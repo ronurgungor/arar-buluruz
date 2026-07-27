@@ -35,7 +35,7 @@ function ListingDetail() {
   return (
     <div className="min-h-screen">
       <TopBar />
-      <main className="mx-auto max-w-3xl px-4 pb-28">
+      <main className="mx-auto max-w-2xl px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))]">
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {listing.photos.map((p: string, i: number) => (
             <img
@@ -54,8 +54,9 @@ function ListingDetail() {
         </h1>
         <p className="mt-1 text-3xl font-black text-primary">{formatPrice(listing.price)}</p>
         <p className="mt-2 text-sm text-muted-foreground">
-          {listing.city} / {listing.district} · {listing.seller}
+          {listing.city} / {listing.district}
         </p>
+        <p className="mt-1 text-sm font-semibold text-foreground">{listing.seller}</p>
         <p className="mt-4 leading-relaxed text-foreground">{listing.description}</p>
 
         <div className="mt-6">
@@ -73,8 +74,8 @@ function ListingDetail() {
         </div>
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto grid max-w-3xl grid-cols-2 gap-2 px-4 py-3">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+        <div className="mx-auto grid max-w-2xl grid-cols-2 gap-2 px-4 py-3">
           <a
             href={`tel:${listing.phone}`}
             className="flex h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
