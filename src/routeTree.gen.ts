@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as IlanVerRouteImport } from './routes/ilan-ver'
 import { Route as GirisRouteImport } from './routes/giris'
 import { Route as AraRouteImport } from './routes/ara'
@@ -16,6 +17,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SikayetIdRouteImport } from './routes/sikayet.$id'
 import { Route as IlanIdRouteImport } from './routes/ilan.$id'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IlanVerRoute = IlanVerRouteImport.update({
   id: '/ilan-ver',
   path: '/ilan-ver',
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/ara': typeof AraRoute
   '/giris': typeof GirisRoute
   '/ilan-ver': typeof IlanVerRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ilan/$id': typeof IlanIdRoute
   '/sikayet/$id': typeof SikayetIdRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/ara': typeof AraRoute
   '/giris': typeof GirisRoute
   '/ilan-ver': typeof IlanVerRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ilan/$id': typeof IlanIdRoute
   '/sikayet/$id': typeof SikayetIdRoute
 }
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   '/ara': typeof AraRoute
   '/giris': typeof GirisRoute
   '/ilan-ver': typeof IlanVerRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ilan/$id': typeof IlanIdRoute
   '/sikayet/$id': typeof SikayetIdRoute
 }
@@ -79,16 +88,25 @@ export interface FileRouteTypes {
     | '/ara'
     | '/giris'
     | '/ilan-ver'
+    | '/sitemap.xml'
     | '/ilan/$id'
     | '/sikayet/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ara' | '/giris' | '/ilan-ver' | '/ilan/$id' | '/sikayet/$id'
+  to:
+    | '/'
+    | '/ara'
+    | '/giris'
+    | '/ilan-ver'
+    | '/sitemap.xml'
+    | '/ilan/$id'
+    | '/sikayet/$id'
   id:
     | '__root__'
     | '/'
     | '/ara'
     | '/giris'
     | '/ilan-ver'
+    | '/sitemap.xml'
     | '/ilan/$id'
     | '/sikayet/$id'
   fileRoutesById: FileRoutesById
@@ -98,12 +116,20 @@ export interface RootRouteChildren {
   AraRoute: typeof AraRoute
   GirisRoute: typeof GirisRoute
   IlanVerRoute: typeof IlanVerRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   IlanIdRoute: typeof IlanIdRoute
   SikayetIdRoute: typeof SikayetIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ilan-ver': {
       id: '/ilan-ver'
       path: '/ilan-ver'
@@ -154,9 +180,20 @@ const rootRouteChildren: RootRouteChildren = {
   AraRoute: AraRoute,
   GirisRoute: GirisRoute,
   IlanVerRoute: IlanVerRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   IlanIdRoute: IlanIdRoute,
   SikayetIdRoute: SikayetIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
