@@ -37,7 +37,7 @@ function ListingDetail() {
       <TopBar />
       <main className="mx-auto max-w-3xl px-4 pb-28">
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          {listing.photos.map((p, i) => (
+          {listing.photos.map((p: string, i: number) => (
             <img
               key={i}
               src={p}

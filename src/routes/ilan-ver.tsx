@@ -89,7 +89,7 @@ function PostListing() {
 
             <button
               type="submit"
-              className="h-13 w-full rounded-full bg-primary py-4 text-base font-bold text-primary-foreground hover:bg-primary/90"
+              className="w-full rounded-full bg-primary py-4 text-base font-bold text-primary-foreground hover:bg-primary/90"
             >
               Yayınla
             </button>

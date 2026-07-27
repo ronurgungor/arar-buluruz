@@ -58,7 +58,7 @@ function SearchPage() {
   }, [q, il, sirala]);
 
   const setSearch = (patch: Partial<Search>) =>
-    navigate({ to: "/ara", search: (prev) => ({ ...prev, ...patch }) });
+    navigate({ to: "/ara", search: (prev: Search) => ({ ...prev, ...patch }) });
 
   return (
     <div className="min-h-screen">
