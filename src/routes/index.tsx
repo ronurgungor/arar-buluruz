@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { Search } from "lucide-react";
 import { cities } from "@/data/listings";
+import { Wordmark } from "@/components/Wordmark";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -9,7 +11,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek ücretsiz.",
+          "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz.",
       },
       { property: "og:title", content: "Arar Buluruz" },
       {
@@ -44,8 +46,8 @@ function Home() {
       </div>
 
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center pb-24">
-        <h1 className="text-center text-5xl font-black tracking-tight text-foreground sm:text-6xl">
-          Arar Buluruz
+        <h1 className="text-center">
+          <Wordmark size="lg" />
         </h1>
         <p className="mt-3 text-center text-base text-muted-foreground">
           Ne arıyorsan yaz, gerisini biz bulalım.
@@ -58,19 +60,25 @@ function Home() {
             navigate({ to: "/ara", search: { q, il: city, sirala: "yeni" } });
           }}
         >
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Örn. ikinci el traktör"
-            aria-label="Ne arıyorsun?"
-            className="h-16 w-full rounded-full border border-border bg-card px-6 text-lg shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15"
-          />
+          <div className="relative">
+            <Search
+              aria-hidden
+              className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Ne arıyorsun?"
+              aria-label="Ne arıyorsun?"
+              className="h-16 w-full rounded-full border border-border bg-card pl-13 pr-5 text-lg shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15"
+            />
+          </div>
           <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
             <select
               value={city}
               onChange={(e) => setCity(e.target.value)}
               aria-label="Konum"
-              className="h-12 w-full rounded-full border border-border bg-card px-4 text-sm font-medium outline-none focus:border-primary"
+              className="h-12 w-full min-w-0 rounded-full border border-border bg-card px-4 text-sm font-medium outline-none focus:border-primary"
             >
               {cities.map((c) => (
                 <option key={c} value={c}>
