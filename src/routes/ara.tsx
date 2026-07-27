@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { Search as SearchIcon } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { AdSlot } from "@/components/AdSlot";
 import { cities, formatPrice, listings } from "@/data/listings";
@@ -17,12 +18,12 @@ export const Route = createFileRoute("/ara")({
   }),
   head: () => ({
     meta: [
-      { title: "İlan arama sonuçları — Arar Buluruz" },
+      { title: "Arama sonuçları — Arar Buluruz" },
       {
         name: "description",
         content: "Aradığın ilanları fotoğraf, fiyat ve konumla birlikte hızlıca gör.",
       },
-      { property: "og:title", content: "İlan arama sonuçları — Arar Buluruz" },
+      { property: "og:title", content: "Arama sonuçları — Arar Buluruz" },
       { property: "og:description", content: "Sade filtrelerle hızlı ilan arama." },
     ],
   }),
@@ -63,7 +64,7 @@ function SearchPage() {
   return (
     <div className="min-h-screen">
       <TopBar />
-      <main className="mx-auto max-w-3xl px-4 pb-16">
+      <main className="mx-auto max-w-2xl px-4 pb-16">
         <form
           className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 pt-4"
           onSubmit={(e) => {
@@ -71,13 +72,19 @@ function SearchPage() {
             setSearch({ q: term });
           }}
         >
-          <input
-            value={term}
-            onChange={(e) => setTerm(e.target.value)}
-            aria-label="Ne arıyorsun?"
-            placeholder="Ne arıyorsun?"
-            className="h-12 w-full rounded-full border border-border bg-card px-5 text-base outline-none focus:border-primary"
-          />
+          <div className="relative min-w-0">
+            <SearchIcon
+              aria-hidden
+              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+              aria-label="Ne arıyorsun?"
+              placeholder="Ne arıyorsun?"
+              className="h-12 w-full rounded-full border border-border bg-card pl-11 pr-4 text-base outline-none focus:border-primary"
+            />
+          </div>
           <button
             type="submit"
             className="h-12 shrink-0 rounded-full bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90"
@@ -112,17 +119,15 @@ function SearchPage() {
           ))}
         </div>
 
-        <p className="mt-4 text-sm text-muted-foreground">
-          {results.length} ilan bulundu
-        </p>
+        <p className="mt-3 text-sm text-muted-foreground">{results.length} ilan bulundu</p>
 
-        <ul className="mt-3 space-y-3">
+        <ul className="mt-2 divide-y divide-border/70">
           {results.map((l, i) => (
-            <li key={l.id}>
+            <li key={l.id} className="py-2">
               <Link
                 to="/ilan/$id"
                 params={{ id: l.id }}
-                className="flex gap-3 rounded-2xl border border-border bg-card p-3 transition-shadow hover:shadow-md"
+                className="flex items-center gap-3 rounded-xl p-1 transition-colors hover:bg-accent/40"
               >
                 <img
                   src={l.photos[0]}
@@ -130,22 +135,22 @@ function SearchPage() {
                   width={800}
                   height={600}
                   loading="lazy"
-                  className="h-24 w-24 shrink-0 rounded-xl object-cover sm:h-28 sm:w-32"
+                  className="h-20 w-20 shrink-0 rounded-lg object-cover sm:h-24 sm:w-28"
                 />
                 <div className="min-w-0 flex-1">
-                  <h2 className="line-clamp-2 text-base font-semibold text-foreground">
+                  <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">
                     {l.title}
                   </h2>
-                  <p className="mt-1 text-lg font-extrabold text-primary">
+                  <p className="mt-0.5 text-base font-extrabold text-primary">
                     {formatPrice(l.price)}
                   </p>
-                  <p className="mt-1 truncate text-sm text-muted-foreground">
+                  <p className="truncate text-[13px] text-muted-foreground">
                     {l.city} / {l.district}
                   </p>
                 </div>
               </Link>
               {(i + 1 === 4 || (i + 1 > 4 && (i + 1 - 4) % 6 === 0)) && (
-                <div className="mt-3">
+                <div className="mt-2">
                   <AdSlot />
                 </div>
               )}
@@ -155,7 +160,7 @@ function SearchPage() {
 
         {results.length === 0 && (
           <p className="mt-10 text-center text-muted-foreground">
-            Sonuç bulunamadı. Farklı bir kelime deneyin.
+            Sonuç bulunamadı. Farklı bir kelime dene.
           </p>
         )}
       </main>

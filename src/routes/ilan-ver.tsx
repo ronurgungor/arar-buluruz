@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { Plus } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { cities } from "@/data/listings";
 
@@ -9,10 +10,11 @@ export const Route = createFileRoute("/ilan-ver")({
       { title: "Ücretsiz ilan ver — Arar Buluruz" },
       {
         name: "description",
-        content: "Fotoğraf, başlık, fiyat ve konum ekle; ilanın dakikalar içinde yayında olsun.",
+        content:
+          "Fotoğraf, başlık, fiyat ve konum ekle; ilanın dakikalar içinde yayında olsun.",
       },
       { property: "og:title", content: "Ücretsiz ilan ver — Arar Buluruz" },
-      { property: "og:description", content: "Birkaç alan doldur, ilanını yayınla." },
+      { property: "og:description", content: "Birkaç alanı doldur, ilanını yayınla." },
     ],
   }),
   component: PostListing,
@@ -27,7 +29,7 @@ function PostListing() {
   return (
     <div className="min-h-screen">
       <TopBar />
-      <main className="mx-auto max-w-xl px-4 pb-16">
+      <main className="mx-auto max-w-md px-4 pb-16">
         <h1 className="mt-6 text-2xl font-extrabold tracking-tight">İlan Ver</h1>
         <p className="mt-1 text-sm text-muted-foreground">Ücretsiz. Birkaç alan yeterli.</p>
 
@@ -52,12 +54,22 @@ function PostListing() {
               setSent(true);
             }}
           >
-            <label className="block">
-              <span className="text-sm font-medium">Fotoğraf</span>
-              <div className="mt-1 flex h-32 items-center justify-center rounded-xl border border-dashed border-border bg-muted/50 text-sm text-muted-foreground">
-                Fotoğraf eklemek için dokun
+            <div>
+              <span className="text-sm font-medium">Fotoğraflar</span>
+              <div className="mt-1 grid grid-cols-4 gap-2">
+                {[0, 1, 2, 3].map((i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-label={`${i + 1}. fotoğrafı ekle`}
+                    className="flex aspect-square items-center justify-center rounded-xl border border-dashed border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-accent/50"
+                  >
+                    <Plus className="h-5 w-5" aria-hidden />
+                  </button>
+                ))}
               </div>
-            </label>
+              <p className="mt-1 text-xs text-muted-foreground">En fazla 4 fotoğraf.</p>
+            </div>
 
             <label className="block">
               <span className="text-sm font-medium">Başlık</span>
@@ -81,7 +93,7 @@ function PostListing() {
             <label className="block">
               <span className="text-sm font-medium">Açıklama</span>
               <textarea
-                rows={5}
+                rows={4}
                 placeholder="Ürünün durumu, teslim şekli..."
                 className="mt-1 w-full rounded-xl border border-border bg-card p-4 text-base outline-none focus:border-primary"
               />
