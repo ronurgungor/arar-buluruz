@@ -9,38 +9,148 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as IlanVerRouteImport } from './routes/ilan-ver'
+import { Route as GirisRouteImport } from './routes/giris'
+import { Route as AraRouteImport } from './routes/ara'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SikayetIdRouteImport } from './routes/sikayet.$id'
+import { Route as IlanIdRouteImport } from './routes/ilan.$id'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IlanVerRoute = IlanVerRouteImport.update({
+  id: '/ilan-ver',
+  path: '/ilan-ver',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GirisRoute = GirisRouteImport.update({
+  id: '/giris',
+  path: '/giris',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AraRoute = AraRouteImport.update({
+  id: '/ara',
+  path: '/ara',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SikayetIdRoute = SikayetIdRouteImport.update({
+  id: '/sikayet/$id',
+  path: '/sikayet/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IlanIdRoute = IlanIdRouteImport.update({
+  id: '/ilan/$id',
+  path: '/ilan/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ara': typeof AraRoute
+  '/giris': typeof GirisRoute
+  '/ilan-ver': typeof IlanVerRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/ilan/$id': typeof IlanIdRoute
+  '/sikayet/$id': typeof SikayetIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ara': typeof AraRoute
+  '/giris': typeof GirisRoute
+  '/ilan-ver': typeof IlanVerRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/ilan/$id': typeof IlanIdRoute
+  '/sikayet/$id': typeof SikayetIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ara': typeof AraRoute
+  '/giris': typeof GirisRoute
+  '/ilan-ver': typeof IlanVerRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/ilan/$id': typeof IlanIdRoute
+  '/sikayet/$id': typeof SikayetIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/ara'
+    | '/giris'
+    | '/ilan-ver'
+    | '/sitemap.xml'
+    | '/ilan/$id'
+    | '/sikayet/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/ara'
+    | '/giris'
+    | '/ilan-ver'
+    | '/sitemap.xml'
+    | '/ilan/$id'
+    | '/sikayet/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/ara'
+    | '/giris'
+    | '/ilan-ver'
+    | '/sitemap.xml'
+    | '/ilan/$id'
+    | '/sikayet/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AraRoute: typeof AraRoute
+  GirisRoute: typeof GirisRoute
+  IlanVerRoute: typeof IlanVerRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  IlanIdRoute: typeof IlanIdRoute
+  SikayetIdRoute: typeof SikayetIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ilan-ver': {
+      id: '/ilan-ver'
+      path: '/ilan-ver'
+      fullPath: '/ilan-ver'
+      preLoaderRoute: typeof IlanVerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/giris': {
+      id: '/giris'
+      path: '/giris'
+      fullPath: '/giris'
+      preLoaderRoute: typeof GirisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ara': {
+      id: '/ara'
+      path: '/ara'
+      fullPath: '/ara'
+      preLoaderRoute: typeof AraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +158,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sikayet/$id': {
+      id: '/sikayet/$id'
+      path: '/sikayet/$id'
+      fullPath: '/sikayet/$id'
+      preLoaderRoute: typeof SikayetIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ilan/$id': {
+      id: '/ilan/$id'
+      path: '/ilan/$id'
+      fullPath: '/ilan/$id'
+      preLoaderRoute: typeof IlanIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AraRoute: AraRoute,
+  GirisRoute: GirisRoute,
+  IlanVerRoute: IlanVerRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  IlanIdRoute: IlanIdRoute,
+  SikayetIdRoute: SikayetIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
