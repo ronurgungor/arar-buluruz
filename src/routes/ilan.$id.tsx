@@ -77,23 +77,34 @@ function ListingDetail() {
       </main>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-        <div className="mx-auto grid max-w-2xl grid-cols-2 gap-2 px-4 py-3">
-          <a
-            href={`tel:${listing.phone}`}
-            className="flex h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
-          >
-            Ara
-          </a>
-          <a
-            href={`https://wa.me/${listing.phone.replace("+", "")}`}
-            target="_blank"
-            rel="noreferrer"
-            className="flex h-12 items-center justify-center rounded-full border border-primary text-sm font-bold text-primary hover:bg-accent"
-          >
-            WhatsApp
-          </a>
+        <div className="mx-auto max-w-2xl px-4 py-3">
+          {notice && (
+            <p
+              role="status"
+              className="mb-2 rounded-xl bg-muted px-3 py-2 text-center text-xs text-muted-foreground"
+            >
+              Bu prototipte gerçek iletişim kapalıdır.
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setNotice(true)}
+              className="flex h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
+            >
+              Ara
+            </button>
+            <button
+              type="button"
+              onClick={() => setNotice(true)}
+              className="flex h-12 items-center justify-center rounded-full border border-primary text-sm font-bold text-primary hover:bg-accent"
+            >
+              WhatsApp
+            </button>
+          </div>
         </div>
       </div>
+
     </div>
   );
 }
