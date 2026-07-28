@@ -16,6 +16,8 @@ export type Listing = {
   photos: string[];
   createdAt: string;
   distanceKm: number;
+  /** Aramada eşleşen, ekranda gösterilmeyen eş anlamlılar. */
+  keywords: string[];
 };
 
 export const listings: Listing[] = [
@@ -32,6 +34,7 @@ export const listings: Listing[] = [
     photos: [ilan1, ilan6],
     createdAt: "2026-07-26",
     distanceKm: 4,
+    keywords: ["traktör", "tarım", "bahçe", "zirai", "tarla", "makine", "çiftçi"],
   },
   {
     id: "2",
@@ -45,6 +48,7 @@ export const listings: Listing[] = [
     photos: [ilan2],
     createdAt: "2026-07-25",
     distanceKm: 2,
+    keywords: ["mobilya", "masa", "sandalye", "yemek", "ahşap", "ev eşyası", "salon"],
   },
   {
     id: "3",
@@ -58,6 +62,7 @@ export const listings: Listing[] = [
     photos: [ilan3],
     createdAt: "2026-07-24",
     distanceKm: 11,
+    keywords: ["araba", "oto", "otomobil", "araç", "sedan", "vasıta", "ikinci el araba"],
   },
   {
     id: "4",
@@ -71,6 +76,7 @@ export const listings: Listing[] = [
     photos: [ilan4],
     createdAt: "2026-07-23",
     distanceKm: 7,
+    keywords: ["ev", "daire", "kiralık", "emlak", "konut", "2+1", "kira"],
   },
   {
     id: "5",
@@ -84,6 +90,7 @@ export const listings: Listing[] = [
     photos: [ilan6],
     createdAt: "2026-07-22",
     distanceKm: 25,
+    keywords: ["su motoru", "pompa", "su pompası", "tarım", "sulama", "hidrofor"],
   },
   {
     id: "6",
@@ -97,6 +104,7 @@ export const listings: Listing[] = [
     photos: [ilan2],
     createdAt: "2026-07-21",
     distanceKm: 3,
+    keywords: ["masa", "ofis", "mobilya", "büro", "çalışma masası", "ikinci el"],
   },
   {
     id: "7",
@@ -110,6 +118,7 @@ export const listings: Listing[] = [
     photos: [ilan6],
     createdAt: "2026-07-20",
     distanceKm: 40,
+    keywords: ["sulama", "bahçe", "tarım", "hortum", "fıskiye", "set"],
   },
   {
     id: "8",
@@ -123,6 +132,7 @@ export const listings: Listing[] = [
     photos: [ilan4],
     createdAt: "2026-07-19",
     distanceKm: 15,
+    keywords: ["dükkan", "dükkân", "kiralık", "işyeri", "emlak", "ticari", "mağaza"],
   },
   {
     id: "9",
@@ -136,6 +146,7 @@ export const listings: Listing[] = [
     photos: [ilan3],
     createdAt: "2026-07-18",
     distanceKm: 9,
+    keywords: ["lastik", "oto", "araba", "araç", "yedek parça", "jant"],
   },
   {
     id: "10",
@@ -149,6 +160,7 @@ export const listings: Listing[] = [
     photos: [ilan2],
     createdAt: "2026-07-17",
     distanceKm: 60,
+    keywords: ["sehpa", "mobilya", "ahşap", "ev eşyası", "masa", "el yapımı"],
   },
   {
     id: "11",
@@ -162,6 +174,7 @@ export const listings: Listing[] = [
     photos: [ilan1],
     createdAt: "2026-07-16",
     distanceKm: 33,
+    keywords: ["römork", "traktör", "tarım", "makine", "damperli", "tarla"],
   },
   {
     id: "12",
@@ -175,6 +188,7 @@ export const listings: Listing[] = [
     photos: [ilan4],
     createdAt: "2026-07-15",
     distanceKm: 80,
+    keywords: ["arsa", "emlak", "tarla", "satılık", "imarlı", "arazi"],
   },
 ];
 

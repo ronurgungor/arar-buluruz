@@ -47,10 +47,12 @@ function SearchPage() {
       const matchesTerm =
         !needle ||
         l.title.toLocaleLowerCase("tr").includes(needle) ||
-        l.description.toLocaleLowerCase("tr").includes(needle);
+        l.description.toLocaleLowerCase("tr").includes(needle) ||
+        l.keywords.some((k) => k.toLocaleLowerCase("tr").includes(needle));
       const matchesCity = !il || il === "Tüm Türkiye" || l.city === il;
       return matchesTerm && matchesCity;
     });
+
     list = [...list];
     if (sirala === "fiyat") list.sort((a, b) => a.price - b.price);
     else if (sirala === "yakin") list.sort((a, b) => a.distanceKm - b.distanceKm);
@@ -159,10 +161,20 @@ function SearchPage() {
         </ul>
 
         {results.length === 0 && (
-          <p className="mt-10 text-center text-muted-foreground">
-            Sonuç bulunamadı. Farklı bir kelime dene.
-          </p>
+          <div className="mt-10 text-center">
+            <p className="text-muted-foreground">Sonuç bulunamadı. Farklı bir kelime dene.</p>
+            {il && il !== "Tüm Türkiye" && (
+              <button
+                type="button"
+                onClick={() => setSearch({ il: "Tüm Türkiye" })}
+                className="mt-4 h-11 rounded-full bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+              >
+                Tüm Türkiye'de ara
+              </button>
+            )}
+          </div>
         )}
+
       </main>
     </div>
   );
