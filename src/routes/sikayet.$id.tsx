@@ -28,7 +28,7 @@ function Report() {
         <h1 className="mt-8 text-2xl font-extrabold tracking-tight">Şikâyet Et</h1>
         {sent ? (
           <div className="mt-6 rounded-2xl border border-border bg-card p-6">
-            <p className="font-semibold">Bildirimin alındı.</p>
+            <p className="font-semibold">Bu prototipte bildirim kaydedilmez.</p>
             <Link
               to="/ilan/$id"
               params={{ id }}
@@ -37,6 +37,7 @@ function Report() {
               İlana dön
             </Link>
           </div>
+
         ) : (
           <form
             className="mt-6 space-y-4"
