@@ -17,6 +17,8 @@ export const Route = createFileRoute("/giris")({
 });
 
 function SignIn() {
+  const [sent, setSent] = useState(false);
+
   return (
     <div className="min-h-screen">
       <TopBar />
@@ -26,7 +28,13 @@ function SignIn() {
           İlanlarını yönetmek için telefon numaran yeterli.
         </p>
 
-        <form className="mt-6 space-y-3" onSubmit={(e) => e.preventDefault()}>
+        <form
+          className="mt-6 space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setSent(true);
+          }}
+        >
           <input
             placeholder="05xx xxx xx xx"
             inputMode="tel"
@@ -36,12 +44,18 @@ function SignIn() {
           <button className="h-12 w-full rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90">
             Kod gönder
           </button>
+          <p className="text-center text-xs text-muted-foreground">
+            Prototip — gerçek kayıt yapılmaz.
+          </p>
         </form>
 
-        <p className="mt-6 text-xs text-muted-foreground">
-          Bu ekran prototip aşamasında; giriş henüz aktif değil.
-        </p>
+        {sent && (
+          <p role="status" className="mt-4 rounded-xl bg-muted px-3 py-2 text-center text-xs text-muted-foreground">
+            Kod gönderilmedi; giriş bu prototipte devre dışı.
+          </p>
+        )}
       </main>
     </div>
   );
 }
+

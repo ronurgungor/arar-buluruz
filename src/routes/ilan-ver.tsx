@@ -106,6 +106,10 @@ function PostListing() {
             >
               Yayınla
             </button>
+            <p className="text-center text-xs text-muted-foreground">
+              Prototip — gerçek kayıt yapılmaz.
+            </p>
+
           </form>
         )}
       </main>
