@@ -35,18 +35,19 @@ function PostListing() {
 
         {sent ? (
           <div className="mt-8 rounded-2xl border border-primary/30 bg-accent/50 p-6">
-            <p className="font-semibold text-foreground">İlanın hazır (önizleme).</p>
+            <p className="font-semibold text-foreground">Prototip — gerçek kayıt yapılmaz.</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Bu bir prototip; ilan henüz kaydedilmiyor.
+              İlanın yayınlanmadı; bu ekran yalnızca tasarım önizlemesidir.
             </p>
             <button
               onClick={() => setSent(false)}
               className="mt-4 h-11 rounded-full border border-border px-5 text-sm font-semibold hover:bg-accent"
             >
-              Yeni ilan
+              Forma dön
             </button>
           </div>
         ) : (
+
           <form
             className="mt-6 space-y-4"
             onSubmit={(e) => {
