@@ -47,10 +47,12 @@ function SearchPage() {
       const matchesTerm =
         !needle ||
         l.title.toLocaleLowerCase("tr").includes(needle) ||
-        l.description.toLocaleLowerCase("tr").includes(needle);
+        l.description.toLocaleLowerCase("tr").includes(needle) ||
+        l.keywords.some((k) => k.toLocaleLowerCase("tr").includes(needle));
       const matchesCity = !il || il === "Tüm Türkiye" || l.city === il;
       return matchesTerm && matchesCity;
     });
+
     list = [...list];
     if (sirala === "fiyat") list.sort((a, b) => a.price - b.price);
     else if (sirala === "yakin") list.sort((a, b) => a.distanceKm - b.distanceKm);
