@@ -77,19 +77,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Arar Buluruz — Ücretsiz ilan ver, hızlı ara bul" },
+      { title: "Arar Buluruz — Ücretsiz ilan ver, aradığını hemen bul" },
       {
         name: "description",
         content:
-          "Türkiye geneli ücretsiz ilan verme ve ilan arama servisi. Tek arama çubuğu, kategori yok, hızlı sonuç.",
+          "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz.",
       },
-      { property: "og:title", content: "Arar Buluruz" },
+      { property: "og:title", content: "Arar Buluruz — Ücretsiz ilan ver, aradığını hemen bul" },
       {
         property: "og:description",
-        content: "Ücretsiz ilan ver, aradığını yazıp hemen bul.",
+        content: "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Arar Buluruz — Ücretsiz ilan ver, aradığını hemen bul" },
+      { name: "twitter:description", content: "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/8948598a-fdf4-454b-9683-442283b920a8" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/8948598a-fdf4-454b-9683-442283b920a8" },
     ],
     links: [
       {
