@@ -1,4 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useState } from "react";
 import { TopBar } from "@/components/TopBar";
 import { AdSlot } from "@/components/AdSlot";
 import { formatPrice, listings } from "@/data/listings";
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/ilan/$id")({
 
 function ListingDetail() {
   const { listing } = Route.useLoaderData();
+  const [notice, setNotice] = useState(false);
 
   return (
     <div className="min-h-screen">
