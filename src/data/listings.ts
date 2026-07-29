@@ -264,8 +264,6 @@ export const cities = [
   "Zonguldak",
 ];
 
-
-
 export const formatPrice = (value: number) =>
   new Intl.NumberFormat("tr-TR", {
     style: "currency",
