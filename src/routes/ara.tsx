@@ -39,11 +39,7 @@ function SearchPage() {
   const [term, setTerm] = useState(q ?? "");
 
   const results = useMemo(() => {
-    const tokens = (q ?? "")
-      .trim()
-      .toLocaleLowerCase("tr")
-      .split(/\s+/)
-      .filter(Boolean);
+    const tokens = (q ?? "").trim().toLocaleLowerCase("tr").split(/\s+/).filter(Boolean);
 
     let list = listings.filter((l) => {
       const searchableText = [l.title, l.description, ...l.keywords]
