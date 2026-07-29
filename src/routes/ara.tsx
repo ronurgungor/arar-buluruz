@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Search as SearchIcon } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { AdSlot } from "@/components/AdSlot";
@@ -137,38 +137,40 @@ function SearchPage() {
 
         <ul className="mt-2 divide-y divide-border/70">
           {results.map((l, i) => (
-            <li key={l.id} className="py-2">
-              <Link
-                to="/ilan/$id"
-                params={{ id: l.id }}
-                className="flex items-center gap-3 rounded-xl p-1 transition-colors hover:bg-accent/40"
-              >
-                <img
-                  src={l.photos[0]}
-                  alt={l.title}
-                  width={800}
-                  height={600}
-                  loading="lazy"
-                  className="h-20 w-20 shrink-0 rounded-lg object-cover sm:h-24 sm:w-28"
-                />
-                <div className="min-w-0 flex-1">
-                  <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">
-                    {l.title}
-                  </h2>
-                  <p className="mt-0.5 text-base font-extrabold text-primary">
-                    {formatPrice(l.price)}
-                  </p>
-                  <p className="truncate text-[13px] text-muted-foreground">
-                    {l.city} / {l.district}
-                  </p>
-                </div>
-              </Link>
+            <Fragment key={l.id}>
+              <li className="py-2">
+                <Link
+                  to="/ilan/$id"
+                  params={{ id: l.id }}
+                  className="flex items-center gap-3 rounded-xl p-1 transition-colors hover:bg-accent/40"
+                >
+                  <img
+                    src={l.photos[0]}
+                    alt={l.title}
+                    width={800}
+                    height={600}
+                    loading="lazy"
+                    className="h-20 w-20 shrink-0 rounded-lg object-cover sm:h-24 sm:w-28"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">
+                      {l.title}
+                    </h2>
+                    <p className="mt-0.5 text-base font-extrabold text-primary">
+                      {formatPrice(l.price)}
+                    </p>
+                    <p className="truncate text-[13px] text-muted-foreground">
+                      {l.city} / {l.district}
+                    </p>
+                  </div>
+                </Link>
+              </li>
               {(i + 1 === 4 || (i + 1 > 4 && (i + 1 - 4) % 6 === 0)) && (
-                <div className="mt-2">
+                <li className="py-4">
                   <AdSlot />
-                </div>
+                </li>
               )}
-            </li>
+            </Fragment>
           ))}
         </ul>
 
