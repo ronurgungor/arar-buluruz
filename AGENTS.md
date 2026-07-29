@@ -35,19 +35,21 @@ Bu dosya, projede çalışan ana sohbet, Lovable, Codex ve bağımsız denetim s
 
 Aynı anda yalnız bir araç kod yazar. Yazar değişmeden önce mevcut görev tamamlanır veya durdurulur; değişiklikler commit/push ile güvenli hale getirilir; exact branch ve SHA doğrulanır.
 
-## Ayrı kurucu onayı gereken işlemler
+## Onay modeli
 
-- `main` branch'e merge
-- Public publish veya republish
-- Backend veya database açma
-- Auth veya SMS
+Kurucu, backlog'da tanımlı düşük riskli ve geri dönüşü kolay görevler için sürekli uygulama onayı vermiştir. Ana sohbet; kapsam sapması, ciddi belirsizlik veya aşağıdaki yüksek riskli alanlardan biri yoksa feature branch, commit, PR, merge ve gerekiyorsa publish adımlarını tamamlayabilir.
+
+Aşağıdaki işlemler için görev bazlı açık karar veya Work ile bağımsız değerlendirme gerekir:
+
+- Backend, database, auth, SMS, storage veya edge function açma
 - Secret veya environment değişikliği
 - Gerçek kullanıcı/satıcı verisi
 - Ödeme veya reklam ağı entegrasyonu
 - Ücretli ya da recurring servis
+- KVKK, güvenlik, public pilot veya geri dönüşü pahalı mimari karar
 - Git geçmişini değiştirme veya force-push
 
-Merge ve public publish aynı onay değildir.
+Test başarısızsa, kapsam belirsizse veya geri dönüş planı yeterli değilse otomatik onay kullanılmaz.
 
 ## Teknik kurallar
 
@@ -60,9 +62,13 @@ Merge ve public publish aynı onay değildir.
 - `npm install`, `npm ci`, ikinci lockfile veya izinsiz dependency değişikliği yapılmaz.
 - İlgisiz refactor ve biçimlendirme aynı göreve eklenmez.
 
-## Backend sınırı
+## Backend sahipliği ve çıkış planı
 
-Backend şu anda kapalıdır. Zamanı geldiğinde kurucunun kontrolündeki Supabase kullanılacak ve migration'lar ilk günden GitHub'da tutulacaktır. Backend, auth veya gerçek veri açık onay olmadan etkinleştirilmez.
+- Lovable database kapalı kalır; Lovable üzerinden database, auth, storage, secret veya edge function etkinleştirilmez.
+- Gelecekteki backend, kurucunun doğrudan sahibi olduğu ayrı bir Supabase projesinde kurulacaktır; hesap, organizasyon, billing ve yönetici erişimleri kurucunun kontrolünde olacaktır.
+- Şema ve tüm migration'lar ilk günden GitHub'da kanonik olarak tutulacaktır. Dashboard'da yapılan değişiklikler migration'a dönüştürülmeden kalıcı kabul edilmez.
+- Uygulama yalnız açıkça yönetilen environment değişkenleriyle backend'e bağlanacaktır; Lovable'a kalıcı backend sahipliği veya tek taraflı kontrol verilmeyecektir.
+- Gerçek veri öncesinde yedekleme, export/restore, bölge, RLS, auth, veri saklama/KVKK ve sağlayıcıdan çıkış planı Work ile bağımsız değerlendirilip kurucu tarafından onaylanacaktır.
 
 ## Görev akışı
 
@@ -70,8 +76,8 @@ Backend şu anda kapalıdır. Zamanı geldiğinde kurucunun kontrolündeki Supab
 2. Dar feature branch'te minimum diff hazırlanır.
 3. Diff, hedef davranışlar ve mümkün olan testler incelenir.
 4. Gerekirse Codex veya Work'ten bağımsız/uzman kontrol alınır.
-5. PR hazırlanır; merge yalnız kurucu onayıyla yapılır.
-6. Publish gerekiyorsa ayrıca kurucu onayı alınır.
+5. Onay modeline göre PR hazırlanır ve merge edilir veya karar için durulur.
+6. Publish gerekiyorsa aynı risk değerlendirmesi ayrı olarak uygulanır.
 7. Milestone sonrası current state ve backlog güncellenir.
 
 ## Raporlama
