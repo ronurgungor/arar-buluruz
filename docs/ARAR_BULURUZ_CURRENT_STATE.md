@@ -7,7 +7,7 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - Repository: `ronurgungor/arar-buluruz`
 - Visibility: Private
 - Default branch: `main`
-- Current repository milestone SHA: `ce31b04ea9c45fa076f19228399d2c07cad23ecf`
+- Current repository milestone SHA: `4dc46a8bf2e2f470ce5320bed34ed855b17bdf6d`
 - Latest confirmed published application SHA: `13146e010949a25343de997aff4e69d83c16287e`
 - Canonical package lock: `bun.lock`
 
@@ -22,6 +22,8 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - PR #7: home-page example searches and honest mock-proximity labels added; published at application SHA `13146e01…`.
 - PR #8: source-level internal dry-run and five-person moderated user-test pack added.
 - PR #9: pinned Bun CI and clean Prettier baseline added.
+- PR #10: CI and executable-validation evidence synchronized into project memory.
+- PR #11: cross-platform LF checkout policy added through `.gitattributes`.
 
 ## Current product behavior
 
@@ -52,21 +54,26 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - GitHub Actions runs on pull requests targeting `main`, pushes to `main`, and manual dispatch.
 - Workflow permissions are read-only: `contents: read`.
 - `actions/checkout` and `oven-sh/setup-bun` are pinned to verified commit SHAs.
-- Bun is pinned to `1.3.14`, proven by the successful clean run.
+- Bun is pinned to `1.3.14`.
 - Validation sequence:
   - `bun install --frozen-lockfile`
   - `bun run lint`
   - `bun run build`
-- PR #9 run `30471718645` completed successfully: frozen install, lint and production build passed.
-- Six existing shadcn Fast Refresh warnings remain non-blocking; no unrelated component refactor was introduced.
+- GitHub CI has passed frozen install, lint and production build on the pinned environment.
+- Windows local validation also passed with Bun `1.3.14` after enforcing LF checkouts:
+  - frozen install: passed
+  - lint: passed with six non-blocking Fast Refresh warnings
+  - production build: passed
+  - five-route HTTP smoke test: passed
+- `.gitattributes` enforces LF for text files across Windows, macOS and Linux; binary assets are excluded from line-ending conversion.
 
 ## Search-index protection
 
 - Root metadata includes `robots` and `googlebot`: `noindex, nofollow, noarchive, nosnippet`.
 - Server responses add `X-Robots-Tag` with the same directive.
 - `robots.txt` remains crawlable so crawlers can read the noindex instruction.
-- Lovable reports the relevant application deployments as completed and published.
-- Independent live retrieval of the response header remains open because available external network checks could not reach the endpoint.
+- Local runtime smoke tests confirmed the expected `X-Robots-Tag` header on `/`, `/ara`, `/ilan/1`, `/ilan-ver` and `/giris`.
+- Independent retrieval from the public Lovable endpoint remains open because available external checks could not reach the endpoint.
 
 ## Lovable
 
@@ -87,19 +94,29 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - Schema and every migration will be canonical in GitHub from day one.
 - Before real data, Work review and founder approval are required for region, backups, export/restore, RLS, auth, KVKK/retention and provider exit planning.
 
+## Local checkout
+
+- Local repository: `C:\Projects\arar-buluruz`
+- Local `main` and `origin/main` are synchronized at `4dc46a8bf2e2f470ce5320bed34ed855b17bdf6d`.
+- Working tree is clean.
+- Repository-local Git settings are `core.autocrlf=false` and `core.eol=lf`.
+- The pre-sync backup branch and stash are still retained temporarily even though their functional changes are fully present in `main`.
+
 ## Current validation stage
 
 - Source-level dry-run is complete.
+- Local executable validation and route smoke tests are complete.
 - The next evidence gate is five moderated tests on real mobile devices using `docs/MODERATED_USER_TEST_PLAN.md`.
 - No additional speculative product feature should be added before those observations are collected.
 - Lovable credits are reserved for a repeated, task-blocking or clearly evidenced mobile UX issue.
 
 ## Known gaps and risks
 
-- The local checkout at `C:\Projects\arar-buluruz` is behind canonical GitHub `main` and contains old uncommitted contact-flow changes. Do not start local/Codex work until it is safely reconciled.
 - Lovable project-panel metadata still uses `Find It Fast`; runtime and repository naming use `Arar Buluruz`.
-- Independent live retrieval of the `X-Robots-Tag` header remains open.
+- Independent public-endpoint retrieval of the `X-Robots-Tag` header remains open.
 - Six non-blocking Fast Refresh warnings exist in shared shadcn UI files.
+- `bun run preview` currently expects an incompatible output path for the Lovable/Nitro Cloudflare build; local smoke validation uses the dev server. Do not change the preview script without verifying the hosting adapter's supported command.
+- The redundant local pre-sync backup branch and stash should be removed only after retaining the external patch files and one final identity check.
 
 ## Hard boundaries
 
