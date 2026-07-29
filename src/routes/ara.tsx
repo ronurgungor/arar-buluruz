@@ -39,14 +39,18 @@ function SearchPage() {
   const [term, setTerm] = useState(q ?? "");
 
   const results = useMemo(() => {
-    const tokens = (q ?? "").trim().toLocaleLowerCase("tr").split(/\s+/).filter(Boolean);
+    const tokens: string[] = (q ?? "")
+      .trim()
+      .toLocaleLowerCase("tr")
+      .split(/\s+/)
+      .filter(Boolean);
 
     let list = listings.filter((l) => {
       const searchableText = [l.title, l.description, ...l.keywords]
         .join(" ")
         .toLocaleLowerCase("tr");
       const matchesTerm =
-        tokens.length === 0 || tokens.every((token) => searchableText.includes(token));
+        tokens.length === 0 || tokens.every((token: string) => searchableText.includes(token));
       const matchesCity = !il || il === "Tüm Türkiye" || l.city === il;
       return matchesTerm && matchesCity;
     });
