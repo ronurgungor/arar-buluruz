@@ -7,39 +7,49 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - Repository: `ronurgungor/arar-buluruz`
 - Visibility: Private
 - Default branch: `main`
-- Current `main` SHA: `2341c6a5eab34b3418580a93259858a030d4d128`
+- Latest application/runtime code SHA: `c563ab50cfa20689284d62c96c997b79501b7562`
+- Latest repository milestone before this status sync: `ede5d90fff3e6c14addc9c9a0cd206ccab410534`
 - Canonical package lock: `bun.lock`
 
-## Latest completed milestone
+## Completed milestones
 
-PR #1, **Route prototype contacts to controlled test line**, merged into `main`.
+- PR #1: controlled prototype contact flow merged and published.
+- PR #2: shared project memory, standing approval rules and backend ownership guardrails merged.
+- PR #3: site-wide `noindex/nofollow` protection merged and published.
+- PR #4: repository README heading renamed from `Find It Fast` to `Arar Buluruz`.
 
-Implemented:
+## Current contact behavior
 
-- One central `PROTOTYPE_CONTACT` configuration
+- Central `PROTOTYPE_CONTACT` configuration
 - Controlled test number: `+905321739111`
 - Call target: `tel:+905321739111`
 - WhatsApp target: `https://wa.me/905321739111`
-- `Listing.phone` removed
-- Twelve old mock phone numbers removed
-- Blocking prototype contact notice/state removed
-- Short non-blocking test explanation added to listing detail
+- `Listing.phone` and twelve old mock numbers removed
 - Number is not printed in visible listing copy
+
+## Search-index protection
+
+- Root HTML metadata includes `robots` and `googlebot` directives:
+  - `noindex, nofollow, noarchive, nosnippet`
+- Server responses add:
+  - `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet`
+- `robots.txt` remains crawlable so crawlers can read the noindex directive.
+- Lovable reports deployment of application SHA `c563ab50…` as completed and published.
+- Direct external fetch of the live header was unavailable from the available network environments; source and deployment linkage are verified, but independent runtime header retrieval remains open.
 
 ## Lovable
 
 - Project ID: `dca896f8-bb48-4a67-ae49-0493610ca6ad`
 - Public URL: `https://arar-buluruz.lovable.app`
 - Database: Disabled
-- Production deployment ID: `09ee92e0-49ec-4f44-b641-28ee52d6ee6c`
+- Latest production deployment ID: `79c79651-4e08-4ba6-b6d4-aaa33f0fb151`
 - Publish status: Completed
 - Published: Yes, public visibility
-- Lovable project metadata and latest screenshot reference the `2341c6a5…` main version.
-- Visible project display name still reports `Find It Fast`; cleanup remains a separate task.
+- Project metadata still reports display name `Find It Fast` and an old generated description. The connector exposes no direct rename operation; no Lovable credit was spent on metadata-only cleanup.
 
 ## Backend ownership position
 
-- Lovable will remain a frontend writer/hosting surface, not the backend owner.
+- Lovable remains a frontend writer/hosting surface, not the backend owner.
 - Lovable database, auth, storage, secrets and edge functions remain disabled.
 - Future backend will use a separate founder-owned Supabase project.
 - Founder controls the Supabase account, organization, billing and administrator access.
@@ -58,24 +68,19 @@ The app is a frontend-only, mobile-first classified-listing prototype with mock 
 - Profile/login placeholder flow
 - Advertising placeholders only
 
-## Active work
+## Next planned work
 
-- Branch: `docs/project-memory`
-- Task: Add the shared project memory files and explicit backend ownership guardrails
-- Files:
-  - `AGENTS.md`
-  - `docs/ARAR_BULURUZ_CURRENT_STATE.md`
-  - `docs/ARAR_BULURUZ_BACKLOG.md`
-- Founder has provided standing approval for low-risk, reversible backlog work; serious or uncertain decisions still require direct review or Work input.
+- Run an internal end-to-end dry run of the main user flows.
+- Use Lovable credits only for bounded UX work supported by observed problems.
+- Prepare the first five moderated user tests.
 
 ## Known gaps and risks
 
-- The repository currently has no GitHub Actions/CI check running for pull requests.
-- `bun run lint` and `bun run build` were not executed for PR #1 because the earlier local environment lacked Bun and dependencies.
-- PR #1 passed remote diff and static source review, but executable validation remains unproven.
-- The local checkout at `C:\Projects\arar-buluruz` is behind the new `main` and contains the same contact-flow changes as uncommitted local changes. Do not begin new local work until it is safely reconciled.
-- Some visible naming still says `Find It Fast`; cleanup is a separate task.
-- Site-wide `noindex/nofollow` is not yet implemented.
+- No GitHub Actions/CI check currently runs for pull requests.
+- `bun run lint` and `bun run build` remain unproven in a clean executable environment.
+- The local checkout at `C:\Projects\arar-buluruz` is behind canonical GitHub `main` and contains old uncommitted contact-flow changes. Do not start local/Codex work until it is safely reconciled.
+- Lovable project-panel metadata still uses `Find It Fast`; runtime and repository naming use `Arar Buluruz`.
+- Independent live retrieval of the `X-Robots-Tag` header remains to be completed when network access permits.
 
 ## Hard boundaries
 
