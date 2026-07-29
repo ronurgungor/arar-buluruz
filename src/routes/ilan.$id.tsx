@@ -36,7 +36,7 @@ function ListingDetail() {
   return (
     <div className="min-h-screen">
       <TopBar />
-      <main className="mx-auto max-w-2xl px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))]">
+      <main className="mx-auto max-w-2xl px-4 pb-[calc(8rem+env(safe-area-inset-bottom))]">
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {listing.photos.map((p: string, i: number) => (
             <img
