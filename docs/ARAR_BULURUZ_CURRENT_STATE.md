@@ -7,8 +7,7 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - Repository: `ronurgungor/arar-buluruz`
 - Visibility: Private
 - Default branch: `main`
-- Latest application/runtime code SHA: `c563ab50cfa20689284d62c96c997b79501b7562`
-- Latest repository milestone before this status sync: `ede5d90fff3e6c14addc9c9a0cd206ccab410534`
+- Latest application/runtime code SHA: `13146e010949a25343de997aff4e69d83c16287e`
 - Canonical package lock: `bun.lock`
 
 ## Completed milestones
@@ -16,36 +15,54 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - PR #1: controlled prototype contact flow merged and published.
 - PR #2: shared project memory, standing approval rules and backend ownership guardrails merged.
 - PR #3: site-wide `noindex/nofollow` protection merged and published.
-- PR #4: repository README heading renamed from `Find It Fast` to `Arar Buluruz`.
+- PR #4: repository README heading renamed to `Arar Buluruz`.
+- PR #5: current state and backlog synchronized.
+- PR #6: submitted listing values are shown in an editable prototype preview; published at application SHA `7dd6434d…`.
+- PR #7: home-page example searches and honest mock-proximity labels added; published at application SHA `13146e01…`.
+- Source-level internal dry-run completed and recorded in `docs/INTERNAL_DRY_RUN_2026-07-29.md`.
+- Five-person moderated test protocol prepared in `docs/MODERATED_USER_TEST_PLAN.md`.
 
-## Current contact behavior
+## Current product behavior
 
-- Central `PROTOTYPE_CONTACT` configuration
+### Search
+
+- Search includes title, description and hidden keyword synonyms.
+- Zero-result city filtering offers `Tüm Türkiye'de ara` recovery.
+- Home page offers direct example searches: `traktör`, `kiralık daire`, `ikinci el masa`, `oto`.
+- Mock distance ordering is labelled `Yakın (örnek)` and explicitly states that real location is not used.
+
+### Listing detail and contact
+
 - Controlled test number: `+905321739111`
 - Call target: `tel:+905321739111`
 - WhatsApp target: `https://wa.me/905321739111`
-- `Listing.phone` and twelve old mock numbers removed
-- Number is not printed in visible listing copy
+- `Listing.phone` and twelve old mock numbers are removed.
+- The number is not printed in visible listing copy.
+
+### Listing creation
+
+- Title, price, city and description are preserved in frontend state.
+- Submission shows the user's values in a listing-style preview card.
+- `İlanı düzenle` returns to the populated form.
+- No real record, upload, backend or storage is used.
 
 ## Search-index protection
 
-- Root HTML metadata includes `robots` and `googlebot` directives:
-  - `noindex, nofollow, noarchive, nosnippet`
-- Server responses add:
-  - `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet`
-- `robots.txt` remains crawlable so crawlers can read the noindex directive.
-- Lovable reports deployment of application SHA `c563ab50…` as completed and published.
-- Direct external fetch of the live header was unavailable from the available network environments; source and deployment linkage are verified, but independent runtime header retrieval remains open.
+- Root metadata includes `robots` and `googlebot`: `noindex, nofollow, noarchive, nosnippet`.
+- Server responses add `X-Robots-Tag` with the same directive.
+- `robots.txt` remains crawlable so crawlers can read the noindex instruction.
+- Lovable reports the relevant application deployments as completed and published.
+- Independent live retrieval of the response header remains open because available external network checks could not reach the endpoint.
 
 ## Lovable
 
 - Project ID: `dca896f8-bb48-4a67-ae49-0493610ca6ad`
 - Public URL: `https://arar-buluruz.lovable.app`
 - Database: Disabled
-- Latest production deployment ID: `79c79651-4e08-4ba6-b6d4-aaa33f0fb151`
-- Publish status: Completed
-- Published: Yes, public visibility
-- Project metadata still reports display name `Find It Fast` and an old generated description. The connector exposes no direct rename operation; no Lovable credit was spent on metadata-only cleanup.
+- Latest confirmed published application SHA: `13146e010949a25343de997aff4e69d83c16287e`
+- Latest deployment ID: `1490c7c7-0875-4b33-a2e1-8a0519ca249a`
+- Project metadata still reports display name `Find It Fast` and an old generated description. The connector exposes no direct rename operation.
+- Five Lovable credits remain unspent. Variant isolation was unavailable, so credits were not risked on direct main-branch writing or metadata-only cleanup.
 
 ## Backend ownership position
 
@@ -53,26 +70,15 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - Lovable database, auth, storage, secrets and edge functions remain disabled.
 - Future backend will use a separate founder-owned Supabase project.
 - Founder controls the Supabase account, organization, billing and administrator access.
-- Database schema and migrations will be canonical in GitHub from day one.
+- Schema and every migration will be canonical in GitHub from day one.
 - Before real data, Work review and founder approval are required for region, backups, export/restore, RLS, auth, KVKK/retention and provider exit planning.
 
-## Current product state
+## Current validation stage
 
-The app is a frontend-only, mobile-first classified-listing prototype with mock data. Current core flows include:
-
-- Search and listing results
-- Listing detail
-- Controlled prototype call and WhatsApp actions
-- Complaint flow
-- Listing creation placeholder flow
-- Profile/login placeholder flow
-- Advertising placeholders only
-
-## Next planned work
-
-- Run an internal end-to-end dry run of the main user flows.
-- Use Lovable credits only for bounded UX work supported by observed problems.
-- Prepare the first five moderated user tests.
+- Source-level dry-run is complete.
+- The next evidence gate is five moderated tests on real mobile devices.
+- No additional speculative product feature should be added before those observations are collected.
+- Lovable credits are reserved for a repeated, task-blocking or clearly evidenced mobile UX issue.
 
 ## Known gaps and risks
 
@@ -80,7 +86,7 @@ The app is a frontend-only, mobile-first classified-listing prototype with mock 
 - `bun run lint` and `bun run build` remain unproven in a clean executable environment.
 - The local checkout at `C:\Projects\arar-buluruz` is behind canonical GitHub `main` and contains old uncommitted contact-flow changes. Do not start local/Codex work until it is safely reconciled.
 - Lovable project-panel metadata still uses `Find It Fast`; runtime and repository naming use `Arar Buluruz`.
-- Independent live retrieval of the `X-Robots-Tag` header remains to be completed when network access permits.
+- Independent live retrieval of the `X-Robots-Tag` header remains open.
 
 ## Hard boundaries
 
