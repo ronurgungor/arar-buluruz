@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search as SearchIcon } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { AdSlot } from "@/components/AdSlot";
@@ -37,6 +37,10 @@ function SearchPage() {
   const { q, il, sirala } = Route.useSearch();
   const navigate = useNavigate();
   const [term, setTerm] = useState(q ?? "");
+
+  useEffect(() => {
+    setTerm(q ?? "");
+  }, [q]);
 
   const results = useMemo(() => {
     const tokens: string[] = (q ?? "")
