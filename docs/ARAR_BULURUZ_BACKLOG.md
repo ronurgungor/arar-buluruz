@@ -8,46 +8,47 @@ Legend: `[x]` completed, `[-]` in progress, `[ ]` pending.
 
 - [x] Create the initial frontend-only classified-listing prototype.
 - [x] Keep Lovable database disabled.
-- [x] Add the controlled test contact flow and remove old mock phone numbers.
-- [x] Merge and publish the controlled contact flow.
-- [x] Add the three-file shared project memory pool.
+- [x] Add and publish the controlled test contact flow.
+- [x] Add the shared project memory pool.
 - [x] Preserve Lovable's Git-history warning while adding project rules.
 - [x] Define standing approval for low-risk, reversible backlog work.
 - [x] Define founder-owned backend guardrails and provider-exit requirements.
-- [x] Add site-wide `robots`/`googlebot` noindex metadata.
-- [x] Add site-wide `X-Robots-Tag` response protection.
-- [x] Publish the noindex-protected application SHA `c563ab50…`.
+- [x] Add and publish site-wide `noindex/nofollow` metadata and `X-Robots-Tag` protection.
 - [x] Rename the repository README heading to `Arar Buluruz`.
+- [x] Show submitted listing values in an editable frontend preview card.
+- [x] Add direct example searches to the home page.
+- [x] Mark proximity sorting as mock data rather than real geolocation.
+- [x] Complete and document the source-level internal dry-run.
+- [x] Prepare the five-person moderated user-test protocol.
 
 ## In progress
 
-- [-] Run an internal end-to-end dry run of the main user flows.
-- [-] Identify the highest-value UX work for today's Lovable credits using observed evidence rather than speculative polish.
+- [-] Conduct the first five moderated tests on real mobile devices.
+- [-] Collect task success, pauses, wrong taps, direct quotes and issue severity using `docs/MODERATED_USER_TEST_PLAN.md`.
 
 ## Next ordered work
 
-1. [ ] Complete the internal dry run and record concrete failures/friction.
-2. [ ] Use Lovable for listing-detail mobile ergonomics if the dry run confirms overlap, safe-area or tap-target issues.
-3. [ ] Use Lovable for search-results mobile usability if the dry run confirms density, overflow or filter issues.
-4. [ ] Use Lovable for listing-form mobile ergonomics if the dry run confirms keyboard, field-order or primary-action issues.
-5. [ ] Conduct the first five moderated user tests.
-6. [ ] Fix the strongest repeatedly observed user problem.
+1. [ ] Complete all five moderated sessions.
+2. [ ] Calculate task success rates and repeated issue counts.
+3. [ ] Select only one next product change using the documented decision rule.
+4. [ ] Use Lovable for the selected mobile UX issue only when safe branch/variant isolation is available.
+5. [ ] Re-run the affected user task after the fix.
 
-## Lovable UX work allocation
+## Lovable UX credit allocation
 
-Use Lovable credits only for bounded, high-value frontend/mobile UX work:
+Five credits remain unspent and reserved for evidence-backed frontend/mobile UX work:
 
-- [ ] Listing-detail mobile ergonomics: fixed contact area, safe-area behavior, content overlap and tap targets.
-- [ ] Search-results mobile usability: card density, title/price overflow, image ratio, filters and touch areas.
-- [ ] Listing-form mobile ergonomics: field order, keyboard behavior, image area and primary action accessibility.
-- [ ] Reserve one credit for a proven responsive regression.
-- [ ] Reserve one credit for the strongest issue found during the internal dry run or moderated tests.
+- [ ] Listing-detail mobile ergonomics if tests confirm fixed-footer overlap, safe-area or tap-target problems.
+- [ ] Search-results mobile usability if tests confirm density, overflow or filter problems.
+- [ ] Listing-form mobile ergonomics if tests confirm keyboard, field-order or primary-action problems.
+- [ ] One credit reserved for a proven responsive regression.
+- [ ] One credit reserved for the strongest repeated problem from moderated tests.
 
-Do not spend Lovable credits on noindex, naming-only cleanup, backend, auth or speculative visual polish.
+Do not spend Lovable credits on noindex, naming-only cleanup, backend, auth, metadata-only edits or speculative polish. Do not let Lovable write directly to canonical `main` without a safely isolated reviewable branch/variant.
 
 ## Administrative metadata
 
-- [ ] Rename Lovable project-panel `display_name` and generated description from `Find It Fast` to `Arar Buluruz` when a direct no-credit metadata operation is available or during a justified Lovable session.
+- [ ] Rename Lovable project-panel `display_name` and generated description from `Find It Fast` to `Arar Buluruz` when a direct no-credit metadata operation is available or during an otherwise justified safe Lovable session.
 
 ## Technical quality backlog
 
