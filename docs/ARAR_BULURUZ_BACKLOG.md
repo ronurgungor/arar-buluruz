@@ -20,6 +20,10 @@ Legend: `[x]` completed, `[-]` in progress, `[ ]` pending.
 - [x] Mark proximity sorting as mock data rather than real geolocation.
 - [x] Complete and document the source-level internal dry-run.
 - [x] Prepare the five-person moderated user-test protocol.
+- [x] Add read-only GitHub Actions CI for PRs, `main` pushes and manual runs.
+- [x] Pin checkout, setup-bun and Bun `1.3.14` to verified versions.
+- [x] Establish a clean Prettier baseline without weakening lint rules.
+- [x] Prove `bun install --frozen-lockfile`, `bun run lint` and `bun run build` in a clean GitHub runner.
 
 ## In progress
 
@@ -53,9 +57,8 @@ Do not spend Lovable credits on noindex, naming-only cleanup, backend, auth, met
 ## Technical quality backlog
 
 - [ ] Independently retrieve the live `X-Robots-Tag` header when network access permits.
-- [ ] Establish a repeatable lint/build validation path using `bun run lint` and `bun run build` without creating a second lockfile.
-- [ ] Decide whether to add a minimal GitHub Actions CI workflow after the package/tooling baseline is verified.
 - [ ] Reconcile the local checkout safely with canonical GitHub `main` before future local/Codex work.
+- [ ] Decide whether the six non-blocking shadcn Fast Refresh warnings justify a separate component-export cleanup; do not refactor them without value.
 - [ ] Add targeted automated tests when real behavior begins to justify them; avoid test scaffolding for placeholder-only flows.
 
 ## Backend readiness gate — deferred
