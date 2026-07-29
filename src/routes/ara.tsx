@@ -33,7 +33,7 @@ export const Route = createFileRoute("/ara")({
 const sortLabels: Record<NonNullable<Search["sirala"]>, string> = {
   yeni: "En yeni",
   fiyat: "Fiyat",
-  yakin: "Yakınımda",
+  yakin: "Yakın (örnek)",
 };
 
 function SearchPage() {
@@ -120,6 +120,12 @@ function SearchPage() {
             </button>
           ))}
         </div>
+
+        {sirala === "yakin" && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Mesafeler bu prototipte örnek veridir; gerçek konum kullanılmaz.
+          </p>
+        )}
 
         <p className="mt-3 text-sm text-muted-foreground">{results.length} ilan bulundu</p>
 
