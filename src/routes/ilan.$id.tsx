@@ -98,7 +98,6 @@ function ListingDetail() {
           </div>
         </div>
       </div>
-
     </div>
   );
 }

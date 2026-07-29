@@ -13,10 +13,14 @@ export const Route = createFileRoute("/")({
         content:
           "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz.",
       },
-      { property: "og:title", content: "Arar Buluruz — Ücretsiz ilan ver, aradığını hemen bul" },
+      {
+        property: "og:title",
+        content: "Arar Buluruz — Ücretsiz ilan ver, aradığını hemen bul",
+      },
       {
         property: "og:description",
-        content: "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz.",
+        content:
+          "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz.",
       },
     ],
   }),
