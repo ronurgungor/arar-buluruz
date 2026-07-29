@@ -31,9 +31,11 @@ Implemented:
 - Project ID: `dca896f8-bb48-4a67-ae49-0493610ca6ad`
 - Public URL: `https://arar-buluruz.lovable.app`
 - Database: Disabled
-- A production deployment was requested on 2026-07-29.
-- Deployment ID: `09ee92e0-49ec-4f44-b641-28ee52d6ee6c`
-- Last observed deployment status: `pending`; live verification is still required.
+- Production deployment ID: `09ee92e0-49ec-4f44-b641-28ee52d6ee6c`
+- Publish status: Completed
+- Published: Yes, public visibility
+- Lovable project metadata and latest screenshot reference the `2341c6a5…` main version.
+- Visible project display name still reports `Find It Fast`; cleanup remains a separate task.
 
 ## Current product state
 

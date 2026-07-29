@@ -14,7 +14,8 @@ Legend: `[x]` completed, `[-]` in progress, `[ ]` pending.
 - [x] Route all mock listing call/WhatsApp actions to the approved controlled test line.
 - [x] Remove the blocking contact notice/state.
 - [x] Merge PR #1 into `main` at `2341c6a5eab34b3418580a93259858a030d4d128`.
-- [x] Request a Lovable production deployment for the merged contact flow.
+- [x] Publish the merged contact flow to `https://arar-buluruz.lovable.app`.
+- [x] Verify Lovable project status as completed, public and tied to the `2341c6a5…` main version.
 
 ## In progress
 
@@ -22,7 +23,6 @@ Legend: `[x]` completed, `[-]` in progress, `[ ]` pending.
   - `AGENTS.md`
   - `docs/ARAR_BULURUZ_CURRENT_STATE.md`
   - `docs/ARAR_BULURUZ_BACKLOG.md`
-- [-] Verify that deployment `09ee92e0-49ec-4f44-b641-28ee52d6ee6c` is live on `https://arar-buluruz.lovable.app`.
 
 ## Next ordered work
 
