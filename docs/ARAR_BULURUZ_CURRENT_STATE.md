@@ -1,13 +1,14 @@
 # Arar Buluruz — Current State
 
-_Last updated: 2026-07-29, Europe/Istanbul_
+_Last updated: 2026-07-30, Europe/Istanbul_
 
 ## Repository
 
 - Repository: `ronurgungor/arar-buluruz`
 - Visibility: Private
 - Default branch: `main`
-- Last locally validated repository SHA: `2e87a7ab330f5c3f72d273169592784ffcdee81a`
+- Current GitHub `main` milestone SHA: `25f014f6106d433507f96b409ba2456f8af191c2`
+- Last locally validated PR branch SHA: `d8538631803faa289befa02694b3bb0806ce0174`
 - Latest confirmed published application SHA: `13146e010949a25343de997aff4e69d83c16287e`
 - Canonical package lock: `bun.lock`
 
@@ -25,13 +26,16 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - PR #10: CI and executable-validation evidence synchronized into project memory.
 - PR #11: cross-platform LF checkout policy added through `.gitattributes`.
 - PR #12: successful Windows synchronization and local executable-validation evidence recorded.
-- Redundant pre-sync local branch and stash were removed after SHA, content and external-recovery-file verification.
+- PR #13: redundant pre-sync branch/stash cleanup recorded after external recovery verification.
+- PR #14: automated mobile E2E findings fixed; multi-word search and fixed-footer overlap corrections merged after local regression validation.
 
 ## Current product behavior
 
 ### Search
 
 - Search includes title, description and hidden keyword synonyms.
+- Multi-word searches are tokenized; every token must appear somewhere in the combined searchable text.
+- `ikinci el masa` and `masa ikinci el` both resolve to the matching office-desk listing.
 - Zero-result city filtering offers `Tüm Türkiye'de ara` recovery.
 - Home page offers direct example searches: `traktör`, `kiralık daire`, `ikinci el masa`, `oto`.
 - Mock distance ordering is labelled `Yakın (örnek)` and explicitly states that real location is not used.
@@ -43,6 +47,7 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - WhatsApp target: `https://wa.me/905321739111`
 - `Listing.phone` and twelve old mock numbers are removed.
 - The number is not printed in visible listing copy.
+- At a `390 × 844` viewport, the fixed contact bar leaves the `Şikâyet Et` link fully visible with `0 px` overlap.
 
 ### Listing creation
 
@@ -50,6 +55,7 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - Submission shows the user's values in a listing-style preview card.
 - `İlanı düzenle` returns to the populated form.
 - No real record, upload, backend or storage is used.
+- The current prototype city selector is intentionally limited to mock-listing cities; a canonical full-city list remains a pre-pilot requirement.
 
 ## CI and executable validation
 
@@ -61,12 +67,16 @@ _Last updated: 2026-07-29, Europe/Istanbul_
   - `bun install --frozen-lockfile`
   - `bun run lint`
   - `bun run build`
-- GitHub CI has passed frozen install, lint and production build on the pinned environment.
-- Windows local validation also passed with Bun `1.3.14` after enforcing LF checkouts:
-  - frozen install: passed
-  - lint: passed with six non-blocking Fast Refresh warnings
-  - production build: passed
-  - five-route HTTP smoke test: passed
+- PR #14 CI run `30489176018` passed frozen install, lint and production build.
+- Codex independently validated PR #14 at `390 × 844`:
+  - multi-word search: passed
+  - reversed word order: passed
+  - fixed-footer overlap: `0 px`
+  - city-filter recovery: passed
+  - listing-preview persistence: passed
+  - complaint flow: passed
+  - console errors, page errors, 404/500 responses and horizontal overflow: none
+- Six existing Fast Refresh warnings remain non-blocking.
 - `.gitattributes` enforces LF for text files across Windows, macOS and Linux; binary assets are excluded from line-ending conversion.
 
 ## Search-index protection
@@ -74,8 +84,7 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - Root metadata includes `robots` and `googlebot`: `noindex, nofollow, noarchive, nosnippet`.
 - Server responses add `X-Robots-Tag` with the same directive.
 - `robots.txt` remains crawlable so crawlers can read the noindex instruction.
-- Local runtime smoke tests confirmed the expected `X-Robots-Tag` header on `/`, `/ara`, `/ilan/1`, `/ilan-ver` and `/giris`.
-- Independent retrieval from the public Lovable endpoint remains open because available external checks could not reach the endpoint.
+- Local and public browser verification confirmed the expected `X-Robots-Tag` header on the tested routes.
 
 ## Lovable
 
@@ -85,7 +94,7 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - Latest confirmed published application SHA: `13146e010949a25343de997aff4e69d83c16287e`
 - Latest deployment ID: `1490c7c7-0875-4b33-a2e1-8a0519ca249a`
 - Project metadata still reports display name `Find It Fast` and an old generated description. The connector exposes no direct rename operation.
-- Five Lovable credits remain unspent. Variant isolation was unavailable, so credits were not risked on direct main-branch writing or metadata-only cleanup.
+- Five Lovable credits remain unspent.
 
 ## Backend ownership position
 
@@ -99,29 +108,27 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 ## Local checkout
 
 - Local repository: `C:\Projects\arar-buluruz`
-- Local `main` and `origin/main` were last verified equal at `2e87a7ab330f5c3f72d273169592784ffcdee81a`.
-- Working tree was clean with ahead/behind `0/0` at the final cleanup check.
+- Before PR #14 merged, local `main` and `origin/main` were clean and equal at `8b68a389e46380f824740bf3b4fa01184cc17236`.
+- The PR #14 branch was locally validated clean at `d8538631803faa289befa02694b3bb0806ce0174`.
+- Local `main` must be fast-forwarded to GitHub `main` `25f014f6106d433507f96b409ba2456f8af191c2` before the next local task.
 - Repository-local Git settings are `core.autocrlf=false` and `core.eol=lf`.
-- The redundant `backup/pre-main-sync-20260729-200448` branch and matching stash were deleted after proving that `main` fully contains their functional changes.
-- External recovery records remain outside the repository:
-  - `C:\Projects\arar-buluruz-working-tree-20260729-200448.patch`
-  - `C:\Projects\arar-buluruz-index-20260729-200448.patch`
-  - `C:\Projects\arar-buluruz-untracked-20260729-200448.txt`
+- External recovery records remain outside the repository.
 
 ## Current validation stage
 
 - Source-level dry-run is complete.
-- Local executable validation and route smoke tests are complete.
-- The next evidence gate is five moderated tests on real mobile devices using `docs/MODERATED_USER_TEST_PLAN.md`.
+- Local executable validation, route smoke tests and automated mobile E2E validation are complete.
+- The next evidence gate remains five moderated tests with real people on mobile devices using `docs/MODERATED_USER_TEST_PLAN.md`.
+- Automated browser runs do not replace human usability evidence.
 - No additional speculative product feature should be added before those observations are collected.
-- Lovable credits are reserved for a repeated, task-blocking or clearly evidenced mobile UX issue.
 
 ## Known gaps and risks
 
 - Lovable project-panel metadata still uses `Find It Fast`; runtime and repository naming use `Arar Buluruz`.
-- Independent public-endpoint retrieval of the `X-Robots-Tag` header remains open.
 - Six non-blocking Fast Refresh warnings exist in shared shadcn UI files.
 - `bun run preview` currently expects an incompatible output path for the Lovable/Nitro Cloudflare build; local smoke validation uses the dev server. Do not change the preview script without verifying the hosting adapter's supported command.
+- The current city selector is mock-data-driven and does not yet contain a canonical full Türkiye city list.
+- The public Lovable deployment is not yet confirmed to include PR #14; publishing status must be verified separately before treating the public URL as updated.
 
 ## Hard boundaries
 
