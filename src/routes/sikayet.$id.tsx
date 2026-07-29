@@ -37,7 +37,6 @@ function Report() {
               İlana dön
             </Link>
           </div>
-
         ) : (
           <form
             className="mt-6 space-y-4"
