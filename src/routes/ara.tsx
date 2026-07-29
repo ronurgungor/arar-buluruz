@@ -12,9 +12,7 @@ export const Route = createFileRoute("/ara")({
     q: typeof search.q === "string" ? search.q : "",
     il: typeof search.il === "string" ? search.il : "Tüm Türkiye",
     sirala:
-      search.sirala === "fiyat" || search.sirala === "yakin"
-        ? search.sirala
-        : "yeni",
+      search.sirala === "fiyat" || search.sirala === "yakin" ? search.sirala : "yeni",
   }),
   head: () => ({
     meta: [
@@ -180,7 +178,6 @@ function SearchPage() {
             )}
           </div>
         )}
-
       </main>
     </div>
   );
