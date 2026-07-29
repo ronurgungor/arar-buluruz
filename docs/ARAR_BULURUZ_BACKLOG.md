@@ -24,6 +24,10 @@ Legend: `[x]` completed, `[-]` in progress, `[ ]` pending.
 - [x] Pin checkout, setup-bun and Bun `1.3.14` to verified versions.
 - [x] Establish a clean Prettier baseline without weakening lint rules.
 - [x] Prove `bun install --frozen-lockfile`, `bun run lint` and `bun run build` in a clean GitHub runner.
+- [x] Reconcile the Windows local checkout with canonical GitHub `main`.
+- [x] Add `.gitattributes` and enforce LF working-tree files across platforms.
+- [x] Prove frozen install, lint, build and five-route HTTP smoke tests on the Windows local checkout.
+- [x] Confirm the expected `X-Robots-Tag` header on all five locally tested routes.
 
 ## In progress
 
@@ -56,8 +60,9 @@ Do not spend Lovable credits on noindex, naming-only cleanup, backend, auth, met
 
 ## Technical quality backlog
 
-- [ ] Independently retrieve the live `X-Robots-Tag` header when network access permits.
-- [ ] Reconcile the local checkout safely with canonical GitHub `main` before future local/Codex work.
+- [ ] Independently retrieve the public Lovable endpoint's live `X-Robots-Tag` header when network access permits.
+- [ ] Remove the redundant local pre-sync backup branch and stash after one final identity check; retain the external patch/list files as the recovery record.
+- [ ] Verify the supported production-preview command for the Lovable/Nitro Cloudflare adapter before changing the currently incompatible `bun run preview` path.
 - [ ] Decide whether the six non-blocking shadcn Fast Refresh warnings justify a separate component-export cleanup; do not refactor them without value.
 - [ ] Add targeted automated tests when real behavior begins to justify them; avoid test scaffolding for placeholder-only flows.
 
