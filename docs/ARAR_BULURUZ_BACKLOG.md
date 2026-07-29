@@ -16,6 +16,8 @@ Legend: `[x]` completed, `[-]` in progress, `[ ]` pending.
 - [x] Merge PR #1 into `main` at `2341c6a5eab34b3418580a93259858a030d4d128`.
 - [x] Publish the merged contact flow to `https://arar-buluruz.lovable.app`.
 - [x] Verify Lovable project status as completed, public and tied to the `2341c6a5…` main version.
+- [x] Define the backend ownership guardrail: Lovable backend remains disabled; future backend is founder-owned Supabase with GitHub migrations and an explicit exit plan.
+- [x] Record standing approval for low-risk, reversible backlog tasks while preserving escalation for serious decisions.
 
 ## In progress
 
@@ -26,7 +28,7 @@ Legend: `[x]` completed, `[-]` in progress, `[ ]` pending.
 
 ## Next ordered work
 
-1. [ ] Review and merge the shared project memory PR with separate founder approval.
+1. [ ] Merge the reviewed shared project memory PR.
 2. [ ] Add site-wide `noindex/nofollow` in a separate feature branch.
 3. [ ] Clean all remaining `Find It Fast` naming to `Arar Buluruz` in a separate feature branch.
 4. [ ] Run an internal end-to-end dry run of the main user flows.
@@ -52,9 +54,21 @@ Do not spend Lovable credits on noindex, naming-only cleanup, backend, auth or s
 - [ ] Reconcile the local checkout safely with canonical GitHub `main` before any future local/Codex work.
 - [ ] Add targeted automated tests when real behavior begins to justify them; avoid test scaffolding for placeholder-only flows.
 
+## Backend readiness gate — deferred
+
+Before any backend is enabled:
+
+- [ ] Obtain Work's independent architecture/security/KVKK review.
+- [ ] Create a founder-owned Supabase organization/project; do not enable Lovable database.
+- [ ] Decide region and document data residency implications.
+- [ ] Define RLS, auth boundaries and service-role handling.
+- [ ] Define backup, export/restore and tested provider-exit procedures.
+- [ ] Store schema and every migration in GitHub from day one.
+- [ ] Define secret/environment ownership outside Lovable.
+- [ ] Obtain explicit founder approval before connecting real data.
+
 ## Deferred until explicit founder approval
 
-- [ ] Founder-controlled Supabase backend with migrations tracked in GitHub from day one.
 - [ ] Authentication or SMS.
 - [ ] Real user or seller data.
 - [ ] Secrets or environment changes.
@@ -64,7 +78,7 @@ Do not spend Lovable credits on noindex, naming-only cleanup, backend, auth or s
 
 ## Decision rules
 
-- Main merge and public publish are separate gates.
-- Work is used for architecture, backend, security, KVKK, real-data stages, public-pilot readiness and other expensive-to-reverse decisions.
+- Low-risk, reversible tasks already listed in this backlog may be completed under the founder's standing approval.
+- Stop for founder/Work input when a task affects backend ownership, security, KVKK, real data, public-pilot readiness, cost commitments or other expensive-to-reverse choices.
 - Codex is used for local terminal requirements, long debugging, large automated refactors or local-only test failures.
 - Only one code writer operates at a time.
