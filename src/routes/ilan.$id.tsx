@@ -1,4 +1,5 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
+import { ChevronLeft } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { AdSlot } from "@/components/AdSlot";
 import { formatPrice, listings } from "@/data/listings";
@@ -32,12 +33,22 @@ export const Route = createFileRoute("/ilan/$id")({
 
 function ListingDetail() {
   const { listing } = Route.useLoaderData();
+  const router = useRouter();
 
   return (
     <div className="min-h-screen">
       <TopBar />
       <main className="mx-auto max-w-2xl px-4 pb-[calc(8rem+env(safe-area-inset-bottom))]">
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => router.history.back()}
+          className="mt-3 -ml-1 inline-flex items-center gap-1 rounded-full px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ChevronLeft className="h-4 w-4" aria-hidden />
+          Sonuçlara dön
+        </button>
+
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
           {listing.photos.map((p: string, i: number) => (
             <img
               key={i}

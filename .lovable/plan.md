@@ -1,45 +1,59 @@
-Kod değiştirilmedi. Aşağıdaki tespitler `src/routes/index.tsx`, `src/routes/ara.tsx`, `src/routes/ilan.$id.tsx`, `src/routes/ilan-ver.tsx`, `src/components/TopBar.tsx` ve `src/data/listings.ts` okunarak doğrulandı.
+Kod değiştirilmedi. Bulgular `src/routes/ara.tsx`, `src/routes/ilan.$id.tsx`, `src/routes/ilan-ver.tsx`, `src/routes/giris.tsx`, `src/routes/sikayet.$id.tsx`, `src/components/TopBar.tsx` ve `src/data/listings.ts` okunarak doğrulandı. Aşağıdaki 5 madde yalnız mevcut akışlardaki sorunlardır; yeni özellik önerisi içermez.
 
-## 1. Testi gerçekten bozabilecek 5 UX sorunu
+## B1 — Arama kutusu URL'deki sorguyla senkron kalmıyor
 
-**S1 — Arama yalnız birebir kelime eşleşmesi yapıyor**
-Doğrulandı: `ara.tsx` filtresi sadece `title` ve `description` içinde `includes` arıyor. Mock veride "otomobil" var ama "araba" yok; "ev" araması "daire/dükkân" ilanlarını getirmez. Kategori ağacı olmadığı için aramanın affediciliği ürünün tamamı demek.
+**Kanıt:** `ara.tsx:39` — `const [term, setTerm] = useState(q ?? "")`. Bu yalnız ilk render'da okunur; `q` sonradan değişince (tarayıcı geri/ileri, ana sayfadaki örnek çipten gelen ikinci gezinme, "Tüm Türkiye'de ara" sonrası geri) input eski metni gösterir.
 
-**S2 — İl filtresi neredeyse her zaman 0 sonuç üretiyor**
-Doğrulandı: 12 ilanın 12'si farklı ilde. Tester bir il seçip bir kelime yazdığında sonuç boş kalır ve "uygulama boş/bozuk" izlenimi doğar. Şu an boş durumda ili gevşetme yolu yok.
+**Kullanıcı etkisi:** Mobilde geri tuşu ana gezinme yoludur. Sonuç listesi bir sorguyu, arama kutusu başka bir sorguyu gösterir; kullanıcı "Ara"ya basınca beklemediği sonuca döner ve aramaya güveni düşer.
 
-**S3 — Ana ekranda ne yazacağını bilmeyen kullanıcı için sıfır ipucu**
-Doğrulandı: `index.tsx` yalnız arama kutusu + konum + Ara içeriyor. Kategori olmaması ilke; ama hiç örnek yoksa tester ilk 10 saniyede takılır.
+**Şiddet:** Yüksek.
 
-**S4 — "Yakınımda" filtresi konum izni istemeden mesafeye göre sıralıyor**
-Doğrulandı: `distanceKm` sabit mock alan. Tester bunu "yanlış çalışıyor" diye raporlar; test geri bildirimi gerçek üründen çok prototip kusuruna harcanır.
+**Önerilen düşük riskli düzeltme:** Kontrollü input'u URL'ye bağlamak — örneğin input'a `key={q}` vermek veya `q` değişiminde `term`'i eşitlemek. Tek dosya, birkaç satır.
 
-**S5 — İlan Ver akışı çıktısız bitiyor**
-Doğrulandı: `ilan-ver.tsx` gönderimde yalnız "Prototip — gerçek kayıt yapılmaz" metni gösteriyor; kullanıcı girdiği başlık/fiyat/fotoğrafı hiçbir yerde görmüyor. Ana gelir akışının test edilebilirliği düşer.
+## B2 — İlan detayından arama sonuçlarına dönüş yolu yok
 
-## 2. Her sorun için en ucuz çözüm ve çözülmezse etkisi
+**Kanıt:** `ilan.$id.tsx` sayfasında geri bağlantısı yok; `TopBar.tsx` yalnız logo (→ "/"), "İlan Ver" ve "Giriş" içeriyor. Logoya basmak kullanıcıyı sonuç listesinden ana ekrana atar.
 
-| # | En ucuz çözüm (sıfır bütçe, frontend) | Çözülmezse test etkisi |
-|---|---|---|
-| S1 | Mock ilanlara görünmeyen `keywords: string[]` alanı ekleyip filtreye dahil etmek (araba/oto, ev/daire/kiralık, mobilya/masa, tarım/traktör). Yapay zekâ, API, sözlük yok. | Testerların yarısı ilk aramada "Sonuç bulunamadı" görür; arama motoru vaadi çöker |
-| S2 | Boş sonuçta "Tüm Türkiye'de ara" düğmesi göstermek (ili sıfırlayan tek buton) | İl seçen her tester ölü ekranla karşılaşır, ürünü boş sanır |
-| S3 | Arama kutusunun altına 4-5 metin çipi ("traktör", "kiralık daire", "ikinci el masa", "oto") — kategori değil, örnek sorgu | İlk etkileşim gecikir; "ne yazacağımı bilemedim" geri bildirimi asıl soruları gölgeler |
-| S4 | "Yakınımda" etiketini "Yakın konum (örnek veri)" gibi dürüst hale getirmek veya prototip turunda gizlemek | Hatalı özellik raporları test gündemini işgal eder |
-| S5 | Yayınla sonrası girilen başlık/fiyat/konumu bir sonuç kartı biçiminde önizleme olarak göstermek (kayıt yok, yeni sayfa yok) | Satıcı tarafı testi sonuçsuz kalır; "ilan verdim, ne oldu?" belirsizliği |
+**Kullanıcı etkisi:** 390 px'de tarama davranışı "ilana gir → geri dön → sonraki ilan"dır. Tek elle erişilebilir bir geri kontrolü olmadığı için kullanıcı logoya basar, sorgusunu kaybeder ve baştan yazar; oturum başına görüntülenen ilan sayısı düşer.
 
-## 3. Lovable'da tek küçük promptta yapılacak yalnız 1 sonraki iş
+**Şiddet:** Yüksek.
 
-**Aramayı affedici hale getirmek: mock ilanlara gizli anahtar kelime alanı + boş sonuçta "Tüm Türkiye'de ara" düğmesi.**
+**Önerilen düşük riskli düzeltme:** Detay sayfasının içerik başına, mevcut tipografiyle uyumlu tek bir metin bağlantısı ("← Sonuçlara dön") koymak; tarayıcı geçmişinde geri gitmesi yeterli. Yeni sayfa veya bileşen gerekmez.
 
-Neden bu: S1 ve S2 aynı dosya çiftinde (`src/data/listings.ts`, `src/routes/ara.tsx`) çözülür, tek küçük prompt eder, yeni sayfa/özellik açmaz ve testin en olası tek kırılma noktasını (boş sonuç ekranı) kapatır. Diğer dördü bu turdan sonra sıraya alınabilir.
+## B3 — İlan verme formundaki 4 fotoğraf kutusu hiçbir şey yapmıyor
 
-## 4. Yapılmaması gereken gereksiz geliştirmeler
+**Kanıt:** `ilan-ver.tsx:89-98` — dört adet `type="button"`, `onClick` yok, dosya seçici yok. Önizleme kartında da (`ilan-ver.tsx:44-46`) sabit "Fotoğraf önizlemesi" gri alanı görünür.
 
-- Kategori ağacı, kategori çipleri, "popüler kategoriler" bölümü — ilkeye aykırı
-- Otomatik tamamlama, arama geçmişi, kayıtlı arama, bildirim
-- Gerçek geolocation izni, harita, mesafe hesabı
-- Favori, mesajlaşma, satıcı profili, puan/yorum
-- Backend, veritabanı, auth, storage, analytics, reklam SDK'sı, deploy
-- Reklam sıklığı/yerleşimi değişikliği veya yeni reklam formatı
-- Genel refactor, tasarım sistemi değişimi, animasyon/onboarding turu
-- Mock ilan sayısını büyütmek (12 ilan test için yeterli; iş S1'in çözümünde)
+**Kullanıcı etkisi:** Fotoğraf, ilan verenin en önemsediği alandır. Kullanıcı dokunur, hiçbir tepki almaz; "uygulama bozuk" kaydı düşer ve testin asıl konusu olan akış geri bildirimi kaybolur.
+
+**Şiddet:** Yüksek (ilan verme ana gelir akışı).
+
+**Önerilen düşük riskli düzeltme:** İki seçenekten biri — (a) kutuları gerçek `<input type="file" accept="image/*">` ile yerel `URL.createObjectURL` önizlemesine bağlamak (yükleme yok, sunucu yok), veya (b) daha ucuzu: kutuları etkileşimsiz yer tutucu hale getirip altına "Fotoğraf yükleme bu prototipte kapalı" notu koymak. Kararı kapsam bütçesi belirler; (b) tek satırlık iştir.
+
+## B4 — Reklam kartı organik ilanın `<li>` öğesinin içinde
+
+**Kanıt:** `ara.tsx:158-162` — reklam bloğu, ilanın `Link`'iyle aynı `<li>` içinde ve o ilanın hemen altına render ediliyor.
+
+**Kullanıcı etkisi:** Görsel olarak reklam 4. ilana yapışık görünür; ekran okuyucu tek liste öğesi olarak okur. Reklamın organik ilanla karışmaması ilkesine aykırı, ayrıca sonuç 4 ilanda bitiyorsa reklam listenin en dibinde tek başına kalır.
+
+**Şiddet:** Orta.
+
+**Önerilen düşük riskli düzeltme:** Reklamı ayrı bir `<li aria-hidden="false">` öğesine taşımak ve üst/alt boşluğu biraz artırmak. Frekans (4. ilandan sonra, sonra her 6 ilanda bir) aynen korunur.
+
+## B5 — Giriş formu boş telefonla da "gönderiliyor"
+
+**Kanıt:** `giris.tsx:39-47` — telefon input'unda `required`, `pattern` veya değer durumu yok; boş formda "Kod gönder" doğrudan `setSent(true)` yapıp "Kod gönderilmedi; giriş bu prototipte devre dışı." mesajını gösteriyor.
+
+**Kullanıcı etkisi:** Kullanıcı numarasını hiç yazmadan da aynı sonucu görür; ekranın ne test ettiği belirsizleşir ve alan doğrulama davranışı hakkında geri bildirim toplanamaz.
+
+**Şiddet:** Düşük.
+
+**Önerilen düşük riskli düzeltme:** Input'a `required` ve basit `inputMode="tel"` + minimum uzunluk vermek; mesaj metni aynı kalır.
+
+## Kapsam dışı bırakılanlar
+
+Backend, auth, SMS, storage, analytics, reklam SDK'sı, deploy, yeni sayfa, kategori/otomatik tamamlama, gerçek konum ve genel refactor bu denetimin dışındadır ve önerilmemiştir.
+
+## Uygulama sırası önerisi
+
+Onay verirsen tek küçük turda B1 + B2 (aynı iki dosya, en yüksek etki), ardından ayrı turda B3'ün seçilen varyantı yapılabilir. B4 ve B5 en sona bırakılabilir.
