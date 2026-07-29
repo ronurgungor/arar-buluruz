@@ -1,4 +1,5 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
+import { ChevronLeft } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { AdSlot } from "@/components/AdSlot";
 import { formatPrice, listings } from "@/data/listings";

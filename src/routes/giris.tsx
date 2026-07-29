@@ -37,6 +37,8 @@ function SignIn() {
           }}
         >
           <input
+            required
+            minLength={10}
             placeholder="05xx xxx xx xx"
             inputMode="tel"
             aria-label="Telefon numarası"

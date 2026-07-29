@@ -85,19 +85,19 @@ function PostListing() {
           >
             <div>
               <span className="text-sm font-medium">Fotoğraflar</span>
-              <div className="mt-1 grid grid-cols-4 gap-2">
+              <div className="mt-1 grid grid-cols-4 gap-2" aria-hidden>
                 {[0, 1, 2, 3].map((i) => (
-                  <button
+                  <div
                     key={i}
-                    type="button"
-                    aria-label={`${i + 1}. fotoğrafı ekle`}
-                    className="flex aspect-square items-center justify-center rounded-xl border border-dashed border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-accent/50"
+                    className="flex aspect-square items-center justify-center rounded-xl border border-dashed border-border bg-muted/50 text-muted-foreground"
                   >
-                    <Plus className="h-5 w-5" aria-hidden />
-                  </button>
+                    <Plus className="h-5 w-5" />
+                  </div>
                 ))}
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">En fazla 4 fotoğraf.</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                En fazla 4 fotoğraf. Fotoğraf yükleme bu prototipte kapalı.
+              </p>
             </div>
 
             <label className="block">
