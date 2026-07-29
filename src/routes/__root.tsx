@@ -85,17 +85,36 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz.",
       },
-      { property: "og:title", content: "Arar Buluruz — Ücretsiz ilan ver, aradığını hemen bul" },
+      {
+        property: "og:title",
+        content: "Arar Buluruz — Ücretsiz ilan ver, aradığını hemen bul",
+      },
       {
         property: "og:description",
-        content: "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz.",
+        content:
+          "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Arar Buluruz — Ücretsiz ilan ver, aradığını hemen bul" },
-      { name: "twitter:description", content: "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/8948598a-fdf4-454b-9683-442283b920a8" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/8948598a-fdf4-454b-9683-442283b920a8" },
+      {
+        name: "twitter:title",
+        content: "Arar Buluruz — Ücretsiz ilan ver, aradığını hemen bul",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/8948598a-fdf4-454b-9683-442283b920a8",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/8948598a-fdf4-454b-9683-442283b920a8",
+      },
     ],
     links: [
       {
