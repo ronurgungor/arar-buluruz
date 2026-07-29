@@ -1,4 +1,4 @@
-# Find It Fast
+# Arar Buluruz
 
 Yeni ve bağımsız bir proje oluştur. Proje çalışma adı: “Arar Buluruz”. Tarladan projesiyle hiçbir kod, veri, entegrasyon veya marka unsuru paylaşma.
 
