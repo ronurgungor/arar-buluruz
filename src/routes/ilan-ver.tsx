@@ -10,8 +10,7 @@ export const Route = createFileRoute("/ilan-ver")({
       { title: "Ücretsiz ilan ver — Arar Buluruz" },
       {
         name: "description",
-        content:
-          "Fotoğraf, başlık, fiyat ve konum ekle; ilanın dakikalar içinde yayında olsun.",
+        content: "Fotoğraf, başlık, fiyat ve konum ekle; ilanın dakikalar içinde yayında olsun.",
       },
       { property: "og:title", content: "Ücretsiz ilan ver — Arar Buluruz" },
       { property: "og:description", content: "Birkaç alanı doldur, ilanını yayınla." },
@@ -49,12 +48,8 @@ function PostListing() {
               <p className="text-xs font-bold uppercase tracking-wide text-primary">
                 İlan önizlemesi
               </p>
-              <h2 className="mt-2 text-xl font-extrabold leading-tight text-foreground">
-                {title}
-              </h2>
-              <p className="mt-2 text-2xl font-black text-primary">
-                {formatPrice(Number(price))}
-              </p>
+              <h2 className="mt-2 text-xl font-extrabold leading-tight text-foreground">{title}</h2>
+              <p className="mt-2 text-2xl font-black text-primary">{formatPrice(Number(price))}</p>
               <p className="mt-1 text-sm font-medium text-muted-foreground">{city}</p>
               {description.trim() && (
                 <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
