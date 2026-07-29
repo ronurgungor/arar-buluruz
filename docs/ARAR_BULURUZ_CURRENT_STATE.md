@@ -7,7 +7,7 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - Repository: `ronurgungor/arar-buluruz`
 - Visibility: Private
 - Default branch: `main`
-- Current repository milestone SHA: `4dc46a8bf2e2f470ce5320bed34ed855b17bdf6d`
+- Last locally validated repository SHA: `2e87a7ab330f5c3f72d273169592784ffcdee81a`
 - Latest confirmed published application SHA: `13146e010949a25343de997aff4e69d83c16287e`
 - Canonical package lock: `bun.lock`
 
@@ -24,6 +24,8 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - PR #9: pinned Bun CI and clean Prettier baseline added.
 - PR #10: CI and executable-validation evidence synchronized into project memory.
 - PR #11: cross-platform LF checkout policy added through `.gitattributes`.
+- PR #12: successful Windows synchronization and local executable-validation evidence recorded.
+- Redundant pre-sync local branch and stash were removed after SHA, content and external-recovery-file verification.
 
 ## Current product behavior
 
@@ -97,10 +99,14 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 ## Local checkout
 
 - Local repository: `C:\Projects\arar-buluruz`
-- Local `main` and `origin/main` are synchronized at `4dc46a8bf2e2f470ce5320bed34ed855b17bdf6d`.
-- Working tree is clean.
+- Local `main` and `origin/main` were last verified equal at `2e87a7ab330f5c3f72d273169592784ffcdee81a`.
+- Working tree was clean with ahead/behind `0/0` at the final cleanup check.
 - Repository-local Git settings are `core.autocrlf=false` and `core.eol=lf`.
-- The pre-sync backup branch and stash are still retained temporarily even though their functional changes are fully present in `main`.
+- The redundant `backup/pre-main-sync-20260729-200448` branch and matching stash were deleted after proving that `main` fully contains their functional changes.
+- External recovery records remain outside the repository:
+  - `C:\Projects\arar-buluruz-working-tree-20260729-200448.patch`
+  - `C:\Projects\arar-buluruz-index-20260729-200448.patch`
+  - `C:\Projects\arar-buluruz-untracked-20260729-200448.txt`
 
 ## Current validation stage
 
@@ -116,7 +122,6 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - Independent public-endpoint retrieval of the `X-Robots-Tag` header remains open.
 - Six non-blocking Fast Refresh warnings exist in shared shadcn UI files.
 - `bun run preview` currently expects an incompatible output path for the Lovable/Nitro Cloudflare build; local smoke validation uses the dev server. Do not change the preview script without verifying the hosting adapter's supported command.
-- The redundant local pre-sync backup branch and stash should be removed only after retaining the external patch files and one final identity check.
 
 ## Hard boundaries
 
