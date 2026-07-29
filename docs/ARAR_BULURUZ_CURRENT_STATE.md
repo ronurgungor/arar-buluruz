@@ -37,6 +37,15 @@ Implemented:
 - Lovable project metadata and latest screenshot reference the `2341c6a5…` main version.
 - Visible project display name still reports `Find It Fast`; cleanup remains a separate task.
 
+## Backend ownership position
+
+- Lovable will remain a frontend writer/hosting surface, not the backend owner.
+- Lovable database, auth, storage, secrets and edge functions remain disabled.
+- Future backend will use a separate founder-owned Supabase project.
+- Founder controls the Supabase account, organization, billing and administrator access.
+- Database schema and migrations will be canonical in GitHub from day one.
+- Before real data, Work review and founder approval are required for region, backups, export/restore, RLS, auth, KVKK/retention and provider exit planning.
+
 ## Current product state
 
 The app is a frontend-only, mobile-first classified-listing prototype with mock data. Current core flows include:
@@ -52,12 +61,12 @@ The app is a frontend-only, mobile-first classified-listing prototype with mock 
 ## Active work
 
 - Branch: `docs/project-memory`
-- Task: Add the shared project memory files
+- Task: Add the shared project memory files and explicit backend ownership guardrails
 - Files:
   - `AGENTS.md`
   - `docs/ARAR_BULURUZ_CURRENT_STATE.md`
   - `docs/ARAR_BULURUZ_BACKLOG.md`
-- Next gate: Review and separate merge approval
+- Founder has provided standing approval for low-risk, reversible backlog work; serious or uncertain decisions still require direct review or Work input.
 
 ## Known gaps and risks
 
@@ -70,6 +79,6 @@ The app is a frontend-only, mobile-first classified-listing prototype with mock 
 
 ## Hard boundaries
 
-- No backend, Supabase, auth, SMS, secrets, real data, payments, ad network, paid service or recurring service without explicit founder approval.
-- Merge and public publish remain separate approval gates.
+- No backend, Supabase, auth, SMS, storage, secrets, real data, payments, ad network, paid service or recurring service without explicit founder approval and, where appropriate, Work review.
+- Lovable backend capabilities must not be enabled as a convenience shortcut.
 - GitHub `main` is the canonical code source; local copies are synchronized deliberately.
