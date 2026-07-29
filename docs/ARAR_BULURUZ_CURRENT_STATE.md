@@ -7,7 +7,8 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - Repository: `ronurgungor/arar-buluruz`
 - Visibility: Private
 - Default branch: `main`
-- Latest application/runtime code SHA: `13146e010949a25343de997aff4e69d83c16287e`
+- Current repository milestone SHA: `ce31b04ea9c45fa076f19228399d2c07cad23ecf`
+- Latest confirmed published application SHA: `13146e010949a25343de997aff4e69d83c16287e`
 - Canonical package lock: `bun.lock`
 
 ## Completed milestones
@@ -19,8 +20,8 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - PR #5: current state and backlog synchronized.
 - PR #6: submitted listing values are shown in an editable prototype preview; published at application SHA `7dd6434d…`.
 - PR #7: home-page example searches and honest mock-proximity labels added; published at application SHA `13146e01…`.
-- Source-level internal dry-run completed and recorded in `docs/INTERNAL_DRY_RUN_2026-07-29.md`.
-- Five-person moderated test protocol prepared in `docs/MODERATED_USER_TEST_PLAN.md`.
+- PR #8: source-level internal dry-run and five-person moderated user-test pack added.
+- PR #9: pinned Bun CI and clean Prettier baseline added.
 
 ## Current product behavior
 
@@ -45,6 +46,19 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 - Submission shows the user's values in a listing-style preview card.
 - `İlanı düzenle` returns to the populated form.
 - No real record, upload, backend or storage is used.
+
+## CI and executable validation
+
+- GitHub Actions runs on pull requests targeting `main`, pushes to `main`, and manual dispatch.
+- Workflow permissions are read-only: `contents: read`.
+- `actions/checkout` and `oven-sh/setup-bun` are pinned to verified commit SHAs.
+- Bun is pinned to `1.3.14`, proven by the successful clean run.
+- Validation sequence:
+  - `bun install --frozen-lockfile`
+  - `bun run lint`
+  - `bun run build`
+- PR #9 run `30471718645` completed successfully: frozen install, lint and production build passed.
+- Six existing shadcn Fast Refresh warnings remain non-blocking; no unrelated component refactor was introduced.
 
 ## Search-index protection
 
@@ -76,17 +90,16 @@ _Last updated: 2026-07-29, Europe/Istanbul_
 ## Current validation stage
 
 - Source-level dry-run is complete.
-- The next evidence gate is five moderated tests on real mobile devices.
+- The next evidence gate is five moderated tests on real mobile devices using `docs/MODERATED_USER_TEST_PLAN.md`.
 - No additional speculative product feature should be added before those observations are collected.
 - Lovable credits are reserved for a repeated, task-blocking or clearly evidenced mobile UX issue.
 
 ## Known gaps and risks
 
-- No GitHub Actions/CI check currently runs for pull requests.
-- `bun run lint` and `bun run build` remain unproven in a clean executable environment.
 - The local checkout at `C:\Projects\arar-buluruz` is behind canonical GitHub `main` and contains old uncommitted contact-flow changes. Do not start local/Codex work until it is safely reconciled.
 - Lovable project-panel metadata still uses `Find It Fast`; runtime and repository naming use `Arar Buluruz`.
 - Independent live retrieval of the `X-Robots-Tag` header remains open.
+- Six non-blocking Fast Refresh warnings exist in shared shadcn UI files.
 
 ## Hard boundaries
 
