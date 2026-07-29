@@ -39,13 +39,18 @@ function SearchPage() {
   const [term, setTerm] = useState(q ?? "");
 
   const results = useMemo(() => {
-    const needle = (q ?? "").trim().toLocaleLowerCase("tr");
+    const tokens = (q ?? "")
+      .trim()
+      .toLocaleLowerCase("tr")
+      .split(/\s+/)
+      .filter(Boolean);
+
     let list = listings.filter((l) => {
+      const searchableText = [l.title, l.description, ...l.keywords]
+        .join(" ")
+        .toLocaleLowerCase("tr");
       const matchesTerm =
-        !needle ||
-        l.title.toLocaleLowerCase("tr").includes(needle) ||
-        l.description.toLocaleLowerCase("tr").includes(needle) ||
-        l.keywords.some((k) => k.toLocaleLowerCase("tr").includes(needle));
+        tokens.length === 0 || tokens.every((token) => searchableText.includes(token));
       const matchesCity = !il || il === "Tüm Türkiye" || l.city === il;
       return matchesTerm && matchesCity;
     });
