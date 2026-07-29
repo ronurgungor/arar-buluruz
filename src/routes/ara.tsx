@@ -11,8 +11,7 @@ export const Route = createFileRoute("/ara")({
   validateSearch: (search: Record<string, unknown>): Search => ({
     q: typeof search.q === "string" ? search.q : "",
     il: typeof search.il === "string" ? search.il : "Tüm Türkiye",
-    sirala:
-      search.sirala === "fiyat" || search.sirala === "yakin" ? search.sirala : "yeni",
+    sirala: search.sirala === "fiyat" || search.sirala === "yakin" ? search.sirala : "yeni",
   }),
   head: () => ({
     meta: [
