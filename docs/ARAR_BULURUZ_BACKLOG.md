@@ -28,6 +28,7 @@ Legend: `[x]` completed, `[-]` in progress, `[ ]` pending.
 - [x] Add `.gitattributes` and enforce LF working-tree files across platforms.
 - [x] Prove frozen install, lint, build and five-route HTTP smoke tests on the Windows local checkout.
 - [x] Confirm the expected `X-Robots-Tag` header on all five locally tested routes.
+- [x] Verify the redundant pre-sync backup branch and stash against `main`, delete both local Git objects and retain the external patch/list recovery files.
 
 ## In progress
 
@@ -61,7 +62,6 @@ Do not spend Lovable credits on noindex, naming-only cleanup, backend, auth, met
 ## Technical quality backlog
 
 - [ ] Independently retrieve the public Lovable endpoint's live `X-Robots-Tag` header when network access permits.
-- [ ] Remove the redundant local pre-sync backup branch and stash after one final identity check; retain the external patch/list files as the recovery record.
 - [ ] Verify the supported production-preview command for the Lovable/Nitro Cloudflare adapter before changing the currently incompatible `bun run preview` path.
 - [ ] Decide whether the six non-blocking shadcn Fast Refresh warnings justify a separate component-export cleanup; do not refactor them without value.
 - [ ] Add targeted automated tests when real behavior begins to justify them; avoid test scaffolding for placeholder-only flows.
