@@ -16,7 +16,9 @@ export function Wordmark({ size = "sm" }: { size?: "sm" | "lg" }) {
       >
         <span
           className={`absolute rounded-full bg-primary ${
-            isLarge ? "-bottom-1 -right-1 h-2 w-[3px] rotate-45" : "-bottom-0.5 -right-0.5 h-1 w-0.5 rotate-45"
+            isLarge
+              ? "-bottom-1 -right-1 h-2 w-[3px] rotate-45"
+              : "-bottom-0.5 -right-0.5 h-1 w-0.5 rotate-45"
           }`}
         />
       </span>
