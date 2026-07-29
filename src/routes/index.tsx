@@ -23,6 +23,8 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
+const exampleSearches = ["traktör", "kiralık daire", "ikinci el masa", "oto"] as const;
+
 function Home() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
@@ -94,6 +96,28 @@ function Home() {
             </button>
           </div>
         </form>
+
+        <div
+          aria-label="Örnek aramalar"
+          className="mt-5 flex flex-wrap items-center justify-center gap-2"
+        >
+          <span className="text-xs font-medium text-muted-foreground">Örnek:</span>
+          {exampleSearches.map((example) => (
+            <button
+              key={example}
+              type="button"
+              onClick={() =>
+                navigate({
+                  to: "/ara",
+                  search: { q: example, il: city, sirala: "yeni" },
+                })
+              }
+              className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              {example}
+            </button>
+          ))}
+        </div>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           İlan vermek her zaman ücretsiz.
