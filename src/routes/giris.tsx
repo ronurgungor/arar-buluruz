@@ -1,65 +1,50 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { TopBar } from "@/components/TopBar";
 
 export const Route = createFileRoute("/giris")({
   head: () => ({
     meta: [
-      { title: "Giriş ve profil — Arar Buluruz" },
+      { title: "Giriş — Arar Buluruz" },
       {
         name: "description",
-        content: "Telefon numaranla giriş yap, ilanlarını tek yerden yönet.",
+        content: "İlk kontrollü pilotta kullanıcı girişi ve hesap yönetimi bulunmaz.",
       },
-      { property: "og:title", content: "Giriş ve profil — Arar Buluruz" },
-      { property: "og:description", content: "İlanlarını yönetmek için giriş yap." },
+      { property: "og:title", content: "Giriş — Arar Buluruz" },
+      {
+        property: "og:description",
+        content: "İlk kontrollü pilotta kullanıcı girişi bulunmaz.",
+      },
     ],
   }),
   component: SignIn,
 });
 
 function SignIn() {
-  const [sent, setSent] = useState(false);
-
   return (
     <div className="min-h-screen">
       <TopBar />
       <main className="mx-auto max-w-sm px-4 pb-16">
-        <h1 className="mt-10 text-2xl font-extrabold tracking-tight">Giriş yap</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          İlanlarını yönetmek için telefon numaran yeterli.
-        </p>
-
-        <form
-          className="mt-6 space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setSent(true);
-          }}
-        >
-          <input
-            required
-            minLength={10}
-            placeholder="05xx xxx xx xx"
-            inputMode="tel"
-            aria-label="Telefon numarası"
-            className="h-12 w-full rounded-xl border border-border bg-card px-4 text-base outline-none focus:border-primary"
-          />
-          <button className="h-12 w-full rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90">
-            Kod gönder
-          </button>
-          <p className="text-center text-xs text-muted-foreground">
-            Prototip — gerçek kayıt yapılmaz.
+        <h1 className="mt-10 text-2xl font-extrabold tracking-tight">Giriş</h1>
+        <div className="mt-6 rounded-2xl border border-border bg-card p-6">
+          <h2 className="font-bold text-foreground">Pilot sürecinde giriş bulunmuyor.</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            İlk Çorlu pilotunda alıcı veya satıcı hesabı, SMS kodu ve ilan yönetim paneli açılmadı.
+            İlan başvuruları merkezi WhatsApp hattı üzerinden alınır ve kurucu tarafından manuel
+            olarak incelenir.
           </p>
-        </form>
-
-        {sent && (
-          <p
-            role="status"
-            className="mt-4 rounded-xl bg-muted px-3 py-2 text-center text-xs text-muted-foreground"
+          <Link
+            to="/ilan-ver"
+            className="mt-5 flex h-12 items-center justify-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
           >
-            Kod gönderilmedi; giriş bu prototipte devre dışı.
-          </p>
-        )}
+            İlan başvurusu yap
+          </Link>
+          <Link
+            to="/"
+            className="mt-3 flex h-11 items-center justify-center rounded-full border border-border px-5 text-sm font-semibold text-foreground hover:bg-accent"
+          >
+            Ana sayfaya dön
+          </Link>
+        </div>
       </main>
     </div>
   );
