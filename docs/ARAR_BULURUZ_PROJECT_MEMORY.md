@@ -96,17 +96,29 @@ This is the only approved prototype contact target unless the founder changes it
 
 ## Operating model
 
+- The main assistant is the default executor and coordinator when it has the required connected tools, understands the scope and can perform the work safely.
+- Direct execution by the main assistant is considered a capability improvement over the earlier manual copy/paste workflow; handing every task to Work or Codex is not required for progress.
 - Only one code writer works at a time.
 - Low-risk, reversible work inside approved scope may continue without ceremonial re-approval.
 - Use reviewable branches and PRs whenever the tool supports them.
 - Validation depth follows the risk introduced; do not repeat full regressions by habit.
 - Existing evidence remains valid until a change touches the behavior it covered.
-- Work is used for independent product, architecture, security, KVKK and expensive-to-reverse decisions.
-- Codex is used when repository inspection must be combined with terminal execution, testing, debugging or substantial code changes.
+- Work is an optional independent analysis and risk-review specialist for product, architecture, security, KVKK and expensive-to-reverse decisions.
+- Codex is an optional execution/test specialist when repository inspection must be combined with terminal execution, testing, debugging or substantial code changes.
 - Lovable is used only for bounded frontend/UX work when credits, isolation and review conditions are acceptable.
-- The main assistant coordinates source-of-truth updates, routing, GitHub operations and founder decisions.
+- Specialist outputs are recommendations and evidence, not binding commands. The main assistant and founder evaluate them against canonical sources, scope and risk.
+- Double or triple checking is reserved for consequential, uncertain, security/KVKK-sensitive or expensive-to-reverse questions. It is not a routine ritual.
 
 Role descriptions are provisional unless their actual access has been verified in `AI_TEAM_CAPABILITIES.md`.
+
+## Capability progression and founder preference
+
+The founder's earlier Tarladan workflow relied mainly on ChatGPT 5.5 guidance plus manual copy/paste edits directly into GitHub files. Arar Buluruz deliberately advances beyond that model:
+
+- the current main assistant can inspect connected sources and perform many GitHub/documentation operations directly;
+- direct assistant execution reduces manual transcription, copy/paste mistakes and coordination overhead;
+- Work and Codex remain valuable specialist options, but they do not need to be the primary code writer for the project to represent progress;
+- the preferred team model is to use the minimum capable actor, keeping the main assistant as the default when it can complete the task correctly and safely.
 
 ## Knowledge that must be preserved
 
