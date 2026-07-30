@@ -14,13 +14,15 @@ _Last updated: 2026-07-30, Europe/Istanbul_
 
 ## Shared knowledge system
 
-The repository now separates project knowledge by purpose:
+The repository separates project knowledge by purpose:
 
 - `AGENTS.md`: operating contract and source priority
+- `docs/AI_CHAT_BOOTSTRAP.md`: common new-chat entry point for application, work, team and governance
 - `docs/ARAR_BULURUZ_PROJECT_MEMORY.md`: durable project thesis, identifiers, architecture and ownership boundaries
 - `docs/ARAR_BULURUZ_CURRENT_STATE.md`: current behavior, verification and known risks
 - `docs/ARAR_BULURUZ_DECISION_LOG.md`: consequential decisions and rationale
-- `docs/AI_TEAM_CAPABILITIES.md`: verified AI/tool access and limitations
+- `docs/AI_TEAM_CAPABILITIES.md`: verified/self-reported AI and tool access, limits and routing
+- `docs/WORK_CODEX_CAPABILITY_PROFILE.md`: detailed Work and Codex capability profiles and handoff standards
 - `docs/ARAR_BULURUZ_BACKLOG.md`: pending and ordered work
 - dated documents: historical test and audit evidence
 
@@ -38,7 +40,10 @@ An AI without repository access must say so and request the minimum missing file
 - Lovable credit sprint used all five expiring credits on bounded frontend work.
 - PR #16 synchronized the final credit-sprint evidence.
 - PR #17 adopted risk-based validation and explicit Work/Codex/main-assistant routing.
-- Structured shared memory, decision-log and capability-registry documents were added for cross-chat and cross-tool continuity.
+- Structured shared memory, decision-log, capability-registry, Work/Codex profile and new-chat bootstrap documents were added for cross-chat and cross-tool continuity.
+- The first Work capability inventory was completed and recorded with nominal capabilities, observed limits and session-dependent authority separated.
+- Broad and reduced first-pilot options were independently compared by the main assistant rather than treating Work's recommendation as binding.
+- The founder selected the reduced founder-operated persistence direction recorded in D-016.
 
 ## Current product behavior
 
@@ -111,15 +116,65 @@ An AI without repository access must say so and request the minimum missing file
 - Main-assistant GitHub/Lovable connector operations are verified in the current connected environment.
 - Codex repository, local terminal, lint/build and mobile E2E capability has been demonstrated in project work.
 - Lovable frontend writing and preview/build behavior has been demonstrated; current credits are zero and its plan mode was not safely non-writing in the observed run.
-- Work's actual GitHub, browser, terminal and mutation capabilities remain unverified. Its next task begins with a read-only capability inventory.
-- Capability claims and session-dependent limits are recorded in `docs/AI_TEAM_CAPABILITIES.md`.
+- Work capability inventory is complete: its nominal GitHub, shell, browser, web, Lovable and related capabilities are recorded, while first-session clone/Bun/test and mutation limits remain explicit and current-session authority must still be rechecked.
+- Work's pilot recommendation was advisory input. The founder later selected a reduced persistence direction after independent comparison; this is a founder decision rather than automatic adoption of an AI recommendation.
+- Capability claims and session-dependent limits are recorded in `docs/AI_TEAM_CAPABILITIES.md` and `docs/WORK_CODEX_CAPABILITY_PROFILE.md`.
+
+## Approved first-pilot direction — not implemented
+
+The founder selected the reduced Option B direction recorded in D-016:
+
+- first real capability: listing persistence;
+- initial geography: Çorlu;
+- technical validation: 5–10 controlled real listings;
+- only one application table: `listings`;
+- public application: read-only;
+- no buyer auth, seller auth, in-app moderator auth or custom admin panel;
+- no seller-contact/private-phone table;
+- no `app_roles` or `moderation_events`;
+- no photo upload or Storage;
+- no public/anonymous database insert;
+- no automatic expiration cron;
+- seller phone remains outside Supabase and communication stays on the controlled central phone/WhatsApp line;
+- the founder may temporarily manage approved listing rows in the Supabase Dashboard after a separately approved founder-owned project exists;
+- Dashboard access is founder-only, MFA-protected and not shared;
+- all schema, RLS, grant, constraint, index, trigger and extension changes remain GitHub-migration canonical.
+
+Minimum planned `listings` fields:
+
+- `id`
+- `title`
+- `description`
+- `price_amount`
+- `province`
+- `district`
+- `seller_display_name`
+- `search_keywords`
+- `status`
+- `created_at`
+- `updated_at`
+- `published_at`
+- `expires_at`
+- `unpublished_at`
+
+Initial status values: `draft`, `published`, `unpublished`.
+
+Mock listings will not enter the production database and no `is_mock` field is planned.
+
+Public visibility must be enforced in database/RLS, not only in the frontend:
+
+```sql
+status = 'published'
+and published_at <= now()
+and expires_at > now()
+```
 
 ## Operating and validation policy
 
 - Continue directly when the path is clear and the work is low-risk, reversible and within approved scope.
-- Use Work for independent product strategy, architecture, security, KVKK, public-pilot readiness, cost or expensive-to-reverse decisions.
+- Use Work for independent product strategy, architecture, security, KVKK, public-pilot readiness, cost or expensive-to-reverse decisions only when a new concrete uncertainty justifies it.
 - Use Codex when repository analysis must be combined with terminal execution, tests, debugging, CI investigation or substantial code changes.
-- Stop for explicit founder approval before backend, real data, authentication, secrets, payments, paid services or public-pilot launch.
+- Stop for explicit founder approval before local implementation, Supabase activation, real data, authentication, secrets/environment connection, payments, paid services or public-pilot launch as applicable to the current gate.
 - Only one code writer operates at a time.
 - Testing depth follows risk rather than a fixed ritual.
 - Existing evidence remains valid until a change touches the covered behavior.
@@ -130,22 +185,28 @@ An AI without repository access must say so and request the minimum missing file
 - Lovable remains a frontend writer and hosting surface, not the backend owner.
 - Lovable database, auth, storage, secrets and edge functions remain disabled.
 - Any future backend will use a separate founder-owned Supabase project.
-- The founder controls the Supabase account, organization, billing and administrator access.
+- The founder controls the Supabase account, organization, billing, MFA, recovery and administrator access.
 - Schema and every migration will be canonical in GitHub from day one.
-- Before real data, Work review and founder approval are required for region, backups, export/restore, RLS, auth, KVKK/retention and provider-exit planning.
+- The approved pilot allows temporary founder Dashboard row operations only; it does not authorize Dashboard schema/security changes or establish a permanent admin architecture.
+- Before real data, the founder/KVKK/Supabase preparation package and explicit real-data approval must be completed.
 
 ## Current stage
 
-- The frontend-only mock prototype is technically validated and published.
-- Repeating the same tests is not the next task.
-- The next consequential decision is the minimum first-real-pilot scope and the first real capability.
-- Before relying on Work for that decision, Work's actual capabilities and GitHub access must be inventoried and recorded.
-- After capability verification, Work should perform a read-only pilot/product/architecture assessment from current GitHub sources.
+- The application remains the technically validated, published frontend-only mock prototype.
+- No Supabase organization or project has been created for Arar Buluruz.
+- No backend, database table, migration, RLS policy, client connection, secret/environment variable or real-data flow has been implemented.
+- Technical implementation has not started.
+- The real pilot has not started and has not been launched.
+- The pilot architecture debate is closed: reduced founder-operated persistence is the selected direction.
+- Current work is preparation only, divided into founder/KVKK/Supabase Package A and an unapproved technical implementation candidate Package B.
 
 ## Known gaps and risks
 
-- Work capability inventory is pending.
-- First-real-pilot scope, district need and first backend capability remain undecided.
+- Package A remains unresolved: Supabase ownership/recovery/MFA, region, controlled WhatsApp-line ownership, data-controller identity, notice/legal basis, retention/deletion and possible international transfer.
+- Local isolated implementation preparation has not been authorized.
+- Supabase project creation, environment connection, real-data entry and pilot launch remain separate founder gates.
+- WhatsApp handling of seller phone and messages remains personal-data processing even though those data are not stored in Supabase.
+- Founder-only Dashboard operation is intentionally temporary and must be replaced when its exit triggers occur.
 - Lovable project-panel metadata still uses `Find It Fast`.
 - Six non-blocking Fast Refresh warnings remain in shared shadcn UI files.
 - `bun run preview` expects an incompatible path for the Lovable/Nitro Cloudflare build; do not change it without adapter verification.
@@ -153,6 +214,7 @@ An AI without repository access must say so and request the minimum missing file
 
 ## Hard boundaries
 
-- No backend, Supabase, auth, SMS, storage, secrets, real data, payments, ad network, paid service or recurring service without explicit founder approval and, where appropriate, Work review.
+- This documentation milestone does not authorize Codex execution, code changes, Supabase creation, migrations, auth, Storage, secrets/environment changes, real data, deployment or pilot launch.
+- No backend, Supabase activation, auth, SMS, storage, secrets, real data, payments, ad network, paid service or recurring service without the appropriate explicit founder gate.
 - Lovable backend capabilities must not be enabled as a convenience shortcut.
 - GitHub `main` is the canonical code and documentation source.
