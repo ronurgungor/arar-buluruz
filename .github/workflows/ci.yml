@@ -18,13 +18,15 @@ concurrency:
 
 jobs:
   quality:
-    name: Lint and build
+    name: Lint, unit test and build
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
       - name: Check out repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -40,5 +42,56 @@ jobs:
       - name: Lint
         run: bun run lint
 
-      - name: Build
+      - name: Unit tests
+        run: bun run test:unit
+
+      - name: Build with backend connection disabled
+        env:
+          VITE_LISTINGS_SOURCE: disabled
         run: bun run build
+
+  gate1-database:
+    name: Gate 1 local migration and RLS tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
+        with:
+          version: 2.101.0
+
+      - name: Report Supabase CLI version
+        run: supabase --version
+
+      - name: Verify local-only test boundary
+        shell: bash
+        run: |
+          if [[ -f supabase/.temp/project-ref ]]; then
+            echo "A linked Supabase project-ref is prohibited in Gate 1 CI."
+            exit 1
+          fi
+          if [[ -n "${SUPABASE_ACCESS_TOKEN:-}" || -n "${SUPABASE_DB_PASSWORD:-}" ]]; then
+            echo "Remote Supabase credentials are prohibited in Gate 1 CI."
+            exit 1
+          fi
+
+      - name: Start isolated local Supabase stack
+        run: >-
+          supabase start
+          -x gotrue,realtime,storage-api,imgproxy,studio,mailpit,edge-runtime,logflare,vector,supavisor
+
+      - name: Rebuild database from migrations
+        run: supabase db reset --local --no-seed
+
+      - name: Run pgTAP database and RLS tests
+        run: supabase test db
+
+      - name: Stop and remove local Supabase data
+        if: always()
+        run: supabase stop --no-backup
