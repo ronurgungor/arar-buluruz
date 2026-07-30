@@ -10,6 +10,7 @@ if (!playwrightModule) {
 
 const { chromium } = await import(pathToFileURL(path.join(playwrightModule, "index.js")).href);
 const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:4173";
+const visibleListingId = "00000000-0000-4000-8000-000000000101";
 const resultsDir = path.resolve("test-results/gate1-browser");
 fs.mkdirSync(resultsDir, { recursive: true });
 
@@ -29,10 +30,14 @@ async function assertNoHorizontalOverflow(page: any, profile: string, route: str
   );
 }
 
-function assertCleanRuntime(runtimeErrors: string[], profile: string) {
+function assertCleanRuntime(runtimeErrors: string[], authRequests: string[], profile: string) {
   assert(
     runtimeErrors.length === 0,
     `${profile} browser runtime errors: ${runtimeErrors.join(" | ")}`,
+  );
+  assert(
+    authRequests.length === 0,
+    `${profile} unexpectedly called product auth endpoints: ${authRequests.join(" | ")}`,
   );
 }
 
@@ -53,10 +58,15 @@ async function runProfile(
   });
   const page = await context.newPage();
   const runtimeErrors: string[] = [];
+  const authRequests: string[] = [];
 
   page.on("pageerror", (error: Error) => runtimeErrors.push(`pageerror: ${error.message}`));
   page.on("console", (message: any) => {
     if (message.type() === "error") runtimeErrors.push(`console: ${message.text()}`);
+  });
+  page.on("request", (request: any) => {
+    const requestUrl = new URL(request.url());
+    if (requestUrl.pathname.startsWith("/auth/v1")) authRequests.push(request.url());
   });
 
   await page.goto(`${baseUrl}/ara`, { waitUntil: "networkidle" });
@@ -135,7 +145,19 @@ async function runProfile(
   );
   await assertNoHorizontalOverflow(page, profile.name, "/ilan-ver");
 
-  assertCleanRuntime(runtimeErrors, profile.name);
+  await page.goto(`${baseUrl}/sikayet/${visibleListingId}`, { waitUntil: "networkidle" });
+  await page.getByRole("heading", { level: 1, name: "Şikâyet Et" }).waitFor();
+  assert(
+    (await page.getByText("Veritabanına public kayıt yazılmaz.", { exact: false }).count()) === 1,
+    `${profile.name} complaint route did not disclose the no-public-write boundary.`,
+  );
+  assert(
+    (await page.getByRole("button", { name: "WhatsApp ile bildir" }).count()) === 1,
+    `${profile.name} complaint route did not expose the controlled WhatsApp action.`,
+  );
+  await assertNoHorizontalOverflow(page, profile.name, "/sikayet/$id");
+
+  assertCleanRuntime(runtimeErrors, authRequests, profile.name);
   await context.close();
   console.log(`Gate 1 ${profile.name} browser E2E passed.`);
 }
