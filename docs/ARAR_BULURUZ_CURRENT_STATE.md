@@ -7,29 +7,22 @@ _Last updated: 2026-07-30, Europe/Istanbul_
 - Repository: `ronurgungor/arar-buluruz`
 - Visibility: Private
 - Default branch: `main`
-- Current GitHub `main` SHA: `2660990f699724e63b1d007b39952461d1d05cdb`
-- Last locally validated SHA: `2660990f699724e63b1d007b39952461d1d05cdb`
-- Latest confirmed published Lovable SHA: `2660990f699724e63b1d007b39952461d1d05cdb`
+- Current GitHub `main` SHA: `7a817dfa9726d9f845248863bb1558cec51c1f37`
+- Latest locally synchronized SHA: `7a817dfa9726d9f845248863bb1558cec51c1f37`
+- Latest validated and published runtime SHA: `2660990f699724e63b1d007b39952461d1d05cdb`
 - Canonical package lock: `bun.lock`
 
 ## Completed milestones
 
-- PR #1: controlled prototype contact flow merged and published.
-- PR #2: shared project memory, standing approval rules and backend ownership guardrails merged.
-- PR #3: site-wide `noindex/nofollow` protection merged and published.
-- PR #4: repository README heading renamed to `Arar Buluruz`.
-- PR #5: current state and backlog synchronized.
-- PR #6: submitted listing values are shown in an editable prototype preview.
-- PR #7: home-page example searches and honest mock-proximity labels added.
-- PR #8: source-level internal dry-run and five-person moderated user-test pack added.
-- PR #9: pinned Bun CI and clean Prettier baseline added.
-- PR #10: CI and executable-validation evidence synchronized into project memory.
-- PR #11: cross-platform LF checkout policy added through `.gitattributes`.
-- PR #12: successful Windows synchronization and local executable-validation evidence recorded.
-- PR #13: redundant pre-sync branch/stash cleanup recorded after external recovery verification.
-- PR #14: automated mobile E2E findings fixed; multi-word search and fixed-footer overlap corrections merged after regression validation.
-- PR #15: PR #14 validation, public-header evidence and the next human-test gate synchronized.
-- Lovable credit sprint: all five remaining credits were used on bounded frontend work, followed by GitHub diff review, local lint/build validation and generated-file cleanup.
+- Controlled frontend-only classified-listing prototype created and published.
+- Shared project memory, standing approval rules and backend ownership guardrails added.
+- Site-wide `noindex/nofollow` metadata and `X-Robots-Tag` protection added and verified.
+- Editable frontend listing preview, example searches and honest mock-proximity labels added.
+- Read-only CI pinned to Bun `1.3.14`; frozen install, lint and production build proved.
+- Cross-platform LF checkout policy and clean Windows synchronization proved.
+- Automated mobile E2E found and fixed multi-word search and fixed-footer overlap defects.
+- Lovable credit sprint used all five expiring credits on bounded frontend work.
+- PR #16 synchronized the final credit-sprint evidence into project memory.
 
 ## Current product behavior
 
@@ -38,57 +31,51 @@ _Last updated: 2026-07-30, Europe/Istanbul_
 - Search includes title, description and hidden keyword synonyms.
 - Multi-word searches are tokenized; every token must appear somewhere in the combined searchable text.
 - `ikinci el masa` and `masa ikinci el` both resolve to the matching office-desk listing.
-- The search input now stays synchronized with the URL query when browser history or in-app navigation changes the search.
+- The search input stays synchronized with URL/history changes.
 - Zero-result city filtering offers `Tüm Türkiye'de ara` recovery.
 - Home page offers direct example searches: `traktör`, `kiralık daire`, `ikinci el masa`, `oto`.
-- Mock distance ordering is labelled `Yakın (örnek)` and explicitly states that real location is not used.
-- Advertising placeholders are separate list items rather than being semantically nested inside an organic listing item.
+- Mock distance ordering is labelled `Yakın (örnek)` and states that real location is not used.
+- Advertising placeholders are separate list items rather than being nested inside organic listings.
 
 ### Listing detail and contact
 
 - Controlled test number: `+905321739111`
 - Call target: `tel:+905321739111`
 - WhatsApp target: `https://wa.me/905321739111`
-- `Listing.phone` and twelve old mock numbers are removed.
-- The number is not printed in visible listing copy.
-- At a `390 × 844` viewport, the fixed contact bar leaves the `Şikâyet Et` link fully visible with `0 px` overlap.
-- Listing detail includes a `Sonuçlara dön` control that returns through router history.
+- The controlled number is not printed in visible listing copy.
+- At `390 × 844`, the fixed contact bar leaves the `Şikâyet Et` link visible with `0 px` overlap.
+- Listing detail includes a `Sonuçlara dön` history control.
 
 ### Listing creation and login
 
 - Title, price, city and description are preserved in frontend state.
 - Submission shows the user's values in a listing-style preview card.
 - `İlanı düzenle` returns to the populated form.
-- No real record, upload, backend or storage is used.
-- The city selector contains `Tüm Türkiye` plus all 81 provinces with Turkish characters.
-- Photo slots are honest non-interactive prototype placeholders and explicitly state that photo upload is disabled.
-- The prototype login form requires a telephone value with a minimum length of 10 before showing the disabled-login message.
+- The city selector contains `Tüm Türkiye` plus all 81 provinces.
+- Photo slots clearly state that upload is disabled in the prototype.
+- The prototype login form requires a minimum telephone value before showing its disabled-login message.
+- No real record, upload, backend, authentication or storage is used.
 
 ## CI and executable validation
 
-- GitHub Actions runs on pull requests targeting `main`, pushes to `main`, and manual dispatch.
+- GitHub Actions runs on pull requests targeting `main`, pushes to `main` and manual dispatch.
 - Workflow permissions are read-only: `contents: read`.
-- `actions/checkout` and `oven-sh/setup-bun` are pinned to verified commit SHAs.
-- Bun is pinned to `1.3.14`.
+- `actions/checkout`, `oven-sh/setup-bun` and Bun `1.3.14` are pinned.
 - Validation sequence:
   - `bun install --frozen-lockfile`
   - `bun run lint`
   - `bun run build`
-- PR #14 CI and independent Codex mobile regression validation passed.
-- The final local checkout at `2660990f…` passed:
-  - Bun `1.3.14`
-  - lint: `0` errors and six existing non-blocking Fast Refresh warnings
-  - production build: passed
-  - generated `src/routeTree.gen.ts` drift restored to the canonical HEAD version
-  - final working tree: clean
-- `.gitattributes` enforces LF for text files across Windows, macOS and Linux; binary assets are excluded from line-ending conversion.
+- Independent Codex mobile regression validation passed for the core search, detail, city-recovery, listing-preview and complaint flows.
+- Final runtime local validation at `2660990f…` passed with `0` lint errors, six existing non-blocking Fast Refresh warnings and a successful production build.
+- Generated `src/routeTree.gen.ts` drift was restored; the working tree was clean.
+- PR #16 was documentation-only and passed CI before merge.
 
 ## Search-index protection
 
 - Root metadata includes `robots` and `googlebot`: `noindex, nofollow, noarchive, nosnippet`.
-- Server responses add `X-Robots-Tag` with the same directive.
-- `robots.txt` remains crawlable so crawlers can read the noindex instruction.
-- Local and public browser verification confirmed the expected `X-Robots-Tag` header on the tested routes.
+- Server responses add the equivalent `X-Robots-Tag` directive.
+- `robots.txt` remains crawlable so crawlers can read the instruction.
+- Local and public verification confirmed the expected header on tested routes.
 
 ## Lovable
 
@@ -97,44 +84,58 @@ _Last updated: 2026-07-30, Europe/Istanbul_
 - Database: Disabled
 - Project status: Completed
 - Published: Yes, public
-- Latest confirmed published SHA: `2660990f699724e63b1d007b39952461d1d05cdb`
-- The Lovable project screenshot reference also carries the `2660990f` commit prefix.
-- Project metadata still reports display name `Find It Fast` and an old generated description. The connector exposes no direct rename operation.
+- Latest confirmed published runtime SHA: `2660990f699724e63b1d007b39952461d1d05cdb`
 - Remaining Lovable credits: `0`
-- Variants were unavailable. Under the founder's explicit instruction to use the expiring credits, tightly scoped Lovable work was allowed on `main`, then independently reviewed and validated. Future Lovable code work should return to a reviewable branch/variant workflow when available.
+- Project metadata still reports display name `Find It Fast`; runtime and repository naming use `Arar Buluruz`.
+- Variants were unavailable during the expiring-credit sprint. Future Lovable code work should use a reviewable branch or variant when available.
+
+## Operating policy
+
+- The assistant continues directly when the path is clear and the work is low-risk, reversible and within approved scope.
+- Use a Work prompt for independent product strategy, UX direction, architecture, security, KVKK, public-pilot readiness, cost commitments or expensive-to-reverse decisions.
+- Use a Codex prompt when repository analysis must be combined with terminal execution, tests, debugging, CI investigation or substantial code changes.
+- Stop for explicit founder approval before backend, real data, authentication, secrets, payments, paid services or public-pilot launch.
+- Only one code writer operates at a time.
+
+## Validation policy
+
+- Testing depth follows risk rather than a fixed ritual.
+- Do not repeat the same complete regression after documentation-only or clearly isolated low-risk changes.
+- For bounded frontend changes, lint/build and one focused behavior check are normally sufficient.
+- Existing automated evidence remains valid until a later change touches the covered behavior.
+- A quick founder or nearby-user smoke check is optional when wording or navigation is uncertain.
+- Formal multi-person moderated testing is not a blocking requirement for this mock prototype. It becomes useful before a public pilot, real user data, authentication, payments or when user feedback conflicts.
 
 ## Backend ownership position
 
-- Lovable remains a frontend writer/hosting surface, not the backend owner.
+- Lovable remains a frontend writer and hosting surface, not the backend owner.
 - Lovable database, auth, storage, secrets and edge functions remain disabled.
-- Future backend will use a separate founder-owned Supabase project.
-- Founder controls the Supabase account, organization, billing and administrator access.
+- Any future backend will use a separate founder-owned Supabase project.
+- The founder controls the Supabase account, organization, billing and administrator access.
 - Schema and every migration will be canonical in GitHub from day one.
-- Before real data, Work review and founder approval are required for region, backups, export/restore, RLS, auth, KVKK/retention and provider exit planning.
+- Before real data, Work review and founder approval are required for region, backups, export/restore, RLS, auth, KVKK/retention and provider-exit planning.
 
 ## Local checkout
 
 - Local repository: `C:\Projects\arar-buluruz`
-- Local `main` and `origin/main` are clean and equal at `2660990f699724e63b1d007b39952461d1d05cdb`.
+- Local `main` and `origin/main` were confirmed clean and equal at `7a817dfa9726d9f845248863bb1558cec51c1f37`.
 - Repository-local Git settings are `core.autocrlf=false` and `core.eol=lf`.
 - External recovery records remain outside the repository.
 
-## Current validation stage
+## Current stage
 
-- Source-level dry-run is complete.
-- Local executable validation, route smoke tests and automated mobile E2E validation are complete.
-- Public Lovable synchronization to the current validated SHA is confirmed.
-- The next evidence gate is five moderated tests with real people on mobile devices using `docs/MODERATED_USER_TEST_PLAN.md`.
-- Automated browser runs do not replace human usability evidence.
-- No additional speculative product feature should be added before those observations are collected.
+- The frontend-only mock prototype is technically validated and published.
+- Repeating the same tests is not the next task.
+- The next consequential step is to define the minimum first-real-pilot scope and choose the first real capability.
+- That decision requires product analysis and touches future backend scope, so it should be routed to Work before implementation.
 
 ## Known gaps and risks
 
-- Lovable project-panel metadata still uses `Find It Fast`; runtime and repository naming use `Arar Buluruz`.
-- Six non-blocking Fast Refresh warnings exist in shared shadcn UI files.
-- `bun run preview` currently expects an incompatible output path for the Lovable/Nitro Cloudflare build; local smoke validation uses the dev server. Do not change the preview script without verifying the hosting adapter's supported command.
-- District selection requirements for the first real-data pilot remain undecided.
-- Lovable's direct-to-main credit sprint produced many small commits; no history rewrite or force-push was performed.
+- Lovable project-panel metadata still uses `Find It Fast`.
+- Six non-blocking Fast Refresh warnings remain in shared shadcn UI files.
+- `bun run preview` expects an incompatible path for the Lovable/Nitro Cloudflare build; do not change it without adapter verification.
+- District requirements for the first real-data pilot remain undecided.
+- Lovable's direct-to-main credit sprint produced many small commits; no force-push or history rewrite was performed.
 
 ## Hard boundaries
 
