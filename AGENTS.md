@@ -15,33 +15,40 @@ Bu dosya, projede çalışan ana sohbet, Lovable, Codex, Work ve diğer AI/denet
 
 ## Her yeni görevde zorunlu başlangıç
 
-1. Repository, branch ve mümkünse exact SHA'yı doğrula.
-2. Görevle ilgili kanonik dosyaları oku.
-3. Gerçek erişimini tahmin etme; okuyamadığın kaynakları açıkça belirt.
-4. Eski sohbet hafızasını GitHub'daki güncel bilgiye tercih etme.
-5. Yazma işleminden önce aktif kod yazarını ve onay kapsamını doğrula.
+1. `docs/AI_CHAT_BOOTSTRAP.md` dosyasını ortak giriş noktası olarak oku.
+2. Repository, branch ve mümkünse exact SHA'yı doğrula.
+3. Uygulama için project memory/current state'i, görevler için backlog'u, takım için capability registry ve Work/Codex profilini oku.
+4. Gerçek erişimini tahmin etme; okuyamadığın kaynakları açıkça belirt.
+5. Eski sohbet hafızasını GitHub'daki güncel bilgiye tercih etme.
+6. Yazma işleminden önce aktif kod yazarını ve onay kapsamını doğrula.
+
+Rutin ve düşük riskli bir işte bu başlangıç kısa tutulabilir; gereksiz törene dönüşmemelidir.
 
 ## Kanonik kaynak sırası
 
 1. GitHub `main` branch'indeki güncel kod ve yapılandırma
 2. İncelenen feature branch/PR ve mevcut test kanıtları
 3. `AGENTS.md`
-4. `docs/ARAR_BULURUZ_PROJECT_MEMORY.md`
-5. `docs/ARAR_BULURUZ_CURRENT_STATE.md`
-6. `docs/ARAR_BULURUZ_DECISION_LOG.md`
-7. `docs/AI_TEAM_CAPABILITIES.md`
-8. `docs/ARAR_BULURUZ_BACKLOG.md`
-9. Tarihli kanıt/test dokümanları
-10. Eski sohbetler ve geçmiş notlar yalnız gerektiğinde
+4. `docs/AI_CHAT_BOOTSTRAP.md`
+5. `docs/ARAR_BULURUZ_PROJECT_MEMORY.md`
+6. `docs/ARAR_BULURUZ_CURRENT_STATE.md`
+7. `docs/ARAR_BULURUZ_DECISION_LOG.md`
+8. `docs/AI_TEAM_CAPABILITIES.md`
+9. `docs/WORK_CODEX_CAPABILITY_PROFILE.md`
+10. `docs/ARAR_BULURUZ_BACKLOG.md`
+11. Tarihli kanıt/test dokümanları
+12. Eski sohbetler ve geçmiş notlar yalnız gerektiğinde
 
 Çelişki halinde daha yukarıdaki kaynak esas alınır.
 
 ## Bilgi dosyalarının görevleri
 
+- **AI Chat Bootstrap:** Her yeni sohbete uygulama, görevler, takım ve yönetişim hakkında ortak başlangıç bağlamı verir.
 - **Project Memory:** Kalıcı ürün tezi, kimlikler, mimari sınırlar, sahiplik ve çalışma ilkeleri.
 - **Current State:** Güncel uygulama davranışı, doğrulanmış SHA, CI/runtime durumu ve bilinen riskler.
 - **Decision Log:** Önemli kararlar, gerekçeleri, ertelenen alternatifler ve yeniden değerlendirme tetikleri.
-- **AI Team Capabilities:** Gerçekte doğrulanmış araç/AI erişimleri, yazma/okuma sınırları ve doğru görev yönlendirmesi.
+- **AI Team Capabilities:** Gerçekte doğrulanmış veya açıkça beyan edilmiş araç/AI erişimleri, yazma/okuma sınırları ve doğru görev yönlendirmesi.
+- **Work/Codex Capability Profile:** Work ve Codex'in ayrıntılı rol, nominal yetenek, proje kanıtı, oturum sınırı ve teslim standartları.
 - **Backlog:** Bekleyen ve sıralanmış işler.
 - **Dated Evidence:** Belirli bir tarihteki test, dry-run veya denetim kanıtı.
 
@@ -55,7 +62,7 @@ Bu dosya, projede çalışan ana sohbet, Lovable, Codex, Work ve diğer AI/denet
 - **Codex:** Repository incelemesiyle terminal, test, debugging veya kapsamlı kod uygulamasının birlikte gerektiği işlerde kullanılan uygulama/test uzmanı.
 - **Work:** Ürün stratejisi, mimari, backend, güvenlik, KVKK, gerçek veri, public pilot ve geri dönüşü pahalı kararlarda kullanılan bağımsız analiz ve risk-denetim uzmanı.
 
-Bu roller varsayımsal yetki anlamına gelmez. Gerçek ve oturuma bağlı erişim `docs/AI_TEAM_CAPABILITIES.md` üzerinden doğrulanır.
+Takımdaşların rol ve yetenekleri `docs/AI_TEAM_CAPABILITIES.md` ile `docs/WORK_CODEX_CAPABILITY_PROFILE.md` içinde okunmalıdır. Nominal yetenek, o oturumdaki erişim ve proje için verilmiş işlem yetkisi birbirinden ayrılır.
 
 Work, Codex, Lovable veya ana sohbet çıktısı tek başına emir ya da kesin proje kararı değildir. Öneriler kanonik kaynaklar, kanıt, risk, kapsam ve kurucu iradesiyle değerlendirilir. İkinci veya üçüncü görüş yalnız kararın önemi, belirsizliği, güvenlik/KVKK etkisi ya da geri dönüş maliyeti koordinasyon maliyetini haklı çıkardığında alınır; rutin olarak tekrarlanmaz.
 
@@ -105,14 +112,14 @@ Test başarısızsa, kapsam belirsizse veya geri dönüş planı yeterli değils
 ## Görev akışı
 
 1. Başlangıç branch'i, SHA, aktif yazar ve kapsam doğrulanır.
-2. Gerekli ortak hafıza ve kanıt dosyaları okunur.
+2. Uygulama, görevler ve takım bağlamı bootstrap üzerinden okunur.
 3. Ana sohbet işi güvenli ve doğru biçimde yapabiliyorsa doğrudan devam eder; uzman devri ancak belirgin ek değer sağlıyorsa yapılır.
 4. Dar feature branch'te minimum diff hazırlanır.
 5. Diff, hedef davranışlar ve riskle orantılı testler incelenir.
 6. Gerekirse ve değer katıyorsa Codex veya Work'ten bağımsız/uzman kontrol alınır.
 7. Onay modeline göre PR hazırlanır ve merge edilir veya karar için durulur.
 8. Publish gerekiyorsa aynı risk değerlendirmesi ayrı olarak uygulanır.
-9. Milestone sonrası current state, backlog, decision log ve gerekiyorsa capability registry güncellenir.
+9. Milestone sonrası current state, backlog, decision log ve gerekiyorsa capability registry/profile güncellenir.
 
 ## Raporlama
 

@@ -26,33 +26,43 @@ Legend: `[x]` completed, `[-]` in progress, `[ ]` pending.
 - [x] Use all five remaining Lovable credits on bounded frontend work and validation.
 - [x] Restore generated `src/routeTree.gen.ts` drift and leave the local working tree clean.
 - [x] Replace the mandatory five-person-test gate with risk-based validation.
-- [x] Define Work/Codex/assistant task routing.
+- [x] Define main-assistant/Work/Codex/Lovable task routing.
+- [x] Make the main assistant the default executor when its tools are sufficient.
 - [x] Add a durable shared project-memory document.
 - [x] Add an append-oriented decision log with rationale and review triggers.
-- [x] Add an AI/team capability registry based on verified access rather than role assumptions.
+- [x] Add an AI/team capability registry.
+- [x] Record detailed Work and Codex role charters.
+- [x] Accept the first restricted Work session's own nominal capability inventory while keeping session availability and project authority separate.
+- [x] Record project-observed Codex capabilities and session-dependent limits.
+- [x] Add one mandatory new-chat bootstrap covering application, tasks, team roles/capabilities and governance.
 - [x] Connect `README.md` and `AGENTS.md` to the shared knowledge system.
 - [x] Stop storing a copied “current main SHA” as if it could remain current after documentation merges.
 
 ## Current work
 
-- [-] Obtain Work's read-only capability and access inventory.
-- [-] Verify whether Work can actually read the private repository, current branch/SHA and named canonical files.
-- [-] Record demonstrated Work capabilities and limitations in `docs/AI_TEAM_CAPABILITIES.md`.
-
 There is no mandatory repeated test cycle for the current frontend-only mock prototype.
+
+The team context is now documented so each new chat can reconstruct:
+
+- the application and architecture;
+- completed, current and next work;
+- founder, main assistant, Work, Codex and Lovable roles;
+- nominal capabilities, demonstrated capabilities, session limits and approval boundaries.
+
+The first Work response remains a candidate pilot analysis. Its capability inventory is accepted as a profile of Work's tools; its `Çorlu / persistence-first` recommendation has not been adopted as a project decision.
 
 ## Next ordered work
 
-1. [ ] Send Work the combined capability-inventory and first-pilot-analysis prompt.
-2. [ ] Separate Work's demonstrated access from self-reported but unproven capability claims.
-3. [ ] Update the capability registry with verified results.
-4. [ ] Review Work's proposed minimum first-real-pilot scope.
-5. [ ] Decide whether district selection is required for that pilot.
-6. [ ] Decide which capability comes first: real listing persistence, photo upload or authentication.
-7. [ ] Obtain explicit founder decisions on the consequential pilot/backend choices.
-8. [ ] Before enabling backend or real data, complete the required architecture/security/KVKK gate.
-9. [ ] Implement only the approved first slice through a reviewable GitHub branch and PR.
-10. [ ] Run tests proportionate to the risk introduced by that slice.
+1. [ ] Review the candidate first-real-pilot options using the main assistant as the default decision synthesizer.
+2. [ ] Decide whether the first pilot should be local/invited or broader.
+3. [ ] Decide whether district selection is required for that pilot.
+4. [ ] Decide which capability comes first: real listing persistence, photo upload or authentication.
+5. [ ] Obtain explicit founder decisions on the consequential pilot/backend choices.
+6. [ ] Before enabling backend or real data, complete the proportionate architecture/security/KVKK gate.
+7. [ ] Implement only the approved first slice through a reviewable GitHub branch and PR.
+8. [ ] Run tests proportionate to the risk introduced by that slice.
+
+A second Work or Codex review is not automatic. Use one only when a concrete uncertainty, missing capability or consequential risk justifies the coordination cost.
 
 ## Shared knowledge maintenance
 
@@ -62,7 +72,8 @@ After every meaningful milestone:
 - update pending work here;
 - append consequential decisions and rationale to `ARAR_BULURUZ_DECISION_LOG.md`;
 - update stable identifiers, principles or ownership rules in `ARAR_BULURUZ_PROJECT_MEMORY.md`;
-- update `AI_TEAM_CAPABILITIES.md` when actual access is proved, removed or materially changed;
+- update `AI_TEAM_CAPABILITIES.md` and `WORK_CODEX_CAPABILITY_PROFILE.md` when roles, nominal capabilities, demonstrated access or material limits change;
+- update `AI_CHAT_BOOTSTRAP.md` when the common onboarding model changes;
 - keep long raw logs in dated evidence documents rather than copying them into shared memory.
 
 No password, token, secret or unnecessary personal data belongs in these documents.
@@ -71,18 +82,18 @@ No password, token, secret or unnecessary personal data belongs in these documen
 
 - Do not repeat the same full regression after documentation-only, generated-file cleanup or obviously isolated low-risk changes.
 - For bounded frontend changes, lint/build plus one focused behavior check is normally sufficient.
-- Use Codex when executable analysis, local terminal work, debugging, regression testing or a larger refactor is genuinely needed.
+- Use Codex when executable analysis, local terminal work, debugging, regression testing or a larger refactor is genuinely needed and unavailable/inefficient in the main assistant environment.
 - A quick founder or nearby-user smoke check may be used when wording or navigation is uncertain.
 - Formal moderated multi-person testing is optional for this mock prototype and becomes justified before a public pilot, real user data, authentication, payments or when conflicting user feedback appears.
 - Existing automated evidence remains valid until a change touches the behavior it covered.
 
 ## Task routing
 
-- **Assistant continues:** path is clear; work is low-risk, reversible and within approved scope.
-- **Work prompt:** product strategy, UX direction, architecture, security, KVKK, public-pilot readiness, cost commitments or expensive-to-reverse choices need independent analysis and ideas.
-- **Codex prompt:** analysis must be combined with repository inspection, terminal execution, tests, debugging, CI investigation or substantial code changes.
+- **Main assistant:** default executor when current tools and approval scope are sufficient.
+- **Work:** optional independent analysis for consequential product, architecture, security, KVKK, pilot, cost or expensive-to-reverse choices.
+- **Codex:** optional engineering specialist when local repository, terminal, tests, browser automation, debugging or precise implementation adds required value.
 - **Lovable:** bounded frontend/UX work only when credits and a safe isolated/reviewable workflow exist.
-- **Founder decision:** backend ownership, real data, secrets, payments, paid services, public-pilot launch or any consequential commitment.
+- **Founder:** backend ownership, real data, secrets, payments, paid services, public-pilot launch and consequential commitments.
 - Only one code writer operates at a time.
 
 ## Lovable credit record
@@ -110,7 +121,7 @@ Variants were unavailable, so Lovable wrote directly to `main`. The diff was rev
 
 Before any backend is enabled:
 
-- [ ] Obtain Work's independent architecture/security/KVKK review.
+- [ ] Complete the appropriate independent architecture/security/KVKK review when risk justifies it.
 - [ ] Create a founder-owned Supabase organization/project; do not enable Lovable database.
 - [ ] Decide region and document data-residency implications.
 - [ ] Define RLS, auth boundaries and service-role handling.
@@ -131,7 +142,8 @@ Before any backend is enabled:
 ## Decision rules
 
 - Low-risk, reversible tasks already listed here may be completed under standing approval.
-- Stop for founder/Work input when a task affects backend ownership, security, KVKK, real data, public-pilot readiness, cost commitments or other expensive-to-reverse choices.
+- Stop for founder input when a task affects backend ownership, security, KVKK, real data, public-pilot readiness, cost commitments or other expensive-to-reverse choices.
+- Work/Codex review supports decisions but does not replace founder approval.
 - Testing depth must follow risk, not habit.
 - GitHub `main` remains canonical.
-- Tool capability must be verified, not inferred from a role name or self-description.
+- A teammate's nominal capability may be accepted from its own inventory; current-session access and mutation authority must still be checked before action.

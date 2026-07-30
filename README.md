@@ -6,16 +6,25 @@ Türkiye geneline hitap eden, ücretsiz ilan verme ve ilan arama hizmeti sunmay�
 
 ## Start here — humans and AI agents
 
-Before making decisions or changes, read the canonical project context in this order:
+Every new chat should first use the common bootstrap:
 
-1. [`AGENTS.md`](AGENTS.md) — operating contract, approvals and source priority
-2. [`docs/ARAR_BULURUZ_PROJECT_MEMORY.md`](docs/ARAR_BULURUZ_PROJECT_MEMORY.md) — durable project knowledge
-3. [`docs/ARAR_BULURUZ_CURRENT_STATE.md`](docs/ARAR_BULURUZ_CURRENT_STATE.md) — current implementation and verified state
-4. [`docs/ARAR_BULURUZ_DECISION_LOG.md`](docs/ARAR_BULURUZ_DECISION_LOG.md) — consequential decisions and rationale
-5. [`docs/AI_TEAM_CAPABILITIES.md`](docs/AI_TEAM_CAPABILITIES.md) — verified AI/tool access and limits
-6. [`docs/ARAR_BULURUZ_BACKLOG.md`](docs/ARAR_BULURUZ_BACKLOG.md) — pending and ordered work
+1. [`docs/AI_CHAT_BOOTSTRAP.md`](docs/AI_CHAT_BOOTSTRAP.md) — application, current work, team roles/capabilities and governance in one entry point
+2. [`AGENTS.md`](AGENTS.md) — operating contract, approvals and source priority
+3. [`docs/ARAR_BULURUZ_PROJECT_MEMORY.md`](docs/ARAR_BULURUZ_PROJECT_MEMORY.md) — durable project knowledge
+4. [`docs/ARAR_BULURUZ_CURRENT_STATE.md`](docs/ARAR_BULURUZ_CURRENT_STATE.md) — current implementation and verified state
+5. [`docs/ARAR_BULURUZ_BACKLOG.md`](docs/ARAR_BULURUZ_BACKLOG.md) — pending and ordered work
+6. [`docs/ARAR_BULURUZ_DECISION_LOG.md`](docs/ARAR_BULURUZ_DECISION_LOG.md) — consequential decisions and rationale
+7. [`docs/AI_TEAM_CAPABILITIES.md`](docs/AI_TEAM_CAPABILITIES.md) — team capability registry and routing rules
+8. [`docs/WORK_CODEX_CAPABILITY_PROFILE.md`](docs/WORK_CODEX_CAPABILITY_PROFILE.md) — detailed Work and Codex capabilities, limits and handoff standards
 
 GitHub `main` and the exact branch/PR under review remain more authoritative than summaries. An AI without repository access must say so and request the minimum missing context.
+
+A new project chat should understand before acting:
+
+- what the application is and currently does;
+- what work is completed, pending and next;
+- the founder, main assistant, Codex, Work and Lovable roles;
+- each teammate's nominal capabilities, demonstrated capabilities, session limits and approval boundaries.
 
 ## Product thesis
 
