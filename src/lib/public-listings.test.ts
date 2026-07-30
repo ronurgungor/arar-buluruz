@@ -9,7 +9,7 @@ import {
 
 const config: PublicSupabaseConfig = {
   url: "https://example.supabase.co",
-  anonKey: "public-anon-test-key",
+  publicKey: "sb_publishable_public-test-key",
 };
 
 const publicRow = {
@@ -42,7 +42,7 @@ describe("resolveListingsSource", () => {
 });
 
 describe("public Supabase REST reader", () => {
-  test("selects only approved public columns and maps the response", async () => {
+  test("selects only approved public columns and uses only the apikey header", async () => {
     let requestedUrl: URL | undefined;
     let requestedHeaders: Headers | undefined;
 
@@ -66,8 +66,8 @@ describe("public Supabase REST reader", () => {
     expect(selectedColumns).not.toContain("expires_at");
     expect(selectedColumns).not.toContain("phone");
 
-    expect(requestedHeaders?.get("apikey")).toBe(config.anonKey);
-    expect(requestedHeaders?.get("authorization")).toBe(`Bearer ${config.anonKey}`);
+    expect(requestedHeaders?.get("apikey")).toBe(config.publicKey);
+    expect(requestedHeaders?.has("authorization")).toBeFalse();
 
     expect(listings).toEqual([
       {
