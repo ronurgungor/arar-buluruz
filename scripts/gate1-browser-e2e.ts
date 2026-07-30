@@ -7,6 +7,8 @@ const visibleListingId = "00000000-0000-4000-8000-000000000101";
 const draftListingId = "00000000-0000-4000-8000-000000000102";
 const expiredListingId = "00000000-0000-4000-8000-000000000103";
 const whatsappUrlPattern = /^https:\/\/wa\.me\//;
+const expectedNotFoundConsoleError =
+  "console: Failed to load resource: the server responded with a status of 404 ()";
 const resultsDir = path.resolve("test-results/gate1-browser");
 fs.mkdirSync(resultsDir, { recursive: true });
 
@@ -118,6 +120,15 @@ async function assertHiddenListingNotFound(
   await assertNoHorizontalOverflow(page, profile, `/ilan/${listingId}`);
 }
 
+function consumeExpectedNotFoundConsoleErrors(runtimeErrors: string[], profile: string) {
+  assert(
+    runtimeErrors.length === 2 &&
+      runtimeErrors.every((error) => error === expectedNotFoundConsoleError),
+    `${profile} hidden listing routes emitted unexpected browser errors: ${runtimeErrors.join(" | ")}`,
+  );
+  runtimeErrors.splice(0, runtimeErrors.length);
+}
+
 function assertCleanRuntime(runtimeErrors: string[], authRequests: string[], profile: string) {
   assert(
     runtimeErrors.length === 0,
@@ -221,6 +232,7 @@ async function runProfile(browser: Browser, profile: BrowserProfile) {
     fullPage: true,
   });
 
+  assertCleanRuntime(runtimeErrors, authRequests, profile.name);
   await assertHiddenListingNotFound(
     page,
     profile.name,
@@ -233,6 +245,7 @@ async function runProfile(browser: Browser, profile: BrowserProfile) {
     expiredListingId,
     "Expired integration listing",
   );
+  consumeExpectedNotFoundConsoleErrors(runtimeErrors, profile.name);
 
   await page.goto(`${baseUrl}/giris`, { waitUntil: "networkidle" });
   await page.getByText("Pilot sürecinde giriş bulunmuyor.", { exact: true }).waitFor();
