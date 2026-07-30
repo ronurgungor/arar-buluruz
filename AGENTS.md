@@ -59,6 +59,8 @@ Bu roller varsayımsal yetki anlamına gelmez. Gerçek ve oturuma bağlı erişi
 
 Work, Codex, Lovable veya ana sohbet çıktısı tek başına emir ya da kesin proje kararı değildir. Öneriler kanonik kaynaklar, kanıt, risk, kapsam ve kurucu iradesiyle değerlendirilir. İkinci veya üçüncü görüş yalnız kararın önemi, belirsizliği, güvenlik/KVKK etkisi ya da geri dönüş maliyeti koordinasyon maliyetini haklı çıkardığında alınır; rutin olarak tekrarlanmaz.
 
+Her uzman devri, çözmesi beklenen somut belirsizliği veya sağlayacağı eksik yeteneği açıkça belirtmelidir.
+
 ## Tek yazıcı kuralı
 
 Aynı anda yalnız bir araç kod yazar. Yazar değişmeden önce mevcut görev tamamlanır veya durdurulur; değişiklikler Git ile güvenli hale getirilir; exact branch ve SHA doğrulanır.
