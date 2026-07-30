@@ -33,42 +33,50 @@ Legend: `[x]` completed, `[-]` in progress, `[ ]` pending.
 - [x] Fix multi-word search so `ikinci el masa` and reversed word order resolve correctly.
 - [x] Fix the listing-detail fixed-footer overlap and prove `0 px` overlap at the tested viewport.
 - [x] Re-run search, city-filter, listing-preview and complaint-flow regressions after the fixes.
+- [x] Confirm the public Lovable project synchronized to the current validated GitHub SHA.
+- [x] Keep the search input synchronized with URL/history changes.
+- [x] Add a `Sonuçlara dön` control to listing detail.
+- [x] Replace inert photo-upload buttons with honest non-interactive prototype placeholders.
+- [x] Separate advertising placeholders from organic listing list items.
+- [x] Require a minimum telephone value before the prototype login response.
+- [x] Replace the mock-derived city selector with `Tüm Türkiye` plus all 81 provinces.
+- [x] Use all five remaining Lovable credits on bounded frontend work and validation.
+- [x] Restore generated `src/routeTree.gen.ts` drift and prove the final local working tree clean at `2660990f…`.
 
 ## In progress
 
 - [-] Conduct the first five moderated tests with real people on mobile devices.
 - [-] Collect task success, pauses, wrong taps, direct quotes and issue severity using `docs/MODERATED_USER_TEST_PLAN.md`.
-- [-] Confirm that the public Lovable deployment has advanced to include GitHub PR #14 before using it for moderated sessions.
 
 ## Next ordered work
 
-1. [ ] Fast-forward the local `main` checkout to the latest GitHub `main` before the next Codex task.
-2. [ ] Verify the public Lovable deployment contains the PR #14 search and fixed-footer corrections.
-3. [ ] Complete all five moderated human sessions.
-4. [ ] Calculate task success rates and repeated issue counts.
-5. [ ] Select only one next product change using the documented decision rule.
-6. [ ] Re-run the affected human task after any selected fix.
+1. [ ] Complete all five moderated human sessions.
+2. [ ] Calculate task success rates and repeated issue counts.
+3. [ ] Select only one next product change using the documented decision rule.
+4. [ ] Implement that one change through a reviewable GitHub branch/PR.
+5. [ ] Re-run the affected human task after the selected fix.
+6. [ ] Decide whether the prototype has enough evidence to begin public-pilot readiness planning.
 
-## Evidence-backed frontend/mobile work
+## Lovable credit record
 
-Five Lovable credits remain unspent:
+All five credits were consumed under explicit founder instruction because the balance was expiring:
 
-- [x] Listing-detail fixed-footer overlap was confirmed and fixed through GitHub code; no Lovable credit spent.
-- [x] Search-results multi-word matching failure was confirmed and fixed through GitHub code; no Lovable credit spent.
-- [ ] Listing-form mobile ergonomics if human tests confirm keyboard, field-order or primary-action problems.
-- [ ] One credit reserved for a proven responsive regression.
-- [ ] One credit reserved for the strongest repeated human-test problem.
+- [x] `2.0` credits: mobile flow audit and five bounded frontend corrections.
+- [x] `2.1` credits: complete Türkiye province list.
+- [x] `0.9` credits: Prettier correction plus final lint/build run.
+- Remaining credits: `0`
 
-Do not spend Lovable credits on noindex, naming-only cleanup, backend, auth, metadata-only edits or speculative polish. Do not let Lovable write directly to canonical `main` without a safely isolated reviewable branch/variant.
+Variants were unavailable, so Lovable wrote directly to `main`. The resulting diff was reviewed, the generated route-tree drift was reverted, and the final local lint/build and clean-working-tree checks passed. Future Lovable code work should use a reviewable branch/variant when available.
 
 ## Administrative metadata
 
-- [ ] Rename Lovable project-panel `display_name` and generated description from `Find It Fast` to `Arar Buluruz` when a direct no-credit metadata operation is available or during an otherwise justified safe Lovable session.
+- [ ] Rename Lovable project-panel `display_name` and generated description from `Find It Fast` to `Arar Buluruz` when a direct no-credit metadata operation is available.
 
 ## Product-readiness backlog
 
-- [ ] Replace the mock-listing-derived city selector with a canonical Türkiye city list before any real listing pilot.
+- [x] Replace the mock-listing-derived city selector with a canonical Türkiye city list before any real listing pilot.
 - [ ] Decide whether district selection is required for the first real-data pilot; do not expand location scope speculatively.
+- [ ] Define the minimum public-pilot readiness checklist only after moderated-test evidence is reviewed.
 
 ## Technical quality backlog
 
