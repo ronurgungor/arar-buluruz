@@ -7,9 +7,9 @@ _Last updated: 2026-07-30, Europe/Istanbul_
 - Repository: `ronurgungor/arar-buluruz`
 - Visibility: Private
 - Default branch: `main`
-- Current GitHub `main` milestone SHA: `25f014f6106d433507f96b409ba2456f8af191c2`
-- Last locally validated PR branch SHA: `d8538631803faa289befa02694b3bb0806ce0174`
-- Latest confirmed published application SHA: `13146e010949a25343de997aff4e69d83c16287e`
+- Current GitHub `main` SHA: `2660990f699724e63b1d007b39952461d1d05cdb`
+- Last locally validated SHA: `2660990f699724e63b1d007b39952461d1d05cdb`
+- Latest confirmed published Lovable SHA: `2660990f699724e63b1d007b39952461d1d05cdb`
 - Canonical package lock: `bun.lock`
 
 ## Completed milestones
@@ -19,15 +19,17 @@ _Last updated: 2026-07-30, Europe/Istanbul_
 - PR #3: site-wide `noindex/nofollow` protection merged and published.
 - PR #4: repository README heading renamed to `Arar Buluruz`.
 - PR #5: current state and backlog synchronized.
-- PR #6: submitted listing values are shown in an editable prototype preview; published at application SHA `7dd6434d…`.
-- PR #7: home-page example searches and honest mock-proximity labels added; published at application SHA `13146e01…`.
+- PR #6: submitted listing values are shown in an editable prototype preview.
+- PR #7: home-page example searches and honest mock-proximity labels added.
 - PR #8: source-level internal dry-run and five-person moderated user-test pack added.
 - PR #9: pinned Bun CI and clean Prettier baseline added.
 - PR #10: CI and executable-validation evidence synchronized into project memory.
 - PR #11: cross-platform LF checkout policy added through `.gitattributes`.
 - PR #12: successful Windows synchronization and local executable-validation evidence recorded.
 - PR #13: redundant pre-sync branch/stash cleanup recorded after external recovery verification.
-- PR #14: automated mobile E2E findings fixed; multi-word search and fixed-footer overlap corrections merged after local regression validation.
+- PR #14: automated mobile E2E findings fixed; multi-word search and fixed-footer overlap corrections merged after regression validation.
+- PR #15: PR #14 validation, public-header evidence and the next human-test gate synchronized.
+- Lovable credit sprint: all five remaining credits were used on bounded frontend work, followed by GitHub diff review, local lint/build validation and generated-file cleanup.
 
 ## Current product behavior
 
@@ -36,9 +38,11 @@ _Last updated: 2026-07-30, Europe/Istanbul_
 - Search includes title, description and hidden keyword synonyms.
 - Multi-word searches are tokenized; every token must appear somewhere in the combined searchable text.
 - `ikinci el masa` and `masa ikinci el` both resolve to the matching office-desk listing.
+- The search input now stays synchronized with the URL query when browser history or in-app navigation changes the search.
 - Zero-result city filtering offers `Tüm Türkiye'de ara` recovery.
 - Home page offers direct example searches: `traktör`, `kiralık daire`, `ikinci el masa`, `oto`.
 - Mock distance ordering is labelled `Yakın (örnek)` and explicitly states that real location is not used.
+- Advertising placeholders are separate list items rather than being semantically nested inside an organic listing item.
 
 ### Listing detail and contact
 
@@ -48,14 +52,17 @@ _Last updated: 2026-07-30, Europe/Istanbul_
 - `Listing.phone` and twelve old mock numbers are removed.
 - The number is not printed in visible listing copy.
 - At a `390 × 844` viewport, the fixed contact bar leaves the `Şikâyet Et` link fully visible with `0 px` overlap.
+- Listing detail includes a `Sonuçlara dön` control that returns through router history.
 
-### Listing creation
+### Listing creation and login
 
 - Title, price, city and description are preserved in frontend state.
 - Submission shows the user's values in a listing-style preview card.
 - `İlanı düzenle` returns to the populated form.
 - No real record, upload, backend or storage is used.
-- The current prototype city selector is intentionally limited to mock-listing cities; a canonical full-city list remains a pre-pilot requirement.
+- The city selector contains `Tüm Türkiye` plus all 81 provinces with Turkish characters.
+- Photo slots are honest non-interactive prototype placeholders and explicitly state that photo upload is disabled.
+- The prototype login form requires a telephone value with a minimum length of 10 before showing the disabled-login message.
 
 ## CI and executable validation
 
@@ -67,16 +74,13 @@ _Last updated: 2026-07-30, Europe/Istanbul_
   - `bun install --frozen-lockfile`
   - `bun run lint`
   - `bun run build`
-- PR #14 CI run `30489176018` passed frozen install, lint and production build.
-- Codex independently validated PR #14 at `390 × 844`:
-  - multi-word search: passed
-  - reversed word order: passed
-  - fixed-footer overlap: `0 px`
-  - city-filter recovery: passed
-  - listing-preview persistence: passed
-  - complaint flow: passed
-  - console errors, page errors, 404/500 responses and horizontal overflow: none
-- Six existing Fast Refresh warnings remain non-blocking.
+- PR #14 CI and independent Codex mobile regression validation passed.
+- The final local checkout at `2660990f…` passed:
+  - Bun `1.3.14`
+  - lint: `0` errors and six existing non-blocking Fast Refresh warnings
+  - production build: passed
+  - generated `src/routeTree.gen.ts` drift restored to the canonical HEAD version
+  - final working tree: clean
 - `.gitattributes` enforces LF for text files across Windows, macOS and Linux; binary assets are excluded from line-ending conversion.
 
 ## Search-index protection
@@ -91,10 +95,13 @@ _Last updated: 2026-07-30, Europe/Istanbul_
 - Project ID: `dca896f8-bb48-4a67-ae49-0493610ca6ad`
 - Public URL: `https://arar-buluruz.lovable.app`
 - Database: Disabled
-- Latest confirmed published application SHA: `13146e010949a25343de997aff4e69d83c16287e`
-- Latest deployment ID: `1490c7c7-0875-4b33-a2e1-8a0519ca249a`
+- Project status: Completed
+- Published: Yes, public
+- Latest confirmed published SHA: `2660990f699724e63b1d007b39952461d1d05cdb`
+- The Lovable project screenshot reference also carries the `2660990f` commit prefix.
 - Project metadata still reports display name `Find It Fast` and an old generated description. The connector exposes no direct rename operation.
-- Five Lovable credits remain unspent.
+- Remaining Lovable credits: `0`
+- Variants were unavailable. Under the founder's explicit instruction to use the expiring credits, tightly scoped Lovable work was allowed on `main`, then independently reviewed and validated. Future Lovable code work should return to a reviewable branch/variant workflow when available.
 
 ## Backend ownership position
 
@@ -108,9 +115,7 @@ _Last updated: 2026-07-30, Europe/Istanbul_
 ## Local checkout
 
 - Local repository: `C:\Projects\arar-buluruz`
-- Before PR #14 merged, local `main` and `origin/main` were clean and equal at `8b68a389e46380f824740bf3b4fa01184cc17236`.
-- The PR #14 branch was locally validated clean at `d8538631803faa289befa02694b3bb0806ce0174`.
-- Local `main` must be fast-forwarded to GitHub `main` `25f014f6106d433507f96b409ba2456f8af191c2` before the next local task.
+- Local `main` and `origin/main` are clean and equal at `2660990f699724e63b1d007b39952461d1d05cdb`.
 - Repository-local Git settings are `core.autocrlf=false` and `core.eol=lf`.
 - External recovery records remain outside the repository.
 
@@ -118,7 +123,8 @@ _Last updated: 2026-07-30, Europe/Istanbul_
 
 - Source-level dry-run is complete.
 - Local executable validation, route smoke tests and automated mobile E2E validation are complete.
-- The next evidence gate remains five moderated tests with real people on mobile devices using `docs/MODERATED_USER_TEST_PLAN.md`.
+- Public Lovable synchronization to the current validated SHA is confirmed.
+- The next evidence gate is five moderated tests with real people on mobile devices using `docs/MODERATED_USER_TEST_PLAN.md`.
 - Automated browser runs do not replace human usability evidence.
 - No additional speculative product feature should be added before those observations are collected.
 
@@ -127,8 +133,8 @@ _Last updated: 2026-07-30, Europe/Istanbul_
 - Lovable project-panel metadata still uses `Find It Fast`; runtime and repository naming use `Arar Buluruz`.
 - Six non-blocking Fast Refresh warnings exist in shared shadcn UI files.
 - `bun run preview` currently expects an incompatible output path for the Lovable/Nitro Cloudflare build; local smoke validation uses the dev server. Do not change the preview script without verifying the hosting adapter's supported command.
-- The current city selector is mock-data-driven and does not yet contain a canonical full Türkiye city list.
-- The public Lovable deployment is not yet confirmed to include PR #14; publishing status must be verified separately before treating the public URL as updated.
+- District selection requirements for the first real-data pilot remain undecided.
+- Lovable's direct-to-main credit sprint produced many small commits; no history rewrite or force-push was performed.
 
 ## Hard boundaries
 
