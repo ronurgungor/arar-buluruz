@@ -34,9 +34,9 @@ describe("resolveListingsSource", () => {
   });
 
   test("requires an explicit Supabase source", () => {
-    expect(
-      resolveListingsSource({ isDevelopment: false, configuredSource: "supabase" }),
-    ).toBe("supabase");
+    expect(resolveListingsSource({ isDevelopment: false, configuredSource: "supabase" })).toBe(
+      "supabase",
+    );
     expect(resolveListingsSource({ isDevelopment: false })).toBe("disabled");
   });
 });
