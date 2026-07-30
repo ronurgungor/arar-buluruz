@@ -177,20 +177,33 @@ jobs:
           gateway_env="$(
             docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$kong_container"
           )"
+          gateway_config_path="$(
+            printf '%s\n' "$gateway_env" \
+              | sed -n 's/^KONG_DECLARATIVE_CONFIG=//p' \
+              | head -n 1
+          )"
 
-          extract_gateway_value() {
-            local value
-            value="$(printf '%s\n' "$gateway_env" | grep "^$1=" | head -n 1)"
-            printf '%s' "${value#*=}"
-          }
-
-          public_key="$(extract_gateway_value SUPABASE_PUBLISHABLE_KEY)"
-          if [[ -z "$public_key" ]]; then
-            public_key="$(extract_gateway_value SUPABASE_ANON_KEY)"
+          if [[ -z "$gateway_config_path" ]]; then
+            echo "The local API gateway config path was not available."
+            exit 1
           fi
 
+          gateway_config="$(docker exec "$kong_container" cat "$gateway_config_path")"
+          public_key="$(
+            printf '%s\n' "$gateway_config" \
+              | awk '
+                  /keyauth_credentials:/ { in_credentials = 1; next }
+                  in_credentials && /^[[:space:]]*- key:/ {
+                    sub(/^[[:space:]]*- key:[[:space:]]*/, "")
+                    gsub(/[\047\042]/, "")
+                    print
+                    exit
+                  }
+                '
+          )"
+
           if [[ -z "$public_key" ]]; then
-            echo "The local API gateway did not expose an ephemeral public key."
+            echo "The rendered local API gateway config did not contain a public key."
             exit 1
           fi
 
