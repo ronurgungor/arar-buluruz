@@ -1,24 +1,27 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { chromium, type Browser, type Page } from "playwright";
 
-const playwrightModule = process.env.PLAYWRIGHT_MODULE;
-if (!playwrightModule) {
-  throw new Error("PLAYWRIGHT_MODULE is required for the transient browser test.");
-}
-
-const { chromium } = await import(pathToFileURL(path.join(playwrightModule, "index.js")).href);
 const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:4173";
 const visibleListingId = "00000000-0000-4000-8000-000000000101";
+const draftListingId = "00000000-0000-4000-8000-000000000102";
+const expiredListingId = "00000000-0000-4000-8000-000000000103";
+const whatsappUrlPattern = /^https:\/\/wa\.me\//;
 const resultsDir = path.resolve("test-results/gate1-browser");
 fs.mkdirSync(resultsDir, { recursive: true });
+
+type BrowserProfile = {
+  name: string;
+  viewport: { width: number; height: number };
+  isMobile: boolean;
+  hasTouch: boolean;
+};
 
 function assert(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
-async function assertNoHorizontalOverflow(page: any, profile: string, route: string) {
+async function assertNoHorizontalOverflow(page: Page, profile: string, route: string) {
   const dimensions = await page.evaluate(() => ({
     viewportWidth: window.innerWidth,
     documentWidth: document.documentElement.scrollWidth,
@@ -28,6 +31,91 @@ async function assertNoHorizontalOverflow(page: any, profile: string, route: str
     dimensions.documentWidth <= dimensions.viewportWidth,
     `${profile} ${route} has horizontal overflow: ${JSON.stringify(dimensions)}`,
   );
+}
+
+function readWhatsAppMessage(href: string, profile: string, context: string): string {
+  const url = new URL(href);
+  assert(
+    url.protocol === "https:" && url.hostname === "wa.me",
+    `${profile} ${context} did not use the controlled WhatsApp origin: ${href}`,
+  );
+
+  const message = url.searchParams.get("text");
+  assert(message, `${profile} ${context} did not include a WhatsApp text payload.`);
+  return message;
+}
+
+function assertMessageLines(
+  message: string,
+  expectedLines: string[],
+  profile: string,
+  context: string,
+) {
+  for (const line of expectedLines) {
+    assert(
+      message.includes(line),
+      `${profile} ${context} WhatsApp payload is missing ${JSON.stringify(line)}: ${message}`,
+    );
+  }
+}
+
+async function captureWhatsAppNavigation(
+  page: Page,
+  trigger: () => Promise<void>,
+  profile: string,
+  context: string,
+): Promise<string> {
+  await page.route(whatsappUrlPattern, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "text/html",
+      body: "<!doctype html><html><body>WhatsApp navigation intercepted.</body></html>",
+    });
+  });
+
+  try {
+    const requestPromise = page.waitForRequest((request) => {
+      const url = new URL(request.url());
+      return url.protocol === "https:" && url.hostname === "wa.me";
+    });
+
+    await trigger();
+    const request = await requestPromise;
+    assert(request.method() === "GET", `${profile} ${context} WhatsApp request was not a GET.`);
+    await page.waitForLoadState("domcontentloaded");
+    return request.url();
+  } finally {
+    await page.unroute(whatsappUrlPattern);
+  }
+}
+
+async function assertHiddenListingNotFound(
+  page: Page,
+  profile: string,
+  listingId: string,
+  hiddenTitle: string,
+) {
+  const response = await page.goto(`${baseUrl}/ilan/${listingId}`, { waitUntil: "networkidle" });
+  assert(response, `${profile} hidden listing navigation did not return a response.`);
+  assert(
+    response.status() === 404,
+    `${profile} hidden listing ${listingId} returned HTTP ${response.status()} instead of 404.`,
+  );
+
+  await page.getByRole("heading", { level: 1, name: "404" }).waitFor();
+  assert(
+    (await page.getByText("Page not found", { exact: true }).count()) === 1,
+    `${profile} hidden listing ${listingId} did not render the safe not-found state.`,
+  );
+  assert(
+    (await page.getByText(hiddenTitle, { exact: true }).count()) === 0,
+    `${profile} hidden listing ${listingId} exposed its title on the detail route.`,
+  );
+  assert(
+    (await page.getByRole("link", { name: "WhatsApp" }).count()) === 0,
+    `${profile} hidden listing ${listingId} exposed a contact action.`,
+  );
+  await assertNoHorizontalOverflow(page, profile, `/ilan/${listingId}`);
 }
 
 function assertCleanRuntime(runtimeErrors: string[], authRequests: string[], profile: string) {
@@ -41,15 +129,7 @@ function assertCleanRuntime(runtimeErrors: string[], authRequests: string[], pro
   );
 }
 
-async function runProfile(
-  browser: any,
-  profile: {
-    name: string;
-    viewport: { width: number; height: number };
-    isMobile: boolean;
-    hasTouch: boolean;
-  },
-) {
+async function runProfile(browser: Browser, profile: BrowserProfile) {
   const context = await browser.newContext({
     viewport: profile.viewport,
     isMobile: profile.isMobile,
@@ -60,11 +140,11 @@ async function runProfile(
   const runtimeErrors: string[] = [];
   const authRequests: string[] = [];
 
-  page.on("pageerror", (error: Error) => runtimeErrors.push(`pageerror: ${error.message}`));
-  page.on("console", (message: any) => {
+  page.on("pageerror", (error) => runtimeErrors.push(`pageerror: ${error.message}`));
+  page.on("console", (message) => {
     if (message.type() === "error") runtimeErrors.push(`console: ${message.text()}`);
   });
-  page.on("request", (request: any) => {
+  page.on("request", (request) => {
     const requestUrl = new URL(request.url());
     if (requestUrl.pathname.startsWith("/auth/v1")) authRequests.push(request.url());
   });
@@ -119,11 +199,40 @@ async function runProfile(
     `${profile.name} real listing detail exposed a mock ad slot.`,
   );
 
+  const detailWhatsAppHref = await page
+    .getByRole("link", { name: "WhatsApp" })
+    .getAttribute("href");
+  assert(detailWhatsAppHref, `${profile.name} visible listing did not expose a WhatsApp href.`);
+  const detailMessage = readWhatsAppMessage(
+    detailWhatsAppHref,
+    profile.name,
+    "visible listing detail",
+  );
+  assertMessageLines(
+    detailMessage,
+    [`İlan ID: ${visibleListingId}`],
+    profile.name,
+    "visible listing detail",
+  );
+
   await assertNoHorizontalOverflow(page, profile.name, "/ilan/$id");
   await page.screenshot({
     path: path.join(resultsDir, `${profile.name}-detail.png`),
     fullPage: true,
   });
+
+  await assertHiddenListingNotFound(
+    page,
+    profile.name,
+    draftListingId,
+    "Draft integration listing",
+  );
+  await assertHiddenListingNotFound(
+    page,
+    profile.name,
+    expiredListingId,
+    "Expired integration listing",
+  );
 
   await page.goto(`${baseUrl}/giris`, { waitUntil: "networkidle" });
   await page.getByText("Pilot sürecinde giriş bulunmuyor.", { exact: true }).waitFor();
@@ -139,11 +248,44 @@ async function runProfile(
     (await page.getByText("Bu form veritabanına kayıt yazmaz.", { exact: false }).count()) === 1,
     `${profile.name} listing application did not disclose the no-database-write boundary.`,
   );
-  assert(
-    (await page.getByRole("button", { name: "WhatsApp ile başvur" }).count()) === 1,
-    `${profile.name} listing application did not expose the controlled WhatsApp action.`,
+
+  const sellerName = `${profile.name} E2E Satıcı`;
+  const listingTitle = `${profile.name} E2E ilanı`;
+  const listingPrice = "4321";
+  const listingProvince = "Tekirdağ";
+  const listingDistrict = "Çorlu";
+  const listingDescription = `${profile.name} kabul testi için ayrıntılı ilan açıklaması.`;
+
+  await page.getByLabel("İlanda görünecek ad", { exact: true }).fill(sellerName);
+  await page.getByLabel("Başlık", { exact: true }).fill(listingTitle);
+  await page.getByLabel("Fiyat (TL)", { exact: true }).fill(listingPrice);
+  await page.getByLabel("İl", { exact: true }).selectOption({ label: listingProvince });
+  await page.getByLabel("İlçe", { exact: true }).fill(listingDistrict);
+  await page.getByLabel("Açıklama", { exact: true }).fill(listingDescription);
+
+  const applicationHref = await captureWhatsAppNavigation(
+    page,
+    () => page.getByRole("button", { name: "WhatsApp ile başvur" }).click(),
+    profile.name,
+    "listing application",
   );
-  await assertNoHorizontalOverflow(page, profile.name, "/ilan-ver");
+  const applicationMessage = readWhatsAppMessage(
+    applicationHref,
+    profile.name,
+    "listing application",
+  );
+  assertMessageLines(
+    applicationMessage,
+    [
+      `İlanda görünecek ad: ${sellerName}`,
+      `Başlık: ${listingTitle}`,
+      `Fiyat: ${listingPrice} TL`,
+      `Konum: ${listingProvince} / ${listingDistrict}`,
+      `Açıklama: ${listingDescription}`,
+    ],
+    profile.name,
+    "listing application",
+  );
 
   await page.goto(`${baseUrl}/sikayet/${visibleListingId}`, { waitUntil: "networkidle" });
   await page.getByRole("heading", { level: 1, name: "Şikâyet Et" }).waitFor();
@@ -151,11 +293,33 @@ async function runProfile(
     (await page.getByText("Veritabanına public kayıt yazılmaz.", { exact: false }).count()) === 1,
     `${profile.name} complaint route did not disclose the no-public-write boundary.`,
   );
-  assert(
-    (await page.getByRole("button", { name: "WhatsApp ile bildir" }).count()) === 1,
-    `${profile.name} complaint route did not expose the controlled WhatsApp action.`,
+
+  const complaintReason = "Yanlış fiyat";
+  const complaintDetails = `${profile.name} fiyat açıklaması uyuşmuyor.`;
+  await page.getByLabel(complaintReason, { exact: true }).check();
+  await page.getByPlaceholder("Kısa açıklama (isteğe bağlı)").fill(complaintDetails);
+
+  const complaintHref = await captureWhatsAppNavigation(
+    page,
+    () => page.getByRole("button", { name: "WhatsApp ile bildir" }).click(),
+    profile.name,
+    "listing complaint",
   );
-  await assertNoHorizontalOverflow(page, profile.name, "/sikayet/$id");
+  const complaintMessage = readWhatsAppMessage(
+    complaintHref,
+    profile.name,
+    "listing complaint",
+  );
+  assertMessageLines(
+    complaintMessage,
+    [
+      `İlan ID: ${visibleListingId}`,
+      `Sebep: ${complaintReason}`,
+      `Açıklama: ${complaintDetails}`,
+    ],
+    profile.name,
+    "listing complaint",
+  );
 
   assertCleanRuntime(runtimeErrors, authRequests, profile.name);
   await context.close();
