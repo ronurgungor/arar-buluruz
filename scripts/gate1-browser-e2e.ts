@@ -259,7 +259,7 @@ async function runProfile(browser: Browser, profile: BrowserProfile) {
   await page.getByLabel("İlanda görünecek ad", { exact: true }).fill(sellerName);
   await page.getByLabel("Başlık", { exact: true }).fill(listingTitle);
   await page.getByLabel("Fiyat (TL)", { exact: true }).fill(listingPrice);
-  await page.getByLabel("İl", { exact: true }).selectOption({ label: listingProvince });
+  await page.getByRole("combobox").selectOption({ label: listingProvince });
   await page.getByLabel("İlçe", { exact: true }).fill(listingDistrict);
   await page.getByLabel("Açıklama", { exact: true }).fill(listingDescription);
 
