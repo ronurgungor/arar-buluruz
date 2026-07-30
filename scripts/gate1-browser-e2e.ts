@@ -305,18 +305,10 @@ async function runProfile(browser: Browser, profile: BrowserProfile) {
     profile.name,
     "listing complaint",
   );
-  const complaintMessage = readWhatsAppMessage(
-    complaintHref,
-    profile.name,
-    "listing complaint",
-  );
+  const complaintMessage = readWhatsAppMessage(complaintHref, profile.name, "listing complaint");
   assertMessageLines(
     complaintMessage,
-    [
-      `İlan ID: ${visibleListingId}`,
-      `Sebep: ${complaintReason}`,
-      `Açıklama: ${complaintDetails}`,
-    ],
+    [`İlan ID: ${visibleListingId}`, `Sebep: ${complaintReason}`, `Açıklama: ${complaintDetails}`],
     profile.name,
     "listing complaint",
   );
