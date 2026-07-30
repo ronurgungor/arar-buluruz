@@ -128,3 +128,15 @@ Each new entry should include:
 - **Rationale:** Shared, versioned context increases team competence and prevents each chat from rebuilding the same understanding.
 - **Structure:** Stable memory, current state, backlog, decision log, capability matrix and dated evidence have separate responsibilities.
 - **Limitation:** An AI without repository access cannot automatically read this memory and must be given the relevant files or a bootstrap prompt.
+
+## D-014 — Main assistant is the default executor; specialist outputs are advisory
+
+- **Date:** 2026-07-30
+- **Status:** Active
+- **Decision:** The main assistant is the default executor and coordinator whenever it has the necessary tools and can complete the work safely. Work and Codex are optional specialists used when their additional analysis, terminal execution, testing or independent challenge materially improves the decision or implementation.
+- **Rationale:** The founder's earlier Tarladan workflow depended on ChatGPT 5.5 guidance plus manual copy/paste changes. Direct execution by the current main assistant is already a meaningful capability improvement, reduces transcription risk and avoids unnecessary handoffs.
+- **Governance rule:** No AI output is a binding command. Recommendations are checked against canonical GitHub sources, evidence, project constraints and founder intent.
+- **Review proportionality:** Double or triple checking is reserved for consequential, uncertain, security/KVKK-sensitive, costly or difficult-to-reverse decisions. It is not required for routine low-risk work.
+- **Restricted Work response:** The first Work response was produced at a restricted depth and is retained only as an advisory candidate analysis. Its recommendations and capability claims are not accepted as canonical decisions or general proof of Work's full capabilities without independent verification.
+- **Deferred alternative:** Making Work or Codex the mandatory primary writer or mandatory reviewer for every task.
+- **Review trigger:** Repeated main-assistant implementation failures, loss of required connectors, a task exceeding demonstrated capability, or a high-risk decision that clearly benefits from specialist review.
