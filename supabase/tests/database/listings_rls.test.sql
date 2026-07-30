@@ -205,16 +205,22 @@ select throws_ok(
       'Anonymous'
     )
   $$,
+  '42501',
+  null,
   'anon INSERT is denied'
 );
 
 select throws_ok(
   $$ update public.listings set title = 'Changed by anon' $$,
+  '42501',
+  null,
   'anon UPDATE is denied'
 );
 
 select throws_ok(
   $$ delete from public.listings $$,
+  '42501',
+  null,
   'anon DELETE is denied'
 );
 
@@ -241,6 +247,8 @@ select throws_ok(
       'archived'
     )
   $$,
+  '23514',
+  null,
   'invalid status is rejected'
 );
 
@@ -263,6 +271,8 @@ select throws_ok(
       'Test Seller'
     )
   $$,
+  '23514',
+  null,
   'negative price is rejected'
 );
 
@@ -291,6 +301,8 @@ select throws_ok(
       now() - interval '1 day'
     )
   $$,
+  '23514',
+  null,
   'invalid publication and expiry order is rejected'
 );
 
@@ -313,6 +325,8 @@ select throws_ok(
       'Test Seller'
     )
   $$,
+  '23502',
+  null,
   'missing required field is rejected'
 );
 
@@ -339,6 +353,8 @@ select throws_ok(
       now()
     )
   $$,
+  '23514',
+  null,
   'invalid status and timestamp lifecycle is rejected'
 );
 
