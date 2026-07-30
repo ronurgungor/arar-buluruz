@@ -89,6 +89,27 @@ jobs:
             exit 1
           fi
 
+      - name: Enable GoTrue only in the ephemeral runner copy
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          config_path = Path("supabase/config.toml")
+          config = config_path.read_text(encoding="utf-8")
+          disabled_auth = "[auth]\nenabled = false"
+          enabled_auth = "[auth]\nenabled = true"
+
+          if disabled_auth not in config:
+              raise SystemExit("Expected the repository auth setting to be disabled.")
+
+          config_path.write_text(config.replace(disabled_auth, enabled_auth, 1), encoding="utf-8")
+          PY
+
+          git diff --exit-code -- . ':(exclude)supabase/config.toml'
+          git diff --check -- supabase/config.toml
+          grep -A1 '^\[auth\]$' supabase/config.toml
+
       - name: Start isolated local Supabase stack
         run: >-
           supabase start
