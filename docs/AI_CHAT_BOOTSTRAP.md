@@ -30,8 +30,8 @@ GitHub `main`, the exact branch/PR under review and executable evidence remain m
 - Product: a very simple, mobile-first, search-first classified-listing application for Türkiye.
 - Repository: `ronurgungor/arar-buluruz`.
 - Public prototype: `https://arar-buluruz.lovable.app`.
-- Current stage: frontend-only mock prototype.
-- Data: local mock listings only.
+- Current implementation stage: frontend-only mock prototype.
+- Current data: local mock listings only.
 - Core journeys: search, listing detail, controlled call/WhatsApp contact, editable listing preview, placeholder login and complaint flow.
 - Product principle: users type what they need directly; no required visible category tree.
 - Technical baseline: React, TanStack Start, TypeScript, Tailwind, shadcn/ui, Bun `1.3.14`, `bun.lock`.
@@ -43,17 +43,46 @@ Do not rely on this snapshot for exact runtime details. Read `ARAR_BULURUZ_CURRE
 
 ## Work snapshot
 
-The backlog is the canonical task list. At the time this bootstrap was created:
+The backlog is the canonical task list. At the time this bootstrap was reviewed:
 
 - the frontend-only mock prototype is technically validated;
 - repeated full testing is not the default next step;
 - shared project memory and team capability records exist;
-- the first Work session produced a restricted-depth capability inventory and candidate pilot analysis;
-- the capability inventory is useful for understanding Work, while its pilot recommendation is not automatically accepted;
-- the next consequential product decision is still the minimum first-real-pilot scope and first real capability;
-- backend or real-data work remains behind founder approval and the appropriate architecture/security/KVKK gate.
+- the first restricted Work session's capability inventory has been completed and recorded;
+- Work's pilot analysis and the main assistant's independent comparison were advisory inputs rather than automatic decisions;
+- the founder selected the reduced Option B direction: a founder-operated, listings-only persistence pilot for Çorlu;
+- that direction is canonical, but no Supabase project, backend, migration, environment connection, real data or pilot launch has been implemented;
+- founder/KVKK/Supabase preparation and the technical implementation candidate remain separate ordered work packages and approval gates.
 
 Always read the current backlog because this snapshot will age.
+
+## Approved first-pilot direction
+
+The first real capability is listing persistence, constrained to the smallest safe vertical slice:
+
+- Çorlu scope;
+- technical validation begins with 5–10 controlled real listings;
+- only a `listings` table;
+- public application is read-only;
+- only `published`, already-published and unexpired rows may be publicly visible;
+- no buyer auth, seller auth, in-app moderator auth or custom admin panel;
+- no seller-contact/private-phone table;
+- no photo upload or Storage;
+- no public/anonymous database insert;
+- no `app_roles`, `moderation_events` or automatic expiration cron;
+- seller phone remains outside Supabase and contact stays on the controlled central phone/WhatsApp line;
+- the founder may temporarily operate approved listing rows through the Supabase Dashboard after a separately approved project exists;
+- schema, RLS, grants, constraints, indexes, triggers and extensions remain migration-canonical in GitHub.
+
+This is an architecture and planning decision only. The following remain separate approval gates:
+
+1. local isolated implementation preparation;
+2. Supabase organization/project creation;
+3. secret/environment connection;
+4. real-data entry;
+5. pilot publish/launch.
+
+Approval of one gate never opens the next automatically.
 
 ## Team snapshot
 
@@ -82,6 +111,7 @@ Always read the current backlog because this snapshot will age.
 - Best for consequential pilot, product, architecture, security, KVKK, moderation, cost and lock-in decisions.
 - The first restricted-depth session reported GitHub, shell, browser, web, Lovable and related tool capabilities; exact details and observed limits are documented in `WORK_CODEX_CAPABILITY_PROFILE.md`.
 - Restricted depth affects analysis depth, not the validity of the environment's own capability description.
+- Work's prior pilot recommendation was advisory; the founder's reduced Option B selection is recorded independently in the decision log.
 
 ### Lovable
 
