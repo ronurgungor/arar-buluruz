@@ -7,161 +7,46 @@ _Last updated: 2026-07-30, Europe/Istanbul_
 - Repository: `ronurgungor/arar-buluruz`
 - Visibility: Private
 - Default branch: `main`
-- GitHub `main` is canonical; read its exact current SHA directly at the start of every task rather than trusting a copied value in documentation.
-- Latest founder-local synchronization evidence before this memory update: `7a817dfa9726d9f845248863bb1558cec51c1f37` with a clean working tree.
-- Latest validated and published runtime SHA: `2660990f699724e63b1d007b39952461d1d05cdb`.
-- Canonical package lock: `bun.lock`.
+- GitHub `main` is canonical; read its exact live SHA at the start of every task rather than relying on a copied current-SHA field in documentation.
+- Gate 1 PR: #25
+- Gate 1 implementation head: `1d9d0f6112464e5078d90df510488f7a786cddef`
+- Gate 1 normal merge commit: `994b8b1705d52434be0c000093a052fa0e519542`
+- Canonical package manager and lockfile: Bun `1.3.14` and `bun.lock`.
 
 ## Shared knowledge system
 
-The repository separates project knowledge by purpose:
-
 - `AGENTS.md`: operating contract and source priority
-- `docs/AI_CHAT_BOOTSTRAP.md`: common new-chat entry point for application, work, team and governance
-- `docs/ARAR_BULURUZ_PROJECT_MEMORY.md`: durable project thesis, identifiers, architecture and ownership boundaries
-- `docs/ARAR_BULURUZ_CURRENT_STATE.md`: current behavior, verification and known risks
+- `docs/AI_CHAT_BOOTSTRAP.md`: common new-chat entry point
+- `docs/ARAR_BULURUZ_PROJECT_MEMORY.md`: durable thesis, identifiers, architecture and ownership boundaries
+- `docs/ARAR_BULURUZ_CURRENT_STATE.md`: current behavior, verification and risks
 - `docs/ARAR_BULURUZ_DECISION_LOG.md`: consequential decisions and rationale
-- `docs/AI_TEAM_CAPABILITIES.md`: verified/self-reported AI and tool access, limits and routing
-- `docs/WORK_CODEX_CAPABILITY_PROFILE.md`: detailed Work and Codex capability profiles and handoff standards
-- `docs/ARAR_BULURUZ_BACKLOG.md`: pending and ordered work
-- dated documents: historical test and audit evidence
+- `docs/ARAR_BULURUZ_BACKLOG.md`: completed, current and pending work
+- `docs/AI_TEAM_CAPABILITIES.md` and `docs/WORK_CODEX_CAPABILITY_PROFILE.md`: team/tool capabilities and limits
 
-An AI without repository access must say so and request the minimum missing files. No chat memory overrides GitHub `main`.
+No chat memory overrides GitHub `main`.
 
 ## Completed milestones
 
 - Controlled frontend-only classified-listing prototype created and published.
-- Shared project memory, standing approval rules and backend ownership guardrails added.
-- Site-wide `noindex/nofollow` metadata and `X-Robots-Tag` protection added and verified.
-- Editable frontend listing preview, example searches and honest mock-proximity labels added.
-- Read-only CI pinned to Bun `1.3.14`; frozen install, lint and production build proved.
-- Cross-platform LF checkout policy and clean Windows synchronization proved.
-- Automated mobile E2E found and fixed multi-word search and fixed-footer overlap defects.
-- Lovable credit sprint used all five expiring credits on bounded frontend work.
-- PR #16 synchronized the final credit-sprint evidence.
-- PR #17 adopted risk-based validation and explicit Work/Codex/main-assistant routing.
-- Structured shared memory, decision-log, capability-registry, Work/Codex profile and new-chat bootstrap documents were added for cross-chat and cross-tool continuity.
-- The first Work capability inventory was completed and recorded with nominal capabilities, observed limits and session-dependent authority separated.
-- Broad and reduced first-pilot options were independently compared by the main assistant rather than treating Work's recommendation as binding.
-- The founder selected the reduced founder-operated persistence direction recorded in D-016.
+- Search-first/categoryless interaction, mock listing detail/contact, editable listing preview and mobile fixes validated.
+- Site-wide `noindex/nofollow` and `X-Robots-Tag` protection added.
+- GitHub-canonical memory, decision, capability and backlog system established.
+- Reduced founder-operated persistence direction selected in D-016.
+- Web-first/minimal-PWA/Play-Store sequence recorded in D-017.
+- Gate 1 implementation completed and merged through PR #25 with a normal merge commit.
+- Gate 1 includes the local migration, RLS, REST reader, safe route behavior, controlled WhatsApp flows and executable validation package.
 
-## Current product behavior
+## Gate 1 implementation now on `main`
 
-### Search
+### Database package
 
-- Search includes title, description and hidden keyword synonyms.
-- Multi-word searches are tokenized; every token must appear somewhere in the combined searchable text.
-- `ikinci el masa` and `masa ikinci el` both resolve to the matching office-desk listing.
-- The search input stays synchronized with URL/history changes.
-- Zero-result city filtering offers `Tüm Türkiye'de ara` recovery.
-- Home page offers direct example searches: `traktör`, `kiralık daire`, `ikinci el masa`, `oto`.
-- Mock distance ordering is labelled `Yakın (örnek)` and states that real location is not used.
-- Advertising placeholders are separate list items rather than being nested inside organic listings.
-
-### Listing detail and contact
-
-- Controlled test number: `+905321739111`
-- Call target: `tel:+905321739111`
-- WhatsApp target: `https://wa.me/905321739111`
-- The controlled number is not printed in visible listing copy.
-- At `390 × 844`, the fixed contact bar leaves the `Şikâyet Et` link visible with `0 px` overlap.
-- Listing detail includes a `Sonuçlara dön` history control.
-
-### Listing creation and login
-
-- Title, price, city and description are preserved in frontend state.
-- Submission shows the user's values in a listing-style preview card.
-- `İlanı düzenle` returns to the populated form.
-- The city selector contains `Tüm Türkiye` plus all 81 provinces.
-- Photo slots clearly state that upload is disabled in the prototype.
-- The prototype login form requires a minimum telephone value before showing its disabled-login message.
-- No real record, upload, backend, authentication or storage is used.
-
-## CI and executable validation
-
-- GitHub Actions runs on pull requests targeting `main`, pushes to `main` and manual dispatch.
-- Workflow permissions are read-only: `contents: read`.
-- `actions/checkout`, `oven-sh/setup-bun` and Bun `1.3.14` are pinned.
-- Validation sequence:
-  - `bun install --frozen-lockfile`
-  - `bun run lint`
-  - `bun run build`
-- Independent Codex mobile regression validation passed for the core search, detail, city-recovery, listing-preview and complaint flows.
-- Final runtime local validation at `2660990f…` passed with `0` lint errors, six existing non-blocking Fast Refresh warnings and a successful production build.
-- Generated `src/routeTree.gen.ts` drift was restored and the working tree was clean.
-- Documentation PRs #16 and #17 passed CI before merge.
-
-## Search-index protection
-
-- Root metadata includes `robots` and `googlebot`: `noindex, nofollow, noarchive, nosnippet`.
-- Server responses add the equivalent `X-Robots-Tag` directive.
-- `robots.txt` remains crawlable so crawlers can read the instruction.
-- Local and public verification confirmed the expected header on tested routes.
-
-## Lovable
-
-- Project ID: `dca896f8-bb48-4a67-ae49-0493610ca6ad`
-- Workspace ID: `AERDgNbVzztF411nAuzp`
-- Public URL: `https://arar-buluruz.lovable.app`
-- Database: Disabled
-- Project status: Completed
-- Published: Yes, public
-- Latest confirmed published runtime SHA: `2660990f699724e63b1d007b39952461d1d05cdb`
-- Remaining Lovable credits: `0`
-- Project metadata still reports display name `Find It Fast`; runtime and repository naming use `Arar Buluruz`.
-- Variants were unavailable during the expiring-credit sprint. Future Lovable code work should use a reviewable branch or variant when available.
-
-## Team capability status
-
-- Main-assistant GitHub/Lovable connector operations are verified in the current connected environment.
-- Codex repository, local terminal, lint/build and mobile E2E capability has been demonstrated in project work.
-- Lovable frontend writing and preview/build behavior has been demonstrated; current credits are zero and its plan mode was not safely non-writing in the observed run.
-- Work capability inventory is complete: its nominal GitHub, shell, browser, web, Lovable and related capabilities are recorded, while first-session clone/Bun/test and mutation limits remain explicit and current-session authority must still be rechecked.
-- Work's pilot recommendation was advisory input. The founder later selected a reduced persistence direction after independent comparison; this is a founder decision rather than automatic adoption of an AI recommendation.
-- Capability claims and session-dependent limits are recorded in `docs/AI_TEAM_CAPABILITIES.md` and `docs/WORK_CODEX_CAPABILITY_PROFILE.md`.
-
-## Approved first-pilot direction — not implemented
-
-The founder selected the reduced Option B direction recorded in D-016:
-
-- first real capability: listing persistence;
-- initial geography: Çorlu;
-- technical validation: 5–10 controlled real listings;
-- only one application table: `listings`;
-- public application: read-only;
-- no buyer auth, seller auth, in-app moderator auth or custom admin panel;
-- no seller-contact/private-phone table;
-- no `app_roles` or `moderation_events`;
-- no photo upload or Storage;
-- no public/anonymous database insert;
-- no automatic expiration cron;
-- seller phone remains outside Supabase and communication stays on the controlled central phone/WhatsApp line;
-- the founder may temporarily manage approved listing rows in the Supabase Dashboard after a separately approved founder-owned project exists;
-- Dashboard access is founder-only, MFA-protected and not shared;
-- all schema, RLS, grant, constraint, index, trigger and extension changes remain GitHub-migration canonical.
-
-Minimum planned `listings` fields:
-
-- `id`
-- `title`
-- `description`
-- `price_amount`
-- `province`
-- `district`
-- `seller_display_name`
-- `search_keywords`
-- `status`
-- `created_at`
-- `updated_at`
-- `published_at`
-- `expires_at`
-- `unpublished_at`
-
-Initial status values: `draft`, `published`, `unpublished`.
-
-Mock listings will not enter the production database and no `is_mock` field is planned.
-
-Public visibility must be enforced in database/RLS, not only in the frontend:
+- One migration-canonical `public.listings` table only.
+- Fields: `id`, `title`, `description`, `price_amount`, `province`, `district`, `seller_display_name`, `search_keywords`, `status`, `created_at`, `updated_at`, `published_at`, `expires_at`, `unpublished_at`.
+- Initial status values: `draft`, `published`, `unpublished`.
+- Proportionate required-field, length, price, lifecycle and date-order constraints.
+- Focused public-visibility index and `updated_at` trigger.
+- RLS enabled.
+- Public/anonymous visibility is enforced by the database:
 
 ```sql
 status = 'published'
@@ -169,52 +54,108 @@ and published_at <= now()
 and expires_at > now()
 ```
 
-## Operating and validation policy
+- Anonymous/public INSERT, UPDATE and DELETE are denied.
+- Public reads expose only approved public columns; seller phone and privileged fields are absent.
+- No `is_mock`, auth tables, role tables, seller-contact table, Storage or expiration cron.
 
-- Continue directly when the path is clear and the work is low-risk, reversible and within approved scope.
-- Use Work for independent product strategy, architecture, security, KVKK, public-pilot readiness, cost or expensive-to-reverse decisions only when a new concrete uncertainty justifies it.
-- Use Codex when repository analysis must be combined with terminal execution, tests, debugging, CI investigation or substantial code changes.
-- Stop for explicit founder approval before local implementation, Supabase activation, real data, authentication, secrets/environment connection, payments, paid services or public-pilot launch as applicable to the current gate.
-- Only one code writer operates at a time.
-- Testing depth follows risk rather than a fixed ritual.
-- Existing evidence remains valid until a change touches the covered behavior.
-- Formal multi-person testing is not a blocking requirement for this mock prototype.
+### Application package
+
+- Native-fetch public Supabase REST reader; no privileged client secret and no product auth dependency.
+- Production default remains disconnected unless a later Gate 3 explicitly supplies approved public configuration.
+- Development/test mocks remain isolated from the real-data path.
+- `/ara` reads public-visible listings in Supabase mode and does not show mock distance or mock advertising behavior in that mode.
+- `/ilan/$id` returns only public-visible listings; draft, unpublished, future-published, expired and unknown rows resolve to a safe not-found state.
+- Visible listing WhatsApp messages include the listing ID and use the controlled central line.
+- `/ilan-ver` prepares a structured WhatsApp application and performs no public database insert.
+- `/sikayet/$id` prepares an ID-bearing structured WhatsApp complaint and performs no public database insert.
+- `/giris` states that pilot login is unavailable; no signup/login/auth-client flow exists.
+- Real listings use an honest no-photo state; photo upload and Storage remain absent.
+
+## CI and executable validation
+
+GitHub Actions runs for pull requests targeting `main`, pushes to `main` and manual dispatch with read-only repository permissions.
+
+Canonical quality job:
+
+- Bun `1.3.14`
+- `bun install --frozen-lockfile`
+- Bun-only lockfile/package boundary
+- lint
+- 7 unit tests
+- production build with `VITE_LISTINGS_SOURCE=disabled`
+
+Gate 1 local integration job:
+
+- Supabase CLI `2.101.0`
+- remote project-ref/credential prohibition
+- GoTrue enabled only in the disposable runner copy to expose documented local `API_URL`/`ANON_KEY`
+- clean local `supabase db reset --local --no-seed`
+- 22/22 pgTAP schema, grants, constraints and RLS tests
+- application REST adapter → local Kong/PostgREST → RLS integration
+- exact-pinned `playwright@1.55.0` resolved through Bun
+- desktop `1440 × 900` and mobile `390 × 844` E2E
+- intercepted external WhatsApp navigation; no real message sent
+- direct draft/expired detail 404 checks
+- no `/auth/v1` request
+- local stack and data removed with `supabase stop --no-backup`
+
+Pre-merge CI run `30560604524` passed completely on the approved PR head.
+
+## Lovable
+
+- Project ID: `dca896f8-bb48-4a67-ae49-0493610ca6ad`
+- Workspace ID: `AERDgNbVzztF411nAuzp`
+- Public URL: `https://arar-buluruz.lovable.app`
+- Preview URL: `https://id-preview--dca896f8-bb48-4a67-ae49-0493610ca6ad.lovable.app`
+- Lovable database/backend remains disabled.
+- Project remains published publicly, but publication is a separate snapshot.
+- The GitHub merge synchronized the Lovable editor/preview to merge commit `994b8b17…`.
+- No Lovable Publish/Update was performed for Gate 1.
+- Latest previously confirmed public runtime SHA remains `2660990f699724e63b1d007b39952461d1d05cdb` until a separately authorized publication changes it.
+- Project-panel display name still reports `Find It Fast`; repository/runtime naming uses `Arar Buluruz`.
+- Remaining Lovable credits: `0`.
+
+## Current stage
+
+- Gate 1 local/isolated implementation is completed and merged to GitHub `main`.
+- The repository contains backend schema/RLS/application connection code, but there is still no remote Arar Buluruz Supabase organization/project.
+- No remote migration has been applied.
+- No Supabase project ref, secret or real environment value has been connected.
+- No real seller/listing data has been entered.
+- No real pilot has started.
+- No Lovable Publish/Update or other production deployment was performed for Gate 1.
+- Gates 2–5 remain closed.
+- The public Lovable site therefore remains the previously published frontend-only mock snapshot.
+
+## Next real gate
+
+Gate 2 is founder-owned Supabase organization/project creation. It may not start until the relevant Package A ownership, MFA/recovery, region and KVKK preparation is resolved and the founder gives explicit approval.
+
+A separate narrow minimal-PWA package is planned after Gate 1 and before pilot publication, but it does not authorize or substitute for Gate 2–5 approvals.
 
 ## Backend ownership position
 
 - Lovable remains a frontend writer and hosting surface, not the backend owner.
-- Lovable database, auth, storage, secrets and edge functions remain disabled.
-- Any future backend will use a separate founder-owned Supabase project.
-- The founder controls the Supabase account, organization, billing, MFA, recovery and administrator access.
-- Schema and every migration will be canonical in GitHub from day one.
-- The approved pilot allows temporary founder Dashboard row operations only; it does not authorize Dashboard schema/security changes or establish a permanent admin architecture.
-- Before real data, the founder/KVKK/Supabase preparation package and explicit real-data approval must be completed.
-
-## Current stage
-
-- The application remains the technically validated, published frontend-only mock prototype.
-- No Supabase organization or project has been created for Arar Buluruz.
-- No backend, database table, migration, RLS policy, client connection, secret/environment variable or real-data flow has been implemented.
-- Technical implementation has not started.
-- The real pilot has not started and has not been launched.
-- The pilot architecture debate is closed: reduced founder-operated persistence is the selected direction.
-- Current work is preparation only, divided into founder/KVKK/Supabase Package A and an unapproved technical implementation candidate Package B.
+- Any remote backend will use a separate founder-owned Supabase organization/project.
+- The founder controls account, organization, billing, MFA, recovery and administrator access.
+- Schema/RLS/security changes remain GitHub-migration canonical.
+- Future Dashboard row operations are founder-only and temporary; Dashboard schema/security mutation remains prohibited.
+- Seller phone remains outside Supabase and communication remains on the controlled central line.
 
 ## Known gaps and risks
 
-- Package A remains unresolved: Supabase ownership/recovery/MFA, region, controlled WhatsApp-line ownership, data-controller identity, notice/legal basis, retention/deletion and possible international transfer.
-- Local isolated implementation preparation has not been authorized.
-- Supabase project creation, environment connection, real-data entry and pilot launch remain separate founder gates.
-- WhatsApp handling of seller phone and messages remains personal-data processing even though those data are not stored in Supabase.
-- Founder-only Dashboard operation is intentionally temporary and must be replaced when its exit triggers occur.
-- Lovable project-panel metadata still uses `Find It Fast`.
+- Package A remains unresolved: account ownership/recovery/MFA, region, controlled-line ownership, data-controller identity, notice/legal basis, retention/deletion and possible international transfer.
+- Remote project creation, environment connection, real-data entry and pilot publication remain separate founder gates.
+- WhatsApp handling remains personal-data processing even when the phone/messages are not stored in Supabase.
+- Founder-only Dashboard operation is intentionally temporary and has explicit exit triggers.
+- Browser E2E uses local Vite SSR plus an ephemeral local Supabase stack; the Lovable/Cloudflare production runtime is build-verified but not deployed for Gate 1.
+- `bun run preview` still requires adapter-specific verification before changing its current path.
 - Six non-blocking Fast Refresh warnings remain in shared shadcn UI files.
-- `bun run preview` expects an incompatible path for the Lovable/Nitro Cloudflare build; do not change it without adapter verification.
-- Lovable's direct-to-main credit sprint produced many small commits; no force-push or history rewrite was performed.
 
-## Hard boundaries
+## Operating policy
 
-- This documentation milestone does not authorize Codex execution, code changes, Supabase creation, migrations, auth, Storage, secrets/environment changes, real data, deployment or pilot launch.
-- No backend, Supabase activation, auth, SMS, storage, secrets, real data, payments, ad network, paid service or recurring service without the appropriate explicit founder gate.
-- Lovable backend capabilities must not be enabled as a convenience shortcut.
-- GitHub `main` is the canonical code and documentation source.
+- The main assistant is the active default implementer and coordinator for routine, reversible work within canonical scope.
+- Only one code writer operates at a time.
+- Testing depth follows risk; existing evidence remains valid until touched behavior changes.
+- Stop for founder approval before new architecture/product direction, scope expansion, new security/KVKK risk, remote Supabase or migration, secret/environment changes, real data, production publication/deployment, paid services, advertising/analytics/external SDKs or expensive-to-reverse actions.
+- Gates 2–5 remain closed until separately approved.
