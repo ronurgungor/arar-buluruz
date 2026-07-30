@@ -7,3 +7,6 @@ export const PROTOTYPE_CONTACT = {
   phoneHref: `tel:${phoneE164}`,
   whatsappHref: `https://wa.me/${whatsappNumber}`,
 } as const;
+
+export const buildControlledWhatsAppHref = (message: string) =>
+  `${PROTOTYPE_CONTACT.whatsappHref}?text=${encodeURIComponent(message)}`;

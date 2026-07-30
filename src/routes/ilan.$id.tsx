@@ -2,29 +2,31 @@ import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-rout
 import { ChevronLeft } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { AdSlot } from "@/components/AdSlot";
-import { formatPrice, listings } from "@/data/listings";
-import { PROTOTYPE_CONTACT } from "@/lib/prototype-contact";
+import { formatPrice } from "@/data/listings";
+import { loadListingDetail } from "@/lib/public-listings";
+import { PROTOTYPE_CONTACT, buildControlledWhatsAppHref } from "@/lib/prototype-contact";
 
 export const Route = createFileRoute("/ilan/$id")({
-  loader: ({ params }) => {
-    const listing = listings.find((l) => l.id === params.id);
-    if (!listing) throw notFound();
-    return { listing };
+  loader: async ({ params }) => {
+    const result = await loadListingDetail(params.id);
+    if (result.state === "ready" && !result.listing) throw notFound();
+    return result;
   },
   head: ({ loaderData }) => {
-    if (!loaderData) {
+    if (!loaderData?.listing) {
       return {
         meta: [{ title: "İlan bulunamadı — Arar Buluruz" }, { name: "robots", content: "noindex" }],
       };
     }
+
     const { listing } = loaderData;
-    const desc = `${listing.title} — ${formatPrice(listing.price)} · ${listing.city}/${listing.district}`;
+    const description = `${listing.title} — ${formatPrice(listing.price)} · ${listing.city}/${listing.district}`;
     return {
       meta: [
         { title: `${listing.title} — Arar Buluruz` },
-        { name: "description", content: desc },
+        { name: "description", content: description },
         { property: "og:title", content: listing.title },
-        { property: "og:description", content: desc },
+        { property: "og:description", content: description },
       ],
     };
   },
@@ -32,8 +34,39 @@ export const Route = createFileRoute("/ilan/$id")({
 });
 
 function ListingDetail() {
-  const { listing } = Route.useLoaderData();
+  const result = Route.useLoaderData();
   const router = useRouter();
+  const listing = result.listing;
+
+  if (!listing) {
+    return (
+      <div className="min-h-screen">
+        <TopBar />
+        <main className="mx-auto max-w-2xl px-4 pb-16">
+          <button
+            type="button"
+            onClick={() => router.history.back()}
+            className="mt-3 -ml-1 inline-flex items-center gap-1 rounded-full px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden />
+            Sonuçlara dön
+          </button>
+          <div
+            role="status"
+            className="mt-8 rounded-2xl border border-border bg-card p-6 text-center"
+          >
+            <h1 className="text-lg font-bold text-foreground">İlan şu anda gösterilemiyor.</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{result.message}</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const isMockSource = result.source === "mock";
+  const whatsappHref = buildControlledWhatsAppHref(
+    `Merhaba, Arar Buluruz ilanı hakkında bilgi almak istiyorum. İlan ID: ${listing.id}`,
+  );
 
   return (
     <div className="min-h-screen">
@@ -48,18 +81,24 @@ function ListingDetail() {
           Sonuçlara dön
         </button>
 
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          {listing.photos.map((p: string, i: number) => (
-            <img
-              key={i}
-              src={p}
-              alt={`${listing.title} fotoğraf ${i + 1}`}
-              width={800}
-              height={600}
-              className="aspect-[4/3] w-full rounded-2xl object-cover"
-            />
-          ))}
-        </div>
+        {listing.photos.length > 0 ? (
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {listing.photos.map((photo: string, index: number) => (
+              <img
+                key={photo}
+                src={photo}
+                alt={`${listing.title} fotoğraf ${index + 1}`}
+                width={800}
+                height={600}
+                className="aspect-[4/3] w-full rounded-2xl object-cover"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-2 flex aspect-[4/3] w-full items-center justify-center rounded-2xl bg-muted text-sm text-muted-foreground">
+            Bu pilot ilanında fotoğraf bulunmuyor.
+          </div>
+        )}
 
         <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-foreground">
           {listing.title}
@@ -71,9 +110,11 @@ function ListingDetail() {
         <p className="mt-1 text-sm font-semibold text-foreground">{listing.seller}</p>
         <p className="mt-4 leading-relaxed text-foreground">{listing.description}</p>
 
-        <div className="mt-6">
-          <AdSlot />
-        </div>
+        {isMockSource && (
+          <div className="mt-6">
+            <AdSlot />
+          </div>
+        )}
 
         <div className="mt-6">
           <Link
@@ -89,7 +130,7 @@ function ListingDetail() {
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
         <div className="mx-auto max-w-2xl px-4 py-3">
           <p className="mb-2 text-center text-xs text-muted-foreground">
-            Bu prototipte iletişim düğmeleri kontrollü bir test hattına yönlendirilir.
+            İletişim, kontrollü merkezi Arar Buluruz hattına yönlendirilir.
           </p>
           <div className="grid grid-cols-2 gap-2">
             <a
@@ -99,7 +140,7 @@ function ListingDetail() {
               Ara
             </a>
             <a
-              href={PROTOTYPE_CONTACT.whatsappHref}
+              href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
               className="flex h-12 items-center justify-center rounded-full border border-primary text-sm font-bold text-primary hover:bg-accent"
