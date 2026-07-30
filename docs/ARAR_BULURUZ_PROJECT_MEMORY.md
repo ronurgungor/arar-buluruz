@@ -61,6 +61,7 @@ The core idea is:
 - Do not add social feeds, ratings, maps, chat, payment, shipping or order flows without a proven need and explicit scope decision.
 - Do not confuse mock proximity, mock data or disabled prototype actions with real capabilities.
 - Prefer the smallest useful pilot over a broad platform build.
+- The first real pilot begins with the smallest safe persistence slice that can validate the product thesis; temporary founder-operated Dashboard content operations are an operational bridge, not a permanent admin architecture.
 
 ## Current architecture baseline
 
@@ -91,6 +92,7 @@ This is the only approved prototype contact target unless the founder changes it
 - A future backend must use a separate founder-owned Supabase organization/project.
 - The founder must control account ownership, billing and administrator access.
 - Schema and every migration must be canonical in GitHub from day one.
+- Temporary founder Dashboard use may manage approved listing rows only; schema, RLS, grants, constraints, indexes, triggers and extensions remain migration-controlled.
 - No backend, real data, auth, SMS, storage, secrets, payments, advertising network, paid service or recurring service is enabled without explicit founder approval and the required independent review.
 - No force-push, published-history rewrite or unsafe rebase/amend workflow.
 

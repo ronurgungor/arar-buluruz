@@ -39,10 +39,10 @@ Each new entry should include:
 ## D-003 — Frontend-only prototype first
 
 - **Date:** 2026-07-27
-- **Status:** Active until pilot scope is approved
+- **Status:** Completed for prototype validation; first-pilot direction superseded by D-016
 - **Decision:** Initial development uses local mock data with no real backend, database, auth, storage, secrets, payments or ad SDK.
 - **Rationale:** Validate the core experience before introducing ownership, security, KVKK, abuse and operating burdens.
-- **Review trigger:** Founder approval of a narrowly scoped real pilot after proportionate product/architecture/security review.
+- **Review trigger:** The mock-only stage remains active in implementation until the separately gated D-016 slice is built and approved for real data.
 
 ## D-004 — GitHub `main` is canonical
 
@@ -81,10 +81,11 @@ Each new entry should include:
 ## D-008 — Controlled contact flow
 
 - **Date:** 2026-07-28
-- **Status:** Active for prototype
+- **Status:** Active for prototype and approved reduced pilot direction
 - **Decision:** All mock listings use one controlled telephone/WhatsApp target rather than unique fake seller numbers.
 - **Rationale:** Prevent accidental contact with real third parties while preserving the interaction flow.
-- **Review trigger:** Real seller onboarding and verified ownership of seller contact data.
+- **Pilot extension:** The first real persistence slice also keeps communication on the central controlled line and stores no seller phone in Supabase.
+- **Review trigger:** A separately approved direct-seller-contact model with verified ownership, privacy, abuse and operating controls.
 
 ## D-009 — Search and mobile defects fixed before further expansion
 
@@ -137,7 +138,7 @@ Each new entry should include:
 - **Rationale:** The founder's earlier Tarladan workflow depended on ChatGPT 5.5 guidance plus manual copy/paste changes. Direct execution by the current main assistant is already a meaningful capability improvement, reduces transcription risk and avoids unnecessary handoffs.
 - **Governance rule:** No AI output is a binding command. Recommendations are checked against canonical GitHub sources, evidence, project constraints and founder intent.
 - **Review proportionality:** Double or triple checking is reserved for consequential, uncertain, security/KVKK-sensitive, costly or difficult-to-reverse decisions. It is not required for routine low-risk work.
-- **Restricted Work response:** The first Work response was produced at restricted depth. Its strategic recommendations remain advisory candidate analysis, while its own nominal capability inventory is accepted as a valid description of the Work environment. Current-session availability and mutation authority remain separate checks.
+- **Restricted Work response:** The first Work response was produced at restricted depth. Its strategic recommendations were advisory inputs, while its own nominal capability inventory is accepted as a valid description of the Work environment. Current-session availability and mutation authority remain separate checks.
 - **Deferred alternative:** Making Work or Codex the mandatory primary writer or mandatory reviewer for every task.
 - **Review trigger:** Repeated main-assistant implementation failures, loss of required connectors, a task exceeding demonstrated capability, or a high-risk decision that clearly benefits from specialist review.
 
@@ -151,3 +152,20 @@ Each new entry should include:
 - **Practical rule:** Routine low-risk work may use a concise bootstrap; the requirement must not become a ceremony that delays obvious execution.
 - **No-access fallback:** A chat without GitHub access must say so and receive the minimum bootstrap files and task-specific evidence.
 - **Review trigger:** Update the bootstrap when architecture, current stage, team roles, capabilities or governance change materially.
+
+## D-016 — Reduced founder-operated persistence pilot
+
+- **Date:** 2026-07-30
+- **Status:** Active direction; implementation and launch not yet approved
+- **Decision:** Select reduced Option B. The first real capability will be listing persistence through the smallest safe founder-operated slice, beginning in Çorlu with 5–10 controlled real listings for technical validation.
+- **Data model:** Start with only a `listings` table containing `id`, `title`, `description`, `price_amount`, `province`, `district`, `seller_display_name`, `search_keywords`, `status`, `created_at`, `updated_at`, `published_at`, `expires_at` and `unpublished_at`. Initial status values are `draft`, `published` and `unpublished`. Mock listings never enter the production database and no `is_mock` column is added.
+- **Public boundary:** The public application is read-only. Database/RLS visibility must enforce `status = 'published' and published_at <= now() and expires_at > now()`. Anonymous/public INSERT, UPDATE and DELETE remain prohibited; frontend filtering is not the security boundary.
+- **Founder operation:** The founder may temporarily create, edit, publish and remove approved listing rows through the Supabase Dashboard. Dashboard access belongs only to the founder, uses MFA and is not shared. No table, column, RLS, grant, constraint, index, trigger or extension changes may be made through the Dashboard.
+- **Canonical schema:** Schema and security changes are migration-canonical in GitHub from day one.
+- **Contact/KVKK boundary:** Seller phone is not stored in Supabase. Public output shows only an approved `seller_display_name`; communication remains on the central controlled phone/WhatsApp line. Keeping phone and messages in WhatsApp does not remove applicable KVKK obligations. Data-controller identity, notice, legal basis, retention/deletion and possible international-transfer treatment remain a separate founder/KVKK package.
+- **Explicitly deferred:** Buyer auth, seller auth, in-app moderator auth, `app_roles`, `moderation_events`, seller-contact/private-phone tables, custom admin panel, public database insert, seller self-service, photo upload, Storage, SMS/OTP, automatic expiration cron, broad analytics/events, direct seller phone, nationwide real pilot, vehicle and real-estate listings, payment, chat, shipping and advertising network.
+- **Rationale:** This slice validates persistence, publication, removal and expiry with the least personal data, security surface, operational software and provider lock-in. Auth, photos and a custom moderation system add cost before the core persistence behavior is proven.
+- **Approval gates:** This decision approves architecture and preparation scope only. Local isolated implementation, Supabase organization/project creation, secret/environment connection, real-data entry and pilot publish/launch are five separate gates. Approval of one gate never authorizes the next.
+- **Dashboard exit triggers:** Replace founder-only Dashboard operations when a second operator or role separation is needed; seller self-service or private contact data enters scope; repeated Dashboard errors require workflow/audit controls; pending operations or turnaround become unsustainable; the pilot expands beyond the controlled Çorlu model; or the Dashboard prevents reliable enforcement of the approved operating process.
+- **Pilot progression:** 5–10 listings validate persistence/RLS/publication/removal/expiry; 10–20 listings validate application, moderation and central relay operations; 30+ listings are used for search-density testing only if sufficient real demand clusters emerge. Thirty listings are not a mandatory success gate.
+- **Review trigger:** Reconsider scope only after evidence from the staged pilot, a material legal/security finding, or a Dashboard exit trigger. Do not reopen the architecture debate merely because deferred features exist.

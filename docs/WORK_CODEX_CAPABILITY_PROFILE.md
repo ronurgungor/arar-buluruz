@@ -31,7 +31,7 @@ Typical subjects:
 
 ### Capability inventory reported by the first Work session
 
-The first Work response was produced at restricted reasoning depth. Its strategic recommendations remain advisory candidate analysis, but its own tool/capability inventory is accepted as a useful profile of that session.
+The first Work response was produced at restricted reasoning depth. Its strategic recommendations were advisory candidate analysis, but its own tool/capability inventory is accepted as a useful profile of that session.
 
 Reported capabilities:
 
@@ -58,7 +58,7 @@ Reported capabilities:
 - Bun and `gh` were unavailable, so local lint/build/test execution was not possible.
 - GitHub write capabilities were not exercised.
 - Network and responsive-browser inspection were less complete than a local Playwright/DevTools workflow.
-- The session was restricted-depth; its pilot recommendation is not an accepted project decision.
+- The session was restricted-depth. Its pilot recommendation was not automatically adopted; the founder later selected a reduced founder-operated persistence pilot through independent synthesis and recorded it separately in the decision log.
 
 ### Required Work output
 

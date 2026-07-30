@@ -150,7 +150,7 @@ Work reported:
 - Local lint/build/test execution did not occur.
 - GitHub mutation capabilities were not exercised.
 - Full HAR/network and deterministic mobile-resize workflows were not present.
-- The pilot recommendation was created at restricted depth and remains candidate advice, not a project decision.
+- The pilot recommendation was restricted-depth advisory input rather than an automatic project decision. The founder later selected a reduced founder-operated persistence pilot after independent comparison and synthesis; the accepted scope is recorded in the decision log and backlog.
 
 ### Best assignment
 
