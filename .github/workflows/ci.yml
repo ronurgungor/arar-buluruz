@@ -168,7 +168,11 @@ jobs:
       - name: Run application-to-RLS REST integration
         shell: bash
         run: |
-          status_env="$(supabase status -o env)"
+          status_env="$(
+            supabase status -o env \
+              --override-name api.url=LOCAL_API_URL \
+              --override-name auth.anon_key=LOCAL_PUBLIC_KEY
+          )"
 
           extract_status_value() {
             local value
@@ -179,16 +183,16 @@ jobs:
             printf '%s' "$value"
           }
 
-          api_url="$(extract_status_value API_URL)"
-          anon_key="$(extract_status_value ANON_KEY)"
+          api_url="$(extract_status_value LOCAL_API_URL)"
+          public_key="$(extract_status_value LOCAL_PUBLIC_KEY)"
 
-          if [[ -z "$api_url" || -z "$anon_key" ]]; then
+          if [[ -z "$api_url" || -z "$public_key" ]]; then
             echo "Local public Supabase connection values were not available."
             exit 1
           fi
 
           LOCAL_SUPABASE_URL="$api_url" \
-          LOCAL_SUPABASE_PUBLIC_KEY="$anon_key" \
+          LOCAL_SUPABASE_PUBLIC_KEY="$public_key" \
             bun scripts/gate1-local-integration.ts
 
       - name: Stop and remove local Supabase data
