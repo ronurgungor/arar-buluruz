@@ -193,8 +193,8 @@ jobs:
             printf '%s\n' "$gateway_config" \
               | awk '
                   /keyauth_credentials:/ { in_credentials = 1; next }
-                  in_credentials && /^[[:space:]]*- key:/ {
-                    sub(/^[[:space:]]*- key:[[:space:]]*/, "")
+                  in_credentials && /^[[:space:]]*(-[[:space:]]*)?key:/ {
+                    sub(/^[[:space:]]*(-[[:space:]]*)?key:[[:space:]]*/, "")
                     gsub(/[\047\042]/, "")
                     print
                     exit
