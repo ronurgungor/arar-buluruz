@@ -168,7 +168,8 @@ function PostListing() {
             WhatsApp ile başvur
           </button>
           <p className="text-center text-xs text-muted-foreground">
-            Gönderimden sonra ilan otomatik yayınlanmaz; kurallara uygunluğu manuel olarak incelenir.
+            Gönderimden sonra ilan otomatik yayınlanmaz; kurallara uygunluğu manuel olarak
+            incelenir.
           </p>
         </form>
       </main>
