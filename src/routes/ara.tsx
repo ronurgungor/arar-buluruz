@@ -66,7 +66,11 @@ function SearchPage() {
     list = [...list];
     if (effectiveSort === "fiyat") list.sort((a, b) => a.price - b.price);
     else if (effectiveSort === "yakin") {
-      list.sort((a, b) => (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER));
+      list.sort(
+        (a, b) =>
+          (a.distanceKm ?? Number.MAX_SAFE_INTEGER) -
+          (b.distanceKm ?? Number.MAX_SAFE_INTEGER),
+      );
     } else list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return list;
   }, [effectiveSort, il, listingData.listings, q]);
@@ -140,7 +144,10 @@ function SearchPage() {
         )}
 
         {listingData.state !== "ready" ? (
-          <div role="status" className="mt-8 rounded-2xl border border-border bg-card p-5 text-center">
+          <div
+            role="status"
+            className="mt-8 rounded-2xl border border-border bg-card p-5 text-center"
+          >
             <p className="font-semibold text-foreground">İlanlar henüz gösterilemiyor.</p>
             <p className="mt-1 text-sm text-muted-foreground">{listingData.message}</p>
           </div>
