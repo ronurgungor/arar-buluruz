@@ -27,21 +27,45 @@ Legend: `[x]` completed, `[-]` in progress, `[ ]` pending.
 - [x] Restore generated `src/routeTree.gen.ts` drift and leave the local working tree clean.
 - [x] Replace the mandatory five-person-test gate with risk-based validation.
 - [x] Define Work/Codex/assistant task routing.
+- [x] Add a durable shared project-memory document.
+- [x] Add an append-oriented decision log with rationale and review triggers.
+- [x] Add an AI/team capability registry based on verified access rather than role assumptions.
+- [x] Connect `README.md` and `AGENTS.md` to the shared knowledge system.
+- [x] Stop storing a copied “current main SHA” as if it could remain current after documentation merges.
 
 ## Current work
 
-There is no mandatory repeated test cycle for the current frontend-only mock prototype.
+- [-] Obtain Work's read-only capability and access inventory.
+- [-] Verify whether Work can actually read the private repository, current branch/SHA and named canonical files.
+- [-] Record demonstrated Work capabilities and limitations in `docs/AI_TEAM_CAPABILITIES.md`.
 
-The assistant continues directly when the next step is clear, low-risk, reversible and inside the approved frontend/documentation scope.
+There is no mandatory repeated test cycle for the current frontend-only mock prototype.
 
 ## Next ordered work
 
-1. [ ] Decide the minimum scope of the first real pilot.
-2. [ ] Decide whether district selection is required for that pilot.
-3. [ ] Define which capability comes first: real listing persistence, photo upload or authentication.
-4. [ ] Before enabling any backend or real data, obtain Work's independent architecture/security/KVKK review and explicit founder approval.
-5. [ ] Implement only the approved first slice through a reviewable GitHub branch and PR.
-6. [ ] Run tests proportionate to the risk introduced by that slice.
+1. [ ] Send Work the combined capability-inventory and first-pilot-analysis prompt.
+2. [ ] Separate Work's demonstrated access from self-reported but unproven capability claims.
+3. [ ] Update the capability registry with verified results.
+4. [ ] Review Work's proposed minimum first-real-pilot scope.
+5. [ ] Decide whether district selection is required for that pilot.
+6. [ ] Decide which capability comes first: real listing persistence, photo upload or authentication.
+7. [ ] Obtain explicit founder decisions on the consequential pilot/backend choices.
+8. [ ] Before enabling backend or real data, complete the required architecture/security/KVKK gate.
+9. [ ] Implement only the approved first slice through a reviewable GitHub branch and PR.
+10. [ ] Run tests proportionate to the risk introduced by that slice.
+
+## Shared knowledge maintenance
+
+After every meaningful milestone:
+
+- update current behavior and verified state in `ARAR_BULURUZ_CURRENT_STATE.md`;
+- update pending work here;
+- append consequential decisions and rationale to `ARAR_BULURUZ_DECISION_LOG.md`;
+- update stable identifiers, principles or ownership rules in `ARAR_BULURUZ_PROJECT_MEMORY.md`;
+- update `AI_TEAM_CAPABILITIES.md` when actual access is proved, removed or materially changed;
+- keep long raw logs in dated evidence documents rather than copying them into shared memory.
+
+No password, token, secret or unnecessary personal data belongs in these documents.
 
 ## Validation policy
 
@@ -57,6 +81,7 @@ The assistant continues directly when the next step is clear, low-risk, reversib
 - **Assistant continues:** path is clear; work is low-risk, reversible and within approved scope.
 - **Work prompt:** product strategy, UX direction, architecture, security, KVKK, public-pilot readiness, cost commitments or expensive-to-reverse choices need independent analysis and ideas.
 - **Codex prompt:** analysis must be combined with repository inspection, terminal execution, tests, debugging, CI investigation or substantial code changes.
+- **Lovable:** bounded frontend/UX work only when credits and a safe isolated/reviewable workflow exist.
 - **Founder decision:** backend ownership, real data, secrets, payments, paid services, public-pilot launch or any consequential commitment.
 - Only one code writer operates at a time.
 
@@ -109,3 +134,4 @@ Before any backend is enabled:
 - Stop for founder/Work input when a task affects backend ownership, security, KVKK, real data, public-pilot readiness, cost commitments or other expensive-to-reverse choices.
 - Testing depth must follow risk, not habit.
 - GitHub `main` remains canonical.
+- Tool capability must be verified, not inferred from a role name or self-description.
