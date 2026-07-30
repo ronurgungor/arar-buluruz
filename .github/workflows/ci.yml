@@ -168,30 +168,33 @@ jobs:
       - name: Run application-to-RLS REST integration
         shell: bash
         run: |
-          status_env="$(
-            supabase status -o env \
-              --override-name api.url=LOCAL_API_URL \
-              --override-name auth.anon_key=LOCAL_PUBLIC_KEY
-          )"
-
-          extract_status_value() {
-            local value
-            value="$(printf '%s\n' "$status_env" | grep "^$1=" | head -n 1)"
-            value="${value#*=}"
-            value="${value#\"}"
-            value="${value%\"}"
-            printf '%s' "$value"
-          }
-
-          api_url="$(extract_status_value LOCAL_API_URL)"
-          public_key="$(extract_status_value LOCAL_PUBLIC_KEY)"
-
-          if [[ -z "$api_url" || -z "$public_key" ]]; then
-            echo "Local public Supabase connection values were not available."
+          kong_container="$(docker ps --format '{{.Names}}' | grep '^supabase_kong_' | head -n 1)"
+          if [[ -z "$kong_container" ]]; then
+            echo "Local Supabase API gateway container was not found."
             exit 1
           fi
 
-          LOCAL_SUPABASE_URL="$api_url" \
+          gateway_env="$(
+            docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$kong_container"
+          )"
+
+          extract_gateway_value() {
+            local value
+            value="$(printf '%s\n' "$gateway_env" | grep "^$1=" | head -n 1)"
+            printf '%s' "${value#*=}"
+          }
+
+          public_key="$(extract_gateway_value SUPABASE_PUBLISHABLE_KEY)"
+          if [[ -z "$public_key" ]]; then
+            public_key="$(extract_gateway_value SUPABASE_ANON_KEY)"
+          fi
+
+          if [[ -z "$public_key" ]]; then
+            echo "The local API gateway did not expose an ephemeral public key."
+            exit 1
+          fi
+
+          LOCAL_SUPABASE_URL="http://127.0.0.1:54321" \
           LOCAL_SUPABASE_PUBLIC_KEY="$public_key" \
             bun scripts/gate1-local-integration.ts
 
