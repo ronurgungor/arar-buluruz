@@ -67,7 +67,7 @@ describe("public Supabase REST reader", () => {
     expect(selectedColumns).not.toContain("phone");
 
     expect(requestedHeaders?.get("apikey")).toBe(config.publicKey);
-    expect(requestedHeaders?.has("authorization")).toBeFalse();
+    expect(requestedHeaders?.has("authorization")).toBe(false);
 
     expect(listings).toEqual([
       {
