@@ -1,60 +1,92 @@
 # Arar Buluruz
 
-Yeni ve bağımsız bir proje oluştur. Proje çalışma adı: “Arar Buluruz”. Tarladan projesiyle hiçbir kod, veri, entegrasyon veya marka unsuru paylaşma.
+Türkiye geneline hitap eden, ücretsiz ilan verme ve ilan arama hizmeti sunmayı amaçlayan, aşırı sade ve hızlı bir mobil-öncelikli web uygulaması/PWA prototipi.
 
-Amaç: Türkiye geneline hitap eden, ücretsiz ilan verme ve ilan arama hizmeti sunan, reklam geliri odaklı, aşırı sade ve çok hızlı bir mobil-öncelikli web uygulaması/PWA prototipi.
+**Live prototype:** https://arar-buluruz.lovable.app
 
-Bu ilk aşamada yalnızca frontend prototipi oluştur. Veritabanı, Supabase/Lovable Cloud, kimlik doğrulama, ödeme, reklam SDK’sı, gerçek telefon bağlantısı, dış servis veya backend etkinleştirme. Bunları daha sonra ayrı kararla bağlayacağız. Örnek ilanları yerel mock data ile göster.
+## Start here — humans and AI agents
 
-Temel ürün ilkeleri:
-- Kullanıcı arayüzünde kategori menüsü veya kategori bölümü olmasın.
-- Ana ekran Google benzeri sade olsun: marka adı, çok büyük tek arama çubuğu, konum seçimi, “İlan Ver” ve giriş/profil erişimi.
-- Kullanıcı doğrudan ne aradığını yazar; kategori ağacında dolaşmaz.
-- Hız, sadelik ve mobil kullanım öncelikli olsun.
-- Gereksiz kartlar, banner karuselleri, haber akışı, kampanya alanları, sosyal özellikler, puan sistemi, harita, canlı sohbet, ödeme/kargo/sipariş akışı olmasın.
+Before making decisions or changes, read the canonical project context in this order:
 
-Hazırlanacak ekranlar:
-1. Ana ekran: logo/metin “Arar Buluruz”, büyük arama çubuğu, konum, İlan Ver, profil.
-2. Arama sonuçları: fotoğraf, başlık, fiyat, il/ilçe; sade filtreler yalnız “En yeni”, “Fiyat”, “Yakınımda”. Kategori filtresi gösterme.
-3. İlan detayı: fotoğraflar, başlık, fiyat, kısa açıklama, konum, satıcı/işletme adı, “Ara” ve “WhatsApp” düğmeleri, “Şikâyet Et”.
-4. İlan verme: fotoğraf, başlık, fiyat, konum, açıklama ve Yayınla. Kategori seçimi gösterme.
-5. Basit giriş/profil yer tutucu ekranı.
+1. [`AGENTS.md`](AGENTS.md) — operating contract, approvals and source priority
+2. [`docs/ARAR_BULURUZ_PROJECT_MEMORY.md`](docs/ARAR_BULURUZ_PROJECT_MEMORY.md) — durable project knowledge
+3. [`docs/ARAR_BULURUZ_CURRENT_STATE.md`](docs/ARAR_BULURUZ_CURRENT_STATE.md) — current implementation and verified state
+4. [`docs/ARAR_BULURUZ_DECISION_LOG.md`](docs/ARAR_BULURUZ_DECISION_LOG.md) — consequential decisions and rationale
+5. [`docs/AI_TEAM_CAPABILITIES.md`](docs/AI_TEAM_CAPABILITIES.md) — verified AI/tool access and limits
+6. [`docs/ARAR_BULURUZ_BACKLOG.md`](docs/ARAR_BULURUZ_BACKLOG.md) — pending and ordered work
 
-Reklam yerleşimi için yalnız tasarım yer tutucuları oluştur:
-- Ana arama ekranında reklam yok.
-- Arama sonuçlarında 4. gerçek ilandan sonra bir “Reklam” kartı; sonra her 6 ilanda bir.
-- İlan detayında temel bilgilerden sonra bir reklam alanı.
-- İlan verme, giriş ve şikâyet ekranlarında reklam yok.
-- Tam ekran, açılış veya yanıltıcı reklam tasarlama.
+GitHub `main` and the exact branch/PR under review remain more authoritative than summaries. An AI without repository access must say so and request the minimum missing context.
 
-Tasarım dili:
-- Sıcak, sempatik, güven veren ama çocukça olmayan.
-- Çok açık arka plan, güçlü tipografi, bol boşluk.
-- Kullanıcıya kategori ve sistem karmaşıklığı hissettirme.
-- Her ekranda yalnız ana işe yarayan kontroller olsun.
-- Mobilde tek elle kullanılabilir, masaüstünde de temiz.
+## Product thesis
 
-Şimdilik yayınlama/deploy yapma. Önce çalışan önizleme oluştur ve yapılanları özetle.
+- Users type what they need directly instead of browsing a category tree.
+- Search, listing creation and direct contact should remain simple and fast.
+- Mobile use and one-handed interaction take priority.
+- The prototype must clearly distinguish mock data and disabled actions from real capabilities.
+- The project is independent from Tarladan and shares no code, data, integrations or brand assets with it.
 
-This project was built with [Lovable](https://lovable.dev).
+## Current scope
 
-**Live app**: https://arar-buluruz.lovable.app
+The current stage is frontend-only and uses local mock data.
 
-## Build with Lovable
+Not enabled:
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/dca896f8-bb48-4a67-ae49-0493610ca6ad).
+- database or backend;
+- Supabase/Lovable Cloud;
+- authentication or SMS;
+- real photo storage;
+- payments;
+- advertising SDK/network;
+- secrets or external services;
+- real user or seller data.
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+These require separate analysis and explicit founder approval as defined in `AGENTS.md`.
+
+## Core screens
+
+1. Home: Arar Buluruz wordmark, large search input, location, listing and profile access.
+2. Search results: photo, title, price, location and minimal sorting/filter controls.
+3. Listing detail: photos, title, price, description, location, seller name, call, WhatsApp and complaint flow.
+4. Listing creation: prototype photo slots, title, price, location, description and editable preview.
+5. Login/profile placeholder.
+
+## Product constraints
+
+- No visible category menu or required category selection.
+- No unnecessary cards, carousel, news feed, campaign area or social features.
+- No rating system, map, live chat, payment, shipping or order flow without a proven need.
+- Main search screen has no ad placeholder.
+- Ads remain design placeholders only and must not be deceptive or full-screen.
+
+## Technology
+
+- React + TanStack Start + TypeScript
+- Tailwind CSS + shadcn/ui
+- Bun `1.3.14`; canonical lockfile: `bun.lock`
+- Vite/Nitro Cloudflare module build
+- Lovable frontend editor/hosting connection
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+```powershell
+Set-Location C:\Projects\arar-buluruz
+bun install --frozen-lockfile
+bun run dev
 ```
+
+Validation:
+
+```powershell
+bun run lint
+bun run build
+```
+
+Do not run `npm install`, `npm ci` or create a second lockfile. Do not rewrite published Git history or force-push.
+
+## Lovable
+
+The project is connected to:
+
+https://lovable.dev/projects/dca896f8-bb48-4a67-ae49-0493610ca6ad
+
+Lovable remains a bounded frontend writer/hosting surface. Its database, auth, storage, secrets and edge functions stay disabled.
