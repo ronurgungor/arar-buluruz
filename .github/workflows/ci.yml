@@ -51,9 +51,9 @@ jobs:
         run: bun run build
 
   gate1-database:
-    name: Gate 1 local migration, RLS and REST integration
+    name: Gate 1 local migration, RLS, REST and browser E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
 
     steps:
       - name: Check out repository
@@ -211,6 +211,67 @@ jobs:
           LOCAL_SUPABASE_URL="$api_url" \
           LOCAL_SUPABASE_PUBLIC_KEY="$anon_key" \
             bun scripts/gate1-local-integration.ts
+
+      - name: Install transient Chromium test runtime
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/gate1-browsers
+        run: |
+          npm install \
+            --prefix "$RUNNER_TEMP/gate1-playwright" \
+            --no-save \
+            --ignore-scripts \
+            playwright@1.55.0
+          "$RUNNER_TEMP/gate1-playwright/node_modules/.bin/playwright" install --with-deps chromium
+
+      - name: Run focused desktop and mobile browser E2E
+        shell: bash
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/gate1-browsers
+        run: |
+          status_env="$(supabase status -o env)"
+
+          extract_status_value() {
+            local value
+            value="$(printf '%s\n' "$status_env" | grep "^$1=" | head -n 1)"
+            value="${value#*=}"
+            value="${value#\"}"
+            value="${value%\"}"
+            printf '%s' "$value"
+          }
+
+          api_url="$(extract_status_value API_URL)"
+          anon_key="$(extract_status_value ANON_KEY)"
+
+          if [[ -z "$api_url" || -z "$anon_key" ]]; then
+            echo "Documented local Supabase API_URL or ANON_KEY was not available."
+            exit 1
+          fi
+
+          VITE_LISTINGS_SOURCE=supabase \
+          VITE_SUPABASE_URL="$api_url" \
+          VITE_SUPABASE_ANON_KEY="$anon_key" \
+            bun run build
+
+          bun run preview -- --host 127.0.0.1 --port 4173 >"$RUNNER_TEMP/gate1-preview.log" 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/ara >/dev/null; then
+              break
+            fi
+            if [[ "$attempt" -eq 60 ]]; then
+              cat "$RUNNER_TEMP/gate1-preview.log"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/gate1-playwright/node_modules/playwright" \
+          BASE_URL="http://127.0.0.1:4173" \
+            bun scripts/gate1-browser-e2e.ts
+
+          find test-results/gate1-browser -maxdepth 1 -type f -name '*.png' -print -exec file {} \;
 
       - name: Stop and remove local Supabase data
         if: always()
