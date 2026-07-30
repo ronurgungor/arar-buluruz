@@ -42,7 +42,7 @@ Each new entry should include:
 - **Status:** Active until pilot scope is approved
 - **Decision:** Initial development uses local mock data with no real backend, database, auth, storage, secrets, payments or ad SDK.
 - **Rationale:** Validate the core experience before introducing ownership, security, KVKK, abuse and operating burdens.
-- **Review trigger:** Founder approval of a narrowly scoped real pilot after independent product/architecture/security review.
+- **Review trigger:** Founder approval of a narrowly scoped real pilot after proportionate product/architecture/security review.
 
 ## D-004 — GitHub `main` is canonical
 
@@ -115,10 +115,10 @@ Each new entry should include:
 ## D-012 — Work/Codex/Lovable/main-assistant routing
 
 - **Date:** 2026-07-30
-- **Status:** Active, capability verification ongoing
+- **Status:** Active
 - **Decision:** Continue directly when the path is clear and low-risk; use Work for independent strategy/architecture/security/KVKK analysis; use Codex when analysis requires repository/terminal/test/debugging execution; use Lovable for bounded frontend work under safe review conditions.
 - **Rationale:** Match tasks to specialist strengths without unnecessary handoffs.
-- **Important limitation:** Tool capability is session-dependent and must be verified in `AI_TEAM_CAPABILITIES.md`; role labels are not proof of access.
+- **Important limitation:** Nominal capability, current-session availability and project authorization are separate and must be understood before consequential actions.
 
 ## D-013 — Repository-backed shared AI memory
 
@@ -137,6 +137,17 @@ Each new entry should include:
 - **Rationale:** The founder's earlier Tarladan workflow depended on ChatGPT 5.5 guidance plus manual copy/paste changes. Direct execution by the current main assistant is already a meaningful capability improvement, reduces transcription risk and avoids unnecessary handoffs.
 - **Governance rule:** No AI output is a binding command. Recommendations are checked against canonical GitHub sources, evidence, project constraints and founder intent.
 - **Review proportionality:** Double or triple checking is reserved for consequential, uncertain, security/KVKK-sensitive, costly or difficult-to-reverse decisions. It is not required for routine low-risk work.
-- **Restricted Work response:** The first Work response was produced at a restricted depth and is retained only as an advisory candidate analysis. Its recommendations and capability claims are not accepted as canonical decisions or general proof of Work's full capabilities without independent verification.
+- **Restricted Work response:** The first Work response was produced at restricted depth. Its strategic recommendations remain advisory candidate analysis, while its own nominal capability inventory is accepted as a valid description of the Work environment. Current-session availability and mutation authority remain separate checks.
 - **Deferred alternative:** Making Work or Codex the mandatory primary writer or mandatory reviewer for every task.
 - **Review trigger:** Repeated main-assistant implementation failures, loss of required connectors, a task exceeding demonstrated capability, or a high-risk decision that clearly benefits from specialist review.
+
+## D-015 — Every new chat receives application, work and team context
+
+- **Date:** 2026-07-30
+- **Status:** Active
+- **Decision:** Every new Arar Buluruz chat must begin from a repository-backed bootstrap that covers the application, current tasks, decisions, team roles, nominal capabilities, demonstrated capabilities, session limits and approval boundaries.
+- **Rationale:** A team cannot coordinate well when each chat knows only its own task or is unaware of the other teammates' abilities. Shared context increases effective project competence and reduces duplicate analysis, contradictory instructions and unnecessary handoffs.
+- **Implementation:** `docs/AI_CHAT_BOOTSTRAP.md` is the common entry point; `AI_TEAM_CAPABILITIES.md` and `WORK_CODEX_CAPABILITY_PROFILE.md` preserve team knowledge.
+- **Practical rule:** Routine low-risk work may use a concise bootstrap; the requirement must not become a ceremony that delays obvious execution.
+- **No-access fallback:** A chat without GitHub access must say so and receive the minimum bootstrap files and task-specific evidence.
+- **Review trigger:** Update the bootstrap when architecture, current stage, team roles, capabilities or governance change materially.
