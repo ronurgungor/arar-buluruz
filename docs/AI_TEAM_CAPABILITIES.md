@@ -4,240 +4,238 @@ _Last verified: 2026-07-30, Europe/Istanbul_
 
 ## Purpose
 
-This file records capabilities that have been **actually observed or explicitly verified** in this project. Product names, role labels and self-descriptions are not proof of access.
+This file records the team structure, capability confidence and task-routing rules for Arar Buluruz.
 
-Capabilities may vary by chat, account, connector state, subscription, permissions, reasoning depth and time. Re-verify before consequential work.
+Every new chat must distinguish four different questions:
 
-Status legend:
+1. **Nominal capability:** What can this environment/tool generally do?
+2. **Project-observed capability:** What has it already demonstrated in Arar Buluruz?
+3. **Current-session availability:** Which connectors, credentials, runtimes and permissions are active now?
+4. **Project authorization:** Which read/write/execute actions are approved for this task?
 
-- **Verified:** demonstrated in this project with current or recent evidence
-- **Partially verified:** some access demonstrated; important limits remain unknown
-- **Unverified:** assumed role only; do not route consequential work solely on this assumption
-- **Unavailable:** known not to be accessible in the relevant environment
+An environment is considered a reliable source for describing its own nominal tools and capabilities, even when a restricted reasoning-depth setting is used. Restricted depth may reduce analytical depth; it does not automatically invalidate the environment's own capability inventory. Session availability and project authorization still require separate checks before consequential actions.
+
+Detailed Work and Codex profiles: [`WORK_CODEX_CAPABILITY_PROFILE.md`](WORK_CODEX_CAPABILITY_PROFILE.md)
+
+New-chat entry point: [`AI_CHAT_BOOTSTRAP.md`](AI_CHAT_BOOTSTRAP.md)
+
+## Confidence labels
+
+- **Verified:** demonstrated in this project with current or recent evidence.
+- **Self-reported:** described by the environment itself; accepted as a nominal capability profile.
+- **Partially observed:** some project-specific use or access was observed, but the full capability was not exercised.
+- **Session-dependent:** may change with connector, credential, plan, runtime, reasoning-depth or permission state.
+- **Unavailable:** known not to be accessible in the relevant session.
 
 ## Capability matrix
 
-| Team member / tool | Verification status | Proven read capabilities | Proven write/execute capabilities | Known limits and cautions | Best current use |
+| Team member / tool | Confidence | Read capabilities | Write / execute capabilities | Main limits | Best current use |
 |---|---|---|---|---|---|
-| **Founder** | Verified | Reviews product behavior, GitHub state, terminal output and decisions | Gives approval; runs local PowerShell commands; performs human smoke checks | Not expected to absorb repetitive technical detail; consequential commitments remain explicit decisions | Product intent, approval gates, real-world judgment and final decisions |
-| **Arar Buluruz main assistant** | Verified in the current connected environment | Reads private GitHub files, commits, PRs, CI summaries, uploaded evidence and Lovable project metadata; maintains project context | Creates GitHub branches/files/PRs, merges approved work, queries Lovable and coordinates documentation/state; may act as the primary writer when connected tools support the task | Does not have the founder's local Windows shell by default; connector access is session-dependent; must not imply local execution without evidence | Default product/technical executor, project coordination, source-of-truth maintenance, GitHub operations and decision synthesis |
-| **Codex** | Verified through project executions | Inspects the local repository, diffs, generated files and runtime behavior | Runs local terminal commands, Bun lint/build, browser/E2E checks, debugging and code changes in an isolated working context | Exact permissions, network access and GitHub mutation ability depend on the Codex session; code/push/deploy scope must be stated; avoid duplicate writer overlap | Specialist repository analysis plus terminal execution, testing, debugging and precise implementation when the main assistant needs those capabilities |
-| **Lovable** | Verified | Reads its connected project and generates preview/build feedback | Writes frontend code, creates commits on its connected branch, rebuilds preview and can publish through available tooling | Credits are currently `0`; variants were unavailable in the observed workspace; plan mode unexpectedly edited code; backend capabilities must stay disabled; direct-to-main writes require review | Bounded frontend/UX work only when credits and a safe isolated/reviewable workflow are available |
-| **Work / Work Mode** | Partially verified in one restricted-depth session | The restricted session produced specific private-repository, PR/CI, Lovable and live-browser observations consistent with then-current project context | No mutation was exercised. The session reported shell/browser capability but could not clone the private repo or run Bun because credentials/runtime were unavailable | The response was generated at restricted depth; its product recommendations are advisory only, self-reported capabilities are session-specific, and unexercised write permissions are not accepted as proven | Optional independent product, architecture, security, KVKK and pilot analysis when the issue justifies a second opinion and the session depth/tools are appropriate |
+| **Founder** | Verified | Reviews product behavior, GitHub state, terminal output, proposals and decisions | Gives approval; runs local PowerShell commands; performs real-world smoke checks | Consequential commitments remain explicit founder decisions | Product intent, ownership, approval gates and final judgment |
+| **Arar Buluruz main assistant** | Verified in the connected environment | Reads private GitHub files, commits, PRs, CI summaries, uploaded evidence and connected project context | Creates branches/files/PRs, reviews CI, merges approved work and maintains shared memory; may be primary writer when connected tools support the task | Does not automatically possess the founder's local Windows shell; connector access is session-dependent | Default product/technical executor, GitHub operator, coordinator and decision synthesizer |
+| **Codex** | Verified through project executions; some abilities session-dependent | Local repository, Git state, diffs, generated files, runtime behavior, logs and browser evidence | Shell commands, Bun, lint/build/test, browser/E2E, debugging and scoped code changes in an isolated context | Network, GitHub mutation, deployment, secrets and external-service access vary by session and authority | Engineering specialist when local execution, testing, debugging or precise implementation adds value |
+| **Work / Work Mode** | Nominal capabilities self-reported and accepted; project-specific read access partially observed | Authorized private GitHub repositories, branches, commits, PRs, issues, workflow/CI, files, diffs, architecture, web, Lovable and live-browser context | Reports GitHub mutation, shell, browser interaction and connected-tool capabilities when permissions/authorization allow | Restricted depth affects analysis quality; repo clone/Bun were unavailable in the first session; mutation abilities were not exercised; exact connectors remain session-dependent | Independent product, architecture, security, KVKK, pilot, cost and risk review when the decision merits a second opinion |
+| **Lovable** | Verified | Reads its connected frontend project and produces preview/build feedback | Writes frontend code, creates commits on its connected branch and can publish through available tooling | Credits are `0`; variants were unavailable; plan mode unexpectedly wrote code; backend capabilities must remain disabled | Bounded frontend/UX work only under safe isolated/reviewable conditions |
 
-## Verified project-specific evidence
+## Founder
 
-### Main assistant
+### Role
 
-- Read and updated the private GitHub repository and its project-memory documents.
-- Created branches, documentation commits and PRs; inspected CI and merged approved work through the GitHub connector.
-- Read Lovable project metadata and synchronized it with repository state.
-- Can serve as the default writer/executor for work supported by its connected tools and approval scope.
-- Must still distinguish remote connector actions from founder-local terminal execution.
+- Owns product intent and final consequential decisions.
+- Approves backend, real data, auth, storage, secrets, payments, paid services and public-pilot gates.
+- Provides real-world judgment that tools cannot replace.
 
-### Codex
+### Proven capabilities
 
-- Ran Bun `1.3.14` validation in project workflows.
-- Performed mobile E2E at `390 × 844`.
-- Reproduced and helped resolve multi-word search and fixed-footer overlap defects.
-- Produced local/repository evidence that was later recorded in GitHub.
+- Reads and evaluates terminal output and GitHub state.
+- Runs local PowerShell commands in `C:\Projects\arar-buluruz`.
+- Performs human mobile/product checks when useful.
 
-### Lovable
+## Main assistant
 
-- Implemented bounded frontend changes and the 81-province list.
-- Reported lint/build success during the credit sprint.
-- Committed generated route-tree drift that required independent GitHub cleanup.
-- Variant creation was unavailable; plan mode was not safely non-writing in the observed run.
+### Role
 
-### Work / Work Mode
+The main assistant is the default executor and coordination center. It is not limited to routing work.
 
-A first response was produced in a restricted-depth Work Mode session. It reported and demonstrated enough project-specific detail to support **partial read-access verification for that session**, including then-current repository state, named files, PR/CI information, Lovable context and live-browser observations.
+### Proven capabilities
 
-That response is not accepted as:
+- Reads and updates the private GitHub repository.
+- Reads files, commits, PRs, diffs and CI summaries.
+- Creates feature branches, documentation/code files and pull requests.
+- Merges approved low-risk work.
+- Maintains project memory, current state, backlog, decisions and capability records.
+- Evaluates Work, Codex and Lovable outputs rather than treating them as commands.
 
-- a canonical product decision;
-- a binding order to the main assistant or founder;
-- proof that every future Work session has the same connectors or permissions;
-- proof of GitHub mutation, commit, push, PR, merge, deployment or backend capability;
-- a substitute for independent verification of consequential technical, security or KVKK claims.
+### Limits
 
-The session was run at restricted depth, so its proposed pilot model and other strategic recommendations remain candidate analysis only. A future high-value Work review should use an appropriate reasoning depth, identify exact sources and distinguish verified facts from recommendations.
+- Must not claim founder-local terminal execution without evidence.
+- Current connectors and permissions must be checked when consequential.
+- Must stop at explicit founder approval gates.
 
-## Codex role charter
+## Codex
 
-### Mission
+### Project-observed capabilities
 
-Codex is the project’s execution-focused engineering specialist. It should be used when a correct answer depends on inspecting the repository and then performing terminal, test, debugging or implementation work in the same task, and those capabilities are not already sufficiently available through the main assistant.
+Codex has demonstrated:
 
-### Assign Codex when the task requires
+- local repository and working-tree inspection;
+- branch, SHA, commit and diff analysis;
+- Bun `1.3.14` execution;
+- frozen dependency validation;
+- `bun run lint` and `bun run build`;
+- mobile/browser E2E at `390 × 844`;
+- reproduction and correction of multi-word search behavior;
+- reproduction and correction of mobile fixed-footer overlap;
+- debugging and scoped code changes;
+- generated-file drift and recovery evidence;
+- detailed technical handoffs later recorded in GitHub.
 
-- inspecting a local checkout, branches, commits, diffs, generated files or dependency state;
-- running shell commands, Bun scripts, build tools, linters or targeted test suites;
-- reproducing a runtime, browser, responsive-layout, CI or local-only failure;
-- examining logs, stack traces, console/network output or build artifacts;
-- preparing a narrow code fix, migration candidate, refactor or review package;
-- verifying that a change actually works rather than only reasoning about it;
-- producing exact technical evidence for a later GitHub PR or founder decision.
+### Best assignment
 
-Do not route to Codex merely because code is involved. The main assistant remains the default executor when it already has the required access and the task is within its demonstrated capability.
+Use Codex when correct execution depends on:
 
-### Default permitted work
+- a local checkout or shell;
+- running tests/build tools;
+- browser automation or deterministic viewport checks;
+- logs, stack traces or runtime reproduction;
+- a precise implementation, refactor or migration candidate;
+- rollback/recovery evidence.
 
-Only within the explicit task scope and approval boundaries, Codex may:
+Do not route work to Codex merely because code is involved. The main assistant remains the default executor when its tools are sufficient.
 
-- read and analyze repository content;
-- run local commands and tests;
-- create or modify files in an isolated working branch/context;
-- prepare diffs, patches, test evidence and rollback instructions;
-- identify root cause and propose the minimum safe fix.
+### Session-dependent capabilities
 
-Commit, push, PR, deployment, secret, environment, backend and real-data actions are **not implied** by the Codex role. They must be explicitly authorized and technically available in that session.
+Re-check each time:
 
-### Required Codex handoff
+- private GitHub authentication;
+- network/web access;
+- commit, push and PR ability;
+- deployment access;
+- secrets/environment access;
+- Supabase or external-service access;
+- backend/real-data mutation authority.
 
-Every substantial Codex result should report:
+### Required handoff
 
-1. repository, starting branch and starting SHA;
-2. exact task scope and assumptions;
-3. files inspected and files changed;
-4. commands and tests executed;
-5. pass/fail results and relevant warnings;
-6. remaining risks, unknowns and skipped checks;
-7. rollback or restore method;
-8. final branch, final SHA and working-tree status;
-9. whether anything was committed, pushed, opened as a PR or deployed.
+A substantial Codex result should include starting branch/SHA, scope, files, commands/tests, results, risks, rollback, final branch/SHA/working-tree state and an explicit list of any commit/push/PR/deploy actions.
 
-### Do not use Codex as
+## Work / Work Mode
 
-- the mandatory primary code writer;
-- the final authority for product strategy or founder priorities;
-- the final legal/KVKK decision-maker;
-- permission to broaden scope into unrelated refactors;
-- permission to mutate production, secrets, billing or real data;
-- a second simultaneous code writer while another tool is editing the same scope;
-- a reason to repeat low-value tests that existing evidence already covers.
+### Accepted capability profile
 
-### Current verification boundary
+The first Work session ran at restricted reasoning depth. The founder accepts that Work can accurately describe its own nominal capabilities. The following inventory is therefore preserved as a valid Work capability profile, while session availability and project authorization remain separate questions.
 
-Verified: local repository analysis, terminal execution, Bun validation, browser/mobile E2E, debugging and scoped code work.
+Work reported:
 
-Session-specific and therefore re-verified each time: internet/network access, GitHub write access, commit/push/PR ability, deployment access, secrets and external service permissions.
+- access to private GitHub repositories authorized through its connector;
+- direct read access to `ronurgungor/arar-buluruz`;
+- branches, commits, PRs, issues, workflows/CI and file-content reading;
+- repository search, with connector-search reliability limitations;
+- diff and architecture inspection;
+- technical availability of GitHub branch/file/commit/PR/issue/comment/merge mutations when permissions and explicit authority allow;
+- a shell environment;
+- interactive cloud-browser access;
+- screenshots and console inspection;
+- partial network and responsive inspection;
+- current web research;
+- Lovable read access;
+- Supabase-related tools, although no Arar Buluruz Supabase project or mutation authority was established;
+- product, architecture, security and KVKK analysis.
 
-## Work role charter
+### First-session observed limits
 
-### Mission
+- The private repository could not be cloned into the shell because credentials were not available there.
+- The shell was not in a repository checkout.
+- Bun and `gh` were unavailable.
+- Local lint/build/test execution did not occur.
+- GitHub mutation capabilities were not exercised.
+- Full HAR/network and deterministic mobile-resize workflows were not present.
+- The pilot recommendation was created at restricted depth and remains candidate advice, not a project decision.
 
-Work is an optional independent decision and risk-review specialist. It should challenge assumptions and compare options before Arar Buluruz enters a costly, sensitive or difficult-to-reverse stage. It is not a superior command layer over the main assistant or founder.
+### Best assignment
 
-### Assign Work when the task requires
+Use Work when the expected reduction in decision risk justifies a separate review, particularly for:
 
-- defining the first real pilot or public-pilot scope where the decision is consequential;
-- comparing materially different product directions, user journeys or prioritization alternatives;
-- reviewing backend ownership, architecture boundaries and provider lock-in;
-- reviewing authentication, authorization, RLS, storage and service-role boundaries;
-- evaluating personal-data minimization, retention, KVKK exposure and data residency;
-- evaluating abuse, moderation, complaint handling and operational burden;
-- comparing paid services, recurring costs or expensive-to-reverse commitments;
-- independently challenging a plan when the risk or uncertainty justifies the coordination cost;
-- converting a complex decision into a small set of founder approval gates.
+- consequential pilot scope;
+- product-direction alternatives;
+- backend ownership and provider lock-in;
+- auth/RLS/storage/service-role boundaries;
+- KVKK, retention, data minimization and residency;
+- moderation, abuse and operational burden;
+- paid/recurring services and expensive commitments.
 
-Do not route routine, low-risk or obvious work to Work merely to obtain another opinion.
+### Required handoff
 
-### Expected Work behavior
+A consequential Work result should identify reasoning depth, connected tools, branch/SHA and sources; separate facts from assumptions and recommendations; compare alternatives; recommend one bounded path; state risks/deferred work; reduce the result to no more than five founder decisions; and assign the next owner.
 
-Work should:
+## Lovable
 
-- begin by declaring the exact resources, reasoning depth and tools available in that session;
-- distinguish clearly between analysis, read access, write access and execution access;
-- read GitHub `main` and the canonical project-memory files directly when access exists;
-- identify the exact branch/SHA and files used as evidence;
-- separate verified facts, assumptions, inferences and recommendations;
-- compare alternatives rather than automatically approve the current plan;
-- recommend one bounded path and state why the alternatives are deferred;
-- identify the smallest safe pilot, minimum data and explicit decision gates;
-- state which next step belongs to the main assistant, Codex, Lovable or founder.
+### Proven capabilities
 
-### Required Work handoff
+- Implemented bounded frontend and UX changes.
+- Added the complete 81-province list.
+- Produced commits and preview/build feedback.
+- Published the connected frontend.
 
-Every consequential Work result should include:
+### Limits and cautions
 
-1. capability, reasoning-depth and access inventory for that session;
-2. sources read, including repository branch/SHA and canonical files;
-3. current-state summary based only on verified sources;
-4. options considered and comparison criteria;
-5. one recommended decision with rationale;
-6. assumptions, risks and unresolved questions;
-7. minimum data, security, KVKK and operational requirements where relevant;
-8. deliberately deferred items;
-9. no more than five founder decisions;
-10. recommended owner for the next action.
-
-### Do not use Work as
-
-- a mandatory reviewer for every product or technical task;
-- a binding command source;
-- proof of GitHub, browser, terminal or write access beyond the demonstrated session;
-- the default code implementer or test runner unless those capabilities are verified and genuinely needed;
-- a substitute for qualified legal advice or an official KVKK determination;
-- permission to change repository files, backend, secrets, billing or production;
-- the final founder decision-maker;
-- a reason to create enterprise-scale architecture for a small pilot;
-- a reason to repeat already sufficient technical validation.
-
-### Current verification boundary
-
-Partially verified for one restricted-depth session: access to project-specific GitHub/Lovable/live-browser information and analytical output.
-
-Not verified as a durable or general capability: GitHub mutation, clone credentials, local Bun execution, commit/push/PR/merge, deployment, backend mutation, secret access or identical access in later Work sessions.
-
-## Main assistant default-executor and coordination contract
-
-The main assistant is not limited to routing. It is the default executor and remains responsible for orchestration:
-
-- read the common project memory before acting;
-- perform the task directly when its connected tools and demonstrated capability are sufficient;
-- choose the minimum capable specialist only when the handoff materially adds value;
-- give Work or Codex a bounded prompt with source priority, constraints and prohibited actions;
-- prevent simultaneous writers;
-- review returned evidence and detect unsupported claims;
-- treat every AI output as advisory until evaluated;
-- convert accepted results into GitHub state, backlog, decision log or capability-registry updates;
-- stop for founder approval at consequential gates.
-
-A Work, Codex, Lovable or main-assistant response is an input to project governance, not automatically the final project state. Only accepted and recorded information becomes shared memory.
+- Current credits: `0`.
+- Variants were unavailable in the observed workspace.
+- Plan mode unexpectedly edited code.
+- Generated route-tree drift required independent cleanup.
+- Database, auth, storage, secrets and edge functions must remain disabled.
 
 ## Routing rules
 
 Use the minimum capable team member:
 
-- **Main assistant:** default executor for code, documentation, GitHub operations, source verification and product/technical coordination when current tools and approval scope are sufficient.
-- **Work:** optional second opinion for consequential product strategy, architecture, security, KVKK, pilot design, cost or expensive-to-reverse decisions.
-- **Codex:** optional specialist when correct execution requires local repository access, shell commands, tests, browser automation, debugging or implementation capabilities unavailable or inefficient in the main assistant's current environment.
-- **Lovable:** bounded frontend/visual implementation when a safe isolated/reviewable workflow exists and using it is more efficient than direct implementation.
-- **Founder:** ownership, real data, backend, secrets, payments, paid services, public pilot and other consequential commitments.
+- **Main assistant:** default executor for project work supported by current tools and approval scope.
+- **Work:** optional independent analysis for consequential or difficult-to-reverse decisions.
+- **Codex:** optional engineering specialist for local repository, terminal, testing, debugging, browser automation or precise implementation.
+- **Lovable:** bounded frontend/visual implementation when a safe reviewable workflow exists and using it is efficient.
+- **Founder:** final authority for ownership, backend, real data, secrets, payments, paid services, public pilot and consequential commitments.
 
 Only one code writer operates at a time.
 
-## Proportional independent-review rule
+## Governance rule
 
-Second and third opinions are valuable when the expected reduction in decision risk exceeds the coordination cost. Appropriate triggers include:
+No teammate's output is an automatic command. Work, Codex, Lovable and main-assistant outputs are evaluated against:
 
-- backend ownership or irreversible architecture;
-- real personal data, auth, RLS, security or KVKK;
-- payments, recurring cost or provider lock-in;
-- public pilot or significant reputational exposure;
-- conflicting evidence or repeated implementation failure;
-- an important decision outside the demonstrated capability of the current executor.
+- GitHub `main` and the exact branch/PR;
+- executable evidence;
+- founder intent;
+- project constraints;
+- risk and reversibility;
+- approval boundaries.
 
-They are normally unnecessary for documentation-only changes, obvious low-risk corrections, already validated behavior or routine implementation inside an approved scope.
+Double or triple checking is used proportionally for consequential, uncertain, security/KVKK-sensitive, costly or difficult-to-reverse matters. It is not required for routine low-risk work.
 
-## Capability verification protocol
+## New-chat protocol
 
-Before assigning a new class of work to any AI/tool:
+Every new project chat must read:
 
-1. ask it to list the exact connected resources, reasoning depth and actions available in that session;
-2. require it to distinguish read, write and execute capabilities;
-3. test one small, reversible read-only action where practical;
-4. record proven access, limits and evidence here;
-5. do not grant broader trust than the demonstrated capability;
-6. re-verify after account, plan, connector, permission, reasoning-depth or tool changes.
+1. `AGENTS.md`;
+2. `AI_CHAT_BOOTSTRAP.md`;
+3. project memory and current state;
+4. backlog and decision log;
+5. this registry;
+6. `WORK_CODEX_CAPABILITY_PROFILE.md`.
+
+It should then know:
+
+- the application and current architecture;
+- completed, current and next work;
+- founder, main assistant, Codex, Work and Lovable roles;
+- each teammate's nominal capability, demonstrated capability, session limits and authority boundaries.
+
+## Update protocol
+
+Update this registry/profile when:
+
+- a teammate demonstrates a new project capability;
+- a nominal capability is clarified;
+- connector, runtime, permission or reasoning-depth availability changes materially;
+- a capability is removed;
+- a previous assumption is disproved.
+
+Do not store secrets, tokens or unnecessary personal data here.
