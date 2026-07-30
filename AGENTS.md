@@ -49,13 +49,15 @@ Bu dosya, projede çalışan ana sohbet, Lovable, Codex, Work ve diğer AI/denet
 
 ## Roller
 
-- **Ana sohbet:** Ürün/teknik koordinasyon, GitHub işlemleri, kaynak doğrulama, görev yönlendirme ve karar sentezi.
+- **Ana sohbet:** Varsayılan ürün/teknik uygulayıcı ve koordinasyon merkezi. Mevcut bağlantı ve araçlarla güvenli biçimde yapabildiği kod, dokümantasyon, GitHub ve inceleme işlerini doğrudan yürütür; gerektiğinde uzmanlara yönlendirir.
 - **Kurucu:** Ürün gözlemi ve nihai karar mercii; ayrı onay kapılarını açar.
 - **Lovable:** Güvenli ve incelemeye açık koşullarda sınırları belirli frontend, mobil UX ve görsel akış işleri.
-- **Codex:** Repository incelemesiyle terminal, test, debugging veya kapsamlı kod uygulamasının birlikte gerektiği işler.
-- **Work:** Ürün stratejisi, mimari, backend, güvenlik, KVKK, gerçek veri, public pilot ve geri dönüşü pahalı kararlar için bağımsız karar ortağı.
+- **Codex:** Repository incelemesiyle terminal, test, debugging veya kapsamlı kod uygulamasının birlikte gerektiği işlerde kullanılan uygulama/test uzmanı.
+- **Work:** Ürün stratejisi, mimari, backend, güvenlik, KVKK, gerçek veri, public pilot ve geri dönüşü pahalı kararlarda kullanılan bağımsız analiz ve risk-denetim uzmanı.
 
 Bu roller varsayımsal yetki anlamına gelmez. Gerçek ve oturuma bağlı erişim `docs/AI_TEAM_CAPABILITIES.md` üzerinden doğrulanır.
+
+Work, Codex, Lovable veya ana sohbet çıktısı tek başına emir ya da kesin proje kararı değildir. Öneriler kanonik kaynaklar, kanıt, risk, kapsam ve kurucu iradesiyle değerlendirilir. İkinci veya üçüncü görüş yalnız kararın önemi, belirsizliği, güvenlik/KVKK etkisi ya da geri dönüş maliyeti koordinasyon maliyetini haklı çıkardığında alınır; rutin olarak tekrarlanmaz.
 
 ## Tek yazıcı kuralı
 
@@ -65,7 +67,7 @@ Aynı anda yalnız bir araç kod yazar. Yazar değişmeden önce mevcut görev t
 
 Kurucu, backlog'da tanımlı düşük riskli ve geri dönüşü kolay görevler için sürekli uygulama onayı vermiştir. Ana sohbet; kapsam sapması, ciddi belirsizlik veya aşağıdaki yüksek riskli alanlardan biri yoksa feature branch, commit, PR, merge ve gerekiyorsa publish adımlarını tamamlayabilir.
 
-Aşağıdaki işlemler için görev bazlı açık karar veya Work ile bağımsız değerlendirme gerekir:
+Aşağıdaki işlemler için görev bazlı açık kurucu kararı gerekir. Work veya Codex incelemesi, risk ve belirsizlik bunu haklı çıkarıyorsa karar desteği olarak kullanılır; kurucu onayının yerine geçmez:
 
 - Backend, database, auth, SMS, storage veya edge function açma
 - Secret veya environment değişikliği
@@ -96,18 +98,19 @@ Test başarısızsa, kapsam belirsizse veya geri dönüş planı yeterli değils
 - Gelecekteki backend, kurucunun doğrudan sahibi olduğu ayrı bir Supabase projesinde kurulacaktır; hesap, organizasyon, billing ve yönetici erişimleri kurucunun kontrolünde olacaktır.
 - Şema ve tüm migration'lar ilk günden GitHub'da kanonik olarak tutulacaktır. Dashboard'da yapılan değişiklikler migration'a dönüştürülmeden kalıcı kabul edilmez.
 - Uygulama yalnız açıkça yönetilen environment değişkenleriyle backend'e bağlanacaktır; Lovable'a kalıcı backend sahipliği veya tek taraflı kontrol verilmeyecektir.
-- Gerçek veri öncesinde yedekleme, export/restore, bölge, RLS, auth, veri saklama/KVKK ve sağlayıcıdan çıkış planı Work ile bağımsız değerlendirilip kurucu tarafından onaylanacaktır.
+- Gerçek veri öncesinde yedekleme, export/restore, bölge, RLS, auth, veri saklama/KVKK ve sağlayıcıdan çıkış planı uygun bağımsız inceleme ile değerlendirilip kurucu tarafından onaylanacaktır.
 
 ## Görev akışı
 
 1. Başlangıç branch'i, SHA, aktif yazar ve kapsam doğrulanır.
 2. Gerekli ortak hafıza ve kanıt dosyaları okunur.
-3. Dar feature branch'te minimum diff hazırlanır.
-4. Diff, hedef davranışlar ve riskle orantılı testler incelenir.
-5. Gerekirse Codex veya Work'ten bağımsız/uzman kontrol alınır.
-6. Onay modeline göre PR hazırlanır ve merge edilir veya karar için durulur.
-7. Publish gerekiyorsa aynı risk değerlendirmesi ayrı olarak uygulanır.
-8. Milestone sonrası current state, backlog, decision log ve gerekiyorsa capability registry güncellenir.
+3. Ana sohbet işi güvenli ve doğru biçimde yapabiliyorsa doğrudan devam eder; uzman devri ancak belirgin ek değer sağlıyorsa yapılır.
+4. Dar feature branch'te minimum diff hazırlanır.
+5. Diff, hedef davranışlar ve riskle orantılı testler incelenir.
+6. Gerekirse ve değer katıyorsa Codex veya Work'ten bağımsız/uzman kontrol alınır.
+7. Onay modeline göre PR hazırlanır ve merge edilir veya karar için durulur.
+8. Publish gerekiyorsa aynı risk değerlendirmesi ayrı olarak uygulanır.
+9. Milestone sonrası current state, backlog, decision log ve gerekiyorsa capability registry güncellenir.
 
 ## Raporlama
 
