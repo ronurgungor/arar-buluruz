@@ -92,7 +92,7 @@ jobs:
       - name: Start isolated local Supabase stack
         run: >-
           supabase start
-          -x gotrue,realtime,storage-api,imgproxy,studio,mailpit,edge-runtime,logflare,vector,supavisor
+          -x realtime,storage-api,imgproxy,studio,mailpit,edge-runtime,logflare,vector,supavisor
 
       - name: Rebuild database from migrations
         run: supabase db reset --local --no-seed
@@ -168,47 +168,27 @@ jobs:
       - name: Run application-to-RLS REST integration
         shell: bash
         run: |
-          kong_container="$(docker ps --format '{{.Names}}' | grep '^supabase_kong_' | head -n 1)"
-          if [[ -z "$kong_container" ]]; then
-            echo "Local Supabase API gateway container was not found."
+          status_env="$(supabase status -o env)"
+
+          extract_status_value() {
+            local value
+            value="$(printf '%s\n' "$status_env" | grep "^$1=" | head -n 1)"
+            value="${value#*=}"
+            value="${value#\"}"
+            value="${value%\"}"
+            printf '%s' "$value"
+          }
+
+          api_url="$(extract_status_value API_URL)"
+          anon_key="$(extract_status_value ANON_KEY)"
+
+          if [[ -z "$api_url" || -z "$anon_key" ]]; then
+            echo "Documented local Supabase API_URL or ANON_KEY was not available."
             exit 1
           fi
 
-          gateway_env="$(
-            docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$kong_container"
-          )"
-          gateway_config_path="$(
-            printf '%s\n' "$gateway_env" \
-              | sed -n 's/^KONG_DECLARATIVE_CONFIG=//p' \
-              | head -n 1
-          )"
-
-          if [[ -z "$gateway_config_path" ]]; then
-            echo "The local API gateway config path was not available."
-            exit 1
-          fi
-
-          gateway_config="$(docker exec "$kong_container" cat "$gateway_config_path")"
-          public_key="$(
-            printf '%s\n' "$gateway_config" \
-              | awk '
-                  /keyauth_credentials:/ { in_credentials = 1; next }
-                  in_credentials && /^[[:space:]]*(-[[:space:]]*)?key:/ {
-                    sub(/^[[:space:]]*(-[[:space:]]*)?key:[[:space:]]*/, "")
-                    gsub(/[\047\042]/, "")
-                    print
-                    exit
-                  }
-                '
-          )"
-
-          if [[ -z "$public_key" ]]; then
-            echo "The rendered local API gateway config did not contain a public key."
-            exit 1
-          fi
-
-          LOCAL_SUPABASE_URL="http://127.0.0.1:54321" \
-          LOCAL_SUPABASE_PUBLIC_KEY="$public_key" \
+          LOCAL_SUPABASE_URL="$api_url" \
+          LOCAL_SUPABASE_PUBLIC_KEY="$anon_key" \
             bun scripts/gate1-local-integration.ts
 
       - name: Stop and remove local Supabase data
