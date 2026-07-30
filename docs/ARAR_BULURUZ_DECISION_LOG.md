@@ -1,0 +1,130 @@
+# Arar Buluruz — Decision Log
+
+_Last updated: 2026-07-30, Europe/Istanbul_
+
+This is an append-oriented record of consequential product, technical and operating decisions. It preserves **what was decided, why, alternatives rejected and what would cause reconsideration**.
+
+Do not use this file for routine implementation details or temporary task notes.
+
+## Decision format
+
+Each new entry should include:
+
+- date and status;
+- decision;
+- rationale;
+- rejected or deferred alternatives;
+- consequences and review trigger;
+- evidence or related PR when available.
+
+---
+
+## D-001 — Independent project boundary
+
+- **Date:** 2026-07-27
+- **Status:** Active
+- **Decision:** Arar Buluruz is independent from Tarladan and shares no code, data, integrations or brand assets.
+- **Rationale:** Prevent cross-project coupling, accidental data/secret reuse and unclear ownership.
+- **Review trigger:** None expected; changing this would require explicit founder approval and a migration plan.
+
+## D-002 — Search-first, categoryless product model
+
+- **Date:** 2026-07-27
+- **Status:** Active
+- **Decision:** Users search with natural terms; the product does not require visible category-tree navigation or category selection for listing creation.
+- **Rationale:** The product thesis is speed and simplicity rather than marketplace taxonomy management.
+- **Deferred alternative:** Category browsing and category-driven forms.
+- **Review trigger:** Repeated real-user search failures that cannot be solved through search quality, synonyms or lightweight filters.
+
+## D-003 — Frontend-only prototype first
+
+- **Date:** 2026-07-27
+- **Status:** Active until pilot scope is approved
+- **Decision:** Initial development uses local mock data with no real backend, database, auth, storage, secrets, payments or ad SDK.
+- **Rationale:** Validate the core experience before introducing ownership, security, KVKK, abuse and operating burdens.
+- **Review trigger:** Founder approval of a narrowly scoped real pilot after independent product/architecture/security review.
+
+## D-004 — GitHub `main` is canonical
+
+- **Date:** 2026-07-28
+- **Status:** Active
+- **Decision:** GitHub `main` is the canonical code and documentation source. Chat memory and Lovable state are secondary.
+- **Rationale:** A versioned, reviewable and transferable source prevents knowledge fragmentation and vendor lock-in.
+- **Consequence:** Important facts and decisions must be written back to repository documentation.
+
+## D-005 — Founder-owned future backend
+
+- **Date:** 2026-07-28
+- **Status:** Active
+- **Decision:** Any future backend will use a separate founder-owned Supabase organization/project; Lovable backend remains disabled.
+- **Rationale:** Preserve account, billing, administrator, data and provider-exit control.
+- **Requirements:** GitHub-canonical schema/migrations; reviewed RLS, auth, backups, region, retention/KVKK, secrets and export/restore.
+- **Review trigger:** A different provider may be considered only through an explicit architecture and exit-cost review.
+
+## D-006 — One active code writer
+
+- **Date:** 2026-07-28
+- **Status:** Active
+- **Decision:** Only one AI/tool writes code at a time.
+- **Rationale:** Prevent overlapping edits, hidden divergence, unreviewable merges and unclear ownership of failures.
+- **Handoff requirement:** Finish or stop the task, secure changes in Git, and verify exact branch/SHA before switching writers.
+
+## D-007 — Bun and lockfile discipline
+
+- **Date:** 2026-07-29
+- **Status:** Active
+- **Decision:** `bun.lock` is canonical; Bun `1.3.14` is pinned for validation. Default checks are `bun run lint` and `bun run build`.
+- **Rationale:** Match the existing lockfile and CI while avoiding dependency drift.
+- **Prohibited shortcut:** `npm install`, `npm ci` or creation of a second lockfile without an explicit package-manager migration decision.
+- **Clarification:** `npm run lint/build` is not inherently invalid, but Bun commands are the project default.
+
+## D-008 — Controlled contact flow
+
+- **Date:** 2026-07-28
+- **Status:** Active for prototype
+- **Decision:** All mock listings use one controlled telephone/WhatsApp target rather than unique fake seller numbers.
+- **Rationale:** Prevent accidental contact with real third parties while preserving the interaction flow.
+- **Review trigger:** Real seller onboarding and verified ownership of seller contact data.
+
+## D-009 — Search and mobile defects fixed before further expansion
+
+- **Date:** 2026-07-29
+- **Status:** Completed
+- **Decision:** Fix confirmed multi-word search failure and mobile fixed-footer overlap before adding speculative features.
+- **Rationale:** Both defects affected the core discovery/contact flow and were reproduced by automated E2E.
+- **Evidence:** PR #14 and `AUTOMATED_E2E_REPORT_2026-07-29.md`.
+
+## D-010 — Use expiring Lovable credits only on bounded frontend work
+
+- **Date:** 2026-07-29
+- **Status:** Completed
+- **Decision:** Spend all five expiring credits on a limited mobile-flow audit, bounded frontend corrections and the complete 81-province list.
+- **Rationale:** Preserve value without opening backend, dependency or irreversible scope.
+- **Exception recorded:** Variants were unavailable, so Lovable wrote to `main`; the diff was independently reviewed and generated route-tree drift was reverted.
+- **Future rule:** Return to an isolated branch/variant workflow when available.
+
+## D-011 — Risk-based validation rather than ritual testing
+
+- **Date:** 2026-07-30
+- **Status:** Active
+- **Decision:** Testing depth follows the risk and behavior touched by a change. The current low-risk mock prototype does not require repeated full or five-person test cycles after every small change.
+- **Rationale:** Repeated validation was consuming more time than the residual risk justified.
+- **Normal expectation:** Bounded frontend work uses lint/build plus a focused behavior check; higher-risk slices receive proportionally deeper tests.
+- **Escalation triggers:** Real data, auth, storage, payment, public pilot, security-sensitive changes, conflicting user feedback or a change touching previously validated behavior.
+
+## D-012 — Work/Codex/Lovable/main-assistant routing
+
+- **Date:** 2026-07-30
+- **Status:** Active, capability verification ongoing
+- **Decision:** Continue directly when the path is clear and low-risk; use Work for independent strategy/architecture/security/KVKK analysis; use Codex when analysis requires repository/terminal/test/debugging execution; use Lovable for bounded frontend work under safe review conditions.
+- **Rationale:** Match tasks to specialist strengths without unnecessary handoffs.
+- **Important limitation:** Tool capability is session-dependent and must be verified in `AI_TEAM_CAPABILITIES.md`; role labels are not proof of access.
+
+## D-013 — Repository-backed shared AI memory
+
+- **Date:** 2026-07-30
+- **Status:** Active
+- **Decision:** Important project knowledge must be stored in structured GitHub documents so new AI tools and chats can reconstruct the project from canonical sources.
+- **Rationale:** Shared, versioned context increases team competence and prevents each chat from rebuilding the same understanding.
+- **Structure:** Stable memory, current state, backlog, decision log, capability matrix and dated evidence have separate responsibilities.
+- **Limitation:** An AI without repository access cannot automatically read this memory and must be given the relevant files or a bootstrap prompt.
