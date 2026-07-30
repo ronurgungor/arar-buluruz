@@ -39,7 +39,7 @@ type RuntimeModeInput = {
 
 export type PublicSupabaseConfig = {
   url: string;
-  anonKey: string;
+  publicKey: string;
 };
 
 const publicListingRowSchema = z.object({
@@ -96,10 +96,12 @@ export function resolveListingsSource({
 
 function readRuntimeSupabaseConfig(): PublicSupabaseConfig | null {
   const url = import.meta.env.VITE_SUPABASE_URL?.trim();
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
+  const publicKey =
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ??
+    import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
-  if (!url || !anonKey) return null;
-  return { url, anonKey };
+  if (!url || !publicKey) return null;
+  return { url, publicKey };
 }
 
 function readRuntimeSource(): ListingsSource {
@@ -167,8 +169,7 @@ async function fetchRows(
     method: "GET",
     headers: {
       Accept: "application/json",
-      apikey: config.anonKey,
-      Authorization: `Bearer ${config.anonKey}`,
+      apikey: config.publicKey,
     },
   });
 
