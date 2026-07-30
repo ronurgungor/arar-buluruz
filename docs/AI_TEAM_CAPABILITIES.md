@@ -21,7 +21,7 @@ Status legend:
 |---|---|---|---|---|---|
 | **Founder** | Verified | Reviews product behavior, GitHub state, terminal output and decisions | Gives approval; runs local PowerShell commands; performs human smoke checks | Not expected to absorb repetitive technical detail; consequential commitments remain explicit decisions | Product intent, approval gates, real-world judgment and final decisions |
 | **Arar Buluruz main assistant** | Verified in the current connected environment | Reads private GitHub files, commits, PRs, CI summaries and Lovable project metadata; maintains project context | Creates GitHub branches/files/PRs, merges approved low-risk work, queries Lovable and coordinates documentation/state | Does not have the founder's local Windows shell by default; connector access is session-dependent; must not imply local execution without evidence | Project coordination, source-of-truth maintenance, task routing, GitHub operations and decision synthesis |
-| **Codex** | Verified through project executions | Inspects the local repository, diffs, generated files and runtime behavior | Runs local terminal commands, Bun lint/build, browser/E2E checks, debugging and code changes in an isolated working context | Exact permissions and network access depend on the Codex session; code/push/deploy scope must be stated; avoid duplicate writer overlap | Repository analysis plus terminal execution, testing, debugging, large or precise code work |
+| **Codex** | Verified through project executions | Inspects the local repository, diffs, generated files and runtime behavior | Runs local terminal commands, Bun lint/build, browser/E2E checks, debugging and code changes in an isolated working context | Exact permissions, network access and GitHub mutation ability depend on the Codex session; code/push/deploy scope must be stated; avoid duplicate writer overlap | Repository analysis plus terminal execution, testing, debugging and precise implementation |
 | **Lovable** | Verified | Reads its connected project and generates preview/build feedback | Writes frontend code, creates commits on its connected branch, rebuilds preview and can publish through available tooling | Credits are currently `0`; variants were unavailable in the observed workspace; plan mode unexpectedly edited code; backend capabilities must stay disabled; direct-to-main writes require review | Bounded frontend/UX work only when credits and a safe reviewable branch/variant are available |
 | **Work** | Unverified pending capability inventory | Unknown until Work confirms and demonstrates GitHub/web/source access | Unknown; no repository write or execution capability should be assumed | Self-description alone is insufficient. Must distinguish analysis ability from actual connectors, browser, terminal and write permissions | Independent product, architecture, security, KVKK and pilot analysis after access is verified |
 
@@ -51,6 +51,138 @@ Status legend:
 ### Work
 
 No capability claim is yet accepted as verified. The next Work task must begin with a read-only capability inventory and, where practical, demonstrate repository access by identifying the exact current branch/SHA and reading named canonical files.
+
+## Codex role charter
+
+### Mission
+
+Codex is the project’s execution-focused engineering specialist. It should be used when a correct answer depends on inspecting the repository and then performing terminal, test, debugging or implementation work in the same task.
+
+### Assign Codex when the task requires
+
+- inspecting the local checkout, branches, commits, diffs, generated files or dependency state;
+- running shell commands, Bun scripts, build tools, linters or targeted test suites;
+- reproducing a runtime, browser, responsive-layout, CI or local-only failure;
+- examining logs, stack traces, console/network output or build artifacts;
+- preparing a narrow code fix, migration candidate, refactor or review package;
+- verifying that a change actually works rather than only reasoning about it;
+- producing exact technical evidence for a later GitHub PR or founder decision.
+
+### Default permitted work
+
+Only within the explicit task scope and approval boundaries, Codex may:
+
+- read and analyze repository content;
+- run local commands and tests;
+- create or modify files in an isolated working branch/context;
+- prepare diffs, patches, test evidence and rollback instructions;
+- identify root cause and propose the minimum safe fix.
+
+Commit, push, PR, deployment, secret, environment, backend and real-data actions are **not implied** by the Codex role. They must be explicitly authorized and technically available in that session.
+
+### Required Codex handoff
+
+Every substantial Codex result should report:
+
+1. repository, starting branch and starting SHA;
+2. exact task scope and assumptions;
+3. files inspected and files changed;
+4. commands and tests executed;
+5. pass/fail results and relevant warnings;
+6. remaining risks, unknowns and skipped checks;
+7. rollback or restore method;
+8. final branch, final SHA and working-tree status;
+9. whether anything was committed, pushed, opened as a PR or deployed.
+
+### Do not use Codex as
+
+- the final authority for product strategy or founder priorities;
+- the final legal/KVKK decision-maker;
+- permission to broaden scope into unrelated refactors;
+- permission to mutate production, secrets, billing or real data;
+- a second simultaneous code writer while another tool is editing the same scope;
+- a reason to repeat low-value tests that existing evidence already covers.
+
+### Current verification boundary
+
+Verified: local repository analysis, terminal execution, Bun validation, browser/mobile E2E, debugging and scoped code work.
+
+Session-specific and therefore re-verified each time: internet/network access, GitHub write access, commit/push/PR ability, deployment access, secrets and external service permissions.
+
+## Work role charter
+
+### Mission
+
+Work is the project’s independent decision and risk-review specialist. It should challenge assumptions and compare options before Arar Buluruz enters a costly, sensitive or difficult-to-reverse stage.
+
+### Assign Work when the task requires
+
+- defining the first real pilot or public-pilot scope;
+- comparing product directions, user journeys or prioritization alternatives;
+- reviewing backend ownership, architecture boundaries and provider lock-in;
+- reviewing authentication, authorization, RLS, storage and service-role boundaries;
+- evaluating personal-data minimization, retention, KVKK exposure and data residency;
+- evaluating abuse, moderation, complaint handling and operational burden;
+- comparing paid services, recurring costs or expensive-to-reverse commitments;
+- independently challenging a plan already proposed by the main assistant, Codex or Lovable;
+- converting a complex decision into a small set of founder approval gates.
+
+### Expected Work behavior
+
+Work should:
+
+- begin by declaring the exact resources and tools available in that session;
+- distinguish clearly between analysis, read access, write access and execution access;
+- read GitHub `main` and the canonical project-memory files directly when access exists;
+- identify the exact branch/SHA and files used as evidence;
+- separate verified facts, assumptions, inferences and recommendations;
+- compare alternatives rather than automatically approve the current plan;
+- recommend one bounded path and state why the alternatives are deferred;
+- identify the smallest safe pilot, minimum data and explicit decision gates;
+- state which next step belongs to the main assistant, Codex, Lovable or founder.
+
+### Required Work handoff
+
+Every consequential Work result should include:
+
+1. capability and access inventory for that session;
+2. sources read, including repository branch/SHA and canonical files;
+3. current-state summary based only on verified sources;
+4. options considered and comparison criteria;
+5. one recommended decision with rationale;
+6. assumptions, risks and unresolved questions;
+7. minimum data, security, KVKK and operational requirements where relevant;
+8. deliberately deferred items;
+9. no more than five founder decisions;
+10. recommended owner for the next action.
+
+### Do not use Work as
+
+- proof of GitHub, browser, terminal or write access before demonstration;
+- the default code implementer or test runner unless those capabilities are verified;
+- a substitute for qualified legal advice or an official KVKK determination;
+- permission to change repository files, backend, secrets, billing or production;
+- the final founder decision-maker;
+- a reason to create enterprise-scale architecture for a small pilot;
+- a reason to repeat already sufficient technical validation.
+
+### Current verification boundary
+
+Work’s intended analytical role is accepted, but its actual GitHub, browser, web, terminal and mutation capabilities remain **unverified**. Update this section only after Work demonstrates specific access. Self-report may be recorded as self-report but not promoted to verified without evidence.
+
+## Main assistant coordination contract
+
+The main assistant remains responsible for orchestration:
+
+- read the common project memory before routing work;
+- choose the minimum capable team member;
+- give Work or Codex a bounded prompt with source priority, constraints and prohibited actions;
+- prevent simultaneous writers;
+- review the returned evidence and detect unsupported claims;
+- convert accepted results into GitHub state, backlog, decision log or capability-registry updates;
+- stop for founder approval at consequential gates.
+
+A Work or Codex response is an input to project governance, not automatically the final project state. Only accepted and recorded information becomes shared memory.
 
 ## Routing rules
 
