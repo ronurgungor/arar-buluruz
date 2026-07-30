@@ -12,14 +12,18 @@ const url = process.env.LOCAL_SUPABASE_URL?.trim();
 const publicKey = process.env.LOCAL_SUPABASE_PUBLIC_KEY?.trim();
 
 if (!url || !publicKey) {
-  throw new Error("Local Supabase URL and public key are required for the Gate 1 integration test.");
+  throw new Error(
+    "Local Supabase URL and public key are required for the Gate 1 integration test.",
+  );
 }
 
 const config: PublicSupabaseConfig = { url, publicKey };
 const listings = await fetchPublicListings(config);
 
 if (listings.length !== 1 || listings[0]?.id !== visibleId) {
-  throw new Error(`Expected only the active published fixture, received ${JSON.stringify(listings)}.`);
+  throw new Error(
+    `Expected only the active published fixture, received ${JSON.stringify(listings)}.`,
+  );
 }
 
 if (listings[0]?.title !== "Visible integration listing") {
