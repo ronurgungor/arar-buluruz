@@ -252,17 +252,20 @@ jobs:
           VITE_SUPABASE_ANON_KEY="$anon_key" \
             bun run build
 
-          HOST=127.0.0.1 PORT=4173 \
-            node .output/server/index.mjs >"$RUNNER_TEMP/gate1-preview.log" 2>&1 &
-          preview_pid=$!
-          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          VITE_LISTINGS_SOURCE=supabase \
+          VITE_SUPABASE_URL="$api_url" \
+          VITE_SUPABASE_ANON_KEY="$anon_key" \
+            bun run dev -- --host 127.0.0.1 --port 4173 --strictPort \
+              >"$RUNNER_TEMP/gate1-browser-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
 
           for attempt in $(seq 1 60); do
             if curl --fail --silent --show-error http://127.0.0.1:4173/ara >/dev/null; then
               break
             fi
             if [[ "$attempt" -eq 60 ]]; then
-              cat "$RUNNER_TEMP/gate1-preview.log"
+              cat "$RUNNER_TEMP/gate1-browser-server.log"
               exit 1
             fi
             sleep 1
@@ -281,7 +284,7 @@ jobs:
           name: gate1-browser-e2e
           path: |
             test-results/gate1-browser/*.png
-            ${{ runner.temp }}/gate1-preview.log
+            ${{ runner.temp }}/gate1-browser-server.log
           if-no-files-found: warn
           retention-days: 7
 
