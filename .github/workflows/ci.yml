@@ -252,7 +252,8 @@ jobs:
           VITE_SUPABASE_ANON_KEY="$anon_key" \
             bun run build
 
-          bun run preview -- --host 127.0.0.1 --port 4173 >"$RUNNER_TEMP/gate1-preview.log" 2>&1 &
+          HOST=127.0.0.1 PORT=4173 \
+            node .output/server/index.mjs >"$RUNNER_TEMP/gate1-preview.log" 2>&1 &
           preview_pid=$!
           trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
 
@@ -272,6 +273,17 @@ jobs:
             bun scripts/gate1-browser-e2e.ts
 
           find test-results/gate1-browser -maxdepth 1 -type f -name '*.png' -print -exec file {} \;
+
+      - name: Upload Gate 1 browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gate1-browser-e2e
+          path: |
+            test-results/gate1-browser/*.png
+            ${{ runner.temp }}/gate1-preview.log
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Stop and remove local Supabase data
         if: always()
