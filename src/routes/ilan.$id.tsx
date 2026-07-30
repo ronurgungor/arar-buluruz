@@ -51,7 +51,10 @@ function ListingDetail() {
             <ChevronLeft className="h-4 w-4" aria-hidden />
             Sonuçlara dön
           </button>
-          <div role="status" className="mt-8 rounded-2xl border border-border bg-card p-6 text-center">
+          <div
+            role="status"
+            className="mt-8 rounded-2xl border border-border bg-card p-6 text-center"
+          >
             <h1 className="text-lg font-bold text-foreground">İlan şu anda gösterilemiyor.</h1>
             <p className="mt-2 text-sm text-muted-foreground">{result.message}</p>
           </div>
