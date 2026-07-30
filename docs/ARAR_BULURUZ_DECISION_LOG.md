@@ -42,7 +42,7 @@ Each new entry should include:
 - **Status:** Completed for prototype validation; first-pilot direction superseded by D-016
 - **Decision:** Initial development uses local mock data with no real backend, database, auth, storage, secrets, payments or ad SDK.
 - **Rationale:** Validate the core experience before introducing ownership, security, KVKK, abuse and operating burdens.
-- **Review trigger:** The mock-only stage remains active in implementation until the separately gated D-016 slice is built and approved for real data.
+- **Review trigger:** The published public snapshot remains the mock prototype until separately approved remote activation, environment connection, real data and publication gates are completed.
 
 ## D-004 — GitHub `main` is canonical
 
@@ -73,10 +73,10 @@ Each new entry should include:
 
 - **Date:** 2026-07-29
 - **Status:** Active
-- **Decision:** `bun.lock` is canonical; Bun `1.3.14` is pinned for validation. Default checks are `bun run lint` and `bun run build`.
+- **Decision:** `bun.lock` is canonical; Bun `1.3.14` is pinned for validation. Default checks use Bun commands.
 - **Rationale:** Match the existing lockfile and CI while avoiding dependency drift.
 - **Prohibited shortcut:** `npm install`, `npm ci` or creation of a second lockfile without an explicit package-manager migration decision.
-- **Clarification:** `npm run lint/build` is not inherently invalid, but Bun commands are the project default.
+- **Clarification:** Test-only dependencies may be exact-pinned in `devDependencies` and resolved through the canonical Bun lockfile.
 
 ## D-008 — Controlled contact flow
 
@@ -135,10 +135,9 @@ Each new entry should include:
 - **Date:** 2026-07-30
 - **Status:** Active
 - **Decision:** The main assistant is the default executor and coordinator whenever it has the necessary tools and can complete the work safely. Work and Codex are optional specialists used when their additional analysis, terminal execution, testing or independent challenge materially improves the decision or implementation.
-- **Rationale:** The founder's earlier Tarladan workflow depended on ChatGPT 5.5 guidance plus manual copy/paste changes. Direct execution by the current main assistant is already a meaningful capability improvement, reduces transcription risk and avoids unnecessary handoffs.
+- **Rationale:** Direct execution reduces transcription risk, unnecessary handoffs and fragmented ownership.
 - **Governance rule:** No AI output is a binding command. Recommendations are checked against canonical GitHub sources, evidence, project constraints and founder intent.
 - **Review proportionality:** Double or triple checking is reserved for consequential, uncertain, security/KVKK-sensitive, costly or difficult-to-reverse decisions. It is not required for routine low-risk work.
-- **Restricted Work response:** The first Work response was produced at restricted depth. Its strategic recommendations were advisory inputs, while its own nominal capability inventory is accepted as a valid description of the Work environment. Current-session availability and mutation authority remain separate checks.
 - **Deferred alternative:** Making Work or Codex the mandatory primary writer or mandatory reviewer for every task.
 - **Review trigger:** Repeated main-assistant implementation failures, loss of required connectors, a task exceeding demonstrated capability, or a high-risk decision that clearly benefits from specialist review.
 
@@ -147,7 +146,7 @@ Each new entry should include:
 - **Date:** 2026-07-30
 - **Status:** Active
 - **Decision:** Every new Arar Buluruz chat must begin from a repository-backed bootstrap that covers the application, current tasks, decisions, team roles, nominal capabilities, demonstrated capabilities, session limits and approval boundaries.
-- **Rationale:** A team cannot coordinate well when each chat knows only its own task or is unaware of the other teammates' abilities. Shared context increases effective project competence and reduces duplicate analysis, contradictory instructions and unnecessary handoffs.
+- **Rationale:** Shared context reduces duplicate analysis, contradictory instructions and unnecessary handoffs.
 - **Implementation:** `docs/AI_CHAT_BOOTSTRAP.md` is the common entry point; `AI_TEAM_CAPABILITIES.md` and `WORK_CODEX_CAPABILITY_PROFILE.md` preserve team knowledge.
 - **Practical rule:** Routine low-risk work may use a concise bootstrap; the requirement must not become a ceremony that delays obvious execution.
 - **No-access fallback:** A chat without GitHub access must say so and receive the minimum bootstrap files and task-specific evidence.
@@ -156,30 +155,40 @@ Each new entry should include:
 ## D-016 — Reduced founder-operated persistence pilot
 
 - **Date:** 2026-07-30
-- **Status:** Active direction; Gate 1 local and isolated implementation preparation approved, Gates 2–5 closed
-- **Decision:** Select reduced Option B. The first real capability will be listing persistence through the smallest safe founder-operated slice, beginning in Çorlu with 5–10 controlled real listings for technical validation.
+- **Status:** Active direction; Gate 1 implementation merged to `main`; Gates 2–5 closed
+- **Decision:** Select reduced Option B. The first real capability will be listing persistence through the smallest safe founder-operated slice, beginning in Çorlu.
 - **Data model:** Start with only a `listings` table containing `id`, `title`, `description`, `price_amount`, `province`, `district`, `seller_display_name`, `search_keywords`, `status`, `created_at`, `updated_at`, `published_at`, `expires_at` and `unpublished_at`. Initial status values are `draft`, `published` and `unpublished`. Mock listings never enter the production database and no `is_mock` column is added.
-- **Public boundary:** The public application is read-only. Database/RLS visibility must enforce `status = 'published' and published_at <= now() and expires_at > now()`. Anonymous/public INSERT, UPDATE and DELETE remain prohibited; frontend filtering is not the security boundary.
-- **Founder operation:** The founder may temporarily create, edit, publish and remove approved listing rows through the Supabase Dashboard. Dashboard access belongs only to the founder, uses MFA and is not shared. No table, column, RLS, grant, constraint, index, trigger or extension changes may be made through the Dashboard.
+- **Public boundary:** The public application is read-only. Database/RLS visibility enforces `status = 'published' and published_at <= now() and expires_at > now()`. Anonymous/public INSERT, UPDATE and DELETE remain prohibited; frontend filtering is not the security boundary.
+- **Founder operation:** The founder may temporarily create, edit, publish and remove approved listing rows through the Supabase Dashboard after a separately approved founder-owned project exists. Dashboard access belongs only to the founder, uses MFA and is not shared. No schema/security changes may be made through the Dashboard.
 - **Canonical schema:** Schema and security changes are migration-canonical in GitHub from day one.
-- **Contact/KVKK boundary:** Seller phone is not stored in Supabase. Public output shows only an approved `seller_display_name`; communication remains on the central controlled phone/WhatsApp line. Keeping phone and messages in WhatsApp does not remove applicable KVKK obligations. Data-controller identity, notice, legal basis, retention/deletion and possible international-transfer treatment remain a separate founder/KVKK package.
-- **Explicitly deferred:** Buyer auth, seller auth, in-app moderator auth, `app_roles`, `moderation_events`, seller-contact/private-phone tables, custom admin panel, public database insert, seller self-service, photo upload, Storage, SMS/OTP, automatic expiration cron, broad analytics/events, direct seller phone, nationwide real pilot, vehicle and real-estate listings, payment, chat, shipping and advertising network.
-- **Rationale:** This slice validates persistence, publication, removal and expiry with the least personal data, security surface, operational software and provider lock-in. Auth, photos and a custom moderation system add cost before the core persistence behavior is proven.
-- **Approval gates:** Gate 1 local and isolated implementation preparation is approved. Supabase organization/project creation, secret/environment connection, real-data entry and pilot publish/launch remain separate closed gates. Approval or completion of one gate never authorizes the next.
-- **Dashboard exit triggers:** Replace founder-only Dashboard operations when a second operator or role separation is needed; seller self-service or private contact data enters scope; repeated Dashboard errors require workflow/audit controls; pending operations or turnaround become unsustainable; the pilot expands beyond the controlled Çorlu model; or the Dashboard prevents reliable enforcement of the approved operating process.
-- **Pilot progression:** 5–10 listings validate persistence/RLS/publication/removal/expiry; 10–20 listings validate application, moderation and central relay operations; 30+ listings are used for search-density testing only if sufficient real demand clusters emerge. Thirty listings are not a mandatory success gate.
-- **Review trigger:** Reconsider scope only after evidence from the staged pilot, a material legal/security finding, or a Dashboard exit trigger. Do not reopen the architecture debate merely because deferred features exist.
+- **Contact/KVKK boundary:** Seller phone is not stored in Supabase. Public output shows only an approved `seller_display_name`; communication remains on the central controlled phone/WhatsApp line. Data-controller identity, notice, legal basis, retention/deletion and possible international-transfer treatment remain a separate founder/KVKK package.
+- **Explicitly deferred:** Buyer/seller/moderator auth, role tables, seller-contact/private-phone tables, custom admin panel, public database insert, seller self-service, photos/Storage, SMS/OTP, expiration cron, broad analytics, direct seller phone, nationwide pilot, vehicle/real-estate listings, payment, chat, shipping and advertising network.
+- **Approval gates:** Gate 1 code, migration, RLS, REST integration and local validation were merged through PR #25. Supabase organization/project creation, environment connection, real-data entry and pilot publication remain separate closed gates. Approval or completion of one gate never authorizes the next.
+- **Evidence:** PR #25; expected head `1d9d0f6112464e5078d90df510488f7a786cddef`; normal merge commit `994b8b1705d52434be0c000093a052fa0e519542`; frozen Bun install, lint, unit/build, clean local reset, 22/22 pgTAP, REST/RLS and desktop/mobile E2E passed before merge.
+- **Dashboard exit triggers:** Replace founder-only Dashboard operations when a second operator or role separation is needed; seller self-service or private contact data enters scope; repeated Dashboard errors require workflow/audit controls; pending operations become unsustainable; the pilot expands beyond the controlled Çorlu model; or the Dashboard prevents reliable enforcement.
+- **Pilot evidence rule:** Listing counts are not mandatory hard gates. Progression depends on persistence/RLS correctness and qualitative use/operating signals.
+- **Review trigger:** Reconsider scope only after real pilot evidence, a material legal/security finding or a Dashboard exit trigger.
 
 ## D-017 — Web-first delivery, minimal PWA package and separate Play Store value gate
 
 - **Date:** 2026-07-30
 - **Status:** Active
 - **Decision:** The canonical delivery sequence is: responsive web → Gate 1 persistence/RLS implementation → a separate narrow minimal-PWA preparation package → controlled Çorlu pilot → real-use and operating validation → a separate Play Store value gate → if that gate passes, TWA as the default Play Store packaging path.
-- **Gate 1 boundary:** Minimal PWA work is not part of Gate 1. Gate 1 receives no PWA dependency, service worker, TWA, Android Studio or Play Store files, package ID, `assetlinks.json` or other mobile-packaging scope. This decision does not expand the approved persistence/RLS implementation slice.
+- **Gate 1 boundary:** Minimal PWA work is not part of Gate 1. Gate 1 receives no PWA dependency, service worker, TWA, Android Studio or Play Store files, package ID, `assetlinks.json` or other mobile-packaging scope.
 - **Minimal PWA scope:** The later package is limited to a manifest, durable application identity, correct icons, installability and a safe, honest offline/error screen. Push notifications, full offline listing functionality, background sync and cache-first storage of dynamic listings remain out of scope.
-- **Pilot evidence rule:** Reaching 10–20 listings is not a mandatory hard gate. Progression is based on qualitative use and operating signals, including whether users find and contact relevant listings and whether intake, moderation, relay, correction, removal and expiry can be operated reliably.
-- **Play Store gate:** Play Store publication is not automatic after the pilot. It requires separate evidence that store presence creates material acquisition, trust, re-engagement or distribution value beyond the responsive web/PWA path and that the ongoing policy, signing, release and maintenance burden is justified.
+- **Pilot evidence rule:** Reaching 10–20 listings is not a mandatory hard gate. Progression is based on qualitative use and operating signals.
+- **Play Store gate:** Play Store publication is not automatic after the pilot. It requires separate evidence that store presence creates material value and that ongoing policy/signing/release/maintenance burden is justified.
 - **Default packaging if approved:** If the Play Store value gate passes without a measured need for deeper device integration, use a Trusted Web Activity as the default packaging route.
-- **Deferred alternatives:** Capacitor or native Android are reconsidered only when measured product evidence shows a device-integration need that responsive web, minimal PWA and TWA cannot satisfy safely and proportionately.
-- **Rationale:** Preserve the fastest path to a real pilot, avoid mobile packaging and offline complexity before persistence and operations are proven, and prevent Play Store availability from becoming a substitute for demonstrated user value.
-- **Review trigger:** Reconsider only after real pilot evidence, a material platform-policy change, a proven installation/distribution problem or a measured device-integration requirement. Deferred mobile features alone are not a reason to reopen Gate 1.
+- **Deferred alternatives:** Capacitor or native Android are reconsidered only when measured evidence shows a device-integration need that responsive web, minimal PWA and TWA cannot satisfy safely and proportionately.
+- **Review trigger:** Reconsider only after real pilot evidence, a material platform-policy change, a proven installation/distribution problem or a measured device-integration requirement.
+
+## D-018 — Routine execution authority and escalation boundary
+
+- **Date:** 2026-07-30
+- **Status:** Active
+- **Decision:** The main assistant is the active primary implementer and coordinator. It independently performs routine technical details, small implementation choices, test maintenance, reversible repository operations, debugging and validation within the canonical scope.
+- **No-routine-handoff rule:** Work or another independent advisor is not required for ordinary implementation or review. Specialist review is used only when it materially improves an important decision or when the founder explicitly requests it.
+- **Mandatory founder escalation:** Stop before a new product/architecture direction, scope expansion, new security/KVKK/personal-data risk, remote Supabase project or migration, secret/environment change, real data, Lovable Publish/Update or another production deployment, paid service, advertising, analytics/external SDK, expensive-to-reverse/high-operational-impact action, or a genuine unresolved canonical conflict.
+- **Rationale:** Preserve execution speed and clear ownership while retaining explicit founder control over consequential gates.
+- **Consequence:** Low-risk work proceeds without repeated approvals; exact SHA, tests, mutations, risks and rollback remain reportable.
+- **Review trigger:** Reconsider if routine autonomy causes repeated scope drift, unsafe mutations or insufficient founder visibility.
