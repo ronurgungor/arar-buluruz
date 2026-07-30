@@ -68,8 +68,7 @@ function SearchPage() {
     else if (effectiveSort === "yakin") {
       list.sort(
         (a, b) =>
-          (a.distanceKm ?? Number.MAX_SAFE_INTEGER) -
-          (b.distanceKm ?? Number.MAX_SAFE_INTEGER),
+          (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER),
       );
     } else list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return list;
