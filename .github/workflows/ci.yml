@@ -1,55 +1,293 @@
-name: Gate 1 lock commit
+name: CI
 
 on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: gate1-lock-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  commit-lock:
-    name: Commit canonical Bun lockfile
+  quality:
+    name: Lint, unit test and build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
-      - name: Check out Gate 1 branch
+      - name: Check out repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          ref: agent/gate1-persistence-rls
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.3.14
 
-      - name: Generate and commit Bun lockfile
+      - name: Report Bun version
+        run: bun --version
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Unit tests
+        run: bun run test:unit
+
+      - name: Build with backend connection disabled
+        env:
+          VITE_LISTINGS_SOURCE: disabled
+        run: bun run build
+
+  gate1-database:
+    name: Gate 1 local migration, RLS, REST and browser E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.14
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify Bun-only package boundary
         run: |
-          bun --version
-          bun install --ignore-scripts
-          git diff --exit-code -- package.json
-          git diff --check -- bun.lock
           test "$(bun -e 'console.log(require("./package.json").devDependencies.playwright)')" = "1.55.0"
           test ! -e package-lock.json
           test ! -e npm-shrinkwrap.json
           test ! -e yarn.lock
           test ! -e pnpm-lock.yaml
 
-          if git diff --quiet -- bun.lock; then
-            echo "bun.lock is already current."
-            exit 0
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
+        with:
+          version: 2.101.0
+
+      - name: Report Supabase CLI version
+        run: supabase --version
+
+      - name: Verify local-only test boundary
+        shell: bash
+        run: |
+          if [[ -f supabase/.temp/project-ref ]]; then
+            echo "A linked Supabase project-ref is prohibited in Gate 1 CI."
+            exit 1
+          fi
+          if [[ -n "${SUPABASE_ACCESS_TOKEN:-}" || -n "${SUPABASE_DB_PASSWORD:-}" ]]; then
+            echo "Remote Supabase credentials are prohibited in Gate 1 CI."
+            exit 1
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add bun.lock
-          git commit -m "Update Bun lock for Playwright"
-          git push origin HEAD:agent/gate1-persistence-rls
+      - name: Enable GoTrue only in the ephemeral runner copy
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          config_path = Path("supabase/config.toml")
+          config = config_path.read_text(encoding="utf-8")
+          disabled_auth = "[auth]\nenabled = false"
+          enabled_auth = "[auth]\nenabled = true"
+
+          if disabled_auth not in config:
+              raise SystemExit("Expected the repository auth setting to be disabled.")
+
+          config_path.write_text(config.replace(disabled_auth, enabled_auth, 1), encoding="utf-8")
+          PY
+
+          git diff --exit-code -- . ':(exclude)supabase/config.toml'
+          git diff --check -- supabase/config.toml
+          grep -A1 '^\[auth\]$' supabase/config.toml
+
+      - name: Start isolated local Supabase stack
+        run: >-
+          supabase start
+          -x realtime,storage-api,imgproxy,studio,mailpit,edge-runtime,logflare,vector,supavisor
+
+      - name: Rebuild database from migrations
+        run: supabase db reset --local --no-seed
+
+      - name: Run pgTAP database and RLS tests
+        run: supabase test db
+
+      - name: Seed transient integration fixtures
+        shell: bash
+        run: |
+          db_container="$(docker ps --format '{{.Names}}' | grep '^supabase_db_' | head -n 1)"
+          if [[ -z "$db_container" ]]; then
+            echo "Local Supabase Postgres container was not found."
+            exit 1
+          fi
+
+          docker exec -i "$db_container" psql -v ON_ERROR_STOP=1 -U postgres -d postgres <<'SQL'
+          insert into public.listings (
+            id,
+            title,
+            description,
+            price_amount,
+            province,
+            district,
+            seller_display_name,
+            search_keywords,
+            status,
+            published_at,
+            expires_at
+          )
+          values
+            (
+              '00000000-0000-4000-8000-000000000101',
+              'Visible integration listing',
+              'This active listing must pass through the local public application adapter.',
+              1250,
+              'Tekirdag',
+              'Corlu',
+              'Pilot Seller',
+              array['visible', 'integration'],
+              'published',
+              now() - interval '1 hour',
+              now() + interval '1 day'
+            ),
+            (
+              '00000000-0000-4000-8000-000000000102',
+              'Draft integration listing',
+              'This draft listing must remain hidden through the public application adapter.',
+              1500,
+              'Tekirdag',
+              'Corlu',
+              'Pilot Seller',
+              array['draft', 'integration'],
+              'draft',
+              null,
+              null
+            ),
+            (
+              '00000000-0000-4000-8000-000000000103',
+              'Expired integration listing',
+              'This expired listing must remain hidden through the public application adapter.',
+              1750,
+              'Tekirdag',
+              'Corlu',
+              'Pilot Seller',
+              array['expired', 'integration'],
+              'published',
+              now() - interval '2 days',
+              now() - interval '1 day'
+            );
+          SQL
+
+      - name: Run application-to-RLS REST integration
+        shell: bash
+        run: |
+          status_env="$(supabase status -o env)"
+
+          extract_status_value() {
+            local value
+            value="$(printf '%s\n' "$status_env" | grep "^$1=" | head -n 1)"
+            value="${value#*=}"
+            value="${value#\"}"
+            value="${value%\"}"
+            printf '%s' "$value"
+          }
+
+          api_url="$(extract_status_value API_URL)"
+          anon_key="$(extract_status_value ANON_KEY)"
+
+          if [[ -z "$api_url" || -z "$anon_key" ]]; then
+            echo "Documented local Supabase API_URL or ANON_KEY was not available."
+            exit 1
+          fi
+
+          LOCAL_SUPABASE_URL="$api_url" \
+          LOCAL_SUPABASE_PUBLIC_KEY="$anon_key" \
+            bun scripts/gate1-local-integration.ts
+
+      - name: Install Chromium with Bun-managed Playwright
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/gate1-browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run focused desktop and mobile browser E2E
+        shell: bash
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/gate1-browsers
+        run: |
+          status_env="$(supabase status -o env)"
+
+          extract_status_value() {
+            local value
+            value="$(printf '%s\n' "$status_env" | grep "^$1=" | head -n 1)"
+            value="${value#*=}"
+            value="${value#\"}"
+            value="${value%\"}"
+            printf '%s' "$value"
+          }
+
+          api_url="$(extract_status_value API_URL)"
+          anon_key="$(extract_status_value ANON_KEY)"
+
+          if [[ -z "$api_url" || -z "$anon_key" ]]; then
+            echo "Documented local Supabase API_URL or ANON_KEY was not available."
+            exit 1
+          fi
+
+          VITE_LISTINGS_SOURCE=supabase \
+          VITE_SUPABASE_URL="$api_url" \
+          VITE_SUPABASE_ANON_KEY="$anon_key" \
+            bun run build
+
+          VITE_LISTINGS_SOURCE=supabase \
+          VITE_SUPABASE_URL="$api_url" \
+          VITE_SUPABASE_ANON_KEY="$anon_key" \
+            bun run dev -- --host 127.0.0.1 --port 4173 --strictPort \
+              >"$RUNNER_TEMP/gate1-browser-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/ara >/dev/null; then
+              break
+            fi
+            if [[ "$attempt" -eq 60 ]]; then
+              cat "$RUNNER_TEMP/gate1-browser-server.log"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          BASE_URL="http://127.0.0.1:4173" bun scripts/gate1-browser-e2e.ts
+
+          find test-results/gate1-browser -maxdepth 1 -type f -name '*.png' -print -exec file {} \;
+
+      - name: Upload Gate 1 browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gate1-browser-e2e
+          path: |
+            test-results/gate1-browser/*.png
+            ${{ runner.temp }}/gate1-browser-server.log
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Stop and remove local Supabase data
+        if: always()
+        run: supabase stop --no-backup
