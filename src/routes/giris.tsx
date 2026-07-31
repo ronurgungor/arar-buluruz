@@ -26,7 +26,7 @@ function SignIn() {
       <main className="mx-auto max-w-sm px-4 pb-16">
         <h1 className="mt-10 text-2xl font-extrabold tracking-tight">Giriş</h1>
         <div className="mt-6 rounded-2xl border border-border bg-card p-6">
-          <h2 className="font-bold text-foreground">Gerçek kullanıcı hesabı bu fazda yok.</h2>
+          <h2 className="font-bold text-foreground">Pilot sürecinde giriş bulunmuyor.</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             V0, kullanıcıların hesap açacağını veya ilanlarını yöneteceğini doğrulamaz. E-posta,
             telefon, parola ya da başka kişisel veri toplanmaz.
