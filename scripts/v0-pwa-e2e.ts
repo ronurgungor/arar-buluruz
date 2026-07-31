@@ -192,7 +192,9 @@ async function runMobileOffline() {
 
     console.log("V0 PWA: validating honest offline fallback");
     await context.setOffline(true);
-    await page.goto(`${baseUrl}/offline-probe`, { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => {
+      window.location.assign("/offline-probe");
+    });
     await page.getByRole("heading", { level: 1, name: "Bağlantı yok" }).waitFor();
     await page.getByText("dinamik ilanları çevrimdışı saklamaz", { exact: false }).waitFor();
     await assertNoHorizontalOverflow(page, "/offline-probe");
