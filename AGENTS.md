@@ -17,7 +17,7 @@ Bu dosya, projede çalışan ana sohbet, Lovable, Codex, Work ve diğer AI/denet
 
 1. `docs/AI_CHAT_BOOTSTRAP.md` dosyasını ortak giriş noktası olarak oku.
 2. Repository, branch ve mümkünse exact SHA'yı doğrula.
-3. Uygulama için project memory/current state'i, görevler için backlog'u, takım için capability registry ve Work/Codex profilini oku.
+3. Uygulama için project memory/current state'i, görevler için backlog'u, takım için capability registry ve Work/Codex profilini oku; yerel kurucu bilgisayarında çalışma gerekiyorsa `docs/FOUNDER_WINDOWS_DEV_MACHINE_PROFILE.md` dosyasını da oku.
 4. Gerçek erişimini tahmin etme; okuyamadığın kaynakları açıkça belirt.
 5. Eski sohbet hafızasını GitHub'daki güncel bilgiye tercih etme.
 6. Yazma işleminden önce aktif kod yazarını ve onay kapsamını doğrula.
@@ -35,9 +35,10 @@ Rutin ve düşük riskli bir işte bu başlangıç kısa tutulabilir; gereksiz t
 7. `docs/ARAR_BULURUZ_DECISION_LOG.md`
 8. `docs/AI_TEAM_CAPABILITIES.md`
 9. `docs/WORK_CODEX_CAPABILITY_PROFILE.md`
-10. `docs/ARAR_BULURUZ_BACKLOG.md`
-11. Tarihli kanıt/test dokümanları
-12. Eski sohbetler ve geçmiş notlar yalnız gerektiğinde
+10. `docs/FOUNDER_WINDOWS_DEV_MACHINE_PROFILE.md` — yalnız yerel geliştirme, test veya güvenli yönetim kapasitesiyle ilgili görevlerde
+11. `docs/ARAR_BULURUZ_BACKLOG.md`
+12. Tarihli kanıt/test dokümanları
+13. Eski sohbetler ve geçmiş notlar yalnız gerektiğinde
 
 Çelişki halinde daha yukarıdaki kaynak esas alınır.
 
@@ -49,6 +50,7 @@ Rutin ve düşük riskli bir işte bu başlangıç kısa tutulabilir; gereksiz t
 - **Decision Log:** Önemli kararlar, gerekçeleri, ertelenen alternatifler ve yeniden değerlendirme tetikleri.
 - **AI Team Capabilities:** Gerçekte doğrulanmış veya açıkça beyan edilmiş araç/AI erişimleri, yazma/okuma sınırları ve doğru görev yönlendirmesi.
 - **Work/Codex Capability Profile:** Work ve Codex'in ayrıntılı rol, nominal yetenek, proje kanıtı, oturum sınırı ve teslim standartları.
+- **Founder Windows Dev Machine Profile:** Kurucunun yerel bilgisayarının geliştirme/test uygunluğu, doğrulanmış araçları, güvenlik eksikleri ve hangi işlerin CI/VPS'e bırakılacağı.
 - **Backlog:** Bekleyen ve sıralanmış işler.
 - **Dated Evidence:** Belirli bir tarihteki test, dry-run veya denetim kanıtı.
 
@@ -100,6 +102,7 @@ Test başarısızsa, kapsam belirsizse veya geri dönüş planı yeterli değils
 - `npm install`, `npm ci`, ikinci lockfile veya izinsiz dependency değişikliği yapılmaz.
 - İlgisiz refactor ve biçimlendirme aynı göreve eklenmez.
 - Test derinliği alışkanlığa değil, değişikliğin riskine ve dokunduğu davranışa göre seçilir.
+- Yerel bilgisayarda yapılacak işlerin kapasite ve güvenlik sınırları `docs/FOUNDER_WINDOWS_DEV_MACHINE_PROFILE.md` ile eşleştirilir.
 
 ## Backend sahipliği ve çıkış planı
 
