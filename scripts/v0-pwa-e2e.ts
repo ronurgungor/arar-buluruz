@@ -6,6 +6,10 @@ const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:4174";
 const resultsDir = path.resolve("test-results/v0-pwa");
 fs.mkdirSync(resultsDir, { recursive: true });
 
+type V0Global = typeof globalThis & {
+  __stopV0Server?: () => Promise<void>;
+};
+
 function assert(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
@@ -190,8 +194,11 @@ async function runMobileOffline() {
     await assertNoHorizontalOverflow(page, "/ mobile");
     await page.screenshot({ path: path.join(resultsDir, "mobile-home.png"), fullPage: true });
 
-    console.log("V0 PWA: validating honest offline fallback");
-    await context.setOffline(true);
+    console.log("V0 PWA: validating honest offline fallback through a real server outage");
+    const stopServer = (globalThis as V0Global).__stopV0Server;
+    assert(stopServer, "The V0 runner did not provide a server-stop hook.");
+    await stopServer();
+
     await page.evaluate(() => {
       window.location.assign("/offline-probe");
     });
@@ -200,7 +207,6 @@ async function runMobileOffline() {
     await assertNoHorizontalOverflow(page, "/offline-probe");
     await page.screenshot({ path: path.join(resultsDir, "mobile-offline.png"), fullPage: true });
   } finally {
-    await context.setOffline(false);
     await context.close();
     await browser.close();
   }
