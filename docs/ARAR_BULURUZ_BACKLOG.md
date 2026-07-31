@@ -15,41 +15,60 @@ Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 - [x] Preserve Gate 1 as a reusable technical asset rather than treating it as an active real pilot.
 - [x] Canonicalize D-019: **V0 — UX ve değer önerisi doğrulaması**.
 - [x] Freeze backend/provider switching until a measured D-019 trigger exists.
-- [x] Canonicalize provider-independent/no-rebuild boundaries: migration-canonical PostgreSQL, adapter-isolated Supabase calls, future internal UUID identity, nullable future `owner_user_id`, and no JWT/provider-specific domain coupling.
+- [x] Preserve provider-independent/no-rebuild boundaries.
 
-## V0 minimal-PWA package
+## V0 and KVKK-min package
 
-- [x] Default the V0 listing source to synthetic/mock.
-- [x] Add a visible and honest V0 test-version notice.
-- [x] Disable real listing application, account and complaint data entry in V0.
-- [x] Preserve historical Gate 1 operational-flow tests only inside an explicit ephemeral CI flag.
-- [x] Add the manifest with durable app identity, scope and start URL.
-- [x] Add standard, maskable and Apple touch icons.
-- [x] Register a narrow navigation service worker.
-- [x] Cache only the offline page, manifest and icons.
-- [x] Add a safe Turkish offline screen that does not present stale dynamic listings.
-- [x] Add focused V0 PWA CI and desktop/mobile/offline screenshots.
-- [x] Pass standard CI: lint, 7/7 unit tests, build, 22/22 pgTAP, REST/RLS and focused desktop/mobile regression.
-- [x] Pass V0 PWA CI: zero-cost boundary, manifest/icons, service-worker control, shell-only caching, disabled real operations and real-server-outage fallback.
-- [x] Merge PR #28 with normal merge commit `16da297ddac5461d3cba6fa8fc76bbc095bbb2c3`.
+- [x] Default V0 to synthetic/mock listings.
+- [x] Add the visible V0 test notice.
+- [x] Disable real listing, account and complaint data entry.
+- [x] Add the narrow manifest, icons, service worker and honest offline screen.
+- [x] Add `/gizlilik` and a visible home-page privacy link.
+- [x] Remove Google Fonts requests and use system UI fonts.
+- [x] Verify no application cookie, Google Fonts, analytics, advertising-network, auth or backend request in the synthetic test build.
+- [x] Pass standard CI and V0 PWA validation on PR #30 head `71b026e0162be224655bd6477a4d44a487bcfe5c`.
+- [x] Merge PR #30 as `399489b3a452a22664136bc43115cc796cf71fc6`.
+
+## Publish incident and repository recovery
+
+- [x] Execute the conditionally approved Lovable Publish/Update.
+- [x] Verify the public V0 notice and shell.
+- [x] Detect that public `/ara` does not show synthetic listings and instead renders the disconnected-state message.
+- [x] Reject that deployment as an accepted V0 release.
+- [x] Close the temporary public-verification PR #31 without merge.
+- [x] Confirm that the available Lovable connector has no historical deployment rollback or unpublish action.
+- [x] Record the unexpected `1.3` Lovable credit consumption.
+- [x] Revert the unintended Lovable dependency/lock/generated-route mutation through PR #33 without force-push.
+- [x] Re-run and pass full CI, Gate 1 and V0 PWA validation after repository recovery.
+- [x] Restore repository file content to the accepted PR #30 state; `399489b3…` and recovery merge `edabc518…` have no file difference.
 
 ## Active gate
 
-- [-] **Founder Lovable Publish/Update decision for the merged V0 minimal-PWA package.**
+- [-] **Founder-side Lovable rollback or unpublish.**
 
-No other implementation package is active while this gate is pending.
+Use one of the platform UI paths:
 
-## Publish package evidence
+1. History → select the previously accepted published revision → Revert → Publish/Update; or
+2. Project Settings → Unpublish.
 
-- Approved PR head: `2cf223df4aea91b045de91dc20e6ed79e8120124`.
-- Standard CI run: `30631497989` — success.
-- V0 PWA run: `30631497756` — success.
-- Screenshot artifact ID: `8793525311`.
-- Artifact SHA-256: `3b5c61c2fe6b5dbb3f274da31fbae405ab8063af1a9986a28780ed3b6dc6eeb8`.
-- Rollback before publish: revert PR #28 merge commit.
-- Rollback after publish: revert code and restore/publish the last accepted Lovable revision.
+After that action, verify the public URL before opening any new publish or diagnosis gate.
 
-## Frozen until a D-019 trigger exists
+No automated Lovable agent message, publish, environment change or listing-source repair is authorized while this gate is open.
+
+## Frozen until the public rollback is complete
+
+- [ ] Do not change the Lovable environment or listing-source setting.
+- [ ] Do not republish.
+- [ ] Do not diagnose by expanding application/backend scope.
+- [ ] Do not create a remote Supabase project or apply a remote migration.
+- [ ] Do not connect secrets or environment values.
+- [ ] Do not enter real listings or personal data.
+- [ ] Do not add auth, Storage, Realtime or Edge Functions.
+- [ ] Do not add advertising or analytics.
+- [ ] Do not add TWA, Android or Play Store packaging.
+- [ ] Do not buy paid or recurring infrastructure.
+
+## D-019 backend reopening triggers
 
 The backend decision may reopen only when at least one of these is real and measured:
 
@@ -60,64 +79,19 @@ The backend decision may reopen only when at least one of these is real and meas
 - [ ] confirmed photo/storage need;
 - [ ] measured cost or technical necessity.
 
-Without a trigger:
-
-- [ ] do not recommend Supabase ↔ Türkiye self-managed switching;
-- [ ] do not create a remote Supabase project or apply a remote migration;
-- [ ] do not connect secrets or environment values;
-- [ ] do not enter real listings or seller/customer data;
-- [ ] do not add auth, Storage, Realtime or Edge Functions;
-- [ ] do not add advertising or analytics;
-- [ ] do not add TWA, Android or Play Store packaging;
-- [ ] do not buy paid or recurring infrastructure.
-
-Supabase Free remains a development/technical-validation possibility only; it is not presumed to be reliable production infrastructure for a real external-user pilot.
+Without a trigger, do not recommend Supabase ↔ Türkiye self-managed switching. Supabase Free remains development/technical-validation only.
 
 ## V0 evaluation boundary
 
-V0 may be evaluated through manual/qualitative observation of:
+V0 may evaluate only product comprehension, search/discovery, listing cards/details, mobile/desktop usability, PWA installation and general interest.
 
-- whether users understand the product;
-- search and listing discovery;
-- listing cards and detail pages;
-- mobile and desktop usability;
-- PWA installation;
-- general interest.
-
-Do not report V0 as proving:
-
-- real listing supply;
-- account creation;
-- listing management;
-- sustainable moderation;
-- seller-contact operations;
-- supply-demand loop formation.
-
-No analytics/event infrastructure is added solely to measure V0.
-
-## Deferred product capabilities
-
-- [ ] Real user registration, profile and account recovery.
-- [ ] Seller self-service listing creation/editing/deletion.
-- [ ] Real seller contact information and communication rules.
-- [ ] Moderation/admin workflows.
-- [ ] Photo upload or object storage.
-- [ ] SMS/OTP.
-- [ ] Payments, shipping or orders.
-- [ ] In-app chat.
-- [ ] Advertising network integration.
-- [ ] Push notifications or background sync.
-- [ ] Full offline or cache-first dynamic listings.
-- [ ] TWA, Play Store or native Android.
-
-Each deferred item requires measured need, scope definition and the applicable founder gate.
+Do not report V0 as proving real listing supply, accounts, listing management, moderation sustainability, seller-contact operations or supply-demand loop formation.
 
 ## Operating rules
 
 - Main assistant remains the default routine executor under D-018.
 - Only one code writer operates at a time.
-- Lovable Publish/Update and other production deployments require explicit founder approval.
 - Git history is never force-pushed or rewritten.
-- Validation depth follows touched risk; existing evidence remains valid until covered behavior changes.
-- Important milestones are written back to current state, decision log and project memory.
+- Lovable Publish/Update and production deployment require an explicit bounded gate.
+- Do not send another Lovable agent message for this rollback incident.
 - No secret, credential, real user record or unnecessary personal data belongs in repository documentation.
