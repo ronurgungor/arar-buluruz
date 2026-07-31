@@ -152,7 +152,14 @@ function SearchPage() {
           </div>
         ) : (
           <>
-            <p className="mt-3 text-sm text-muted-foreground">{results.length} ilan bulundu</p>
+            <p
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              className="mt-3 text-sm text-muted-foreground"
+            >
+              {results.length === 0 ? "Sonuç bulunamadı" : `${results.length} ilan bulundu`}
+            </p>
 
             <ul className="mt-2 divide-y divide-border/70">
               {results.map((listing, index) => (
