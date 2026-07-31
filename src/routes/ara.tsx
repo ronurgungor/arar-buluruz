@@ -97,7 +97,6 @@ function SearchPage() {
   const setSearch = (patch: Partial<Search>) =>
     navigate({ to: "/ara", search: (prev: Search) => ({ ...prev, ...patch }) });
 
-
   return (
     <div className="min-h-screen">
       <TopBar />
