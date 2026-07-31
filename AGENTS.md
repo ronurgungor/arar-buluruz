@@ -66,7 +66,7 @@ Rutin ve düşük riskli bir işte bu başlangıç kısa tutulabilir; gereksiz t
 
 Takımdaşların rol ve yetenekleri `docs/AI_TEAM_CAPABILITIES.md` ile `docs/WORK_CODEX_CAPABILITY_PROFILE.md` içinde okunmalıdır. Nominal yetenek, o oturumdaki erişim ve proje için verilmiş işlem yetkisi birbirinden ayrılır.
 
-Work, Codex, Lovable veya ana sohbet çıktısı tek başına emir ya da kesin proje kararı değildir. Öneriler kanonik kaynaklar, kanıt, risk, kapsam ve kurucu iradesiyle değerlendirilir. İkinci veya üçüncü görüş yalnız kararın önemi, belirsizliği, güvenlik/KVKK etkisi ya da geri dönüş maliyeti koordinasyon maliyetini haklı çıkardığında alınır; rutin olarak tekrarlanmaz.
+Work, Codex, Lovable veya ana sohbet çıktısı tek başına emir ya da kesin proje kararı değildir. Öneriler kanonik kaynaklar, kanıt, kapsam ve kurucu iradesiyle değerlendirilir. İkinci veya üçüncü görüş yalnız kararın önemi, belirsizliği, güvenlik/KVKK etkisi ya da geri dönüş maliyeti koordinasyon maliyetini haklı çıkardığında alınır; rutin olarak tekrarlanmaz.
 
 Her uzman devri, çözmesi beklenen somut belirsizliği veya sağlayacağı eksik yeteneği açıkça belirtmelidir.
 
@@ -76,7 +76,7 @@ Aynı anda yalnız bir araç kod yazar. Yazar değişmeden önce mevcut görev t
 
 ## Onay modeli
 
-Kurucu, backlog'da tanımlı düşük riskli ve geri dönüşü kolay görevler için sürekli uygulama onayı vermiştir. Ana sohbet; kapsam sapması, ciddi belirsizlik veya aşağıdaki yüksek riskli alanlardan biri yoksa feature branch, commit, PR, merge ve gerekiyorsa publish adımlarını tamamlayabilir.
+Kurucu, backlog'da tanımlı düşük riskli ve geri dönüşü kolay görevler için sürekli uygulama onayı vermiştir. Ana sohbet; kapsam sapması veya ciddi belirsizlik yoksa feature branch, commit, PR ve merge adımlarını tamamlayabilir. Lovable Publish/Update ve diğer production publish/deploy işlemleri için görev bazlı açık kurucu onayı gerekir.
 
 Aşağıdaki işlemler için görev bazlı açık kurucu kararı gerekir. Work veya Codex incelemesi, risk ve belirsizlik bunu haklı çıkarıyorsa karar desteği olarak kullanılır; kurucu onayının yerine geçmez:
 
@@ -86,6 +86,7 @@ Aşağıdaki işlemler için görev bazlı açık kurucu kararı gerekir. Work v
 - Ödeme veya reklam ağı entegrasyonu
 - Ücretli ya da recurring servis
 - KVKK, güvenlik, public pilot veya geri dönüşü pahalı mimari karar
+- Lovable Publish/Update veya başka production publish/deploy
 - Git geçmişini değiştirme veya force-push
 
 Test başarısızsa, kapsam belirsizse veya geri dönüş planı yeterli değilse otomatik onay kullanılmaz.
@@ -104,13 +105,36 @@ Test başarısızsa, kapsam belirsizse veya geri dönüş planı yeterli değils
 - Test derinliği alışkanlığa değil, değişikliğin riskine ve dokunduğu davranışa göre seçilir.
 - Yerel bilgisayarda yapılacak işlerin kapasite ve güvenlik sınırları `docs/FOUNDER_WINDOWS_DEV_MACHINE_PROFILE.md` ile eşleştirilir.
 
+## V0 faz kilidi ve doğrulama sınırı
+
+- Aktif fazın adı **“V0 — UX ve değer önerisi doğrulaması”**dır.
+- V0 yalnız ürünün anlaşılmasını, arama ve ilan keşfini, ilan kartı/detay deneyimini, mobil/desktop kullanılabilirliği, minimal PWA kurulabilirliğini ve genel kullanıcı ilgisini doğrular.
+- V0; kullanıcıların gerçekten ilan vereceğini, hesap açacağını, ilan yöneteceğini, moderasyonun sürdürülebileceğini, satıcı iletişim modelinin çalışacağını veya arz-talep döngüsünün oluşacağını doğrulamış sayılmaz.
+- Canlı V0 yalnız synthetic/mock ilan kullanır. Gerçek kullanıcı hesabı, gerçek ilan, gerçek satıcı telefonu/e-postası, reklam ve analytics kullanılmaz. Test sürümü olduğu dürüstçe belirtilir.
+- Minimal PWA yalnız manifest, kalıcı uygulama kimliği, doğru ikonlar, kurulabilirlik ve güvenli/dürüst offline-hata ekranıdır.
+- Push, background sync, tam offline ilan, dinamik ilanlarda cache-first, auth, gerçek backend, reklam, analytics, TWA ve Play Store V0 kapsamı dışındadır.
+- Backend kararı; dış kullanıcı hesabı, gerçek kişisel veri, uygulanamaz KVKK aktarım modeli, ölçülmüş free-tier/uptime sorunu, kesinleşmiş fotoğraf/storage ihtiyacı veya ölçülmüş maliyet/teknik zorunluluk oluşmadan yeniden açılmaz.
+- Bu tetikleyiciler olmadan Supabase ile Türkiye self-managed arasında yön değişikliği önerilmez.
+- Supabase Free yalnız geliştirme ve teknik doğrulama adayıdır; gerçek dış kullanıcı pilotunda güvenilir production altyapısı olduğu varsayılmaz.
+
+## No-rebuild mimari sınırları
+
+- PostgreSQL şeması ve migration'lar GitHub'da kanonik kalır.
+- UI ve domain iş kuralları backend sağlayıcısından bağımsız tutulur.
+- Supabase çağrıları yalnız adapter katmanında kalır; domain modeline yayılmaz.
+- Gelecekte kullanıcı kimliği internal UUID ile temsil edilir; e-posta veya telefon foreign key yapılmaz.
+- İleride `listings.owner_user_id` nullable olarak eklenebilmesini engelleyen karar alınmaz.
+- Auth claim/JWT biçimi domain modeline gömülmez.
+- Backend kararı kesinleşmeden Supabase Storage, Realtime, Edge Functions veya provider-specific yoğun özellik eklenmez.
+
 ## Backend sahipliği ve çıkış planı
 
 - Lovable database kapalı kalır; Lovable üzerinden database, auth, storage, secret veya edge function etkinleştirilmez.
-- Gelecekteki backend, kurucunun doğrudan sahibi olduğu ayrı bir Supabase projesinde kurulacaktır; hesap, organizasyon, billing ve yönetici erişimleri kurucunun kontrolünde olacaktır.
-- Şema ve tüm migration'lar ilk günden GitHub'da kanonik olarak tutulacaktır. Dashboard'da yapılan değişiklikler migration'a dönüştürülmeden kalıcı kabul edilmez.
-- Uygulama yalnız açıkça yönetilen environment değişkenleriyle backend'e bağlanacaktır; Lovable'a kalıcı backend sahipliği veya tek taraflı kontrol verilmeyecektir.
-- Gerçek veri öncesinde yedekleme, export/restore, bölge, RLS, auth, veri saklama/KVKK ve sağlayıcıdan çıkış planı uygun bağımsız inceleme ile değerlendirilip kurucu tarafından onaylanacaktır.
+- Backend sağlayıcısı V0 boyunca dondurulmuştur; mevcut Supabase adapter/migration yatırımı teknik hazırlık olarak korunur fakat remote proje veya production taahhüdü sayılmaz.
+- Gelecekteki backend kurucunun doğrudan kontrolünde olmalıdır; hesap, organizasyon, billing ve yönetici erişimleri kurucunun kontrolünde tutulur.
+- Şema ve tüm migration'lar ilk günden GitHub'da kanonik tutulur. Dashboard değişiklikleri migration'a dönüştürülmeden kalıcı kabul edilmez.
+- Uygulama yalnız açıkça yönetilen environment değişkenleriyle backend'e bağlanır; Lovable'a kalıcı backend sahipliği veya tek taraflı kontrol verilmez.
+- Gerçek veri öncesinde yedekleme, export/restore, bölge, RLS, auth, veri saklama/KVKK ve sağlayıcıdan çıkış planı uygun bağımsız inceleme ile değerlendirilip kurucu tarafından onaylanır.
 
 ## Görev akışı
 
@@ -121,7 +145,7 @@ Test başarısızsa, kapsam belirsizse veya geri dönüş planı yeterli değils
 5. Diff, hedef davranışlar ve riskle orantılı testler incelenir.
 6. Gerekirse ve değer katıyorsa Codex veya Work'ten bağımsız/uzman kontrol alınır.
 7. Onay modeline göre PR hazırlanır ve merge edilir veya karar için durulur.
-8. Publish gerekiyorsa aynı risk değerlendirmesi ayrı olarak uygulanır.
+8. Publish gerekiyorsa ayrı açık kurucu onayı alınır.
 9. Milestone sonrası current state, backlog, decision log ve gerekiyorsa capability registry/profile güncellenir.
 
 ## Raporlama

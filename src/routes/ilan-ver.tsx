@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
@@ -8,15 +8,15 @@ import { buildControlledWhatsAppHref } from "@/lib/prototype-contact";
 export const Route = createFileRoute("/ilan-ver")({
   head: () => ({
     meta: [
-      { title: "İlan başvurusu — Arar Buluruz" },
+      { title: "İlan verme demosu — Arar Buluruz" },
       {
         name: "description",
-        content: "İlan bilgilerini kontrollü Arar Buluruz WhatsApp hattına gönder.",
+        content: "V0 test sürümünde gerçek ilan başvurusu veya kişisel veri girişi yapılmaz.",
       },
-      { property: "og:title", content: "İlan başvurusu — Arar Buluruz" },
+      { property: "og:title", content: "İlan verme demosu — Arar Buluruz" },
       {
         property: "og:description",
-        content: "Pilot ilan başvurunu merkezi WhatsApp hattına ilet.",
+        content: "V0 test sürümünde ilan verme işlemi kapalıdır.",
       },
     ],
   }),
@@ -25,8 +25,36 @@ export const Route = createFileRoute("/ilan-ver")({
 
 const fieldClass =
   "h-12 w-full rounded-xl border border-border bg-card px-4 text-base outline-none focus:border-primary";
+const gate1TestOperationsEnabled = import.meta.env.VITE_GATE1_TEST_OPERATIONS === "enabled";
 
 function PostListing() {
+  if (gate1TestOperationsEnabled) return <Gate1ApplicationForm />;
+
+  return (
+    <div className="min-h-screen">
+      <TopBar />
+      <main className="mx-auto max-w-md px-4 pb-16">
+        <h1 className="mt-8 text-2xl font-extrabold tracking-tight">İlan verme demosu</h1>
+        <div className="mt-6 rounded-2xl border border-border bg-card p-6">
+          <h2 className="font-bold text-foreground">Gerçek ilan başvurusu bu fazda kapalı.</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            V0 yalnız ürünün anlaşılmasını, arama ve ilan keşfi deneyimini doğrular. Bu ekranda
+            kişisel bilgi veya ilan verisi girmeyin; hiçbir kayıt, WhatsApp başvurusu veya yayınlama
+            işlemi yapılmaz.
+          </p>
+          <Link
+            to="/"
+            className="mt-5 flex h-12 items-center justify-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+          >
+            Aramaya dön
+          </Link>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function Gate1ApplicationForm() {
   const [sellerDisplayName, setSellerDisplayName] = useState("");
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
