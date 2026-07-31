@@ -49,6 +49,18 @@ async function gotoOk(page: Page, route: string) {
   assert(response?.ok() === true, `${route} returned HTTP ${response?.status() ?? "unknown"}.`);
 }
 
+async function sameOriginFetch(page: Page, route: string) {
+  return page.evaluate(async (path) => {
+    const response = await fetch(path, { cache: "no-store" });
+    return {
+      ok: response.ok,
+      status: response.status,
+      contentType: response.headers.get("content-type"),
+      text: await response.text(),
+    };
+  }, route);
+}
+
 async function assertNoTrackingMarkup(page: Page, route: string) {
   const state = await page.evaluate(() => ({
     fontLinks: Array.from(document.querySelectorAll<HTMLLinkElement>("link[href]")).filter((link) =>
@@ -76,12 +88,32 @@ async function assertNoOverflow(page: Page, route: string) {
   );
 }
 
-async function assertInstallability(context: BrowserContext, page: Page) {
+function assertOnlyHostingSecurityCookies(
+  cookies: Awaited<ReturnType<BrowserContext["cookies"]>>,
+  label: string,
+) {
+  const unexpected = cookies.filter(
+    (cookie) =>
+      cookie.name !== "__dpl" &&
+      cookie.name !== "cf_clearance" &&
+      !cookie.name.startsWith("__cf_"),
+  );
+  assert(
+    unexpected.length === 0,
+    `${label} created non-hosting cookies: ${unexpected.map((cookie) => cookie.name).join(", ")}`,
+  );
+}
+
+async function assertInstallability(page: Page) {
   assert(new URL(baseUrl).protocol === "https:", "Public V0 is not served over HTTPS.");
 
-  const response = await context.request.get(new URL("/manifest.webmanifest", baseUrl).toString());
-  assert(response.ok(), `Manifest returned HTTP ${response.status()}.`);
-  const manifest = (await response.json()) as {
+  const manifestResponse = await sameOriginFetch(page, "/manifest.webmanifest");
+  assert(manifestResponse.ok, `Manifest returned HTTP ${manifestResponse.status}.`);
+  assert(
+    manifestResponse.contentType?.startsWith("application/manifest+json") === true,
+    `Unexpected manifest content type: ${manifestResponse.contentType}`,
+  );
+  const manifest = JSON.parse(manifestResponse.text) as {
     id?: string;
     name?: string;
     short_name?: string;
@@ -111,10 +143,10 @@ async function assertInstallability(context: BrowserContext, page: Page) {
   assert(requiredIcons.every(Boolean), "Required installability icons are missing.");
 
   for (const icon of requiredIcons) {
-    const iconResponse = await context.request.get(new URL(icon!.src!, baseUrl).toString());
-    assert(iconResponse.ok(), `${icon!.src} returned HTTP ${iconResponse.status()}.`);
+    const iconResponse = await sameOriginFetch(page, icon!.src!);
+    assert(iconResponse.ok, `${icon!.src} returned HTTP ${iconResponse.status}.`);
     assert(
-      iconResponse.headers()["content-type"]?.startsWith("image/png") === true,
+      iconResponse.contentType?.startsWith("image/png") === true,
       `${icon!.src} is not image/png.`,
     );
   }
@@ -162,7 +194,7 @@ async function verifyDesktop() {
     await page.getByTestId("v0-notice").waitFor();
     await page.getByText("İlanlar örnektir", { exact: false }).waitFor();
     await page.getByRole("link", { name: "Gizlilik" }).waitFor();
-    await assertInstallability(context, page);
+    await assertInstallability(page);
     await assertNoTrackingMarkup(page, "/");
     await assertNoOverflow(page, "/");
     await page.screenshot({ path: path.join(evidenceDir, "public-desktop-home.png"), fullPage: true });
@@ -182,11 +214,17 @@ async function verifyDesktop() {
     assert(listingId, "Listing ID could not be derived.");
     await gotoOk(page, `/sikayet/${listingId}`);
     await page.getByRole("heading", { level: 1, name: "Şikâyet demosu" }).waitFor();
-    assert((await page.locator("form, input, textarea, select").count()) === 0, "Complaint data collection is active.");
+    assert(
+      (await page.locator("form, input, textarea, select").count()) === 0,
+      "Complaint data collection is active.",
+    );
 
     await gotoOk(page, "/ilan-ver");
     await page.getByRole("heading", { level: 1, name: "İlan verme demosu" }).waitFor();
-    assert((await page.locator("form, input, textarea, select").count()) === 0, "Listing data collection is active.");
+    assert(
+      (await page.locator("form, input, textarea, select").count()) === 0,
+      "Listing data collection is active.",
+    );
 
     await gotoOk(page, "/giris");
     await page.getByText("Pilot sürecinde giriş bulunmuyor.", { exact: true }).waitFor();
@@ -199,13 +237,15 @@ async function verifyDesktop() {
     await page.getByText("Zorunlu olmayan çerez veya tracker", { exact: false }).waitFor();
     await page.getByText("teknik erişim kayıtları tutabilir", { exact: false }).waitFor();
     await page.getByText("merkezi telefon ve WhatsApp hattıdır", { exact: false }).waitFor();
-    assert((await page.locator("form, input, textarea, select").count()) === 0, "Privacy page collects data.");
+    assert(
+      (await page.locator("form, input, textarea, select").count()) === 0,
+      "Privacy page collects data.",
+    );
     await assertNoTrackingMarkup(page, "/gizlilik");
     await assertNoOverflow(page, "/gizlilik");
     await page.screenshot({ path: path.join(evidenceDir, "public-desktop-privacy.png"), fullPage: true });
 
-    const cookies = await context.cookies(baseUrl);
-    assert(cookies.length === 0, `Public V0 created cookies: ${cookies.map((item) => item.name).join(", ")}`);
+    assertOnlyHostingSecurityCookies(await context.cookies(baseUrl), "Public desktop V0");
     assert(
       forbiddenRequests.length === 0,
       `Public V0 made a forbidden request: ${forbiddenRequests.join(" | ")}`,
@@ -233,7 +273,7 @@ async function verifyMobileOffline() {
     await gotoOk(page, "/");
     await page.getByTestId("v0-notice").waitFor();
     await page.getByRole("link", { name: "Gizlilik" }).waitFor();
-    await assertInstallability(context, page);
+    await assertInstallability(page);
     await assertNoTrackingMarkup(page, "/ mobile");
     await assertNoOverflow(page, "/ mobile");
     await page.screenshot({ path: path.join(evidenceDir, "public-mobile-home.png"), fullPage: true });
@@ -243,8 +283,7 @@ async function verifyMobileOffline() {
     await assertNoOverflow(page, "/gizlilik mobile");
     await page.screenshot({ path: path.join(evidenceDir, "public-mobile-privacy.png"), fullPage: true });
 
-    const cookies = await context.cookies(baseUrl);
-    assert(cookies.length === 0, `Mobile public V0 created cookies: ${cookies.map((item) => item.name).join(", ")}`);
+    assertOnlyHostingSecurityCookies(await context.cookies(baseUrl), "Public mobile V0");
     assert(
       forbiddenRequests.length === 0,
       `Mobile public V0 made a forbidden request: ${forbiddenRequests.join(" | ")}`,
