@@ -37,8 +37,7 @@ async function assertManifest(context: BrowserContext) {
   const required = [
     icons.find((icon) => icon.sizes === "192x192" && icon.type === "image/png"),
     icons.find(
-      (icon) =>
-        icon.sizes === "512x512" && icon.type === "image/png" && icon.purpose === "any",
+      (icon) => icon.sizes === "512x512" && icon.type === "image/png" && icon.purpose === "any",
     ),
     icons.find(
       (icon) =>
@@ -46,7 +45,10 @@ async function assertManifest(context: BrowserContext) {
     ),
   ];
 
-  assert(required.every((icon) => Boolean(icon?.src)), "Manifest icon set is incomplete.");
+  assert(
+    required.every((icon) => Boolean(icon?.src)),
+    "Manifest icon set is incomplete.",
+  );
 
   for (const icon of required) {
     const iconResponse = await context.request.get(new URL(icon!.src!, baseUrl).toString());
