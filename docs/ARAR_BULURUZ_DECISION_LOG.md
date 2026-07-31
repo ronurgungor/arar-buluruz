@@ -1,6 +1,6 @@
 # Arar Buluruz — Decision Log
 
-_Last updated: 2026-07-30, Europe/Istanbul_
+_Last updated: 2026-07-31, Europe/Istanbul_
 
 This is an append-oriented record of consequential product, technical and operating decisions. It preserves **what was decided, why, alternatives rejected and what would cause reconsideration**.
 
@@ -39,7 +39,7 @@ Each new entry should include:
 ## D-003 — Frontend-only prototype first
 
 - **Date:** 2026-07-27
-- **Status:** Completed for prototype validation; first-pilot direction superseded by D-016
+- **Status:** Completed for prototype validation; current V0 boundary is D-019
 - **Decision:** Initial development uses local mock data with no real backend, database, auth, storage, secrets, payments or ad SDK.
 - **Rationale:** Validate the core experience before introducing ownership, security, KVKK, abuse and operating burdens.
 - **Review trigger:** The published public snapshot remains the mock prototype until separately approved remote activation, environment connection, real data and publication gates are completed.
@@ -55,11 +55,11 @@ Each new entry should include:
 ## D-005 — Founder-owned future backend
 
 - **Date:** 2026-07-28
-- **Status:** Active
-- **Decision:** Any future backend will use a separate founder-owned Supabase organization/project; Lovable backend remains disabled.
+- **Status:** Ownership principle active; Supabase provider commitment superseded by D-019
+- **Decision:** Any future backend must be founder-controlled; Lovable backend remains disabled. The earlier Supabase-specific provider commitment is no longer an active next-step decision.
 - **Rationale:** Preserve account, billing, administrator, data and provider-exit control.
 - **Requirements:** GitHub-canonical schema/migrations; reviewed RLS, auth, backups, region, retention/KVKK, secrets and export/restore.
-- **Review trigger:** A different provider may be considered only through an explicit architecture and exit-cost review.
+- **Review trigger:** Backend/provider selection reopens only under D-019 triggers.
 
 ## D-006 — One active code writer
 
@@ -81,10 +81,10 @@ Each new entry should include:
 ## D-008 — Controlled contact flow
 
 - **Date:** 2026-07-28
-- **Status:** Active for prototype and approved reduced pilot direction
+- **Status:** Active only for synthetic prototype behavior; no real contact validation in V0
 - **Decision:** All mock listings use one controlled telephone/WhatsApp target rather than unique fake seller numbers.
 - **Rationale:** Prevent accidental contact with real third parties while preserving the interaction flow.
-- **Pilot extension:** The first real persistence slice also keeps communication on the central controlled line and stores no seller phone in Supabase.
+- **V0 boundary:** This synthetic interaction does not validate the future seller-contact model.
 - **Review trigger:** A separately approved direct-seller-contact model with verified ownership, privacy, abuse and operating controls.
 
 ## D-009 — Search and mobile defects fixed before further expansion
@@ -155,32 +155,24 @@ Each new entry should include:
 ## D-016 — Reduced founder-operated persistence pilot
 
 - **Date:** 2026-07-30
-- **Status:** Active direction; Gate 1 implementation merged to `main`; Gates 2–5 closed
-- **Decision:** Select reduced Option B. The first real capability will be listing persistence through the smallest safe founder-operated slice, beginning in Çorlu.
-- **Data model:** Start with only a `listings` table containing `id`, `title`, `description`, `price_amount`, `province`, `district`, `seller_display_name`, `search_keywords`, `status`, `created_at`, `updated_at`, `published_at`, `expires_at` and `unpublished_at`. Initial status values are `draft`, `published` and `unpublished`. Mock listings never enter the production database and no `is_mock` column is added.
-- **Public boundary:** The public application is read-only. Database/RLS visibility enforces `status = 'published' and published_at <= now() and expires_at > now()`. Anonymous/public INSERT, UPDATE and DELETE remain prohibited; frontend filtering is not the security boundary.
-- **Founder operation:** The founder may temporarily create, edit, publish and remove approved listing rows through the Supabase Dashboard after a separately approved founder-owned project exists. Dashboard access belongs only to the founder, uses MFA and is not shared. No schema/security changes may be made through the Dashboard.
-- **Canonical schema:** Schema and security changes are migration-canonical in GitHub from day one.
-- **Contact/KVKK boundary:** Seller phone is not stored in Supabase. Public output shows only an approved `seller_display_name`; communication remains on the central controlled phone/WhatsApp line. Data-controller identity, notice, legal basis, retention/deletion and possible international-transfer treatment remain a separate founder/KVKK package.
-- **Explicitly deferred:** Buyer/seller/moderator auth, role tables, seller-contact/private-phone tables, custom admin panel, public database insert, seller self-service, photos/Storage, SMS/OTP, expiration cron, broad analytics, direct seller phone, nationwide pilot, vehicle/real-estate listings, payment, chat, shipping and advertising network.
-- **Approval gates:** Gate 1 code, migration, RLS, REST integration and local validation were merged through PR #25. Supabase organization/project creation, environment connection, real-data entry and pilot publication remain separate closed gates. Approval or completion of one gate never authorizes the next.
-- **Evidence:** PR #25; expected head `1d9d0f6112464e5078d90df510488f7a786cddef`; normal merge commit `994b8b1705d52434be0c000093a052fa0e519542`; frozen Bun install, lint, unit/build, clean local reset, 22/22 pgTAP, REST/RLS and desktop/mobile E2E passed before merge.
-- **Dashboard exit triggers:** Replace founder-only Dashboard operations when a second operator or role separation is needed; seller self-service or private contact data enters scope; repeated Dashboard errors require workflow/audit controls; pending operations become unsustainable; the pilot expands beyond the controlled Çorlu model; or the Dashboard prevents reliable enforcement.
-- **Pilot evidence rule:** Listing counts are not mandatory hard gates. Progression depends on persistence/RLS correctness and qualitative use/operating signals.
-- **Review trigger:** Reconsider scope only after real pilot evidence, a material legal/security finding or a Dashboard exit trigger.
+- **Status:** Gate 1 technical asset retained; real-pilot sequencing frozen and superseded by D-019
+- **Decision:** The completed Gate 1 work remains a reusable PostgreSQL migration/RLS/adapter validation asset. It is not the active product phase and does not authorize a real pilot.
+- **Data model:** The prepared `listings` migration contains `id`, `title`, `description`, `price_amount`, `province`, `district`, `seller_display_name`, `search_keywords`, `status`, `created_at`, `updated_at`, `published_at`, `expires_at` and `unpublished_at`. Initial status values are `draft`, `published` and `unpublished`.
+- **Public boundary:** The prepared RLS visibility condition is `status = 'published' and published_at <= now() and expires_at > now()`. Anonymous/public INSERT, UPDATE and DELETE remain prohibited.
+- **Canonical schema:** Schema and security changes remain migration-canonical in GitHub.
+- **Approval boundary:** No remote Supabase organization/project, environment connection, real data or pilot publication is authorized.
+- **Evidence:** PR #25; head `1d9d0f6112464e5078d90df510488f7a786cddef`; normal merge commit `994b8b1705d52434be0c000093a052fa0e519542`; frozen Bun install, lint, unit/build, clean local reset, 22/22 pgTAP, REST/RLS and desktop/mobile E2E passed before merge.
+- **Review trigger:** Only the D-019 backend-reopening triggers.
 
-## D-017 — Web-first delivery, minimal PWA package and separate Play Store value gate
+## D-017 — Web-first delivery and minimal PWA boundary
 
 - **Date:** 2026-07-30
-- **Status:** Active
-- **Decision:** The canonical delivery sequence is: responsive web → Gate 1 persistence/RLS implementation → a separate narrow minimal-PWA preparation package → controlled Çorlu pilot → real-use and operating validation → a separate Play Store value gate → if that gate passes, TWA as the default Play Store packaging path.
-- **Gate 1 boundary:** Minimal PWA work is not part of Gate 1. Gate 1 receives no PWA dependency, service worker, TWA, Android Studio or Play Store files, package ID, `assetlinks.json` or other mobile-packaging scope.
-- **Minimal PWA scope:** The later package is limited to a manifest, durable application identity, correct icons, installability and a safe, honest offline/error screen. Push notifications, full offline listing functionality, background sync and cache-first storage of dynamic listings remain out of scope.
-- **Pilot evidence rule:** Reaching 10–20 listings is not a mandatory hard gate. Progression is based on qualitative use and operating signals.
-- **Play Store gate:** Play Store publication is not automatic after the pilot. It requires separate evidence that store presence creates material value and that ongoing policy/signing/release/maintenance burden is justified.
-- **Default packaging if approved:** If the Play Store value gate passes without a measured need for deeper device integration, use a Trusted Web Activity as the default packaging route.
-- **Deferred alternatives:** Capacitor or native Android are reconsidered only when measured evidence shows a device-integration need that responsive web, minimal PWA and TWA cannot satisfy safely and proportionately.
-- **Review trigger:** Reconsider only after real pilot evidence, a material platform-policy change, a proven installation/distribution problem or a measured device-integration requirement.
+- **Status:** Minimal-PWA scope active; former post-PWA real-pilot sequence superseded by D-019
+- **Decision:** Preserve responsive web and implement only the separate narrow minimal-PWA package.
+- **Minimal PWA scope:** Manifest, durable application identity, correct icons, installability and a safe, honest offline/error screen.
+- **Excluded:** Push notifications, full offline listing functionality, background sync, cache-first storage of dynamic listings, auth, real backend, advertising, analytics, TWA and Play Store.
+- **Play Store gate:** Play Store publication remains a separate future value decision and is not automatic.
+- **Review trigger:** A material platform-policy change, proven installation/distribution problem or measured device-integration requirement.
 
 ## D-018 — Routine execution authority and escalation boundary
 
@@ -192,3 +184,19 @@ Each new entry should include:
 - **Rationale:** Preserve execution speed and clear ownership while retaining explicit founder control over consequential gates.
 - **Consequence:** Low-risk work proceeds without repeated approvals; exact SHA, tests, mutations, risks and rollback remain reportable.
 - **Review trigger:** Reconsider if routine autonomy causes repeated scope drift, unsafe mutations or insufficient founder visibility.
+
+## D-019 — V0 UX/value validation freeze and no-rebuild guardrails
+
+- **Date:** 2026-07-31
+- **Status:** Active; supersedes D-005, D-016 and D-017 where they conflict
+- **Phase:** **V0 — UX ve değer önerisi doğrulaması.**
+- **Validated only:** Product comprehension; search and listing discovery; listing cards and detail pages; mobile/desktop usability; minimal-PWA installability; general user interest.
+- **Not validated:** Real listing supply; account creation; listing ownership/management; sustainable moderation; seller-contact operations; or a functioning supply-demand loop.
+- **Live-data boundary:** V0 uses only synthetic/mock listings and is honestly labelled as a test version. No real account, real listing, real seller phone/email, advertising or analytics is used.
+- **Minimal-PWA boundary:** Only manifest, durable identity, correct icons, installability and a safe/honest offline-error screen. No push, background sync, full offline listings, cache-first dynamic listings, auth, real backend, advertising, analytics, TWA or Play Store.
+- **No-rebuild architecture:** PostgreSQL migrations remain canonical; UI/domain rules remain provider-independent; Supabase calls stay behind adapters; future user identity uses an internal UUID rather than email/phone foreign keys; no choice may block a future nullable `listings.owner_user_id`; JWT/auth-claim shape stays out of the domain model; and no Supabase Storage, Realtime, Edge Functions or provider-heavy feature is added before backend selection.
+- **Supabase Free:** May be considered only for development and technical verification. It is not assumed to be reliable production infrastructure for a real external-user pilot.
+- **Backend freeze:** Do not reopen or recommend Supabase ↔ Türkiye self-managed switching unless at least one trigger exists: external user accounts; real personal data; an unworkable KVKK transfer model; measured free-tier/uptime failure; confirmed photo/storage need; or measured cost/technical necessity.
+- **Execution:** Prepare and validate the narrow minimal-PWA package independently. Merge remains routine after evidence; Lovable Publish/Update requires one separate founder approval.
+- **Rationale:** Validate the value proposition at zero incremental service cost while preserving reusable migration/domain boundaries and avoiding premature backend churn.
+- **Rollback:** Revert the minimal-PWA implementation commit/merge; no remote backend, secret, personal data or provider resource is created.
