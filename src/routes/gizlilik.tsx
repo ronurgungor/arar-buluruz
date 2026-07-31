@@ -35,8 +35,8 @@ function PrivacyPage() {
             <h2 className="font-semibold">Bu sürümde toplanmayan veriler</h2>
             <p className="mt-2 text-muted-foreground">
               Gerçek hesap açılmaz. Gerçek ilan, telefon, e-posta veya iletişim formu verisi
-              alınmaz. Reklam ve analytics kullanılmaz. Zorunlu olmayan çerez veya tracker
-              bulunmaz; bu nedenle çerez onay bandı gösterilmez.
+              alınmaz. Reklam ve analytics kullanılmaz. Zorunlu olmayan çerez veya tracker bulunmaz;
+              bu nedenle çerez onay bandı gösterilmez.
             </p>
           </section>
 
@@ -51,8 +51,8 @@ function PrivacyPage() {
           <section>
             <h2 className="font-semibold">Kontrollü iletişim kanalı</h2>
             <p className="mt-2 text-muted-foreground">
-              Mevcut kontrollü iletişim kanalı merkezi telefon ve WhatsApp hattıdır. V0
-              sayfaları bu kanala yazılan mesajları veya arama içeriğini toplamaz.
+              Mevcut kontrollü iletişim kanalı merkezi telefon ve WhatsApp hattıdır. V0 sayfaları bu
+              kanala yazılan mesajları veya arama içeriğini toplamaz.
             </p>
             <div className="mt-3 flex flex-wrap gap-3">
               <a
@@ -75,8 +75,8 @@ function PrivacyPage() {
           <section>
             <h2 className="font-semibold">Gelecekteki değişiklikler</h2>
             <p className="mt-2 text-muted-foreground">
-              Kullanıcı verisi toplamaya başlanmadan önce bu metin, gerçek veri akışını ve
-              ilgili hakları açıklayacak şekilde güncellenecektir.
+              Kullanıcı verisi toplamaya başlanmadan önce bu metin, gerçek veri akışını ve ilgili
+              hakları açıklayacak şekilde güncellenecektir.
             </p>
           </section>
         </div>
