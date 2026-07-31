@@ -89,7 +89,7 @@ jobs:
             sleep 1
           done
 
-          BASE_URL="http://127.0.0.1:4174" bun scripts/v0-pwa-e2e.ts
+          timeout 120s env BASE_URL="http://127.0.0.1:4174" bun scripts/v0-pwa-runner.ts
           find test-results/v0-pwa -maxdepth 1 -type f -name '*.png' -print -exec file {} \;
 
       - name: Upload V0 PWA evidence
