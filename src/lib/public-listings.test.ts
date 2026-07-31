@@ -28,9 +28,7 @@ const publicRow = {
 describe("resolveListingsSource", () => {
   test("honors an explicit mock source in development and production", () => {
     expect(resolveListingsSource({ isDevelopment: true })).toBe("mock");
-    expect(resolveListingsSource({ isDevelopment: false, configuredSource: "mock" })).toBe(
-      "mock",
-    );
+    expect(resolveListingsSource({ isDevelopment: false, configuredSource: "mock" })).toBe("mock");
   });
 
   test("keeps unconfigured production disabled and requires an explicit Supabase source", () => {
