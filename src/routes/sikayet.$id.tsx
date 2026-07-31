@@ -23,13 +23,12 @@ export const Route = createFileRoute("/sikayet/$id")({
 });
 
 const reasons = ["Yanıltıcı ilan", "Yasak ürün", "Yanlış fiyat", "Sahte satıcı", "Diğer"];
-const gate1TestOperationsEnabled =
-  import.meta.env.VITE_GATE1_TEST_OPERATIONS === "enabled";
+const gate1TestOperationsEnabled = import.meta.env.VITE_GATE1_TEST_OPERATIONS === "enabled";
 
 function Report() {
-  if (gate1TestOperationsEnabled) return <Gate1ComplaintForm />;
-
   const { id } = Route.useParams();
+
+  if (gate1TestOperationsEnabled) return <Gate1ComplaintForm id={id} />;
 
   return (
     <div className="min-h-screen">
@@ -39,8 +38,8 @@ function Report() {
         <div className="mt-6 rounded-2xl border border-border bg-card p-6">
           <h2 className="font-bold text-foreground">Gerçek şikâyet işlemi bu fazda kapalı.</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            V0 moderasyonun sürdürülebilirliğini doğrulamaz. İlan ID’si {id} için herhangi bir kayıt,
-            WhatsApp bildirimi veya kişisel veri işleme yapılmaz.
+            V0 moderasyonun sürdürülebilirliğini doğrulamaz. İlan ID’si {id} için herhangi bir
+            kayıt, WhatsApp bildirimi veya kişisel veri işleme yapılmaz.
           </p>
           <Link
             to="/ilan/$id"
@@ -55,8 +54,7 @@ function Report() {
   );
 }
 
-function Gate1ComplaintForm() {
-  const { id } = Route.useParams();
+function Gate1ComplaintForm({ id }: { id: string }) {
   const [reason, setReason] = useState(reasons[0]);
   const [details, setDetails] = useState("");
 
