@@ -109,8 +109,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         name: "twitter:description",
-        content:
-          "Arama ve ilan keşfi deneyimini doğrulayan test sürümü. İlanlar örnektir.",
+        content: "Arama ve ilan keşfi deneyimini doğrulayan test sürümü. İlanlar örnektir.",
       },
       {
         property: "og:image",
@@ -177,7 +176,8 @@ function RootComponent() {
         data-testid="v0-notice"
         className="border-b border-border bg-accent/70 px-4 py-2 text-center text-xs font-semibold text-accent-foreground"
       >
-        {productPhaseLabel} · İlanlar örnektir; gerçek hesap, ilan gönderimi veya satıcı işlemi yoktur.
+        {productPhaseLabel} · İlanlar örnektir; gerçek hesap, ilan gönderimi veya satıcı işlemi
+        yoktur.
       </div>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
