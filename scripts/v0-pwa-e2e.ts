@@ -212,7 +212,7 @@ async function runDesktop() {
     const listingId = detailHref.split("/").filter(Boolean).at(-1);
     assert(listingId, "Listing ID could not be derived from the detail route.");
     await gotoOk(page, `${baseUrl}/sikayet/${listingId}`);
-    await page.getByRole("heading", { level: 1, name: "Şikâyet bildirimi demosu" }).waitFor();
+    await page.getByRole("heading", { level: 1, name: "Şikâyet demosu" }).waitFor();
     assert((await page.locator("form, input, textarea, select").count()) === 0, "V0 collected complaint data.");
     await assertNoTrackingMarkup(page, `/sikayet/${listingId}`);
 
