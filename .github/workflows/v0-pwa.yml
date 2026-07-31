@@ -73,7 +73,7 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/v0-pwa-browsers
           VITE_LISTINGS_SOURCE: mock
         run: |
-          bun run dev -- --host 127.0.0.1 --port 4174 --strictPort \
+          bunx vite preview --host 127.0.0.1 --port 4174 --strictPort \
             >"$RUNNER_TEMP/v0-pwa-server.log" 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
