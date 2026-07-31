@@ -37,6 +37,12 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/public-v0-browsers
         run: bunx playwright install --with-deps chromium
 
+      - name: Probe published search state
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/public-v0-browsers
+          BASE_URL: https://arar-buluruz.lovable.app
+        run: bun scripts/public-search-probe.ts
+
       - name: Verify published V0
         env:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/public-v0-browsers
