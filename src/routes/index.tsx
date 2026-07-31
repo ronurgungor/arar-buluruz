@@ -126,6 +126,11 @@ function Home() {
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Hedefimiz: ilan vermek her zaman ücretsiz.
         </p>
+        <p className="mt-3 text-center text-xs text-muted-foreground">
+          <Link to="/gizlilik" className="underline underline-offset-4 hover:text-foreground">
+            Gizlilik
+          </Link>
+        </p>
       </div>
     </main>
   );
