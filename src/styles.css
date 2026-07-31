@@ -95,9 +95,8 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
-  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
-
 
 .dark {
   --background: oklch(0.129 0.042 264.695);
@@ -146,4 +145,3 @@
     -webkit-font-smoothing: antialiased;
   }
 }
-
