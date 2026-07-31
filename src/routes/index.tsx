@@ -7,20 +7,20 @@ import { Wordmark } from "@/components/Wordmark";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Arar Buluruz — Ücretsiz ilan ver, aradığını hemen bul" },
+      { title: "Arar Buluruz — V0 test sürümü" },
       {
         name: "description",
         content:
-          "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz.",
+          "Arama ve ilan keşfi deneyimini doğrulayan Arar Buluruz V0 test sürümü. İlanlar örnektir.",
       },
       {
         property: "og:title",
-        content: "Arar Buluruz — Ücretsiz ilan ver, aradığını hemen bul",
+        content: "Arar Buluruz — V0 test sürümü",
       },
       {
         property: "og:description",
         content:
-          "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz.",
+          "Arama ve ilan keşfi deneyimini doğrulayan test sürümü. Gerçek hesap veya ilan işlemi bulunmaz.",
       },
     ],
   }),
@@ -41,7 +41,7 @@ function Home() {
           to="/ilan-ver"
           className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          İlan Ver
+          İlan Ver (demo)
         </Link>
         <Link
           to="/giris"
@@ -124,7 +124,7 @@ function Home() {
         </div>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          İlan vermek her zaman ücretsiz.
+          Hedefimiz: ilan vermek her zaman ücretsiz.
         </p>
       </div>
     </main>
