@@ -106,7 +106,7 @@ async function assertHiddenListingNotFound(
 
   await page.getByRole("heading", { level: 1, name: "404" }).waitFor();
   assert(
-    (await page.getByText("Page not found", { exact: true }).count()) === 1,
+    (await page.getByText("Sayfa bulunamadı", { exact: true }).count()) === 1,
     `${profile} hidden listing ${listingId} did not render the safe not-found state.`,
   );
   assert(
