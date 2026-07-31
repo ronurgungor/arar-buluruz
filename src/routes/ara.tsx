@@ -6,12 +6,15 @@ import { AdSlot } from "@/components/AdSlot";
 import { cities, formatPrice } from "@/data/listings";
 import { loadListingsCollection } from "@/lib/public-listings";
 
-type Search = { q?: string; il?: string; sirala?: "yeni" | "fiyat" | "yakin" };
+type Search = { q?: string; il?: string; ilce?: string; sirala?: "yeni" | "fiyat" | "yakin" };
+
+const ALL_DISTRICTS = "Tüm ilçeler";
 
 export const Route = createFileRoute("/ara")({
   validateSearch: (search: Record<string, unknown>): Search => ({
     q: typeof search.q === "string" ? search.q : "",
     il: typeof search.il === "string" ? search.il : "Tüm Türkiye",
+    ilce: typeof search.ilce === "string" ? search.ilce : ALL_DISTRICTS,
     sirala: search.sirala === "fiyat" || search.sirala === "yakin" ? search.sirala : "yeni",
   }),
   loader: () => loadListingsCollection(),
@@ -36,7 +39,7 @@ const sortLabels: Record<NonNullable<Search["sirala"]>, string> = {
 };
 
 function SearchPage() {
-  const { q, il, sirala } = Route.useSearch();
+  const { q, il, ilce, sirala } = Route.useSearch();
   const listingData = Route.useLoaderData();
   const navigate = useNavigate();
   const [term, setTerm] = useState(q ?? "");
@@ -50,6 +53,21 @@ function SearchPage() {
     setTerm(q ?? "");
   }, [q]);
 
+  const hasCity = Boolean(il) && il !== "Tüm Türkiye";
+
+  const districts = useMemo<string[]>(() => {
+    if (!hasCity) return [];
+    const unique = new Set<string>(
+      listingData.listings
+        .filter((listing: { city: string }) => listing.city === il)
+        .map((listing: { district: string }) => listing.district)
+        .filter(Boolean),
+    );
+    return [...unique].sort((a, b) => a.localeCompare(b, "tr"));
+  }, [hasCity, il, listingData.listings]);
+
+  const activeDistrict = hasCity && ilce && ilce !== ALL_DISTRICTS ? ilce : ALL_DISTRICTS;
+
   const results = useMemo(() => {
     const tokens: string[] = (q ?? "").trim().toLocaleLowerCase("tr").split(/\s+/).filter(Boolean);
 
@@ -60,7 +78,9 @@ function SearchPage() {
       const matchesTerm =
         tokens.length === 0 || tokens.every((token: string) => searchableText.includes(token));
       const matchesCity = !il || il === "Tüm Türkiye" || listing.city === il;
-      return matchesTerm && matchesCity;
+      const matchesDistrict =
+        activeDistrict === ALL_DISTRICTS || listing.district === activeDistrict;
+      return matchesTerm && matchesCity && matchesDistrict;
     });
 
     list = [...list];
@@ -72,7 +92,7 @@ function SearchPage() {
       );
     } else list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return list;
-  }, [effectiveSort, il, listingData.listings, q]);
+  }, [activeDistrict, effectiveSort, il, listingData.listings, q]);
 
   const setSearch = (patch: Partial<Search>) =>
     navigate({ to: "/ara", search: (prev: Search) => ({ ...prev, ...patch }) });
@@ -112,14 +132,27 @@ function SearchPage() {
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <select
             value={il}
-            onChange={(event) => setSearch({ il: event.target.value })}
+            onChange={(event) => setSearch({ il: event.target.value, ilce: ALL_DISTRICTS })}
             aria-label="Konum"
-            className="h-9 rounded-full border border-border bg-card px-3 text-sm font-medium outline-none focus:border-primary"
+            className="h-9 max-w-[45%] rounded-full border border-border bg-card px-3 text-sm font-medium outline-none focus:border-primary"
           >
             {cities.map((city) => (
               <option key={city}>{city}</option>
             ))}
           </select>
+          <select
+            value={activeDistrict}
+            disabled={!hasCity}
+            onChange={(event) => setSearch({ ilce: event.target.value })}
+            aria-label="İlçe"
+            className="h-9 max-w-[45%] rounded-full border border-border bg-card px-3 text-sm font-medium outline-none focus:border-primary disabled:opacity-50"
+          >
+            <option>{ALL_DISTRICTS}</option>
+            {districts.map((district) => (
+              <option key={district}>{district}</option>
+            ))}
+          </select>
+
           {availableSorts.map((key) => (
             <button
               key={key}
