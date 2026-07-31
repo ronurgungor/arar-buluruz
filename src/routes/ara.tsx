@@ -53,6 +53,21 @@ function SearchPage() {
     setTerm(q ?? "");
   }, [q]);
 
+  const hasCity = Boolean(il) && il !== "Tüm Türkiye";
+
+  const districts = useMemo(() => {
+    if (!hasCity) return [];
+    const unique = new Set(
+      listingData.listings
+        .filter((listing) => listing.city === il)
+        .map((listing) => listing.district)
+        .filter(Boolean),
+    );
+    return [...unique].sort((a, b) => a.localeCompare(b, "tr"));
+  }, [hasCity, il, listingData.listings]);
+
+  const activeDistrict = hasCity && ilce && ilce !== ALL_DISTRICTS ? ilce : ALL_DISTRICTS;
+
   const results = useMemo(() => {
     const tokens: string[] = (q ?? "").trim().toLocaleLowerCase("tr").split(/\s+/).filter(Boolean);
 
@@ -63,7 +78,9 @@ function SearchPage() {
       const matchesTerm =
         tokens.length === 0 || tokens.every((token: string) => searchableText.includes(token));
       const matchesCity = !il || il === "Tüm Türkiye" || listing.city === il;
-      return matchesTerm && matchesCity;
+      const matchesDistrict =
+        activeDistrict === ALL_DISTRICTS || listing.district === activeDistrict;
+      return matchesTerm && matchesCity && matchesDistrict;
     });
 
     list = [...list];
@@ -75,10 +92,11 @@ function SearchPage() {
       );
     } else list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return list;
-  }, [effectiveSort, il, listingData.listings, q]);
+  }, [activeDistrict, effectiveSort, il, listingData.listings, q]);
 
   const setSearch = (patch: Partial<Search>) =>
     navigate({ to: "/ara", search: (prev: Search) => ({ ...prev, ...patch }) });
+
 
   return (
     <div className="min-h-screen">
