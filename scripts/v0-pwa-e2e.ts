@@ -194,10 +194,7 @@ async function runDesktop() {
     await page.screenshot({ path: path.join(resultsDir, "desktop-home.png"), fullPage: true });
 
     console.log("V0 PWA: validating synthetic discovery and detail routes");
-    await gotoOk(
-      page,
-      `${baseUrl}/ara?q=trakt%C3%B6r&il=T%C3%BCm+T%C3%BCrkiye&sirala=yeni`,
-    );
+    await gotoOk(page, `${baseUrl}/ara?q=trakt%C3%B6r&il=T%C3%BCm+T%C3%BCrkiye&sirala=yeni`);
     await page.getByText("ilan bulundu", { exact: false }).waitFor();
     await page.getByText("Yakın (örnek)", { exact: true }).first().waitFor();
     await assertNoTrackingMarkup(page, "/ara");
@@ -213,7 +210,10 @@ async function runDesktop() {
     assert(listingId, "Listing ID could not be derived from the detail route.");
     await gotoOk(page, `${baseUrl}/sikayet/${listingId}`);
     await page.getByRole("heading", { level: 1, name: "Şikâyet demosu" }).waitFor();
-    assert((await page.locator("form, input, textarea, select").count()) === 0, "V0 collected complaint data.");
+    assert(
+      (await page.locator("form, input, textarea, select").count()) === 0,
+      "V0 collected complaint data.",
+    );
     await assertNoTrackingMarkup(page, `/sikayet/${listingId}`);
 
     console.log("V0 PWA: validating disabled real operations");
@@ -240,13 +240,19 @@ async function runDesktop() {
     await page.getByText("Zorunlu olmayan çerez veya tracker", { exact: false }).waitFor();
     await page.getByText("teknik erişim kayıtları tutabilir", { exact: false }).waitFor();
     await page.getByText("merkezi telefon ve WhatsApp hattıdır", { exact: false }).waitFor();
-    assert((await page.locator("form, input, textarea, select").count()) === 0, "Privacy page collected data.");
+    assert(
+      (await page.locator("form, input, textarea, select").count()) === 0,
+      "Privacy page collected data.",
+    );
     await assertNoTrackingMarkup(page, "/gizlilik");
     await assertNoHorizontalOverflow(page, "/gizlilik");
     await page.screenshot({ path: path.join(resultsDir, "desktop-privacy.png"), fullPage: true });
 
     const cookies = await context.cookies(baseUrl);
-    assert(cookies.length === 0, `V0 created cookies: ${cookies.map((cookie) => cookie.name).join(", ")}`);
+    assert(
+      cookies.length === 0,
+      `V0 created cookies: ${cookies.map((cookie) => cookie.name).join(", ")}`,
+    );
     assert(
       forbiddenRequests.length === 0,
       `V0 made a forbidden request: ${forbiddenRequests.join(" | ")}`,
@@ -287,7 +293,10 @@ async function runMobileOffline() {
     await page.screenshot({ path: path.join(resultsDir, "mobile-privacy.png"), fullPage: true });
 
     const cookies = await context.cookies(baseUrl);
-    assert(cookies.length === 0, `Mobile V0 created cookies: ${cookies.map((cookie) => cookie.name).join(", ")}`);
+    assert(
+      cookies.length === 0,
+      `Mobile V0 created cookies: ${cookies.map((cookie) => cookie.name).join(", ")}`,
+    );
     assert(
       forbiddenRequests.length === 0,
       `Mobile V0 made a forbidden request: ${forbiddenRequests.join(" | ")}`,
