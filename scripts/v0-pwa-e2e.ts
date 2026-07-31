@@ -14,6 +14,43 @@ function assert(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
+function isForbiddenRequest(requestUrl: string) {
+  const url = new URL(requestUrl);
+  const hostname = url.hostname.toLowerCase();
+  const pathname = url.pathname.toLowerCase();
+
+  return (
+    pathname.startsWith("/rest/v1") ||
+    pathname.startsWith("/auth/v1") ||
+    hostname.endsWith("supabase.co") ||
+    hostname === "fonts.googleapis.com" ||
+    hostname === "fonts.gstatic.com" ||
+    hostname.endsWith("google-analytics.com") ||
+    hostname.endsWith("googletagmanager.com") ||
+    hostname.endsWith("doubleclick.net") ||
+    hostname.endsWith("googlesyndication.com") ||
+    hostname.endsWith("plausible.io") ||
+    hostname.endsWith("usefathom.com") ||
+    hostname.includes("umami") ||
+    hostname.includes("segment") ||
+    hostname.includes("mixpanel") ||
+    hostname.includes("amplitude")
+  );
+}
+
+function trackForbiddenRequests(page: Page) {
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (isForbiddenRequest(request.url())) requests.push(request.url());
+  });
+  return requests;
+}
+
+async function gotoOk(page: Page, url: string) {
+  const response = await page.goto(url, { waitUntil: "domcontentloaded" });
+  assert(response?.ok() === true, `${url} returned HTTP ${response?.status() ?? "unknown"}.`);
+}
+
 async function assertManifest(context: BrowserContext) {
   const response = await context.request.get(`${baseUrl}/manifest.webmanifest`);
   assert(response.ok(), `Manifest returned HTTP ${response.status()}.`);
@@ -75,6 +112,23 @@ async function assertNoHorizontalOverflow(page: Page, route: string) {
   );
 }
 
+async function assertNoTrackingMarkup(page: Page, route: string) {
+  const state = await page.evaluate(() => ({
+    fontLinks: Array.from(document.querySelectorAll<HTMLLinkElement>("link[href]")).filter((link) =>
+      /fonts\.(googleapis|gstatic)\.com/i.test(link.href),
+    ).length,
+    trackingScripts: Array.from(document.querySelectorAll<HTMLScriptElement>("script[src]")).filter(
+      (script) =>
+        /google-analytics|googletagmanager|doubleclick|googlesyndication|plausible|fathom|umami|segment|mixpanel|amplitude/i.test(
+          script.src,
+        ),
+    ).length,
+  }));
+
+  assert(state.fontLinks === 0, `${route} contains an external Google Fonts link.`);
+  assert(state.trackingScripts === 0, `${route} contains analytics or advertising markup.`);
+}
+
 async function ensureControlledServiceWorker(page: Page) {
   await page.waitForFunction(
     async () => {
@@ -122,52 +176,87 @@ async function runDesktop() {
   const page = await context.newPage();
   page.setDefaultTimeout(15_000);
   page.setDefaultNavigationTimeout(15_000);
-  const backendRequests: string[] = [];
-
-  page.on("request", (request) => {
-    const url = new URL(request.url());
-    if (
-      url.pathname.startsWith("/rest/v1") ||
-      url.pathname.startsWith("/auth/v1") ||
-      url.hostname.endsWith("supabase.co")
-    ) {
-      backendRequests.push(request.url());
-    }
-  });
+  const forbiddenRequests = trackForbiddenRequests(page);
 
   try {
     console.log("V0 PWA: validating manifest and icons");
     await assertManifest(context);
 
     console.log("V0 PWA: validating desktop shell and service worker");
-    await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
+    await gotoOk(page, baseUrl);
     await page.getByTestId("v0-notice").waitFor();
     await page.getByText("İlanlar örnektir", { exact: false }).waitFor();
+    await page.getByRole("link", { name: "Gizlilik" }).waitFor();
     await ensureControlledServiceWorker(page);
     await assertCacheBoundary(page);
+    await assertNoTrackingMarkup(page, "/");
     await assertNoHorizontalOverflow(page, "/");
     await page.screenshot({ path: path.join(resultsDir, "desktop-home.png"), fullPage: true });
 
-    console.log("V0 PWA: validating synthetic discovery");
-    await page.goto(`${baseUrl}/ara?q=trakt%C3%B6r&il=T%C3%BCm+T%C3%BCrkiye&sirala=yeni`, {
-      waitUntil: "domcontentloaded",
-    });
+    console.log("V0 PWA: validating synthetic discovery and detail routes");
+    await gotoOk(page, `${baseUrl}/ara?q=trakt%C3%B6r&il=T%C3%BCm+T%C3%BCrkiye&sirala=yeni`);
     await page.getByText("ilan bulundu", { exact: false }).waitFor();
     await page.getByText("Yakın (örnek)", { exact: true }).first().waitFor();
+    await assertNoTrackingMarkup(page, "/ara");
     await assertNoHorizontalOverflow(page, "/ara");
 
+    const detailHref = await page.locator('a[href^="/ilan/"]').first().getAttribute("href");
+    assert(detailHref, "Synthetic search did not expose a listing-detail link.");
+    await gotoOk(page, `${baseUrl}${detailHref}`);
+    await assertNoTrackingMarkup(page, detailHref);
+    await assertNoHorizontalOverflow(page, detailHref);
+
+    const listingId = detailHref.split("/").filter(Boolean).at(-1);
+    assert(listingId, "Listing ID could not be derived from the detail route.");
+    await gotoOk(page, `${baseUrl}/sikayet/${listingId}`);
+    await page.getByRole("heading", { level: 1, name: "Şikâyet demosu" }).waitFor();
+    assert(
+      (await page.locator("form, input, textarea, select").count()) === 0,
+      "V0 collected complaint data.",
+    );
+    await assertNoTrackingMarkup(page, `/sikayet/${listingId}`);
+
     console.log("V0 PWA: validating disabled real operations");
-    await page.goto(`${baseUrl}/ilan-ver`, { waitUntil: "domcontentloaded" });
+    await gotoOk(page, `${baseUrl}/ilan-ver`);
     await page.getByRole("heading", { level: 1, name: "İlan verme demosu" }).waitFor();
     assert((await page.locator("form").count()) === 0, "V0 rendered a listing form.");
     assert(
       (await page.locator("input, textarea, select").count()) === 0,
       "V0 collected listing data.",
     );
-    await page.goto(`${baseUrl}/giris`, { waitUntil: "domcontentloaded" });
+    await assertNoTrackingMarkup(page, "/ilan-ver");
+
+    await gotoOk(page, `${baseUrl}/giris`);
     await page.getByText("Pilot sürecinde giriş bulunmuyor.", { exact: true }).waitFor();
     assert((await page.locator("input").count()) === 0, "V0 rendered an account input.");
-    assert(backendRequests.length === 0, `V0 called a backend: ${backendRequests.join(" | ")}`);
+    await assertNoTrackingMarkup(page, "/giris");
+
+    console.log("V0 PWA: validating minimum privacy disclosure");
+    await gotoOk(page, `${baseUrl}/gizlilik`);
+    await page.getByRole("heading", { level: 1, name: "Gizlilik" }).waitFor();
+    await page.getByText("synthetic/mock ilanlarla", { exact: false }).waitFor();
+    await page.getByText("Gerçek hesap açılmaz", { exact: false }).waitFor();
+    await page.getByText("Reklam ve analytics kullanılmaz", { exact: false }).waitFor();
+    await page.getByText("Zorunlu olmayan çerez veya tracker", { exact: false }).waitFor();
+    await page.getByText("teknik erişim kayıtları tutabilir", { exact: false }).waitFor();
+    await page.getByText("merkezi telefon ve WhatsApp hattıdır", { exact: false }).waitFor();
+    assert(
+      (await page.locator("form, input, textarea, select").count()) === 0,
+      "Privacy page collected data.",
+    );
+    await assertNoTrackingMarkup(page, "/gizlilik");
+    await assertNoHorizontalOverflow(page, "/gizlilik");
+    await page.screenshot({ path: path.join(resultsDir, "desktop-privacy.png"), fullPage: true });
+
+    const cookies = await context.cookies(baseUrl);
+    assert(
+      cookies.length === 0,
+      `V0 created cookies: ${cookies.map((cookie) => cookie.name).join(", ")}`,
+    );
+    assert(
+      forbiddenRequests.length === 0,
+      `V0 made a forbidden request: ${forbiddenRequests.join(" | ")}`,
+    );
   } finally {
     await context.close();
     await browser.close();
@@ -185,14 +274,33 @@ async function runMobileOffline() {
   const page = await context.newPage();
   page.setDefaultTimeout(15_000);
   page.setDefaultNavigationTimeout(15_000);
+  const forbiddenRequests = trackForbiddenRequests(page);
 
   try {
-    console.log("V0 PWA: validating mobile shell");
-    await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
+    console.log("V0 PWA: validating mobile shell and privacy route");
+    await gotoOk(page, baseUrl);
     await page.getByTestId("v0-notice").waitFor();
+    await page.getByRole("link", { name: "Gizlilik" }).waitFor();
     await ensureControlledServiceWorker(page);
+    await assertNoTrackingMarkup(page, "/ mobile");
     await assertNoHorizontalOverflow(page, "/ mobile");
     await page.screenshot({ path: path.join(resultsDir, "mobile-home.png"), fullPage: true });
+
+    await gotoOk(page, `${baseUrl}/gizlilik`);
+    await page.getByRole("heading", { level: 1, name: "Gizlilik" }).waitFor();
+    await assertNoTrackingMarkup(page, "/gizlilik mobile");
+    await assertNoHorizontalOverflow(page, "/gizlilik mobile");
+    await page.screenshot({ path: path.join(resultsDir, "mobile-privacy.png"), fullPage: true });
+
+    const cookies = await context.cookies(baseUrl);
+    assert(
+      cookies.length === 0,
+      `Mobile V0 created cookies: ${cookies.map((cookie) => cookie.name).join(", ")}`,
+    );
+    assert(
+      forbiddenRequests.length === 0,
+      `Mobile V0 made a forbidden request: ${forbiddenRequests.join(" | ")}`,
+    );
 
     console.log("V0 PWA: validating honest offline fallback through a real server outage");
     const stopServer = (globalThis as V0Global).__stopV0Server;

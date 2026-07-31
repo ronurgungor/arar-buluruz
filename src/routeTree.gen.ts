@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as IlanVerRouteImport } from './routes/ilan-ver'
+import { Route as GizlilikRouteImport } from './routes/gizlilik'
 import { Route as GirisRouteImport } from './routes/giris'
 import { Route as AraRouteImport } from './routes/ara'
 import { Route as IndexRouteImport } from './routes/index'
@@ -25,6 +26,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const IlanVerRoute = IlanVerRouteImport.update({
   id: '/ilan-ver',
   path: '/ilan-ver',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GizlilikRoute = GizlilikRouteImport.update({
+  id: '/gizlilik',
+  path: '/gizlilik',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GirisRoute = GirisRouteImport.update({
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ara': typeof AraRoute
   '/giris': typeof GirisRoute
+  '/gizlilik': typeof GizlilikRoute
   '/ilan-ver': typeof IlanVerRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ilan/$id': typeof IlanIdRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ara': typeof AraRoute
   '/giris': typeof GirisRoute
+  '/gizlilik': typeof GizlilikRoute
   '/ilan-ver': typeof IlanVerRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ilan/$id': typeof IlanIdRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/ara': typeof AraRoute
   '/giris': typeof GirisRoute
+  '/gizlilik': typeof GizlilikRoute
   '/ilan-ver': typeof IlanVerRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ilan/$id': typeof IlanIdRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ara'
     | '/giris'
+    | '/gizlilik'
     | '/ilan-ver'
     | '/sitemap.xml'
     | '/ilan/$id'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ara'
     | '/giris'
+    | '/gizlilik'
     | '/ilan-ver'
     | '/sitemap.xml'
     | '/ilan/$id'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ara'
     | '/giris'
+    | '/gizlilik'
     | '/ilan-ver'
     | '/sitemap.xml'
     | '/ilan/$id'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AraRoute: typeof AraRoute
   GirisRoute: typeof GirisRoute
+  GizlilikRoute: typeof GizlilikRoute
   IlanVerRoute: typeof IlanVerRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   IlanIdRoute: typeof IlanIdRoute
@@ -135,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/ilan-ver'
       fullPath: '/ilan-ver'
       preLoaderRoute: typeof IlanVerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gizlilik': {
+      id: '/gizlilik'
+      path: '/gizlilik'
+      fullPath: '/gizlilik'
+      preLoaderRoute: typeof GizlilikRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/giris': {
@@ -179,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AraRoute: AraRoute,
   GirisRoute: GirisRoute,
+  GizlilikRoute: GizlilikRoute,
   IlanVerRoute: IlanVerRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   IlanIdRoute: IlanIdRoute,
