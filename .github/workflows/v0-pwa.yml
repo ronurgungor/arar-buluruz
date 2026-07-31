@@ -68,28 +68,12 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       - name: Run focused V0 PWA browser validation
-        shell: bash
         env:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/v0-pwa-browsers
           VITE_LISTINGS_SOURCE: mock
+          BASE_URL: http://127.0.0.1:4174
         run: |
-          bunx vite preview --host 127.0.0.1 --port 4174 --strictPort \
-            >"$RUNNER_TEMP/v0-pwa-server.log" 2>&1 &
-          server_pid=$!
-          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
-
-          for attempt in $(seq 1 60); do
-            if curl --fail --silent --show-error http://127.0.0.1:4174/ >/dev/null; then
-              break
-            fi
-            if [[ "$attempt" -eq 60 ]]; then
-              cat "$RUNNER_TEMP/v0-pwa-server.log"
-              exit 1
-            fi
-            sleep 1
-          done
-
-          timeout 120s env BASE_URL="http://127.0.0.1:4174" bun scripts/v0-pwa-runner.ts
+          timeout 120s bun scripts/v0-pwa-runner.ts
           find test-results/v0-pwa -maxdepth 1 -type f -name '*.png' -print -exec file {} \;
 
       - name: Upload V0 PWA evidence
@@ -97,8 +81,6 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: v0-pwa-evidence
-          path: |
-            test-results/v0-pwa/*.png
-            ${{ runner.temp }}/v0-pwa-server.log
+          path: test-results/v0-pwa/*.png
           if-no-files-found: warn
           retention-days: 7
