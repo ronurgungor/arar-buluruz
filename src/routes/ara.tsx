@@ -39,7 +39,7 @@ const sortLabels: Record<NonNullable<Search["sirala"]>, string> = {
 };
 
 function SearchPage() {
-  const { q, il, sirala } = Route.useSearch();
+  const { q, il, ilce, sirala } = Route.useSearch();
   const listingData = Route.useLoaderData();
   const navigate = useNavigate();
   const [term, setTerm] = useState(q ?? "");
