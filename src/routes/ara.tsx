@@ -55,12 +55,12 @@ function SearchPage() {
 
   const hasCity = Boolean(il) && il !== "Tüm Türkiye";
 
-  const districts = useMemo(() => {
+  const districts = useMemo<string[]>(() => {
     if (!hasCity) return [];
-    const unique = new Set(
+    const unique = new Set<string>(
       listingData.listings
-        .filter((listing) => listing.city === il)
-        .map((listing) => listing.district)
+        .filter((listing: { city: string }) => listing.city === il)
+        .map((listing: { district: string }) => listing.district)
         .filter(Boolean),
     );
     return [...unique].sort((a, b) => a.localeCompare(b, "tr"));
