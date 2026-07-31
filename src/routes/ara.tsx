@@ -6,12 +6,15 @@ import { AdSlot } from "@/components/AdSlot";
 import { cities, formatPrice } from "@/data/listings";
 import { loadListingsCollection } from "@/lib/public-listings";
 
-type Search = { q?: string; il?: string; sirala?: "yeni" | "fiyat" | "yakin" };
+type Search = { q?: string; il?: string; ilce?: string; sirala?: "yeni" | "fiyat" | "yakin" };
+
+const ALL_DISTRICTS = "Tüm ilçeler";
 
 export const Route = createFileRoute("/ara")({
   validateSearch: (search: Record<string, unknown>): Search => ({
     q: typeof search.q === "string" ? search.q : "",
     il: typeof search.il === "string" ? search.il : "Tüm Türkiye",
+    ilce: typeof search.ilce === "string" ? search.ilce : ALL_DISTRICTS,
     sirala: search.sirala === "fiyat" || search.sirala === "yakin" ? search.sirala : "yeni",
   }),
   loader: () => loadListingsCollection(),
