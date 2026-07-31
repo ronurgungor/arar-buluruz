@@ -171,7 +171,10 @@ async function runDesktop() {
     await page.goto(`${baseUrl}/ilan-ver`, { waitUntil: "networkidle" });
     await page.getByRole("heading", { level: 1, name: "İlan verme demosu" }).waitFor();
     assert((await page.locator("form").count()) === 0, "V0 rendered a real listing form.");
-    assert((await page.locator("input, textarea, select").count()) === 0, "V0 collected listing data.");
+    assert(
+      (await page.locator("input, textarea, select").count()) === 0,
+      "V0 collected listing data.",
+    );
 
     await page.goto(`${baseUrl}/giris`, { waitUntil: "networkidle" });
     await page.getByText("Pilot sürecinde giriş bulunmuyor.", { exact: true }).waitFor();
