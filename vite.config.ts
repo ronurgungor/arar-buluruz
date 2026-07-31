@@ -6,6 +6,10 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+// V0 is intentionally a synthetic/mock experience. Explicit CI or future approved
+// environments may still override this with "disabled" or "supabase".
+process.env.VITE_LISTINGS_SOURCE ??= "mock";
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
