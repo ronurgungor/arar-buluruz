@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#397a56" />
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+    <title>Bağlantı yok — Arar Buluruz</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Figtree, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f8f4ea;
+        color: #3a332e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      main {
+        width: min(100%, 440px);
+        border: 1px solid #ded8ce;
+        border-radius: 24px;
+        background: #fff;
+        padding: 32px;
+        box-shadow: 0 18px 60px rgb(58 51 46 / 10%);
+        text-align: center;
+      }
+
+      .icon {
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 20px;
+        border-radius: 20px;
+        display: grid;
+        place-items: center;
+        background: #397a56;
+        color: #f8f4ea;
+        font-size: 34px;
+        font-weight: 800;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: -0.03em;
+      }
+
+      p {
+        margin: 12px 0 0;
+        color: #6e665f;
+        line-height: 1.6;
+      }
+
+      .notice {
+        margin-top: 18px;
+        border-radius: 14px;
+        background: #f2eee6;
+        padding: 12px 14px;
+        font-size: 14px;
+      }
+
+      button {
+        margin-top: 22px;
+        min-height: 48px;
+        width: 100%;
+        border: 0;
+        border-radius: 999px;
+        background: #397a56;
+        color: #fff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="icon" aria-hidden="true">⌕</div>
+      <h1>Bağlantı yok</h1>
+      <p>İnternet bağlantısı geri geldiğinde arama ve örnek ilanları yeniden açabilirsin.</p>
+      <p class="notice">
+        Bu V0 test sürümü dinamik ilanları çevrimdışı saklamaz. Eski veya eksik ilan göstermemek için yalnız bu güvenli hata ekranı kullanılmaktadır.
+      </p>
+      <button type="button" onclick="window.location.reload()">Tekrar dene</button>
+    </main>
+  </body>
+</html>
