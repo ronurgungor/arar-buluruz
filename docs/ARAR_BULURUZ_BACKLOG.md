@@ -26,8 +26,7 @@ Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 - [x] Add `/gizlilik` and a visible home-page privacy link.
 - [x] Remove Google Fonts requests and use system UI fonts.
 - [x] Verify no application cookie, Google Fonts, analytics, advertising-network, auth or backend request in the synthetic test build.
-- [x] Pass standard CI and V0 PWA validation on PR #30 head `71b026e0162be224655bd6477a4d44a487bcfe5c`.
-- [x] Merge PR #30 as `399489b3a452a22664136bc43115cc796cf71fc6`.
+- [x] Merge the KVKK-min package through PR #30 as `399489b3a452a22664136bc43115cc796cf71fc6`.
 
 ## Publish incident and repository recovery
 
@@ -36,42 +35,58 @@ Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 - [x] Detect that public `/ara` does not show synthetic listings and instead renders the disconnected-state message.
 - [x] Reject that deployment as an accepted V0 release.
 - [x] Close the temporary public-verification PR #31 without merge.
-- [x] Confirm that the available Lovable connector has no historical deployment rollback or unpublish action.
-- [x] Record the unexpected `1.3` Lovable credit consumption.
-- [x] Revert the unintended Lovable dependency/lock/generated-route mutation through PR #33 without force-push.
-- [x] Re-run and pass full CI, Gate 1 and V0 PWA validation after repository recovery.
-- [x] Restore repository file content to the accepted PR #30 state; `399489b3…` and recovery merge `edabc518…` have no file difference.
+- [x] Record the unexpected `1.3` Lovable credit consumption and unintended repository mutation.
+- [x] Revert the dependency/lock/generated-route mutation through PR #33 without force-push.
+- [x] Restore repository file content to the accepted PR #30 state.
 - [x] Complete founder-side `Project Settings → Unpublish`.
-- [x] Verify Lovable reports `is_published: false` and returns the project under `not_published`.
-- [x] Confirm that public V0 is currently not published and that unpublish is not a successful V0 release.
-- [x] Close superseded PR #32 without merge; the correct incident record remains PR #34.
+- [x] Verify Lovable reports `is_published: false`.
+- [x] Confirm public V0 is not published and unpublish is not a successful release.
+- [x] Close superseded PR #32 without merge.
+- [x] Record the unpublish through PR #35 as `acb381565880e365467045c9ad0512edd6bd535a`.
 
-## Current gate status
+## Production-source diagnosis and correction
 
-There is no active consequential implementation or publish gate.
+- [x] Diagnose the public disconnected state without Lovable agent messages or environment mutation.
+- [x] Confirm explicit production `mock` was incorrectly converted to `disabled`.
+- [x] Confirm prior browser validation used `vite dev` and did not exercise production mode.
+- [x] Make explicit `VITE_LISTINGS_SOURCE=mock` valid in production while keeping unconfigured production disabled.
+- [x] Update unit coverage for explicit production mock, unconfigured production, disabled and Supabase sources.
+- [x] Preserve the normal Cloudflare deploy-target build.
+- [x] Add a separate zero-cost `node-server` production-mode output only for browser validation.
+- [x] Run synthetic search/detail, privacy, disabled real operations, desktop/mobile, service-worker/cache and real-outage offline checks against production-mode output.
+- [x] Stabilize service-worker control with bounded reload attempts.
+- [x] Pass standard CI run `30655419577`.
+- [x] Pass V0 PWA run `30655419570` and evidence artifact `8803163231`.
+- [x] Merge PR #36 as `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7`.
+- [x] Verify Lovable synchronized the merge SHA while remaining `is_published: false`.
 
-The failed public deployment has been unpublished. GitHub retains the accepted synthetic V0 code, but no accepted V0 release is currently public.
+## Active gate
 
-The next possible bounded gate is deferred pending explicit founder approval:
+- [-] **Founder decision: publish the corrected synthetic V0 from Lovable.**
 
-- [ ] **Zero-cost Lovable V0 production-source diagnosis.**
+This gate is a decision gate only; Publish/Update is not authorized until the founder explicitly approves it.
 
-That future gate must begin read-only and may inspect only:
+Release-candidate source:
 
-- local/CI synthetic build versus Lovable production build behavior;
-- `VITE_LISTINGS_SOURCE` behavior;
-- Lovable build-time environment behavior;
-- whether the correct synthetic V0 can be published without code changes;
-- a zero-cost and reversible resolution path.
+- `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7`
 
-Environment changes, code changes and republish remain separate founder decisions even after diagnosis.
+If approved, perform only:
 
-## Frozen until a separate gate is opened
+1. Lovable founder UI → Publish/Update the current synchronized project.
+2. Verify the public V0 notice and shell.
+3. Verify `/ara` shows synthetic listing results rather than the disconnected-state message.
+4. Verify a synthetic listing-detail route.
+5. Verify `/gizlilik` and the no-real-operations boundary.
+6. Verify no forbidden backend, auth, analytics, advertising or Google Fonts request.
+7. Reject and Unpublish immediately if any required condition fails.
 
+No Lovable agent message, environment change or backend activation belongs to this gate.
+
+## Frozen until explicit publish approval
+
+- [ ] Do not Publish/Update.
 - [ ] Do not change the Lovable environment or listing-source setting.
-- [ ] Do not republish.
 - [ ] Do not send another Lovable agent message for this incident.
-- [ ] Do not diagnose by expanding application/backend scope.
 - [ ] Do not create a remote Supabase project or apply a remote migration.
 - [ ] Do not connect secrets or environment values.
 - [ ] Do not enter real listings or personal data.
@@ -105,5 +120,4 @@ Do not report V0 as proving real listing supply, accounts, listing management, m
 - Only one code writer operates at a time.
 - Git history is never force-pushed or rewritten.
 - Lovable Publish/Update and production deployment require an explicit bounded gate.
-- Do not send another Lovable agent message for this rollback incident.
 - No secret, credential, real user record or unnecessary personal data belongs in repository documentation.
