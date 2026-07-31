@@ -90,7 +90,7 @@ export function resolveListingsSource({
 }: RuntimeModeInput): ListingsSource {
   if (configuredSource === "supabase") return "supabase";
   if (configuredSource === "disabled") return "disabled";
-  if (configuredSource === "mock") return isDevelopment ? "mock" : "disabled";
+  if (configuredSource === "mock") return "mock";
   return isDevelopment ? "mock" : "disabled";
 }
 

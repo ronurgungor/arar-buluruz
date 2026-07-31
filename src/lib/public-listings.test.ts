@@ -26,18 +26,19 @@ const publicRow = {
 };
 
 describe("resolveListingsSource", () => {
-  test("uses mock data only in development", () => {
+  test("honors an explicit mock source in development and production", () => {
     expect(resolveListingsSource({ isDevelopment: true })).toBe("mock");
-    expect(resolveListingsSource({ isDevelopment: false, configuredSource: "mock" })).toBe(
-      "disabled",
-    );
+    expect(resolveListingsSource({ isDevelopment: false, configuredSource: "mock" })).toBe("mock");
   });
 
-  test("requires an explicit Supabase source", () => {
+  test("keeps unconfigured production disabled and requires an explicit Supabase source", () => {
+    expect(resolveListingsSource({ isDevelopment: false })).toBe("disabled");
+    expect(resolveListingsSource({ isDevelopment: false, configuredSource: "disabled" })).toBe(
+      "disabled",
+    );
     expect(resolveListingsSource({ isDevelopment: false, configuredSource: "supabase" })).toBe(
       "supabase",
     );
-    expect(resolveListingsSource({ isDevelopment: false })).toBe("disabled");
   });
 });
 
