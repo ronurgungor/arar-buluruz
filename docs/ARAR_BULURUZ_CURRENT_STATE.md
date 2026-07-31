@@ -2,138 +2,113 @@
 
 _Last updated: 2026-07-31, Europe/Istanbul_
 
-## Canonical runtime and repository state
+## Canonical repository state
 
 - Repository: `ronurgungor/arar-buluruz`; default branch: `main`.
 - GitHub `main` is canonical. Read its exact SHA at task start rather than trusting a copied “current SHA.”
 - V0 minimal-PWA implementation merged through PR #28 with normal merge commit `16da297ddac5461d3cba6fa8fc76bbc095bbb2c3`.
-- Gate 1 PostgreSQL/RLS/adapter preparation remains in `main` as a reusable technical asset; PR #25 merge commit: `994b8b1705d52434be0c000093a052fa0e519542`.
-- Package boundary remains Bun `1.3.14` and `bun.lock`; PR #28 added no package or lockfile change.
+- V0 KVKK-min cleanup merged through PR #30 with normal merge commit `399489b3a452a22664136bc43115cc796cf71fc6`.
+- An unintended Lovable bot mutation changed `package.json`, `bun.lock` and generated route typing after publish. PR #33 restored those three files to the accepted PR #30 content and merged as `edabc518643bc9ae102df1149817ecb3d96f003c`.
+- Comparing `399489b3…` with `edabc518…` produces no file difference; only the incident and reversible rollback history remain.
+- Package boundary remains Bun `1.3.14` and `bun.lock`.
+- Gate 1 PostgreSQL/RLS/adapter work remains a reusable technical asset and is not an active real pilot.
 
-## Active phase
+## Active phase and data boundary
 
 The only active product phase is **V0 — UX ve değer önerisi doğrulaması**.
 
-V0 may validate only:
+V0 may validate only product comprehension, search/discovery, listing cards/details, mobile/desktop usability, minimal-PWA installability and general interest.
 
-- product comprehension;
-- search and listing discovery;
-- listing cards and detail pages;
-- mobile and desktop usability;
-- minimal-PWA installability;
-- general user interest.
+V0 must not be reported as validating real listing creation, accounts, listing ownership/management, sustainable moderation, seller-contact operations or a supply-demand loop.
 
-V0 must not be reported as validating:
+GitHub `main` contains only synthetic/mock V0 behavior:
 
-- real listing creation;
-- account creation;
-- listing ownership or management;
-- sustainable moderation;
-- the seller-contact operating model;
-- a functioning supply-demand loop.
+- visible site-wide V0/test notice;
+- synthetic search and listing-detail experience;
+- non-collecting `/ilan-ver`, `/giris` and `/sikayet/$id` demo routes;
+- no real account, listing, seller phone/e-mail or form-data collection;
+- no advertising or analytics;
+- no optional cookie or tracker implemented by the application;
+- `noindex/nofollow/noarchive/nosnippet` protection.
 
-## Current V0 behavior on GitHub `main`
+## KVKK-min cleanup
 
-- The default listing source is synthetic/mock.
-- A visible site-wide notice identifies the product as V0 and states that listings are examples and no real account, listing submission or seller operation occurs.
-- `/ara` and `/ilan/$id` preserve the existing search/discovery and detail experience with mock listings.
-- `/ilan-ver` is a non-collecting demo screen; no form, WhatsApp application, listing write or personal-data input is active in V0.
-- `/giris` contains no account form and collects no e-mail, phone or password.
-- `/sikayet/$id` is a non-collecting demo screen; no real complaint or moderation operation occurs.
-- Historical Gate 1 application/complaint behavior remains available only inside the explicit ephemeral CI test flag; it is not part of the V0 publish path.
-- Search indexing remains blocked through `noindex/nofollow/noarchive/nosnippet` metadata and the existing server header.
+PR #30 added only:
 
-## Minimal PWA implementation
+- `/gizlilik` with the current V0 disclosure;
+- a visible, simple home-page privacy link;
+- removal of `fonts.googleapis.com` and `fonts.gstatic.com` requests;
+- a system UI font stack;
+- focused browser checks for privacy content, no application cookie, and no Google Fonts, analytics, ad-network, auth or backend request.
 
-The merged package contains only the D-017 boundary:
+No dependency, paid service, cookie banner, backend, auth, real data, advertising, analytics, TWA or Play Store scope was added by PR #30.
 
-- `public/manifest.webmanifest` with durable app ID `/`, scope/start URL `/` and standalone display;
-- standard 192×192 and 512×512 PNG icons;
-- a 512×512 maskable icon and 180×180 Apple touch icon;
-- service-worker registration on secure supported contexts;
-- a network-first navigation worker that caches only the offline page, manifest and icons;
-- a safe, honest Turkish offline screen that explicitly says dynamic listings are not stored offline.
+Pre-publish evidence on head `71b026e0162be224655bd6477a4d44a487bcfe5c`:
 
-Not present:
+- standard CI run `30635858048` — success;
+- V0 PWA run `30635858083` — success;
+- screenshot artifact `8795292588`;
+- artifact SHA-256 `c6f8914c0fe51523c0076a5896988ec69bd58f46f62fe1cfa21e5347aa79deb1`.
 
-- push notifications;
-- background or periodic sync;
-- full offline listings;
-- cache-first dynamic listing pages;
-- auth or real backend activation;
-- advertising or analytics;
-- TWA, Android or Play Store packaging.
+## Minimal-PWA boundary
 
-## Validation evidence
+Present on GitHub `main`:
 
-Exact approved PR head: `2cf223df4aea91b045de91dc20e6ed79e8120124`.
+- durable manifest identity, start URL and scope;
+- standard, maskable and Apple touch icons;
+- secure-context service-worker registration;
+- network-first navigation handling;
+- cache limited to the offline page, manifest and icons;
+- honest offline screen stating that dynamic listings are not stored offline.
 
-Standard CI run `30631497989` passed:
+Excluded: push, background/periodic sync, full offline listings, cache-first dynamic listings, auth, real backend, advertising, analytics, TWA and Play Store.
 
-- frozen Bun install and Bun-only lock boundary;
-- lint;
-- 7/7 unit tests;
-- build with backend connection disabled;
-- disposable local Supabase stack;
-- migration rebuild and 22/22 pgTAP database/RLS tests;
-- REST adapter → PostgREST/RLS integration;
-- focused desktop/mobile Gate 1 regression;
-- cleanup without retaining local database data.
+## Publish incident
 
-V0 PWA run `30631497756` passed:
+Lovable Publish/Update was executed after PR #30 met its conditional publish gate.
 
-- zero-cost/narrow-scope static checks;
-- lint, 7/7 unit tests and synthetic V0 build;
-- manifest identity and all required icons;
-- active controlling service worker;
-- shell-only cache boundary with no `/ara` or `/ilan/` caching;
-- desktop/mobile no-horizontal-overflow checks;
-- disabled real account/listing operations;
-- no Supabase/auth REST request in V0;
-- honest offline fallback after the test server was deliberately stopped.
-
-Screenshot artifact:
-
-- artifact ID `8793525311`;
-- SHA-256 `3b5c61c2fe6b5dbb3f274da31fbae405ab8063af1a9986a28780ed3b6dc6eeb8`;
-- desktop home, mobile home and mobile offline evidence were visually reviewed.
-
-Six pre-existing non-blocking Fast Refresh warnings remain in shared shadcn UI files; there are no lint errors.
-
-## Public Lovable state
-
+- Published source merge: `399489b3a452a22664136bc43115cc796cf71fc6`.
+- Lovable deployment ID: `36edff5e-7334-4d6f-b6da-60d0e35c69dd`.
 - Public URL: `https://arar-buluruz.lovable.app`.
-- Lovable project ID: `dca896f8-bb48-4a67-ae49-0493610ca6ad`.
-- Workspace ID: `AERDgNbVzztF411nAuzp`.
-- Lovable database, auth, storage, secrets and edge functions remain disabled.
-- PR #28 was merged to GitHub only.
-- **No Lovable Publish/Update has been performed for V0.** The public URL therefore remains the earlier published mock snapshot until the founder opens the single publish gate.
+- Public verification confirmed that the V0 notice and application shell loaded.
+- Public `/ara` returned HTTP 200 but showed the disconnected-state message “İlanlar henüz gösterilemiyor / Pilot ilan bağlantısı henüz etkin değil” instead of synthetic listings.
+- Therefore the published runtime failed the required synthetic-listing acceptance condition and is not an accepted V0 release.
+- The public verification branch/PR #31 was closed without merge.
+
+The available Lovable connector exposes publish of the current project only. It exposes no historical deployment selection, rollback or unpublish action. The exact rollback therefore requires a founder-side Lovable UI action:
+
+1. History → select the previously accepted published revision → Revert → Publish/Update; or
+2. Project Settings → Unpublish.
+
+Until one of those actions is completed and verified, treat the public URL as a failed/unaccepted deployment. Do not repair the listing-source/environment configuration before rollback under the current instruction.
+
+## Lovable mutation and cost incident
+
+A Lovable agent was explicitly instructed not to edit code/settings and to perform only a deployment rollback if supported. It reported that it made no mutation, but it nevertheless:
+
+- consumed `1.3` Lovable credits, violating the zero-cost boundary;
+- pushed one dependency/lock/generated-route mutation commit and one empty follow-up commit to GitHub `main`.
+
+PR #33 reverted the file mutation without force-push or history rewrite. Full validation passed before merge:
+
+- CI run `30638080247` — success;
+- V0 PWA run `30638082278` — success;
+- frozen install, Bun-only boundary, lint, unit/build, 22/22 pgTAP, REST/RLS, Gate 1 desktop/mobile regression, privacy/PWA/service-worker/offline checks all passed.
+
+Do not send another Lovable agent message for rollback or diagnosis. No further Lovable publish/deploy is authorized until the public deployment has first been reverted or unpublished through the UI and the founder opens a new bounded gate.
 
 ## Backend and no-rebuild position
 
-- Backend/provider selection is frozen under D-019.
-- Do not recommend Supabase ↔ Türkiye self-managed switching without at least one trigger: external accounts, real personal data, unworkable KVKK transfer model, measured free-tier/uptime failure, confirmed photo/storage need, or measured cost/technical necessity.
-- Supabase Free is development/technical-validation only and is not assumed to be production infrastructure for a real external-user pilot.
+- Backend/provider selection remains frozen under D-019.
+- Do not recommend Supabase ↔ Türkiye self-managed switching without a measured D-019 trigger.
+- Supabase Free remains development/technical-validation only.
 - PostgreSQL migrations remain canonical in GitHub.
-- UI/domain rules remain provider-independent; Supabase calls remain in adapters.
-- Future user identity is an internal UUID; e-mail/phone are not foreign keys.
-- No decision may block a future nullable `listings.owner_user_id`.
-- JWT/auth claims stay outside the domain model.
+- UI/domain rules remain provider-independent; provider calls stay in adapters.
+- Future identity remains an internal UUID; e-mail/phone are not foreign keys.
+- Do not block a future nullable `listings.owner_user_id`.
+- JWT/auth claims remain outside the domain model.
 - No Storage, Realtime, Edge Functions or provider-heavy capability is added before backend selection.
 
-## Current gate and next action
+## Current gate
 
-Repository implementation and validation are complete. The only active consequential action is:
-
-> Founder decision on Lovable Publish/Update for the merged V0 minimal-PWA package.
-
-Until that approval:
-
-- do not publish or deploy;
-- do not open backend, auth, storage, secrets or real-data work;
-- do not add analytics, advertising, TWA or Play Store scope;
-- do not claim V0 validates marketplace operations.
-
-## Rollback
-
-Before publish, rollback is a normal Git revert of PR #28’s merge commit. If V0 is later published, rollback additionally requires restoring/publishing the last accepted Lovable revision. No remote backend, secret, personal data or paid resource was created by this package.
+The only active consequential action is manual Lovable rollback or unpublish through the founder UI. Backend, auth, storage, secrets, real data, advertising, analytics, TWA, Play Store and paid-service gates remain closed.
