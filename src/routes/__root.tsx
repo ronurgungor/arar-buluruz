@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { productPhaseLabel } from "../lib/product-phase";
 
 function NotFoundComponent() {
   return (
@@ -77,33 +78,39 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "theme-color", content: "#397a56" },
+      { name: "application-name", content: "Arar Buluruz" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { name: "apple-mobile-web-app-title", content: "Arar Buluruz" },
       { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
       { name: "googlebot", content: "noindex, nofollow, noarchive, nosnippet" },
-      { title: "Arar Buluruz — Ücretsiz ilan ver, aradığını hemen bul" },
+      { title: "Arar Buluruz — V0 test sürümü" },
       {
         name: "description",
         content:
-          "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz.",
+          "Arama ve ilan keşfi deneyimini doğrulayan Arar Buluruz V0 test sürümü. İlanlar örnektir.",
       },
       {
         property: "og:title",
-        content: "Arar Buluruz — Ücretsiz ilan ver, aradığını hemen bul",
+        content: "Arar Buluruz — V0 test sürümü",
       },
       {
         property: "og:description",
         content:
-          "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz.",
+          "Arama ve ilan keşfi deneyimini doğrulayan test sürümü. Gerçek hesap veya ilan işlemi bulunmaz.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       {
         name: "twitter:title",
-        content: "Arar Buluruz — Ücretsiz ilan ver, aradığını hemen bul",
+        content: "Arar Buluruz — V0 test sürümü",
       },
       {
         name: "twitter:description",
         content:
-          "Türkiye geneli ücretsiz ilan servisi. Ne aradığını yaz, kategori gezmeden bul. İlan vermek her zaman ücretsiz.",
+          "Arama ve ilan keşfi deneyimini doğrulayan test sürümü. İlanlar örnektir.",
       },
       {
         property: "og:image",
@@ -127,6 +134,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap",
       },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png", sizes: "180x180" },
+      { rel: "icon", href: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
@@ -154,8 +164,21 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    if (!("serviceWorker" in navigator) || !window.isSecureContext) return;
+
+    void navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => undefined);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
+      <div
+        role="note"
+        data-testid="v0-notice"
+        className="border-b border-border bg-accent/70 px-4 py-2 text-center text-xs font-semibold text-accent-foreground"
+      >
+        {productPhaseLabel} · İlanlar örnektir; gerçek hesap, ilan gönderimi veya satıcı işlemi yoktur.
+      </div>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
     </QueryClientProvider>
