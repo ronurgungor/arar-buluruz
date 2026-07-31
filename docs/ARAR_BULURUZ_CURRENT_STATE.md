@@ -9,8 +9,9 @@ _Last updated: 2026-07-31, Europe/Istanbul_
 - V0 minimal-PWA implementation merged through PR #28 with normal merge commit `16da297ddac5461d3cba6fa8fc76bbc095bbb2c3`.
 - V0 KVKK-min cleanup merged through PR #30 with normal merge commit `399489b3a452a22664136bc43115cc796cf71fc6`.
 - An unintended Lovable bot mutation changed `package.json`, `bun.lock` and generated route typing after publish. PR #33 restored those three files to the accepted PR #30 content and merged as `edabc518643bc9ae102df1149817ecb3d96f003c`.
-- Comparing `399489b3…` with `edabc518…` produces no file difference; only the incident and reversible rollback history remain.
-- Package boundary remains Bun `1.3.14` and `bun.lock`.
+- PR #35 recorded the completed unpublish with merge commit `acb381565880e365467045c9ad0512edd6bd535a`.
+- PR #36 corrected the V0 production mock-source behavior and production-mode validation with merge commit `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7`.
+- Package boundary remains Bun `1.3.14` and `bun.lock`; PR #36 added no dependency or lockfile change.
 - Gate 1 PostgreSQL/RLS/adapter work remains a reusable technical asset and is not an active real pilot.
 
 ## Active phase and data boundary
@@ -43,13 +44,6 @@ PR #30 added only:
 
 No dependency, paid service, cookie banner, backend, auth, real data, advertising, analytics, TWA or Play Store scope was added by PR #30.
 
-Pre-publish evidence on head `71b026e0162be224655bd6477a4d44a487bcfe5c`:
-
-- standard CI run `30635858048` — success;
-- V0 PWA run `30635858083` — success;
-- screenshot artifact `8795292588`;
-- artifact SHA-256 `c6f8914c0fe51523c0076a5896988ec69bd58f46f62fe1cfa21e5347aa79deb1`.
-
 ## Minimal-PWA boundary
 
 Present on GitHub `main`:
@@ -75,36 +69,54 @@ Lovable Publish/Update was executed after PR #30 met its conditional publish gat
 - Therefore the published runtime failed the required synthetic-listing acceptance condition and was not an accepted V0 release.
 - The public verification branch/PR #31 was closed without merge.
 
-The founder completed `Project Settings → Unpublish` on 2026-07-31. Post-action verification through Lovable project metadata confirmed:
-
-- the project reports `is_published: false`;
-- the project is returned by the `not_published` filter;
-- the accepted repository source remained `07adb6caa8709f86b735078b76da2686d6152dc0` before this documentation-only write-back;
-- no Lovable agent message or code edit occurred after the repository-recovery merge.
+The founder completed `Project Settings → Unpublish` on 2026-07-31. Lovable project metadata confirmed `is_published: false` and the failed deployment is no longer an active public release.
 
 Result:
 
-- the failed/disconnected deployment is no longer an active public release;
-- GitHub’s accepted V0 code remains preserved;
 - public V0 is currently **not published**;
-- unpublish resolves the failed deployment exposure only and must not be recorded as a successful V0 publication.
+- unpublish resolved only the failed deployment exposure and is not a successful V0 publication;
+- PR #32, which assumed a successful publish, was closed without merge;
+- no Lovable agent message, environment change or republish was used during rollback.
 
-PR #32, which assumed a successful publish, was closed without merge as superseded by PR #34 and the failed publish incident.
+## Production-source diagnosis and correction
+
+Read-only diagnosis established that the Lovable production build received the intended mock source, but application logic converted explicit production `mock` to `disabled` because `import.meta.env.DEV` was false.
+
+The prior test suite missed this because:
+
+- the unit test explicitly expected production `mock` to become `disabled`;
+- the browser/PWA runner validated through `vite dev`, where `import.meta.env.DEV` is true, rather than a production-mode output.
+
+PR #36 made the narrow correction:
+
+- explicit `VITE_LISTINGS_SOURCE=mock` is honored in development and production;
+- unconfigured production remains safely `disabled`;
+- explicit `disabled` and `supabase` behavior is preserved;
+- the normal Cloudflare deploy-target build remains intact;
+- a separate zero-cost `node-server` production-mode build is used only for browser validation;
+- the PWA runner starts and stops the prebuilt output directly;
+- service-worker control uses bounded reload attempts before the real-server-outage offline check.
+
+No dependency, backend, remote Supabase project, secret, real data, Lovable setting or deployment was added.
+
+Validation on PR #36 head `20bfc9562bda5661204f086783dbfd2d14ecebcb`:
+
+- standard CI run `30655419577` — success;
+- lint, unit tests and disabled-backend build — success;
+- 22/22 pgTAP, local migration/RLS, REST integration and Gate 1 desktop/mobile E2E — success;
+- V0 PWA run `30655419570` — success;
+- Cloudflare deploy-target production build — success;
+- production-mode synthetic search/detail, disabled real operations, privacy, desktop/mobile layout, service worker, cache boundary and honest offline fallback — success;
+- evidence artifact `8803163231`;
+- artifact SHA-256 `4543ecd8af8bd46700b7477d8fccceef871b5542b509a83a43073cb52c27d35b`.
+
+After merge, Lovable synchronized repository SHA `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7` while remaining `is_published: false`.
 
 ## Lovable mutation and cost incident
 
-A Lovable agent was explicitly instructed not to edit code/settings and to perform only a deployment rollback if supported. It reported that it made no mutation, but it nevertheless:
+A prior Lovable agent message unexpectedly consumed `1.3` Lovable credits and pushed a dependency/lock/generated-route mutation despite a no-mutation instruction. PR #33 reverted the file mutation without force-push or history rewrite.
 
-- consumed `1.3` Lovable credits, violating the zero-cost boundary;
-- pushed one dependency/lock/generated-route mutation commit and one empty follow-up commit to GitHub `main`.
-
-PR #33 reverted the file mutation without force-push or history rewrite. Full validation passed before merge:
-
-- CI run `30638080247` — success;
-- V0 PWA run `30638082278` — success;
-- frozen install, Bun-only boundary, lint, unit/build, 22/22 pgTAP, REST/RLS, Gate 1 desktop/mobile regression, privacy/PWA/service-worker/offline checks all passed.
-
-Do not send another Lovable agent message for rollback or diagnosis. The failed public deployment has now been unpublished. No further Lovable publish/deploy, environment change or listing-source repair is authorized until the founder opens a new bounded gate.
+Do not send another Lovable agent message for this incident or for republish. Use only the explicit founder-side Publish/Update action after a separate bounded approval.
 
 ## Backend and no-rebuild position
 
@@ -120,8 +132,15 @@ Do not send another Lovable agent message for rollback or diagnosis. The failed 
 
 ## Current gate
 
-The manual Lovable rollback/unpublish gate is complete.
+The diagnosis and code-correction gate is complete. The only next consequential gate is:
 
-No new publish, environment, listing-source or implementation gate is active. The next possible bounded gate is **“Zero-cost Lovable V0 production-source diagnosis.”** It requires separate explicit founder approval and must begin read-only by comparing the local/CI synthetic build with Lovable production behavior, `VITE_LISTINGS_SOURCE`, the Lovable build-time environment model, and whether a correct synthetic V0 publish is possible without code changes.
+**Founder decision: publish the corrected synthetic V0 from Lovable and immediately perform bounded public verification.**
 
-Until that gate is explicitly opened, backend, auth, storage, secrets, real data, advertising, analytics, TWA, Play Store, paid services and Lovable republish remain closed.
+This gate is not yet authorized. Until explicit founder approval:
+
+- do not Publish/Update;
+- do not change Lovable environment or listing-source settings;
+- do not send a Lovable agent message;
+- do not activate backend, auth, storage, secrets, real data, advertising, analytics, TWA, Play Store or paid services.
+
+If the publish gate is approved, the release candidate source must be exactly `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7`. Acceptance requires the public shell and V0 notice, synthetic results on `/ara`, working synthetic detail routes, privacy disclosure, no disconnected-state message, no forbidden backend/tracker requests, and a reversible Unpublish rollback path.
