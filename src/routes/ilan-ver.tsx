@@ -25,8 +25,7 @@ export const Route = createFileRoute("/ilan-ver")({
 
 const fieldClass =
   "h-12 w-full rounded-xl border border-border bg-card px-4 text-base outline-none focus:border-primary";
-const gate1TestOperationsEnabled =
-  import.meta.env.VITE_GATE1_TEST_OPERATIONS === "enabled";
+const gate1TestOperationsEnabled = import.meta.env.VITE_GATE1_TEST_OPERATIONS === "enabled";
 
 function PostListing() {
   if (gate1TestOperationsEnabled) return <Gate1ApplicationForm />;
