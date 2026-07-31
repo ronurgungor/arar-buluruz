@@ -46,10 +46,14 @@ jobs:
           test -f public/manifest.webmanifest
           test -f public/sw.js
           test -f public/offline.html
+          test -f src/routes/gizlilik.tsx
           grep -q '"id": "/"' public/manifest.webmanifest
           grep -q '"purpose": "maskable"' public/manifest.webmanifest
           ! grep -Eqi 'push|background[[:space:]_-]*sync|periodicSync' public/sw.js
           ! grep -Eqi '/ara|/ilan/' public/sw.js
+          ! grep -REqi 'fonts\.(googleapis|gstatic)\.com' src public
+          ! grep -REqi 'google-analytics\.com|googletagmanager\.com|doubleclick\.net|googlesyndication\.com' src public
+          ! grep -REqi 'document\.cookie' src
 
       - name: Lint
         run: bun run lint
