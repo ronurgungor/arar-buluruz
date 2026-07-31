@@ -49,9 +49,7 @@ async function assertManifestAndIcons(context: BrowserContext) {
   );
 
   const icons = manifest.icons ?? [];
-  const standard192 = icons.find(
-    (icon) => icon.sizes === "192x192" && icon.type === "image/png",
-  );
+  const standard192 = icons.find((icon) => icon.sizes === "192x192" && icon.type === "image/png");
   const standard512 = icons.find(
     (icon) => icon.sizes === "512x512" && icon.type === "image/png" && icon.purpose === "any",
   );
