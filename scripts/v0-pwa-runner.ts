@@ -4,16 +4,7 @@ const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:4174";
 const viteCli = path.resolve("node_modules/vite/bin/vite.js");
 
 const server = Bun.spawn(
-  [
-    "bun",
-    viteCli,
-    "preview",
-    "--host",
-    "127.0.0.1",
-    "--port",
-    "4174",
-    "--strictPort",
-  ],
+  ["bun", viteCli, "preview", "--host", "127.0.0.1", "--port", "4174", "--strictPort"],
   {
     cwd: process.cwd(),
     env: process.env,
