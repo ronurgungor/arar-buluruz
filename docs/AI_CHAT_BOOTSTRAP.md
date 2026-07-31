@@ -1,174 +1,113 @@
 # Arar Buluruz — New Chat Bootstrap
 
-_Last reviewed: 2026-07-30, Europe/Istanbul_
-
-## Purpose
-
-Every new AI chat or tool entering Arar Buluruz must quickly understand three things before advising or changing anything:
-
-1. **the application** — what Arar Buluruz is, how it currently works and its hard boundaries;
-2. **the work** — what has been completed, what is currently pending and which decisions are open;
-3. **the team** — who the founder, main assistant, Codex, Work and Lovable are, what each can do and when each should be used.
-
-This document is the common entry point. It does not replace the linked canonical files.
+_Last reviewed: 2026-07-31, Europe/Istanbul_
 
 ## Mandatory reading order
 
-1. [`AGENTS.md`](../AGENTS.md) — operating contract, approvals, source priority and one-writer rule
-2. [`ARAR_BULURUZ_PROJECT_MEMORY.md`](ARAR_BULURUZ_PROJECT_MEMORY.md) — durable product, architecture and ownership knowledge
-3. [`ARAR_BULURUZ_CURRENT_STATE.md`](ARAR_BULURUZ_CURRENT_STATE.md) — current implementation and verified runtime state
-4. [`ARAR_BULURUZ_BACKLOG.md`](ARAR_BULURUZ_BACKLOG.md) — completed, current and ordered work
-5. [`ARAR_BULURUZ_DECISION_LOG.md`](ARAR_BULURUZ_DECISION_LOG.md) — consequential decisions and rationale
-6. [`AI_TEAM_CAPABILITIES.md`](AI_TEAM_CAPABILITIES.md) — team capability registry and routing rules
-7. [`WORK_CODEX_CAPABILITY_PROFILE.md`](WORK_CODEX_CAPABILITY_PROFILE.md) — detailed Work and Codex capability profiles
-8. Relevant dated test/evidence documents for the task
+1. [`AGENTS.md`](../AGENTS.md)
+2. [`ARAR_BULURUZ_PROJECT_MEMORY.md`](ARAR_BULURUZ_PROJECT_MEMORY.md)
+3. [`ARAR_BULURUZ_CURRENT_STATE.md`](ARAR_BULURUZ_CURRENT_STATE.md)
+4. [`ARAR_BULURUZ_DECISION_LOG.md`](ARAR_BULURUZ_DECISION_LOG.md)
+5. [`ARAR_BULURUZ_BACKLOG.md`](ARAR_BULURUZ_BACKLOG.md)
+6. [`AI_TEAM_CAPABILITIES.md`](AI_TEAM_CAPABILITIES.md)
+7. [`WORK_CODEX_CAPABILITY_PROFILE.md`](WORK_CODEX_CAPABILITY_PROFILE.md)
+8. [`FOUNDER_WINDOWS_DEV_MACHINE_PROFILE.md`](FOUNDER_WINDOWS_DEV_MACHINE_PROFILE.md) only for founder-local execution
+9. Relevant dated evidence
 
-GitHub `main`, the exact branch/PR under review and executable evidence remain more authoritative than summaries.
+GitHub `main`, the exact branch/PR and executable evidence override summaries and chat memory.
 
 ## Application snapshot
 
-- Product: a very simple, mobile-first, search-first classified-listing application for Türkiye.
+- Product: mobile-first, search-first classified-listing concept for Türkiye.
 - Repository: `ronurgungor/arar-buluruz`.
-- Public prototype: `https://arar-buluruz.lovable.app`.
-- Current implementation stage: frontend-only mock prototype.
-- Current data: local mock listings only.
-- Core journeys: search, listing detail, controlled call/WhatsApp contact, editable listing preview, placeholder login and complaint flow.
-- Product principle: users type what they need directly; no required visible category tree.
-- Technical baseline: React, TanStack Start, TypeScript, Tailwind, shadcn/ui, Bun `1.3.14`, `bun.lock`.
-- Canonical source: GitHub `main`.
-- Lovable role: bounded frontend writer and hosting surface; not backend owner.
-- Backend, database, auth, storage, secrets, real user data, payments and advertising network are not enabled.
+- Public URL: `https://arar-buluruz.lovable.app`.
+- Frontend: React, TanStack Start, TypeScript, Tailwind/shadcn.
+- Package boundary: Bun `1.3.14` and `bun.lock`.
+- Lovable: frontend editor/hosting surface only; its backend features remain disabled.
+- Gate 1 PostgreSQL migration/RLS/adapter/test work is retained as a reusable technical asset but is not an active real pilot.
 
-Do not rely on this snapshot for exact runtime details. Read `ARAR_BULURUZ_CURRENT_STATE.md` and the current code.
+## Active phase — V0
 
-## Work snapshot
+**V0 — UX ve değer önerisi doğrulaması** is the only active product phase.
 
-The backlog is the canonical task list. At the time this bootstrap was reviewed:
+V0 may validate only:
 
-- the frontend-only mock prototype is technically validated;
-- repeated full testing is not the default next step;
-- shared project memory and team capability records exist;
-- the first restricted Work session's capability inventory has been completed and recorded;
-- Work's pilot analysis and the main assistant's independent comparison were advisory inputs rather than automatic decisions;
-- the founder selected the reduced Option B direction: a founder-operated, listings-only persistence pilot for Çorlu;
-- that direction is canonical, but no Supabase project, backend, migration, environment connection, real data or pilot launch has been implemented;
-- founder/KVKK/Supabase preparation and the technical implementation candidate remain separate ordered work packages and approval gates.
+- whether people understand the product;
+- search and listing discovery;
+- listing cards and detail pages;
+- mobile and desktop usability;
+- minimal-PWA installability;
+- general user interest.
 
-Always read the current backlog because this snapshot will age.
+V0 must not be reported as validating:
 
-## Approved first-pilot direction
+- real listing creation;
+- account creation;
+- listing ownership or management;
+- sustainable moderation;
+- the seller-contact operating model;
+- a functioning supply-demand loop.
 
-The first real capability is listing persistence, constrained to the smallest safe vertical slice:
+The live V0 uses synthetic/mock listings only and must disclose that it is a test version. It uses no real account, real listing, real seller phone/email, advertising or analytics.
 
-- Çorlu scope;
-- technical validation begins with 5–10 controlled real listings;
-- only a `listings` table;
-- public application is read-only;
-- only `published`, already-published and unexpired rows may be publicly visible;
-- no buyer auth, seller auth, in-app moderator auth or custom admin panel;
-- no seller-contact/private-phone table;
-- no photo upload or Storage;
-- no public/anonymous database insert;
-- no `app_roles`, `moderation_events` or automatic expiration cron;
-- seller phone remains outside Supabase and contact stays on the controlled central phone/WhatsApp line;
-- the founder may temporarily operate approved listing rows through the Supabase Dashboard after a separately approved project exists;
-- schema, RLS, grants, constraints, indexes, triggers and extensions remain migration-canonical in GitHub.
+## Minimal-PWA boundary
 
-This is an architecture and planning decision only. The following remain separate approval gates:
+Allowed:
 
-1. local isolated implementation preparation;
-2. Supabase organization/project creation;
-3. secret/environment connection;
-4. real-data entry;
-5. pilot publish/launch.
+- manifest;
+- durable application identity;
+- correct icons;
+- installability;
+- safe and honest offline/error screen.
 
-Approval of one gate never opens the next automatically.
+Excluded:
 
-## Team snapshot
+- push notifications;
+- background sync;
+- full offline listings;
+- cache-first dynamic listings;
+- auth or real backend;
+- advertising or analytics;
+- TWA or Play Store.
 
-### Founder
+## Backend freeze and no-rebuild rules
 
-- Owns product intent and final consequential decisions.
-- Opens approval gates for backend, real data, auth, storage, secrets, payments, paid services and public pilot.
-- Runs local PowerShell commands and real-world human checks when needed.
+- Do not reopen backend selection unless there is an external user account, real personal data, an unworkable KVKK transfer model, measured free-tier/uptime failure, confirmed photo/storage need, or measured cost/technical necessity.
+- Without a trigger, do not recommend switching between Supabase and Türkiye self-managed infrastructure.
+- Supabase Free is development/technical-validation only; do not assume it is production infrastructure for a real external-user pilot.
+- Keep PostgreSQL migrations canonical in GitHub.
+- Keep UI and domain rules provider-independent.
+- Keep Supabase calls inside adapters.
+- Future user identity is an internal UUID; email/phone are not foreign keys.
+- Do not block a future nullable `listings.owner_user_id`.
+- Do not embed JWT/auth claim shape in the domain model.
+- Do not add Supabase Storage, Realtime, Edge Functions or provider-heavy features before backend selection.
 
-### Main assistant
+## Team and authority
 
-- Default product/technical executor and coordinator.
-- Reads and writes through connected GitHub tools, maintains shared memory, creates branches/PRs and reviews CI within approval scope.
-- Performs work directly when current tools and demonstrated capabilities are sufficient.
-- Routes to specialists only when the handoff provides material additional value.
+- **Founder:** owns consequential product, backend, data, KVKK, cost and publish decisions.
+- **Main assistant:** default routine implementer/coordinator within approved reversible scope.
+- **Codex:** optional execution/test specialist when its terminal environment adds material value.
+- **Work:** optional independent strategy/risk review for consequential uncertainty.
+- **Lovable:** bounded frontend writer/hosting surface; never backend owner.
 
-### Codex
+Only one writer operates at a time. Routine feature-branch, PR, CI and merge work may proceed under D-018. Stop before Lovable Publish/Update, production deploy, remote backend, secrets/environment, real data, auth, storage, paid service, advertising or analytics.
 
-- Execution-focused engineering specialist.
-- Best for local repository work, shell commands, Bun, lint/build/tests, debugging, browser/E2E, precise code changes and recovery evidence.
-- Project-observed abilities and session-dependent limits are documented in `WORK_CODEX_CAPABILITY_PROFILE.md`.
+## Current task order
 
-### Work / Work Mode
-
-- Independent analysis and risk-review specialist.
-- Best for consequential pilot, product, architecture, security, KVKK, moderation, cost and lock-in decisions.
-- The first restricted-depth session reported GitHub, shell, browser, web, Lovable and related tool capabilities; exact details and observed limits are documented in `WORK_CODEX_CAPABILITY_PROFILE.md`.
-- Restricted depth affects analysis depth, not the validity of the environment's own capability description.
-- Work's prior pilot recommendation was advisory; the founder's reduced Option B selection is recorded independently in the decision log.
-
-### Lovable
-
-- Bounded frontend/UX writer and hosting surface.
-- Credits are currently exhausted.
-- Backend, database, auth, storage, secrets and edge functions must remain disabled.
-- Use only with a safe isolated/reviewable workflow.
-
-## Governance rules every chat must know
-
-- No AI response is a binding command or automatic project decision.
-- Recommendations are evaluated against GitHub, evidence, founder intent, risk and scope.
-- Double/triple checking is proportional to consequence and uncertainty; it is not a ritual.
-- Only one code writer operates at a time.
-- The main assistant is the default executor; Work, Codex and Lovable are optional specialists.
-- A specialist handoff must state the concrete missing capability or uncertainty it is intended to solve.
-- Testing depth follows the risk and behavior touched.
-- Do not force-push or rewrite published Git history.
-- Do not create dependency or lockfile drift.
-- Do not enable backend or real data without the required founder decision.
-
-## Required new-chat declaration
-
-Before consequential advice or any write action, the new chat should state:
-
-1. repository, branch and exact SHA it can verify;
-2. canonical files it read;
-3. its current tools, reasoning depth and read/write/execute access;
-4. its understanding of the current task;
-5. whether it will act directly or recommends a specialist handoff, and why;
-6. prohibited actions and approval gates relevant to the task.
-
-For a routine low-risk task, this declaration may be concise. It must not become ceremony that blocks obvious work.
-
-## When GitHub access is unavailable
-
-The chat must say so. Provide or upload, at minimum:
-
-- `AGENTS.md`;
-- this bootstrap file;
-- `ARAR_BULURUZ_PROJECT_MEMORY.md`;
-- `ARAR_BULURUZ_CURRENT_STATE.md`;
-- `ARAR_BULURUZ_BACKLOG.md`;
-- `AI_TEAM_CAPABILITIES.md`;
-- the exact files/diff relevant to the task.
-
-The chat must not pretend it has read GitHub when it has not.
+1. Prepare and validate the narrow V0 minimal-PWA package.
+2. Produce exact diff, CI, screenshots, risks and rollback.
+3. Merge routine repository work only after evidence passes.
+4. Ask the founder once for Lovable Publish/Update approval.
+5. Keep backend and real-user work frozen until a D-019 trigger exists.
 
 ## Knowledge write-back
 
-After a meaningful milestone, accepted information must be written to the appropriate repository document:
-
-- stable principle or identity → project memory;
+- durable principle → project memory;
 - current implementation/runtime → current state;
 - pending work → backlog;
-- consequential choice and rationale → decision log;
-- team capability or limitation → capability registry/profile;
-- test result → dated evidence document.
+- consequential choice → decision log;
+- test result → dated evidence;
+- local-machine constraint → founder machine profile.
 
-Important project knowledge should not remain only in a conversation.
+No secret, credential, private user record or unnecessary personal data belongs in these files.
