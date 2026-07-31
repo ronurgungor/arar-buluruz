@@ -1,4 +1,4 @@
-/* global self, caches, fetch */
+/* global self, caches, fetch, Response */
 
 const CACHE_PREFIX = "arar-buluruz-";
 const CACHE_NAME = `${CACHE_PREFIX}v0-shell-v1`;
@@ -36,5 +36,20 @@ self.addEventListener("fetch", (event) => {
 
   if (request.method !== "GET" || request.mode !== "navigate") return;
 
-  event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL)));
+  event.respondWith(
+    (async () => {
+      try {
+        return await fetch(request);
+      } catch {
+        const fallback = await caches.match(OFFLINE_URL);
+        return (
+          fallback ??
+          new Response("Bağlantı yok. İnternet bağlantınızı kontrol edip tekrar deneyin.", {
+            status: 503,
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
+          })
+        );
+      }
+    })(),
+  );
 });
