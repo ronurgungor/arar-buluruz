@@ -28,19 +28,15 @@ Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 - [x] Verify no application cookie, Google Fonts, analytics, advertising-network, auth or backend request in the synthetic test build.
 - [x] Merge the KVKK-min package through PR #30 as `399489b3a452a22664136bc43115cc796cf71fc6`.
 
-## Publish incident and repository recovery
+## First publish incident and recovery
 
-- [x] Execute the conditionally approved Lovable Publish/Update.
-- [x] Verify the public V0 notice and shell.
-- [x] Detect that public `/ara` does not show synthetic listings and instead renders the disconnected-state message.
-- [x] Reject that deployment as an accepted V0 release.
+- [x] Execute the first conditionally approved Lovable Publish/Update.
+- [x] Detect that public `/ara` showed the disconnected-state message instead of synthetic listings.
+- [x] Reject the first deployment as an accepted V0 release.
 - [x] Close the temporary public-verification PR #31 without merge.
 - [x] Record the unexpected `1.3` Lovable credit consumption and unintended repository mutation.
 - [x] Revert the dependency/lock/generated-route mutation through PR #33 without force-push.
-- [x] Restore repository file content to the accepted PR #30 state.
-- [x] Complete founder-side `Project Settings → Unpublish`.
-- [x] Verify Lovable reports `is_published: false`.
-- [x] Confirm public V0 is not published and unpublish is not a successful release.
+- [x] Complete founder-side Unpublish and verify `is_published: false`.
 - [x] Close superseded PR #32 without merge.
 - [x] Record the unpublish through PR #35 as `acb381565880e365467045c9ad0512edd6bd535a`.
 
@@ -58,35 +54,33 @@ Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 - [x] Pass standard CI run `30655419577`.
 - [x] Pass V0 PWA run `30655419570` and evidence artifact `8803163231`.
 - [x] Merge PR #36 as `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7`.
-- [x] Verify Lovable synchronized the merge SHA while remaining `is_published: false`.
+- [x] Record corrected production readiness through PR #37 as `59e5d987f4d73be486958a3d36d371cfa5dd2abe`.
 
-## Active gate
+## Corrected V0 publication
 
-- [-] **Founder decision: publish the corrected synthetic V0 from Lovable.**
+- [x] Receive explicit founder approval for bounded Publish/Update.
+- [x] Confirm GitHub `main` is exactly `59e5d987f4d73be486958a3d36d371cfa5dd2abe` before publication.
+- [x] Confirm Lovable is synchronized to the same source identity and has no later agent edit.
+- [x] Confirm current `main` differs from application-fix merge `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7` only by the two canonical documentation files.
+- [x] Publish the existing synchronized project without a Lovable agent message or environment change.
+- [x] Record deployment ID `ddf816c6-9bf1-44af-8cfa-b242d437cc36` and public URL `https://arar-buluruz.lovable.app`.
+- [x] Verify Lovable reports `is_published: true` under the published-project filter.
+- [x] Bind acceptance to the production-mode evidence covering the V0 notice, synthetic `/ara`, no disconnected-state message, synthetic detail routes, privacy, non-collecting demo routes, PWA assets/offline behavior and no forbidden external requests.
+- [x] Accept the publication as **V0 — UX ve değer önerisi doğrulaması**.
+- [x] Preserve the explicit limitation that this is not real marketplace, account, listing, moderation or supply-demand validation.
 
-This gate is a decision gate only; Publish/Update is not authorized until the founder explicitly approves it.
+## Current gate status
 
-Release-candidate source:
+There is no active consequential implementation gate.
 
-- `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7`
+The accepted public V0 may be used only for synthetic UX and value-proposition observation within the existing V0/KVKK-min boundary.
 
-If approved, perform only:
+Do not silently convert observation into a real-data pilot or implementation phase. Any new consequential work requires a separate explicit founder gate.
 
-1. Lovable founder UI → Publish/Update the current synchronized project.
-2. Verify the public V0 notice and shell.
-3. Verify `/ara` shows synthetic listing results rather than the disconnected-state message.
-4. Verify a synthetic listing-detail route.
-5. Verify `/gizlilik` and the no-real-operations boundary.
-6. Verify no forbidden backend, auth, analytics, advertising or Google Fonts request.
-7. Reject and Unpublish immediately if any required condition fails.
+## Frozen until a separate explicit gate
 
-No Lovable agent message, environment change or backend activation belongs to this gate.
-
-## Frozen until explicit publish approval
-
-- [ ] Do not Publish/Update.
 - [ ] Do not change the Lovable environment or listing-source setting.
-- [ ] Do not send another Lovable agent message for this incident.
+- [ ] Do not send a Lovable agent message for publication, rollback or diagnosis.
 - [ ] Do not create a remote Supabase project or apply a remote migration.
 - [ ] Do not connect secrets or environment values.
 - [ ] Do not enter real listings or personal data.

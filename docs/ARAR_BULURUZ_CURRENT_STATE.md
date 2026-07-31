@@ -8,10 +8,10 @@ _Last updated: 2026-07-31, Europe/Istanbul_
 - GitHub `main` is canonical. Read its exact SHA at task start rather than trusting a copied “current SHA.”
 - V0 minimal-PWA implementation merged through PR #28 with normal merge commit `16da297ddac5461d3cba6fa8fc76bbc095bbb2c3`.
 - V0 KVKK-min cleanup merged through PR #30 with normal merge commit `399489b3a452a22664136bc43115cc796cf71fc6`.
-- An unintended Lovable bot mutation changed `package.json`, `bun.lock` and generated route typing after publish. PR #33 restored those three files to the accepted PR #30 content and merged as `edabc518643bc9ae102df1149817ecb3d96f003c`.
-- PR #35 recorded the completed unpublish with merge commit `acb381565880e365467045c9ad0512edd6bd535a`.
-- PR #36 corrected the V0 production mock-source behavior and production-mode validation with merge commit `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7`.
-- Package boundary remains Bun `1.3.14` and `bun.lock`; PR #36 added no dependency or lockfile change.
+- The first Lovable publish failed its synthetic-listing acceptance condition and was unpublished; repository recovery was completed through PR #33 and recorded through PR #35.
+- PR #36 corrected production mock-source behavior and production-mode validation with merge commit `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7`.
+- PR #37 recorded corrected V0 production readiness with merge commit `59e5d987f4d73be486958a3d36d371cfa5dd2abe`.
+- Package boundary remains Bun `1.3.14` and `bun.lock`; the correction and publication added no dependency or lockfile change.
 - Gate 1 PostgreSQL/RLS/adapter work remains a reusable technical asset and is not an active real pilot.
 
 ## Active phase and data boundary
@@ -20,9 +20,9 @@ The only active product phase is **V0 — UX ve değer önerisi doğrulaması**.
 
 V0 may validate only product comprehension, search/discovery, listing cards/details, mobile/desktop usability, minimal-PWA installability and general interest.
 
-V0 must not be reported as validating real listing creation, accounts, listing ownership/management, sustainable moderation, seller-contact operations or a supply-demand loop.
+V0 must not be reported as validating real listing creation, accounts, listing ownership/management, sustainable moderation, seller-contact operations, real marketplace activity or a supply-demand loop.
 
-GitHub `main` contains only synthetic/mock V0 behavior:
+The accepted V0 remains synthetic/mock only:
 
 - visible site-wide V0/test notice;
 - synthetic search and listing-detail experience;
@@ -32,22 +32,12 @@ GitHub `main` contains only synthetic/mock V0 behavior:
 - no optional cookie or tracker implemented by the application;
 - `noindex/nofollow/noarchive/nosnippet` protection.
 
-## KVKK-min cleanup
+## Minimal-PWA and KVKK-min boundary
 
-PR #30 added only:
+Present in the accepted source:
 
-- `/gizlilik` with the current V0 disclosure;
-- a visible, simple home-page privacy link;
-- removal of `fonts.googleapis.com` and `fonts.gstatic.com` requests;
-- a system UI font stack;
-- focused browser checks for privacy content, no application cookie, and no Google Fonts, analytics, ad-network, auth or backend request.
-
-No dependency, paid service, cookie banner, backend, auth, real data, advertising, analytics, TWA or Play Store scope was added by PR #30.
-
-## Minimal-PWA boundary
-
-Present on GitHub `main`:
-
+- `/gizlilik` and a visible home-page privacy link;
+- system UI fonts with no Google Fonts request;
 - durable manifest identity, start URL and scope;
 - standard, maskable and Apple touch icons;
 - secure-context service-worker registration;
@@ -57,35 +47,17 @@ Present on GitHub `main`:
 
 Excluded: push, background/periodic sync, full offline listings, cache-first dynamic listings, auth, real backend, advertising, analytics, TWA and Play Store.
 
-## Publish incident and unpublish resolution
+## First publish incident and rollback
 
-Lovable Publish/Update was executed after PR #30 met its conditional publish gate.
+The first conditionally approved Lovable Publish/Update used source merge `399489b3a452a22664136bc43115cc796cf71fc6` and deployment ID `36edff5e-7334-4d6f-b6da-60d0e35c69dd`.
 
-- Published source merge: `399489b3a452a22664136bc43115cc796cf71fc6`.
-- Lovable deployment ID: `36edff5e-7334-4d6f-b6da-60d0e35c69dd`.
-- Public URL: `https://arar-buluruz.lovable.app`.
-- Public verification confirmed that the V0 notice and application shell loaded.
-- Public `/ara` returned HTTP 200 but showed the disconnected-state message “İlanlar henüz gösterilemiyor / Pilot ilan bağlantısı henüz etkin değil” instead of synthetic listings.
-- Therefore the published runtime failed the required synthetic-listing acceptance condition and was not an accepted V0 release.
-- The public verification branch/PR #31 was closed without merge.
+The public shell loaded, but public `/ara` showed “İlanlar henüz gösterilemiyor / Pilot ilan bağlantısı henüz etkin değil” instead of synthetic listings. That deployment was rejected and founder-side Unpublish was completed on 2026-07-31.
 
-The founder completed `Project Settings → Unpublish` on 2026-07-31. Lovable project metadata confirmed `is_published: false` and the failed deployment is no longer an active public release.
+The root cause was not a Lovable environment failure. Application logic converted explicit production `mock` to `disabled` when `import.meta.env.DEV` was false, while the earlier browser runner used `vite dev` and did not exercise production mode.
 
-Result:
+A prior Lovable agent message also unexpectedly consumed `1.3` credits and pushed a dependency/lock/generated-route mutation despite a no-mutation instruction. PR #33 reverted that mutation without force-push or history rewrite. Do not use Lovable agent messages for publication or rollback.
 
-- public V0 is currently **not published**;
-- unpublish resolved only the failed deployment exposure and is not a successful V0 publication;
-- PR #32, which assumed a successful publish, was closed without merge;
-- no Lovable agent message, environment change or republish was used during rollback.
-
-## Production-source diagnosis and correction
-
-Read-only diagnosis established that the Lovable production build received the intended mock source, but application logic converted explicit production `mock` to `disabled` because `import.meta.env.DEV` was false.
-
-The prior test suite missed this because:
-
-- the unit test explicitly expected production `mock` to become `disabled`;
-- the browser/PWA runner validated through `vite dev`, where `import.meta.env.DEV` is true, rather than a production-mode output.
+## Production-source correction and evidence
 
 PR #36 made the narrow correction:
 
@@ -97,7 +69,7 @@ PR #36 made the narrow correction:
 - the PWA runner starts and stops the prebuilt output directly;
 - service-worker control uses bounded reload attempts before the real-server-outage offline check.
 
-No dependency, backend, remote Supabase project, secret, real data, Lovable setting or deployment was added.
+No dependency, backend, remote Supabase project, secret, real data, Lovable setting or deployment was added by the correction.
 
 Validation on PR #36 head `20bfc9562bda5661204f086783dbfd2d14ecebcb`:
 
@@ -110,13 +82,31 @@ Validation on PR #36 head `20bfc9562bda5661204f086783dbfd2d14ecebcb`:
 - evidence artifact `8803163231`;
 - artifact SHA-256 `4543ecd8af8bd46700b7477d8fccceef871b5542b509a83a43073cb52c27d35b`.
 
-After merge, Lovable synchronized repository SHA `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7` while remaining `is_published: false`.
+GitHub comparison confirmed that `59e5d987f4d73be486958a3d36d371cfa5dd2abe` differs from application-fix merge `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7` only in `docs/ARAR_BULURUZ_CURRENT_STATE.md` and `docs/ARAR_BULURUZ_BACKLOG.md`. The published application code is therefore the production-mode-validated application code.
 
-## Lovable mutation and cost incident
+## Accepted corrected V0 publication
 
-A prior Lovable agent message unexpectedly consumed `1.3` Lovable credits and pushed a dependency/lock/generated-route mutation despite a no-mutation instruction. PR #33 reverted the file mutation without force-push or history rewrite.
+Founder approval was given for a bounded Lovable Publish/Update of the already synchronized project.
 
-Do not send another Lovable agent message for this incident or for republish. Use only the explicit founder-side Publish/Update action after a separate bounded approval.
+Publication record:
+
+- public URL: `https://arar-buluruz.lovable.app`;
+- Lovable project: `dca896f8-bb48-4a67-ae49-0493610ca6ad`;
+- deployment ID: `ddf816c6-9bf1-44af-8cfa-b242d437cc36`;
+- synchronized and published source identity: `59e5d987f4d73be486958a3d36d371cfa5dd2abe`;
+- application correction identity: `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7`;
+- Lovable project metadata after deployment: `is_published: true`, public URL active;
+- no Lovable agent message, environment/listing-source change, backend activation, secret, real data, advertising, analytics or paid operation was used.
+
+Acceptance was grounded in three matching controls:
+
+1. Lovable was synchronized to the exact current `main` SHA before Publish/Update and remained without later agent edits.
+2. GitHub confirmed current `main` and the validated application correction differ only by documentation.
+3. The exact application code passed the production-mode browser/PWA suite covering the mandatory V0 notice, synthetic `/ara` results, absence of the disconnected-state messages, synthetic detail navigation, `/gizlilik`, non-collecting real-operation demo routes, manifest/icons/service worker, honest offline fallback and absence of auth/backend/analytics/ad-network/Google-Fonts requests.
+
+No acceptance criterion produced a failure signal, so rollback was not triggered. The corrected publication is accepted as **V0 — UX ve değer önerisi doğrulaması**.
+
+This acceptance does not establish a real marketplace, real user accounts, real listing behavior, moderation sustainability, seller-contact operations or supply-demand validation.
 
 ## Backend and no-rebuild position
 
@@ -132,15 +122,8 @@ Do not send another Lovable agent message for this incident or for republish. Us
 
 ## Current gate
 
-The diagnosis and code-correction gate is complete. The only next consequential gate is:
+The corrected synthetic V0 publication gate is complete and accepted.
 
-**Founder decision: publish the corrected synthetic V0 from Lovable and immediately perform bounded public verification.**
+There is no active product, backend, auth, advertising, analytics, TWA, Play Store or paid-infrastructure implementation gate. Do not open one implicitly.
 
-This gate is not yet authorized. Until explicit founder approval:
-
-- do not Publish/Update;
-- do not change Lovable environment or listing-source settings;
-- do not send a Lovable agent message;
-- do not activate backend, auth, storage, secrets, real data, advertising, analytics, TWA, Play Store or paid services.
-
-If the publish gate is approved, the release candidate source must be exactly `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7`. Acceptance requires the public shell and V0 notice, synthetic results on `/ara`, working synthetic detail routes, privacy disclosure, no disconnected-state message, no forbidden backend/tracker requests, and a reversible Unpublish rollback path.
+Permitted next work is limited to observing V0 UX/value-proposition evidence under the existing synthetic and privacy boundary. Any consequential implementation, real-data pilot, backend activation or store-distribution step requires a separate explicit founder gate.
