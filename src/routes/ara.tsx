@@ -133,14 +133,27 @@ function SearchPage() {
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <select
             value={il}
-            onChange={(event) => setSearch({ il: event.target.value })}
+            onChange={(event) => setSearch({ il: event.target.value, ilce: ALL_DISTRICTS })}
             aria-label="Konum"
-            className="h-9 rounded-full border border-border bg-card px-3 text-sm font-medium outline-none focus:border-primary"
+            className="h-9 max-w-[45%] rounded-full border border-border bg-card px-3 text-sm font-medium outline-none focus:border-primary"
           >
             {cities.map((city) => (
               <option key={city}>{city}</option>
             ))}
           </select>
+          <select
+            value={activeDistrict}
+            disabled={!hasCity}
+            onChange={(event) => setSearch({ ilce: event.target.value })}
+            aria-label="İlçe"
+            className="h-9 max-w-[45%] rounded-full border border-border bg-card px-3 text-sm font-medium outline-none focus:border-primary disabled:opacity-50"
+          >
+            <option>{ALL_DISTRICTS}</option>
+            {districts.map((district) => (
+              <option key={district}>{district}</option>
+            ))}
+          </select>
+
           {availableSorts.map((key) => (
             <button
               key={key}
