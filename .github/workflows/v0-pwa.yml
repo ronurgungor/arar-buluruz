@@ -59,10 +59,18 @@ jobs:
       - name: Unit tests
         run: bun run test:unit
 
-      - name: Build synthetic V0
+      - name: Build synthetic V0 deploy target
         env:
           VITE_LISTINGS_SOURCE: mock
         run: bun run build
+
+      - name: Build synthetic V0 production preview
+        env:
+          VITE_LISTINGS_SOURCE: mock
+          NITRO_PRESET: node-server
+        run: |
+          rm -rf .output
+          bun run build
 
       - name: Install Chromium with Bun-managed Playwright
         env:
