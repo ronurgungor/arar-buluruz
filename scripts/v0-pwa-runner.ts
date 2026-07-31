@@ -1,17 +1,24 @@
 import path from "node:path";
 
 const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:4174";
-const viteCli = path.resolve("node_modules/vite/bin/vite.js");
+const serverEntry = path.resolve(".output/server/index.mjs");
 
-const server = Bun.spawn(
-  ["bun", viteCli, "preview", "--host", "127.0.0.1", "--port", "4174", "--strictPort"],
-  {
-    cwd: process.cwd(),
-    env: process.env,
-    stdout: "inherit",
-    stderr: "inherit",
+if (!(await Bun.file(serverEntry).exists())) {
+  throw new Error("The V0 production preview output is missing.");
+}
+
+const server = Bun.spawn(["bun", serverEntry], {
+  cwd: process.cwd(),
+  env: {
+    ...process.env,
+    HOST: "127.0.0.1",
+    PORT: "4174",
+    NITRO_HOST: "127.0.0.1",
+    NITRO_PORT: "4174",
   },
-);
+  stdout: "inherit",
+  stderr: "inherit",
+});
 
 async function waitForServerDown() {
   for (let attempt = 1; attempt <= 30; attempt += 1) {
