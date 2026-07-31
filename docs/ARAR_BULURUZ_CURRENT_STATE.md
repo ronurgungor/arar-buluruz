@@ -63,7 +63,7 @@ Present on GitHub `main`:
 
 Excluded: push, background/periodic sync, full offline listings, cache-first dynamic listings, auth, real backend, advertising, analytics, TWA and Play Store.
 
-## Publish incident
+## Publish incident and unpublish resolution
 
 Lovable Publish/Update was executed after PR #30 met its conditional publish gate.
 
@@ -72,15 +72,24 @@ Lovable Publish/Update was executed after PR #30 met its conditional publish gat
 - Public URL: `https://arar-buluruz.lovable.app`.
 - Public verification confirmed that the V0 notice and application shell loaded.
 - Public `/ara` returned HTTP 200 but showed the disconnected-state message “İlanlar henüz gösterilemiyor / Pilot ilan bağlantısı henüz etkin değil” instead of synthetic listings.
-- Therefore the published runtime failed the required synthetic-listing acceptance condition and is not an accepted V0 release.
+- Therefore the published runtime failed the required synthetic-listing acceptance condition and was not an accepted V0 release.
 - The public verification branch/PR #31 was closed without merge.
 
-The available Lovable connector exposes publish of the current project only. It exposes no historical deployment selection, rollback or unpublish action. The exact rollback therefore requires a founder-side Lovable UI action:
+The founder completed `Project Settings → Unpublish` on 2026-07-31. Post-action verification through Lovable project metadata confirmed:
 
-1. History → select the previously accepted published revision → Revert → Publish/Update; or
-2. Project Settings → Unpublish.
+- the project reports `is_published: false`;
+- the project is returned by the `not_published` filter;
+- the accepted repository source remained `07adb6caa8709f86b735078b76da2686d6152dc0` before this documentation-only write-back;
+- no Lovable agent message or code edit occurred after the repository-recovery merge.
 
-Until one of those actions is completed and verified, treat the public URL as a failed/unaccepted deployment. Do not repair the listing-source/environment configuration before rollback under the current instruction.
+Result:
+
+- the failed/disconnected deployment is no longer an active public release;
+- GitHub’s accepted V0 code remains preserved;
+- public V0 is currently **not published**;
+- unpublish resolves the failed deployment exposure only and must not be recorded as a successful V0 publication.
+
+PR #32, which assumed a successful publish, was closed without merge as superseded by PR #34 and the failed publish incident.
 
 ## Lovable mutation and cost incident
 
@@ -95,7 +104,7 @@ PR #33 reverted the file mutation without force-push or history rewrite. Full va
 - V0 PWA run `30638082278` — success;
 - frozen install, Bun-only boundary, lint, unit/build, 22/22 pgTAP, REST/RLS, Gate 1 desktop/mobile regression, privacy/PWA/service-worker/offline checks all passed.
 
-Do not send another Lovable agent message for rollback or diagnosis. No further Lovable publish/deploy is authorized until the public deployment has first been reverted or unpublished through the UI and the founder opens a new bounded gate.
+Do not send another Lovable agent message for rollback or diagnosis. The failed public deployment has now been unpublished. No further Lovable publish/deploy, environment change or listing-source repair is authorized until the founder opens a new bounded gate.
 
 ## Backend and no-rebuild position
 
@@ -111,4 +120,8 @@ Do not send another Lovable agent message for rollback or diagnosis. No further 
 
 ## Current gate
 
-The only active consequential action is manual Lovable rollback or unpublish through the founder UI. Backend, auth, storage, secrets, real data, advertising, analytics, TWA, Play Store and paid-service gates remain closed.
+The manual Lovable rollback/unpublish gate is complete.
+
+No new publish, environment, listing-source or implementation gate is active. The next possible bounded gate is **“Zero-cost Lovable V0 production-source diagnosis.”** It requires separate explicit founder approval and must begin read-only by comparing the local/CI synthetic build with Lovable production behavior, `VITE_LISTINGS_SOURCE`, the Lovable build-time environment model, and whether a correct synthetic V0 publish is possible without code changes.
+
+Until that gate is explicitly opened, backend, auth, storage, secrets, real data, advertising, analytics, TWA, Play Store, paid services and Lovable republish remain closed.

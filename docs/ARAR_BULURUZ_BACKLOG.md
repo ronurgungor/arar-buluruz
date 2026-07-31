@@ -41,24 +41,36 @@ Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 - [x] Revert the unintended Lovable dependency/lock/generated-route mutation through PR #33 without force-push.
 - [x] Re-run and pass full CI, Gate 1 and V0 PWA validation after repository recovery.
 - [x] Restore repository file content to the accepted PR #30 state; `399489b3…` and recovery merge `edabc518…` have no file difference.
+- [x] Complete founder-side `Project Settings → Unpublish`.
+- [x] Verify Lovable reports `is_published: false` and returns the project under `not_published`.
+- [x] Confirm that public V0 is currently not published and that unpublish is not a successful V0 release.
+- [x] Close superseded PR #32 without merge; the correct incident record remains PR #34.
 
-## Active gate
+## Current gate status
 
-- [-] **Founder-side Lovable rollback or unpublish.**
+There is no active consequential implementation or publish gate.
 
-Use one of the platform UI paths:
+The failed public deployment has been unpublished. GitHub retains the accepted synthetic V0 code, but no accepted V0 release is currently public.
 
-1. History → select the previously accepted published revision → Revert → Publish/Update; or
-2. Project Settings → Unpublish.
+The next possible bounded gate is deferred pending explicit founder approval:
 
-After that action, verify the public URL before opening any new publish or diagnosis gate.
+- [ ] **Zero-cost Lovable V0 production-source diagnosis.**
 
-No automated Lovable agent message, publish, environment change or listing-source repair is authorized while this gate is open.
+That future gate must begin read-only and may inspect only:
 
-## Frozen until the public rollback is complete
+- local/CI synthetic build versus Lovable production build behavior;
+- `VITE_LISTINGS_SOURCE` behavior;
+- Lovable build-time environment behavior;
+- whether the correct synthetic V0 can be published without code changes;
+- a zero-cost and reversible resolution path.
+
+Environment changes, code changes and republish remain separate founder decisions even after diagnosis.
+
+## Frozen until a separate gate is opened
 
 - [ ] Do not change the Lovable environment or listing-source setting.
 - [ ] Do not republish.
+- [ ] Do not send another Lovable agent message for this incident.
 - [ ] Do not diagnose by expanding application/backend scope.
 - [ ] Do not create a remote Supabase project or apply a remote migration.
 - [ ] Do not connect secrets or environment values.
