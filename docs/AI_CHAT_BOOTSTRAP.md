@@ -25,6 +25,7 @@ GitHub `main`, the exact branch/PR and executable evidence override summaries an
 - Package boundary: Bun `1.3.14` and `bun.lock`.
 - Lovable: frontend editor/hosting surface only; its backend features remain disabled.
 - Gate 1 PostgreSQL migration/RLS/adapter/test work is retained as a reusable technical asset but is not an active real pilot.
+- V0 minimal-PWA implementation merged through PR #28; Lovable Publish/Update has not yet occurred.
 
 ## Active phase — V0
 
@@ -95,10 +96,10 @@ Only one writer operates at a time. Routine feature-branch, PR, CI and merge wor
 
 ## Current task order
 
-1. Prepare and validate the narrow V0 minimal-PWA package.
-2. Produce exact diff, CI, screenshots, risks and rollback.
-3. Merge routine repository work only after evidence passes.
-4. Ask the founder once for Lovable Publish/Update approval.
+1. Present the merged V0 minimal-PWA diff, CI, screenshots, risks and rollback to the founder.
+2. Obtain one explicit founder decision on Lovable Publish/Update.
+3. If approved, perform only Lovable Publish/Update and verify the public V0 runtime.
+4. If not approved, leave the public snapshot unchanged.
 5. Keep backend and real-user work frozen until a D-019 trigger exists.
 
 ## Knowledge write-back
