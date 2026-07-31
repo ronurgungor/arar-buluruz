@@ -158,9 +158,7 @@ function SearchPage() {
               aria-atomic="true"
               className="mt-3 text-sm text-muted-foreground"
             >
-              {results.length === 0
-                ? "Sonuç bulunamadı"
-                : `${results.length} ilan bulundu`}
+              {results.length === 0 ? "Sonuç bulunamadı" : `${results.length} ilan bulundu`}
             </p>
 
             <ul className="mt-2 divide-y divide-border/70">
