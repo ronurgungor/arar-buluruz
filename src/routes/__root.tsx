@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { productPhaseLabel } from "../lib/product-phase";
 
+const buildSignature = import.meta.env.VITE_ARAR_BUILD_SIGNATURE ?? "unresolved";
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -155,7 +157,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="tr">
+    <html lang="tr" data-arar-build-signature={buildSignature}>
       <head>
         <HeadContent />
       </head>

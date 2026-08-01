@@ -94,7 +94,39 @@ jobs:
             ARAR_BUILD_PROFILE=public-v0 \
             VITE_LISTINGS_SOURCE=disabled
 
-      - name: Build synthetic V0 deploy target
+          assert_public_build_fails \
+            unknown-profile \
+            ARAR_BUILD_PROFILE=unknown
+
+      - name: Build canonical bare Lovable publish target
+        shell: bash
+        run: |
+          unset ARAR_BUILD_PROFILE
+          unset ARAR_V0_BROWSER_TEST
+          unset VITE_LISTINGS_SOURCE
+          unset VITE_GATE1_TEST_OPERATIONS
+          unset VITE_PUBLIC_V0_RUNTIME
+          unset VITE_V0_ERROR_BOUNDARY_TEST
+          unset VITE_SUPABASE_URL
+          unset VITE_SUPABASE_ANON_KEY
+          unset VITE_SUPABASE_PUBLISHABLE_KEY
+          unset NITRO_PRESET
+          rm -rf .output
+          bun run build
+
+      - name: Verify canonical bare public V0 artifact
+        shell: bash
+        run: |
+          grep -R --binary-files=without-match -F -m1 \
+            'public-v0|listings=mock|gate1=off' .output
+          ! grep -R --binary-files=without-match -F \
+            'public-v0|listings=supabase' .output
+          ! grep -R --binary-files=without-match -F \
+            'public-v0|listings=disabled' .output
+          ! grep -R --binary-files=without-match -F \
+            'public-v0|listings=mock|gate1=on' .output
+
+      - name: Build explicit synthetic V0 deploy target
         env:
           ARAR_BUILD_PROFILE: public-v0
           VITE_LISTINGS_SOURCE: mock
