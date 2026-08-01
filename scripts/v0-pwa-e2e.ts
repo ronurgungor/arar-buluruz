@@ -230,8 +230,7 @@ async function runDesktop() {
     await citySelect.selectOption({ label: "Konya" });
     await page.waitForURL((url) => {
       return (
-        url.searchParams.get("il") === "Konya" &&
-        url.searchParams.get("ilce") === "Tüm ilçeler"
+        url.searchParams.get("il") === "Konya" && url.searchParams.get("ilce") === "Tüm ilçeler"
       );
     });
     assert(!(await districtSelect.isDisabled()), "District filter did not enable for Konya.");
@@ -251,8 +250,7 @@ async function runDesktop() {
     await citySelect.selectOption({ label: "İzmir" });
     await page.waitForURL((url) => {
       return (
-        url.searchParams.get("il") === "İzmir" &&
-        url.searchParams.get("ilce") === "Tüm ilçeler"
+        url.searchParams.get("il") === "İzmir" && url.searchParams.get("ilce") === "Tüm ilçeler"
       );
     });
     assert(
