@@ -1,6 +1,6 @@
 # Arar Buluruz — Backlog
 
-_Last updated: 2026-07-31, Europe/Istanbul_
+_Last updated: 2026-08-01, Europe/Istanbul_
 
 Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 
@@ -68,6 +68,22 @@ Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 - [x] Bind acceptance to the production-mode evidence covering the V0 notice, synthetic `/ara`, no disconnected-state message, synthetic detail routes, privacy, non-collecting demo routes, PWA assets/offline behavior and no forbidden external requests.
 - [x] Accept the publication as **V0 — UX ve değer önerisi doğrulaması**.
 - [x] Preserve the explicit limitation that this is not real marketplace, account, listing, moderation or supply-demand validation.
+
+## Post-publication V0 refinements
+
+- [x] Use one bounded Lovable pass to translate the 404/root-error UI, add consistent keyboard focus visibility and add a polite search-result live region.
+- [x] Reject and restore the unintended accessibility-pass dependency and lockfile mutation through PR #39.
+- [x] Merge the cleaned accessibility changes as `accd0c8b305d0e3a7ec0e01c91175f0501a5adb5`.
+- [x] Publish the cleaned accessibility version without backend, environment or data changes.
+- [x] Use the final `1.4` Lovable credits for a single dependent district-filter improvement.
+- [x] Add optional `ilce` URL state, `Tüm ilçeler`, city-dependent district choices and city-plus-district filtering.
+- [x] Derive district options only from existing synthetic listings; add no national district dataset or location service.
+- [x] Keep the district selector disabled until a specific city is selected and reset it when city changes.
+- [x] Reject and restore the unintended district-pass dependency and lockfile mutation through PR #40.
+- [x] Pass frozen package, lint, unit, production build, 22/22 RLS, REST, Gate 1 desktop/mobile and production-PWA/offline validation.
+- [x] Merge the cleaned district-filter source as `edb293b69348ba615b67122908b8cbd9ff4707ef`.
+- [x] Publish/Update synchronized source `edb293b69348ba615b67122908b8cbd9ff4707ef`.
+- [x] Record deployment ID `d6040da8-3425-46b7-8f89-b1e4241af61f` and verify the public project remains `completed` and `is_published: true`.
 
 ## Current gate status
 
