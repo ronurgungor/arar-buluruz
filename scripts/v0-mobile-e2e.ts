@@ -106,7 +106,10 @@ try {
   const homeSearch = page.getByLabel("Ne arıyorsun?");
   const homeCity = page.getByLabel("Konum");
   const homeSubmit = page.getByRole("button", { name: "Ara", exact: true });
-  await assertTouchTarget(page.getByRole("link", { name: "İlan Ver (demo)" }), "Home listing demo link");
+  await assertTouchTarget(
+    page.getByRole("link", { name: "İlan Ver (demo)" }),
+    "Home listing demo link",
+  );
   await assertTouchTarget(page.getByRole("link", { name: "Giriş" }), "Home login link");
   await assertTouchTarget(homeSearch, "Home search input");
   await assertTouchTarget(homeCity, "Home city select");
@@ -118,7 +121,11 @@ try {
   await homeCity.selectOption({ label: "Konya" });
   await homeSubmit.click();
   await page.waitForURL((url) => {
-    return url.pathname === "/ara" && url.searchParams.get("q") === "traktor" && url.searchParams.get("il") === "Konya";
+    return (
+      url.pathname === "/ara" &&
+      url.searchParams.get("q") === "traktor" &&
+      url.searchParams.get("il") === "Konya"
+    );
   });
 
   console.log("V0 mobile: validating search, city, district and result flow");
@@ -126,7 +133,10 @@ try {
   const citySelect = page.getByLabel("Konum");
   const districtSelect = page.getByLabel("İlçe");
   await page.getByText("Sahibinden temiz bahçe traktörü", { exact: true }).waitFor();
-  assert(!(await districtSelect.isDisabled()), "District select stayed disabled after selecting Konya.");
+  assert(
+    !(await districtSelect.isDisabled()),
+    "District select stayed disabled after selecting Konya.",
+  );
   assert(
     (await districtSelect.locator("option").allTextContents()).includes("Çumra"),
     "Konya district options did not include Çumra.",
