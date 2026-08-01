@@ -6,14 +6,95 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-// V0 is intentionally a synthetic/mock experience. Explicit CI or future approved
-// environments may still override this with "disabled" or "supabase".
-process.env.VITE_LISTINGS_SOURCE ??= "mock";
+const buildProfiles = ["public-v0", "ci-disabled", "gate1-ephemeral-ci", "development"] as const;
+type BuildProfile = (typeof buildProfiles)[number];
 
-// Preserve the already-validated Gate 1 operational-flow checks only inside CI's
-// ephemeral Supabase run. This flag is never enabled by the V0 build or publish path.
-if (process.env.CI === "true" && process.env.VITE_LISTINGS_SOURCE === "supabase") {
-  process.env.VITE_GATE1_TEST_OPERATIONS ??= "enabled";
+function failBuildInvariant(message: string): never {
+  throw new Error(`[Arar Buluruz build invariant] ${message}`);
+}
+
+function resolveBuildProfile(): BuildProfile {
+  const configuredProfile = process.env.ARAR_BUILD_PROFILE;
+  if (configuredProfile) {
+    if (!buildProfiles.includes(configuredProfile as BuildProfile)) {
+      failBuildInvariant(`Unknown ARAR_BUILD_PROFILE: ${configuredProfile}`);
+    }
+    return configuredProfile as BuildProfile;
+  }
+
+  const isViteBuild = process.argv.includes("build");
+  const modeIndex = process.argv.indexOf("--mode");
+  const isDevelopmentModeBuild = modeIndex >= 0 && process.argv[modeIndex + 1] === "development";
+
+  if (!isViteBuild || isDevelopmentModeBuild) return "development";
+  return "public-v0";
+}
+
+const buildProfile = resolveBuildProfile();
+const isViteBuild = process.argv.includes("build");
+const listingsSource = process.env.VITE_LISTINGS_SOURCE;
+const gate1Operations = process.env.VITE_GATE1_TEST_OPERATIONS;
+
+if (buildProfile === "public-v0") {
+  if (!isViteBuild) {
+    failBuildInvariant("The public-v0 profile may only be used with vite build.");
+  }
+  if (listingsSource !== "mock") {
+    failBuildInvariant(
+      `Public V0 requires VITE_LISTINGS_SOURCE=mock; received ${listingsSource ?? "unset"}.`,
+    );
+  }
+  if (gate1Operations === "enabled") {
+    failBuildInvariant("Public V0 must not enable Gate 1 test operations.");
+  }
+
+  const errorBoundaryProbeEnabled = process.env.VITE_V0_ERROR_BOUNDARY_TEST === "enabled";
+  const trustedBrowserTest =
+    process.env.CI === "true" &&
+    process.env.ARAR_V0_BROWSER_TEST === "enabled" &&
+    process.env.NITRO_PRESET === "node-server";
+
+  if (errorBoundaryProbeEnabled && !trustedBrowserTest) {
+    failBuildInvariant(
+      "The controlled error-boundary probe is allowed only in the isolated CI browser artifact.",
+    );
+  }
+
+  process.env.VITE_PUBLIC_V0_RUNTIME = "enabled";
+} else if (buildProfile === "ci-disabled") {
+  if (!isViteBuild || process.env.CI !== "true") {
+    failBuildInvariant("The ci-disabled profile is restricted to CI builds.");
+  }
+  if (listingsSource !== "disabled") {
+    failBuildInvariant("The ci-disabled profile requires VITE_LISTINGS_SOURCE=disabled.");
+  }
+  if (gate1Operations === "enabled") {
+    failBuildInvariant("The ci-disabled profile must not enable Gate 1 test operations.");
+  }
+  process.env.VITE_PUBLIC_V0_RUNTIME = "disabled";
+} else if (buildProfile === "gate1-ephemeral-ci") {
+  if (process.env.CI !== "true") {
+    failBuildInvariant("The gate1-ephemeral-ci profile is restricted to CI.");
+  }
+  if (listingsSource !== "supabase") {
+    failBuildInvariant(
+      "The gate1-ephemeral-ci profile requires VITE_LISTINGS_SOURCE=supabase.",
+    );
+  }
+  if (gate1Operations !== "enabled") {
+    failBuildInvariant(
+      "The gate1-ephemeral-ci profile requires VITE_GATE1_TEST_OPERATIONS=enabled.",
+    );
+  }
+  process.env.VITE_PUBLIC_V0_RUNTIME = "disabled";
+} else {
+  const modeIndex = process.argv.indexOf("--mode");
+  const isDevelopmentModeBuild = modeIndex >= 0 && process.argv[modeIndex + 1] === "development";
+  if (isViteBuild && !isDevelopmentModeBuild) {
+    failBuildInvariant("The development profile requires vite --mode development.");
+  }
+  process.env.VITE_LISTINGS_SOURCE ??= "mock";
+  process.env.VITE_PUBLIC_V0_RUNTIME = "disabled";
 }
 
 export default defineConfig({
