@@ -1,6 +1,6 @@
 # Arar Buluruz — Current State
 
-_Last updated: 2026-07-31, Europe/Istanbul_
+_Last updated: 2026-08-01, Europe/Istanbul_
 
 ## Canonical repository state
 
@@ -11,7 +11,9 @@ _Last updated: 2026-07-31, Europe/Istanbul_
 - The first Lovable publish failed its synthetic-listing acceptance condition and was unpublished; repository recovery was completed through PR #33 and recorded through PR #35.
 - PR #36 corrected production mock-source behavior and production-mode validation with merge commit `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7`.
 - PR #37 recorded corrected V0 production readiness with merge commit `59e5d987f4d73be486958a3d36d371cfa5dd2abe`.
-- Package boundary remains Bun `1.3.14` and `bun.lock`; the correction and publication added no dependency or lockfile change.
+- PR #39 preserved the approved accessibility and Turkish-language refinements while restoring the frozen package boundary, with merge commit `accd0c8b305d0e3a7ec0e01c91175f0501a5adb5`.
+- PR #40 preserved the dependent district filter while restoring `package.json` and `bun.lock`, with merge commit `edb293b69348ba615b67122908b8cbd9ff4707ef`.
+- Package boundary remains Bun `1.3.14` and canonical `bun.lock`; no dependency upgrade from either Lovable pass was accepted.
 - Gate 1 PostgreSQL/RLS/adapter work remains a reusable technical asset and is not an active real pilot.
 
 ## Active phase and data boundary
@@ -108,6 +110,35 @@ No acceptance criterion produced a failure signal, so rollback was not triggered
 
 This acceptance does not establish a real marketplace, real user accounts, real listing behavior, moderation sustainability, seller-contact operations or supply-demand validation.
 
+## Post-publication accessibility and district-filter pass
+
+Two founder-approved, bounded Lovable agent passes were used after the accepted V0 publication:
+
+- the accessibility/language pass translated the 404 and root error UI, added consistent `focus-visible` treatment and added a polite search-result live region;
+- the district-filter pass added optional `ilce` URL state and a dependent district selector derived only from the existing synthetic listings.
+
+Both passes unexpectedly changed Lovable development dependencies despite explicit package boundaries. Those package and lockfile changes were rejected and restored through PR #39 and PR #40. The accepted final application difference consists only of the intended frontend changes and one matching Gate 1 localized-text assertion.
+
+The district filter behavior is bounded as follows:
+
+- the district selector is disabled until a specific city is selected;
+- available districts are derived from the current synthetic listings for that city and sorted with Turkish locale rules;
+- changing the city resets the district to `Tüm ilçeler`;
+- city and district are represented in URL search state;
+- no national district dataset, real location, geolocation or backend capability was added.
+
+Validation for the cleaned district-filter source passed frozen package installation, lint, unit tests, production build, 22/22 pgTAP/RLS, REST integration, Gate 1 desktop/mobile E2E and production-mode V0 PWA/offline checks.
+
+Founder approval was then given to update the public project from synchronized source `edb293b69348ba615b67122908b8cbd9ff4707ef`.
+
+Latest publication update:
+
+- deployment ID: `d6040da8-3425-46b7-8f89-b1e4241af61f`;
+- public URL: `https://arar-buluruz.lovable.app`;
+- Lovable project status after deployment: `completed`, `is_published: true`;
+- published screenshot/source identity prefix: `edb293b6`;
+- no environment, listing-source, backend, secret, real-data, advertising, analytics or paid-infrastructure change was made.
+
 ## Backend and no-rebuild position
 
 - Backend/provider selection remains frozen under D-019.
@@ -122,7 +153,7 @@ This acceptance does not establish a real marketplace, real user accounts, real 
 
 ## Current gate
 
-The corrected synthetic V0 publication gate is complete and accepted.
+The corrected synthetic V0 publication and the bounded accessibility/district-filter updates are complete and accepted.
 
 There is no active product, backend, auth, advertising, analytics, TWA, Play Store or paid-infrastructure implementation gate. Do not open one implicitly.
 
