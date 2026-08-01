@@ -10,6 +10,11 @@ type V0Global = typeof globalThis & {
   __stopV0Server?: () => Promise<void>;
 };
 
+type ServiceWorkerState = {
+  active: boolean;
+  controlled: boolean;
+};
+
 function assert(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
@@ -129,33 +134,36 @@ async function assertNoTrackingMarkup(page: Page, route: string) {
   assert(state.trackingScripts === 0, `${route} contains analytics or advertising markup.`);
 }
 
+async function readServiceWorkerState(page: Page): Promise<ServiceWorkerState> {
+  return page.evaluate(async () => {
+    const registration = await Promise.race([
+      navigator.serviceWorker.getRegistration("/"),
+      new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 1_000)),
+    ]);
+
+    return {
+      active: Boolean(registration?.active),
+      controlled: navigator.serviceWorker.controller !== null,
+    };
+  });
+}
+
 async function ensureControlledServiceWorker(page: Page) {
-  await page.waitForFunction(
-    async () => {
-      const registration = await navigator.serviceWorker.getRegistration("/");
-      return Boolean(registration?.active);
-    },
-    undefined,
-    { timeout: 15_000 },
-  );
+  for (let attempt = 1; attempt <= 30; attempt += 1) {
+    const state = await readServiceWorkerState(page);
+    if (state.active && state.controlled) return;
 
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const isControlled = await page.evaluate(() => navigator.serviceWorker.controller !== null);
-    if (isControlled) return;
-
-    await page.reload({ waitUntil: "domcontentloaded", timeout: 15_000 });
-
-    try {
-      await page.waitForFunction(() => navigator.serviceWorker.controller !== null, undefined, {
-        timeout: 5_000,
-      });
-      return;
-    } catch {
-      if (attempt === 3) {
-        throw new Error("The active service worker did not control the page after three reloads.");
-      }
+    if (state.active && !state.controlled && attempt % 5 === 0) {
+      await page.reload({ waitUntil: "domcontentloaded", timeout: 15_000 });
     }
+
+    await page.waitForTimeout(500);
   }
+
+  const state = await readServiceWorkerState(page);
+  throw new Error(
+    `The service worker did not become active and control the page: ${JSON.stringify(state)}.`,
+  );
 }
 
 async function assertCacheBoundary(page: Page) {
@@ -343,9 +351,11 @@ async function runMobileOffline() {
   try {
     console.log("V0 PWA: validating mobile shell and privacy route");
     await gotoOk(page, baseUrl);
+    console.log("V0 PWA: mobile shell loaded");
     await page.getByTestId("v0-notice").waitFor();
     await page.getByRole("link", { name: "Gizlilik" }).waitFor();
     await ensureControlledServiceWorker(page);
+    console.log("V0 PWA: mobile service worker is controlled");
     await assertNoTrackingMarkup(page, "/ mobile");
     await assertNoHorizontalOverflow(page, "/ mobile");
     await page.screenshot({ path: path.join(resultsDir, "mobile-home.png"), fullPage: true });
