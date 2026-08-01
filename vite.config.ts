@@ -45,10 +45,10 @@ if (buildProfile === "public-v0") {
   if (!isViteBuild) {
     failBuildInvariant("The public-v0 profile may only be used with vite build.");
   }
-  if (listingsSource !== "mock") {
-    failBuildInvariant(
-      `Public V0 requires VITE_LISTINGS_SOURCE=mock; received ${listingsSource ?? "unset"}.`,
-    );
+  if (listingsSource === undefined) {
+    process.env.VITE_LISTINGS_SOURCE = "mock";
+  } else if (listingsSource !== "mock") {
+    failBuildInvariant(`Public V0 requires VITE_LISTINGS_SOURCE=mock; received ${listingsSource}.`);
   }
   if (process.env.VITE_GATE1_TEST_OPERATIONS === "enabled") {
     failBuildInvariant("Public V0 must not enable Gate 1 test operations.");
