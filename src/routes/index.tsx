@@ -39,13 +39,13 @@ function Home() {
       <div className="mx-auto flex w-full max-w-xl justify-end gap-2 py-4">
         <Link
           to="/ilan-ver"
-          className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
           İlan Ver (demo)
         </Link>
         <Link
           to="/giris"
-          className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+          className="inline-flex min-h-11 items-center rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
         >
           Giriş
         </Link>
@@ -116,7 +116,7 @@ function Home() {
                   search: { q: example, il: city, sirala: "yeni" },
                 })
               }
-              className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+              className="min-h-11 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
             >
               {example}
             </button>
@@ -127,7 +127,10 @@ function Home() {
           Hedefimiz: ilan vermek her zaman ücretsiz.
         </p>
         <p className="mt-3 text-center text-xs text-muted-foreground">
-          <Link to="/gizlilik" className="underline underline-offset-4 hover:text-foreground">
+          <Link
+            to="/gizlilik"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center px-1 underline underline-offset-4 hover:text-foreground"
+          >
             Gizlilik
           </Link>
         </p>

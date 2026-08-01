@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   v0-pwa:
-    name: Manifest, installability boundary and offline evidence
+    name: Chromium manifest/service-worker readiness and offline evidence
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -150,13 +150,20 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/v0-pwa-browsers
         run: bunx playwright install --with-deps chromium
 
-      - name: Run focused V0 PWA and privacy browser validation
+      - name: Run Chromium manifest/service-worker readiness and offline validation
         env:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/v0-pwa-browsers
           BASE_URL: http://127.0.0.1:4174
-        run: |
-          timeout 150s bun scripts/v0-pwa-runner.ts
-          find test-results/v0-pwa -maxdepth 1 -type f -name '*.png' -print -exec file {} \;
+        run: timeout 120s bun scripts/v0-pwa-runner.ts
+
+      - name: Run isolated Chromium mobile core-flow validation
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/v0-pwa-browsers
+          BASE_URL: http://127.0.0.1:4174
+        run: timeout 120s bun scripts/v0-mobile-runner.ts
+
+      - name: Verify V0 browser evidence files
+        run: find test-results/v0-pwa -maxdepth 1 -type f -name '*.png' -print -exec file {} \;
 
       - name: Upload V0 PWA evidence
         if: always()

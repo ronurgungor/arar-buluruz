@@ -1,8 +1,9 @@
-import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate, useRouter } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
-import { AdSlot } from "@/components/AdSlot";
 import { formatPrice } from "@/data/listings";
+import { ALL_CITIES, ALL_DISTRICTS } from "@/lib/listing-search";
+import { hasListingResultsHistory } from "@/lib/listing-return";
 import { loadListingDetail } from "@/lib/public-listings";
 import { PROTOTYPE_CONTACT, buildControlledWhatsAppHref } from "@/lib/prototype-contact";
 
@@ -36,7 +37,26 @@ export const Route = createFileRoute("/ilan/$id")({
 function ListingDetail() {
   const result = Route.useLoaderData();
   const router = useRouter();
+  const navigate = useNavigate();
   const listing = result.listing;
+
+  const returnToResults = () => {
+    if (hasListingResultsHistory(router.state.location.state)) {
+      router.history.back();
+      return;
+    }
+
+    void navigate({
+      to: "/ara",
+      replace: true,
+      search: {
+        q: "",
+        il: ALL_CITIES,
+        ilce: ALL_DISTRICTS,
+        sirala: "yeni",
+      },
+    });
+  };
 
   if (!listing) {
     return (
@@ -45,8 +65,9 @@ function ListingDetail() {
         <main className="mx-auto max-w-2xl px-4 pb-16">
           <button
             type="button"
-            onClick={() => router.history.back()}
-            className="mt-3 -ml-1 inline-flex items-center gap-1 rounded-full px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            data-testid="results-back"
+            onClick={returnToResults}
+            className="mt-3 -ml-1 inline-flex min-h-11 items-center gap-1 rounded-full px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ChevronLeft className="h-4 w-4" aria-hidden />
             Sonuçlara dön
@@ -63,7 +84,6 @@ function ListingDetail() {
     );
   }
 
-  const isMockSource = result.source === "mock";
   const whatsappHref = buildControlledWhatsAppHref(
     `Merhaba, Arar Buluruz ilanı hakkında bilgi almak istiyorum. İlan ID: ${listing.id}`,
   );
@@ -74,8 +94,9 @@ function ListingDetail() {
       <main className="mx-auto max-w-2xl px-4 pb-[calc(8rem+env(safe-area-inset-bottom))]">
         <button
           type="button"
-          onClick={() => router.history.back()}
-          className="mt-3 -ml-1 inline-flex items-center gap-1 rounded-full px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          data-testid="results-back"
+          onClick={returnToResults}
+          className="mt-3 -ml-1 inline-flex min-h-11 items-center gap-1 rounded-full px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           <ChevronLeft className="h-4 w-4" aria-hidden />
           Sonuçlara dön
@@ -110,24 +131,21 @@ function ListingDetail() {
         <p className="mt-1 text-sm font-semibold text-foreground">{listing.seller}</p>
         <p className="mt-4 leading-relaxed text-foreground">{listing.description}</p>
 
-        {isMockSource && (
-          <div className="mt-6">
-            <AdSlot />
-          </div>
-        )}
-
         <div className="mt-6">
           <Link
             to="/sikayet/$id"
             params={{ id: listing.id }}
-            className="text-sm font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground"
           >
             Şikâyet Et
           </Link>
         </div>
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+      <div
+        data-testid="detail-contact-bar"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
+      >
         <div className="mx-auto max-w-2xl px-4 py-3">
           <p className="mb-2 text-center text-xs text-muted-foreground">
             İletişim, kontrollü merkezi Arar Buluruz hattına yönlendirilir.
@@ -135,7 +153,7 @@ function ListingDetail() {
           <div className="grid grid-cols-2 gap-2">
             <a
               href={PROTOTYPE_CONTACT.phoneHref}
-              className="flex h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
+              className="flex h-12 min-h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
             >
               Ara
             </a>
@@ -143,7 +161,7 @@ function ListingDetail() {
               href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-12 items-center justify-center rounded-full border border-primary text-sm font-bold text-primary hover:bg-accent"
+              className="flex h-12 min-h-12 items-center justify-center rounded-full border border-primary text-sm font-bold text-primary hover:bg-accent"
             >
               WhatsApp
             </a>

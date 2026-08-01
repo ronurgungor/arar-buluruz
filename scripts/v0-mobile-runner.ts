@@ -9,19 +9,6 @@ if (!(await Bun.file(serverEntry).exists())) {
 
 let server: ReturnType<typeof Bun.spawn> | undefined;
 
-async function waitForServerDown() {
-  for (let attempt = 1; attempt <= 30; attempt += 1) {
-    try {
-      await fetch(baseUrl, { signal: AbortSignal.timeout(500) });
-    } catch {
-      return;
-    }
-    await Bun.sleep(100);
-  }
-
-  throw new Error("The V0 production preview server did not stop.");
-}
-
 async function waitForServerReady() {
   for (let attempt = 1; attempt <= 60; attempt += 1) {
     try {
@@ -40,8 +27,6 @@ async function waitForServerReady() {
 }
 
 async function startServer() {
-  if (server && server.exitCode === null) return;
-
   server = Bun.spawn(["bun", serverEntry], {
     cwd: process.cwd(),
     env: {
@@ -60,10 +45,7 @@ async function startServer() {
 
 async function stopServer() {
   const activeServer = server;
-  if (!activeServer || activeServer.exitCode !== null) {
-    server = undefined;
-    return;
-  }
+  if (!activeServer || activeServer.exitCode !== null) return;
 
   activeServer.kill();
   const exited = await Promise.race([
@@ -75,18 +57,12 @@ async function stopServer() {
     activeServer.kill(9);
     await activeServer.exited;
   }
-
-  server = undefined;
-  await waitForServerDown();
 }
-
-Object.assign(globalThis, { __stopV0Server: stopServer });
 
 try {
   await startServer();
-  await import("./v0-privacy-e2e.ts");
-  await import("./v0-search-e2e.ts");
-  await import("./v0-pwa-e2e.ts");
+  console.log("V0 mobile runner: clean production preview is ready");
+  await import("./v0-mobile-e2e.ts");
 } finally {
   await stopServer();
 }
