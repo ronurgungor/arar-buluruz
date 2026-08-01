@@ -25,7 +25,14 @@ function resolveBuildProfile(): BuildProfile {
   const isViteBuild = process.argv.includes("build");
   const modeIndex = process.argv.indexOf("--mode");
   const isDevelopmentModeBuild = modeIndex >= 0 && process.argv[modeIndex + 1] === "development";
+  const listingsSource = process.env.VITE_LISTINGS_SOURCE;
 
+  if (process.env.CI === "true" && listingsSource === "supabase") {
+    return "gate1-ephemeral-ci";
+  }
+  if (isViteBuild && process.env.CI === "true" && listingsSource === "disabled") {
+    return "ci-disabled";
+  }
   if (!isViteBuild || isDevelopmentModeBuild) return "development";
   return "public-v0";
 }
@@ -33,7 +40,6 @@ function resolveBuildProfile(): BuildProfile {
 const buildProfile = resolveBuildProfile();
 const isViteBuild = process.argv.includes("build");
 const listingsSource = process.env.VITE_LISTINGS_SOURCE;
-const gate1Operations = process.env.VITE_GATE1_TEST_OPERATIONS;
 
 if (buildProfile === "public-v0") {
   if (!isViteBuild) {
@@ -44,7 +50,7 @@ if (buildProfile === "public-v0") {
       `Public V0 requires VITE_LISTINGS_SOURCE=mock; received ${listingsSource ?? "unset"}.`,
     );
   }
-  if (gate1Operations === "enabled") {
+  if (process.env.VITE_GATE1_TEST_OPERATIONS === "enabled") {
     failBuildInvariant("Public V0 must not enable Gate 1 test operations.");
   }
 
@@ -68,7 +74,7 @@ if (buildProfile === "public-v0") {
   if (listingsSource !== "disabled") {
     failBuildInvariant("The ci-disabled profile requires VITE_LISTINGS_SOURCE=disabled.");
   }
-  if (gate1Operations === "enabled") {
+  if (process.env.VITE_GATE1_TEST_OPERATIONS === "enabled") {
     failBuildInvariant("The ci-disabled profile must not enable Gate 1 test operations.");
   }
   process.env.VITE_PUBLIC_V0_RUNTIME = "disabled";
@@ -81,7 +87,9 @@ if (buildProfile === "public-v0") {
       "The gate1-ephemeral-ci profile requires VITE_LISTINGS_SOURCE=supabase.",
     );
   }
-  if (gate1Operations !== "enabled") {
+
+  process.env.VITE_GATE1_TEST_OPERATIONS ??= "enabled";
+  if (process.env.VITE_GATE1_TEST_OPERATIONS !== "enabled") {
     failBuildInvariant(
       "The gate1-ephemeral-ci profile requires VITE_GATE1_TEST_OPERATIONS=enabled.",
     );
