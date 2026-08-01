@@ -85,13 +85,48 @@ Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 - [x] Publish/Update synchronized source `edb293b69348ba615b67122908b8cbd9ff4707ef`.
 - [x] Record deployment ID `d6040da8-3425-46b7-8f89-b1e4241af61f` and verify the public project remains `completed` and `is_published: true`.
 
+## V0 hardening and accepted publication record
+
+- [x] Merge PR #43 phase/privacy hardening as `55692d651ade414185ce70b077bc1e0670e20a67`.
+- [x] Merge PR #44 bare public-V0 release-path alignment as `f33856d7417e449ad3e9bfec1f501eb61989de45`.
+- [x] Publish accepted hardening source `f33856d7417e449ad3e9bfec1f501eb61989de45` as deployment `9b7c3685-7611-40a4-9486-ccf6c0b7b454`.
+- [x] Record the accepted publication through documentation-only PR #45 as `991f7533967ac964bfe01fcb55627ee4d65a6681`.
+- [x] Preserve exact runtime signature `public-v0|listings=mock|gate1=off` and all frozen backend/data/dependency boundaries.
+
+## V0 Quality Completion Program
+
+The program is approved for routine implementation and merge under single ownership. No additional founder approval is required between Workstream B and Workstream C. Neither workstream is published separately; one combined Publish/Update gate opens only after both are complete and release readiness is documented.
+
+### Workstream B — Search and URL correctness
+
+- [x] Add shared Turkish-character-tolerant normalization without a dependency.
+- [x] Replace uncontrolled inside-word substring matching with all-token word-prefix matching.
+- [x] Clamp invalid city/district URL state with replace navigation while preserving valid combinations.
+- [x] Add unit and production-mode browser regressions for accentless search, false substring rejection and URL canonicalization.
+- [x] Preserve empty-query, city/district dependency, privacy, PWA/offline and Gate 1 behavior.
+- [x] Merge PR #46 with normal merge commit `1ba1e6dfdfc7908e16497f6aeca3880c718fcfcb`.
+- [x] Keep Workstream B unpublished pending Workstream C and the combined release gate.
+
+### Workstream C — Narrow UX and mobile coverage completion
+
+- [-] Add synthetic public V0 mobile core-flow coverage around a 390×844 viewport.
+- [ ] Validate mobile home, search, city, district, result, detail and lower contact/footer areas without overlap or horizontal overflow.
+- [ ] Make listing-detail return safe for both in-app history and direct/deep-link entry.
+- [ ] Add a Turkish, non-technical static SSR 500 page with safe retry/home navigation.
+- [ ] Hide the public V0 `Reklam` placeholder without adding advertising or leaving layout gaps.
+- [ ] Rename automated installability evidence to `Chromium manifest/service-worker readiness` without weakening manifest, icon, service-worker or offline checks.
+- [ ] Add focused regressions for the mobile flow, both detail-return paths, static 500, absent ad placeholder and existing privacy/PWA/offline controls.
+- [ ] Run the complete frozen Bun, build-signature, production browser/PWA, privacy, 22/22 pgTAP/RLS, REST and Gate 1 desktop/mobile validation set.
+- [ ] Merge Workstream C with a normal merge commit only when all mandatory checks are green.
+- [ ] Create the narrow documentation-only release-readiness record and open one combined founder Publish/Update decision.
+
 ## Current gate status
 
-There is no active consequential implementation gate.
+The active routine gate is **Workstream C — Narrow UX and mobile coverage completion** under the approved V0 Quality Completion Program.
 
-The accepted public V0 may be used only for synthetic UX and value-proposition observation within the existing V0/KVKK-min boundary.
+Sohbet 4 proceeds without an intermediate founder decision through bounded implementation, CI repair within scope, PR and normal merge when all mandatory checks are green.
 
-Do not silently convert observation into a real-data pilot or implementation phase. Any new consequential work requires a separate explicit founder gate.
+No Publish/Update occurs before Workstream C is complete and the single combined release-readiness gate is prepared.
 
 ## Frozen until a separate explicit gate
 
@@ -126,8 +161,10 @@ Do not report V0 as proving real listing supply, accounts, listing management, m
 
 ## Operating rules
 
-- Main assistant remains the default routine executor under D-018.
-- Only one code writer operates at a time.
+- D-018's default routine-executor role is assigned to Sohbet 4 for the approved V0 Quality Completion Program.
+- Sohbet 4 is the single active routine coordinator, code writer, backlog manager, CI quality owner and release-candidate preparer.
+- Only one code writer operates at a time; no parallel Lovable agent or assistant mutation is permitted.
 - Git history is never force-pushed or rewritten.
-- Lovable Publish/Update and production deployment require an explicit bounded gate.
+- Workstream B flows automatically into Workstream C without a new founder decision.
+- Lovable Publish/Update and production deployment require the single explicit bounded founder gate after both workstreams are complete.
 - No secret, credential, real user record or unnecessary personal data belongs in repository documentation.
