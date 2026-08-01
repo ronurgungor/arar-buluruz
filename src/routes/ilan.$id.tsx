@@ -153,7 +153,7 @@ function ListingDetail() {
           <div className="grid grid-cols-2 gap-2">
             <a
               href={PROTOTYPE_CONTACT.phoneHref}
-              className="flex h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
+              className="flex h-12 min-h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
             >
               Ara
             </a>
@@ -161,7 +161,7 @@ function ListingDetail() {
               href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-12 items-center justify-center rounded-full border border-primary text-sm font-bold text-primary hover:bg-accent"
+              className="flex h-12 min-h-12 items-center justify-center rounded-full border border-primary text-sm font-bold text-primary hover:bg-accent"
             >
               WhatsApp
             </a>
