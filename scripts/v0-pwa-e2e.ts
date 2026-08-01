@@ -214,6 +214,56 @@ async function runDesktop() {
     await assertNoTrackingMarkup(page, "/ara");
     await assertNoHorizontalOverflow(page, "/ara");
 
+    console.log("V0 PWA: validating dependent city and district filters");
+    await gotoOk(
+      page,
+      `${baseUrl}/ara?q=&il=T%C3%BCm+T%C3%BCrkiye&ilce=T%C3%BCm+il%C3%A7eler&sirala=yeni`,
+    );
+    const citySelect = page.getByLabel("Konum");
+    const districtSelect = page.getByLabel("İlçe");
+    await districtSelect.waitFor();
+    assert(
+      await districtSelect.isDisabled(),
+      "District filter must be disabled before a specific city is selected.",
+    );
+
+    await citySelect.selectOption({ label: "Konya" });
+    await page.waitForURL((url) => {
+      return (
+        url.searchParams.get("il") === "Konya" && url.searchParams.get("ilce") === "Tüm ilçeler"
+      );
+    });
+    assert(!(await districtSelect.isDisabled()), "District filter did not enable for Konya.");
+    assert(
+      (await districtSelect.locator("option").allTextContents()).includes("Çumra"),
+      "Konya district options did not include Çumra.",
+    );
+
+    await districtSelect.selectOption({ label: "Çumra" });
+    await page.waitForURL((url) => url.searchParams.get("ilce") === "Çumra");
+    await page.getByText("Sahibinden temiz bahçe traktörü", { exact: true }).waitFor();
+    assert(
+      (await page.locator('a[href^="/ilan/"]').count()) === 1,
+      "Konya / Çumra filter did not reduce the results to one synthetic listing.",
+    );
+
+    await citySelect.selectOption({ label: "İzmir" });
+    await page.waitForURL((url) => {
+      return (
+        url.searchParams.get("il") === "İzmir" && url.searchParams.get("ilce") === "Tüm ilçeler"
+      );
+    });
+    assert(
+      (await districtSelect.inputValue()) === "Tüm ilçeler",
+      "Changing the city did not reset the district selection.",
+    );
+    assert(
+      (await districtSelect.locator("option").allTextContents()).includes("Karşıyaka"),
+      "İzmir district options did not include Karşıyaka.",
+    );
+    await page.getByText("Ahşap yemek masası ve 4 sandalye", { exact: true }).waitFor();
+    await assertNoHorizontalOverflow(page, "/ara district filter");
+
     const detailHref = await page.locator('a[href^="/ilan/"]').first().getAttribute("href");
     assert(detailHref, "Synthetic search did not expose a listing-detail link.");
     await gotoOk(page, `${baseUrl}${detailHref}`);
