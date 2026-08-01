@@ -11,6 +11,20 @@ function assert(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
+async function bounded<T>(label: string, operation: Promise<T>, timeoutMs = 15_000): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} exceeded ${timeoutMs} ms.`)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 function trackAutomaticCrossOriginRequests(page: Page, requests: string[]) {
   page.on("request", (request) => {
     let url: URL;
@@ -20,23 +34,29 @@ function trackAutomaticCrossOriginRequests(page: Page, requests: string[]) {
       return;
     }
 
-    if (url.protocol !== "http:" && url.protocol !== "https:") return;
-    if (url.origin === appOrigin) return;
-    requests.push(`${request.method()} ${url.toString()}`);
+    if ((url.protocol === "http:" || url.protocol === "https:") && url.origin !== appOrigin) {
+      requests.push(`${request.method()} ${url.toString()}`);
+    }
   });
 }
 
 async function gotoOk(page: Page, route: string) {
   const url = new URL(route, baseUrl).toString();
-  const response = await page.goto(url, { waitUntil: "domcontentloaded" });
+  const response = await bounded(
+    `Navigation to ${route}`,
+    page.goto(url, { waitUntil: "domcontentloaded", timeout: 15_000 }),
+  );
   assert(response?.ok() === true, `${url} returned HTTP ${response?.status() ?? "unknown"}.`);
 }
 
 async function assertNoHorizontalOverflow(page: Page, route: string) {
-  const dimensions = await page.evaluate(() => ({
-    viewport: window.innerWidth,
-    document: document.documentElement.scrollWidth,
-  }));
+  const dimensions = await bounded(
+    `${route} overflow measurement`,
+    page.evaluate(() => ({
+      viewport: window.innerWidth,
+      document: document.documentElement.scrollWidth,
+    })),
+  );
   assert(
     dimensions.document <= dimensions.viewport,
     `${route} overflows horizontally: ${JSON.stringify(dimensions)}`,
@@ -44,8 +64,9 @@ async function assertNoHorizontalOverflow(page: Page, route: string) {
 }
 
 async function assertTouchTarget(locator: Locator, label: string) {
-  await locator.scrollIntoViewIfNeeded();
-  const box = await locator.boundingBox();
+  await bounded(`${label} visibility`, locator.waitFor({ state: "visible", timeout: 10_000 }));
+  await bounded(`${label} scroll`, locator.scrollIntoViewIfNeeded({ timeout: 10_000 }));
+  const box = await bounded(`${label} geometry`, locator.boundingBox({ timeout: 10_000 }));
   assert(box, `${label} did not have a visible bounding box.`);
   assert(
     box.width >= 44 && box.height >= 44,
@@ -64,12 +85,22 @@ async function assertNoAdPlaceholder(page: Page, route: string) {
   );
 }
 
+async function clickAndWaitForUrl(
+  page: Page,
+  locator: Locator,
+  label: string,
+  predicate: (url: URL) => boolean,
+) {
+  await bounded(`${label} click`, locator.click({ noWaitAfter: true, timeout: 10_000 }));
+  await bounded(`${label} URL transition`, page.waitForURL(predicate, { timeout: 15_000 }));
+}
+
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({
   viewport: { width: 390, height: 844 },
   isMobile: true,
   hasTouch: true,
-  serviceWorkers: "allow",
+  serviceWorkers: "block",
 });
 const page = await context.newPage();
 page.setDefaultTimeout(15_000);
@@ -79,7 +110,10 @@ trackAutomaticCrossOriginRequests(page, crossOriginRequests);
 
 try {
   console.log("V0 mobile: validating Turkish static SSR 500 recovery output");
-  const errorResponse = await context.request.get(`${baseUrl}/?__v0_static_ssr_500_probe=enabled`);
+  const errorResponse = await bounded(
+    "Static SSR 500 probe",
+    context.request.get(`${baseUrl}/?__v0_static_ssr_500_probe=enabled`, { timeout: 15_000 }),
+  );
   assert(errorResponse.status() === 500, `Static SSR probe returned ${errorResponse.status()}.`);
   assert(
     errorResponse.headers()["content-type"]?.startsWith("text/html") === true,
@@ -115,10 +149,13 @@ try {
   await assertTouchTarget(page.getByRole("link", { name: "Gizlilik" }), "Home privacy link");
   await assertNoHorizontalOverflow(page, "/ mobile core flow");
 
-  await homeSearch.fill("traktor");
-  await homeCity.selectOption({ label: "Konya" });
-  await homeSubmit.click();
-  await page.waitForURL((url) => {
+  console.log("V0 mobile: submitting the home search");
+  await bounded("Home search fill", homeSearch.fill("traktor", { timeout: 10_000 }));
+  await bounded(
+    "Home city selection",
+    homeCity.selectOption({ label: "Konya" }, { timeout: 10_000 }),
+  );
+  await clickAndWaitForUrl(page, homeSubmit, "Home search submit", (url) => {
     return (
       url.pathname === "/ara" &&
       url.searchParams.get("q") === "traktor" &&
@@ -139,8 +176,14 @@ try {
     (await districtSelect.locator("option").allTextContents()).includes("Çumra"),
     "Konya district options did not include Çumra.",
   );
-  await districtSelect.selectOption({ label: "Çumra" });
-  await page.waitForURL((url) => url.searchParams.get("ilce") === "Çumra");
+  await bounded(
+    "Çumra district selection",
+    districtSelect.selectOption({ label: "Çumra" }, { timeout: 10_000 }),
+  );
+  await bounded(
+    "Çumra URL transition",
+    page.waitForURL((url) => url.searchParams.get("ilce") === "Çumra", { timeout: 15_000 }),
+  );
   await page.getByText("1 ilan bulundu", { exact: true }).waitFor();
   const resultLink = page.locator('a[href="/ilan/1"]').first();
   await resultLink.waitFor();
@@ -154,8 +197,7 @@ try {
   await page.screenshot({ path: path.join(resultsDir, "mobile-search.png"), fullPage: true });
 
   console.log("V0 mobile: validating in-app detail return and lower contact areas");
-  await resultLink.click();
-  await page.waitForURL((url) => url.pathname === "/ilan/1");
+  await clickAndWaitForUrl(page, resultLink, "Search result", (url) => url.pathname === "/ilan/1");
   await page.getByRole("heading", { level: 1, name: "Sahibinden temiz bahçe traktörü" }).waitFor();
   const resultsBack = page.getByTestId("results-back");
   const complaintLink = page.getByRole("link", { name: "Şikâyet Et" });
@@ -167,7 +209,7 @@ try {
   await assertTouchTarget(complaintLink, "Detail complaint link");
   await assertTouchTarget(phoneLink, "Detail phone link");
   await assertTouchTarget(whatsappLink, "Detail WhatsApp link");
-  await complaintLink.scrollIntoViewIfNeeded();
+  await bounded("Complaint link scroll", complaintLink.scrollIntoViewIfNeeded({ timeout: 10_000 }));
   await page.waitForTimeout(100);
   const complaintBox = await complaintLink.boundingBox();
   const contactBox = await contactBar.boundingBox();
@@ -180,8 +222,7 @@ try {
   await assertNoHorizontalOverflow(page, "/ilan/1 mobile core flow");
   await page.screenshot({ path: path.join(resultsDir, "mobile-detail.png"), fullPage: true });
 
-  await resultsBack.click();
-  await page.waitForURL((url) => {
+  await clickAndWaitForUrl(page, resultsBack, "Results back", (url) => {
     return (
       url.pathname === "/ara" &&
       url.searchParams.get("q") === "traktor" &&
@@ -201,17 +242,21 @@ try {
     await directPage
       .getByRole("heading", { level: 1, name: "Sahibinden temiz bahçe traktörü" })
       .waitFor();
-    await directPage.getByTestId("results-back").click();
-    await directPage.waitForURL((url) => {
-      return (
-        url.origin === appOrigin &&
-        url.pathname === "/ara" &&
-        url.searchParams.get("q") === "" &&
-        url.searchParams.get("il") === "Tüm Türkiye" &&
-        url.searchParams.get("ilce") === "Tüm ilçeler" &&
-        url.searchParams.get("sirala") === "yeni"
-      );
-    });
+    await clickAndWaitForUrl(
+      directPage,
+      directPage.getByTestId("results-back"),
+      "Direct-detail fallback",
+      (url) => {
+        return (
+          url.origin === appOrigin &&
+          url.pathname === "/ara" &&
+          url.searchParams.get("q") === "" &&
+          url.searchParams.get("il") === "Tüm Türkiye" &&
+          url.searchParams.get("ilce") === "Tüm ilçeler" &&
+          url.searchParams.get("sirala") === "yeni"
+        );
+      },
+    );
     await directPage.getByText("ilan bulundu", { exact: false }).waitFor();
     await assertNoHorizontalOverflow(directPage, "/ara direct-detail fallback");
   } finally {
