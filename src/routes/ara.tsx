@@ -1,8 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search as SearchIcon } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
-import { AdSlot } from "@/components/AdSlot";
 import { cities, formatPrice } from "@/data/listings";
 import {
   ALL_CITIES,
@@ -11,6 +10,7 @@ import {
   getDistrictsForCity,
   listingMatchesQuery,
 } from "@/lib/listing-search";
+import { LISTING_RESULTS_HISTORY_STATE } from "@/lib/listing-return";
 import { loadListingsCollection } from "@/lib/public-listings";
 
 type Search = { q?: string; il?: string; ilce?: string; sirala?: "yeni" | "fiyat" | "yakin" };
@@ -152,7 +152,7 @@ function SearchPage() {
             value={activeCity}
             onChange={(event) => setSearch({ il: event.target.value, ilce: ALL_DISTRICTS })}
             aria-label="Konum"
-            className="h-9 max-w-[45%] rounded-full border border-border bg-card px-3 text-sm font-medium outline-none focus:border-primary"
+            className="h-11 max-w-[45%] rounded-full border border-border bg-card px-3 text-sm font-medium outline-none focus:border-primary"
           >
             {cities.map((city) => (
               <option key={city}>{city}</option>
@@ -163,7 +163,7 @@ function SearchPage() {
             disabled={!hasCity}
             onChange={(event) => setSearch({ ilce: event.target.value })}
             aria-label="İlçe"
-            className="h-9 max-w-[45%] rounded-full border border-border bg-card px-3 text-sm font-medium outline-none focus:border-primary disabled:opacity-50"
+            className="h-11 max-w-[45%] rounded-full border border-border bg-card px-3 text-sm font-medium outline-none focus:border-primary disabled:opacity-50"
           >
             <option>{ALL_DISTRICTS}</option>
             {districts.map((district) => (
@@ -176,7 +176,7 @@ function SearchPage() {
               key={key}
               type="button"
               onClick={() => setSearch({ sirala: key })}
-              className={`h-9 rounded-full border px-4 text-sm font-medium transition-colors ${
+              className={`h-11 rounded-full border px-4 text-sm font-medium transition-colors ${
                 effectiveSort === key
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-card text-foreground hover:bg-accent"
@@ -213,51 +213,44 @@ function SearchPage() {
             </p>
 
             <ul className="mt-2 divide-y divide-border/70">
-              {results.map((listing, index) => (
-                <Fragment key={listing.id}>
-                  <li className="py-2">
-                    <Link
-                      to="/ilan/$id"
-                      params={{ id: listing.id }}
-                      className="flex items-center gap-3 rounded-xl p-1 transition-colors hover:bg-accent/40"
-                    >
-                      {listing.photos[0] ? (
-                        <img
-                          src={listing.photos[0]}
-                          alt={listing.title}
-                          width={800}
-                          height={600}
-                          loading="lazy"
-                          className="h-20 w-20 shrink-0 rounded-lg object-cover sm:h-24 sm:w-28"
-                        />
-                      ) : (
-                        <div
-                          aria-label="Fotoğraf bulunmuyor"
-                          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-muted px-2 text-center text-xs text-muted-foreground sm:h-24 sm:w-28"
-                        >
-                          Fotoğraf yok
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">
-                          {listing.title}
-                        </h2>
-                        <p className="mt-0.5 text-base font-extrabold text-primary">
-                          {formatPrice(listing.price)}
-                        </p>
-                        <p className="truncate text-[13px] text-muted-foreground">
-                          {listing.city} / {listing.district}
-                        </p>
+              {results.map((listing) => (
+                <li key={listing.id} className="py-2">
+                  <Link
+                    to="/ilan/$id"
+                    params={{ id: listing.id }}
+                    state={(previous) => ({ ...previous, ...LISTING_RESULTS_HISTORY_STATE })}
+                    className="flex items-center gap-3 rounded-xl p-1 transition-colors hover:bg-accent/40"
+                  >
+                    {listing.photos[0] ? (
+                      <img
+                        src={listing.photos[0]}
+                        alt={listing.title}
+                        width={800}
+                        height={600}
+                        loading="lazy"
+                        className="h-20 w-20 shrink-0 rounded-lg object-cover sm:h-24 sm:w-28"
+                      />
+                    ) : (
+                      <div
+                        aria-label="Fotoğraf bulunmuyor"
+                        className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-muted px-2 text-center text-xs text-muted-foreground sm:h-24 sm:w-28"
+                      >
+                        Fotoğraf yok
                       </div>
-                    </Link>
-                  </li>
-                  {isMockSource &&
-                    (index + 1 === 4 || (index + 1 > 4 && (index + 1 - 4) % 6 === 0)) && (
-                      <li className="py-4">
-                        <AdSlot />
-                      </li>
                     )}
-                </Fragment>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">
+                        {listing.title}
+                      </h2>
+                      <p className="mt-0.5 text-base font-extrabold text-primary">
+                        {formatPrice(listing.price)}
+                      </p>
+                      <p className="truncate text-[13px] text-muted-foreground">
+                        {listing.city} / {listing.district}
+                      </p>
+                    </div>
+                  </Link>
+                </li>
               ))}
             </ul>
 
