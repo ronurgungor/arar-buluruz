@@ -25,7 +25,10 @@ async function waitForServerDown() {
 async function waitForServerReady() {
   for (let attempt = 1; attempt <= 60; attempt += 1) {
     try {
-      const response = await fetch(baseUrl);
+      const response = await fetch(baseUrl, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(1_000),
+      });
       if (response.ok) return;
     } catch {
       // The production preview server may still be starting.
@@ -91,6 +94,7 @@ try {
   // Restart a clean production preview for the separate synthetic mobile
   // core-flow coverage so neither browser phase can affect the other.
   await startServer();
+  console.log("V0 runner: production preview restarted for mobile core flow");
   await import("./v0-mobile-e2e.ts");
 } finally {
   await stopServer();
