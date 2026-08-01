@@ -17,7 +17,10 @@ async function bounded<T>(label: string, operation: Promise<T>, timeoutMs = 15_0
     return await Promise.race([
       operation,
       new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new Error(`${label} exceeded ${timeoutMs} ms.`)), timeoutMs);
+        timer = setTimeout(
+          () => reject(new Error(`${label} exceeded ${timeoutMs} ms.`)),
+          timeoutMs,
+        );
       }),
     ]);
   } finally {
