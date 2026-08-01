@@ -13,11 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { productPhaseLabel } from "../lib/product-phase";
 
-const buildSignature = [
-  import.meta.env.VITE_PUBLIC_V0_RUNTIME === "enabled" ? "public-v0" : "non-public",
-  `listings=${import.meta.env.VITE_LISTINGS_SOURCE ?? "unset"}`,
-  `gate1=${import.meta.env.VITE_GATE1_TEST_OPERATIONS === "enabled" ? "on" : "off"}`,
-].join("|");
+const buildSignature = import.meta.env.VITE_ARAR_BUILD_SIGNATURE ?? "unresolved";
 
 function NotFoundComponent() {
   return (
