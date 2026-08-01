@@ -42,10 +42,7 @@ export function listingMatchesQuery(listing: SearchableListing, query: string): 
   return queryTokens.every((token) => listingWords.some((word) => word.startsWith(token)));
 }
 
-export function getDistrictsForCity(
-  listings: readonly LocatedListing[],
-  city: string,
-): string[] {
+export function getDistrictsForCity(listings: readonly LocatedListing[], city: string): string[] {
   if (city === ALL_CITIES) return [];
 
   return [
