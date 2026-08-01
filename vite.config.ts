@@ -83,9 +83,7 @@ if (buildProfile === "public-v0") {
     failBuildInvariant("The gate1-ephemeral-ci profile is restricted to CI.");
   }
   if (listingsSource !== "supabase") {
-    failBuildInvariant(
-      "The gate1-ephemeral-ci profile requires VITE_LISTINGS_SOURCE=supabase.",
-    );
+    failBuildInvariant("The gate1-ephemeral-ci profile requires VITE_LISTINGS_SOURCE=supabase.");
   }
 
   process.env.VITE_GATE1_TEST_OPERATIONS ??= "enabled";
