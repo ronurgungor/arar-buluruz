@@ -71,6 +71,7 @@ try {
 
   await import("./v0-privacy-e2e.ts");
   await import("./v0-search-e2e.ts");
+  await import("./v0-mobile-e2e.ts");
   await import("./v0-pwa-e2e.ts");
 } finally {
   await stopServer();
