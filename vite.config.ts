@@ -104,8 +104,7 @@ if (buildProfile === "public-v0") {
   }
   process.env.VITE_LISTINGS_SOURCE ??= "mock";
   process.env.VITE_PUBLIC_V0_RUNTIME = "disabled";
-  process.env.VITE_ARAR_BUILD_SIGNATURE =
-    `development|listings=${process.env.VITE_LISTINGS_SOURCE}|gate1=off`;
+  process.env.VITE_ARAR_BUILD_SIGNATURE = `development|listings=${process.env.VITE_LISTINGS_SOURCE}|gate1=off`;
 }
 
 export default defineConfig({
