@@ -160,8 +160,8 @@ try {
   const resultsBack = page.getByTestId("results-back");
   const complaintLink = page.getByRole("link", { name: "Şikâyet Et" });
   const contactBar = page.getByTestId("detail-contact-bar");
-  const phoneLink = page.getByRole("link", { name: "Ara", exact: true });
-  const whatsappLink = page.getByRole("link", { name: "WhatsApp" });
+  const phoneLink = contactBar.getByRole("link", { name: "Ara", exact: true });
+  const whatsappLink = contactBar.getByRole("link", { name: "WhatsApp" });
   await contactBar.waitFor();
   await assertTouchTarget(resultsBack, "Detail results-back control");
   await assertTouchTarget(complaintLink, "Detail complaint link");
