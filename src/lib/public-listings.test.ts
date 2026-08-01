@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { renderErrorPage } from "./error-page";
 import {
   ALL_CITIES,
   ALL_DISTRICTS,
@@ -6,6 +7,10 @@ import {
   listingMatchesQuery,
   normalizeSearchText,
 } from "./listing-search";
+import {
+  LISTING_RESULTS_HISTORY_STATE,
+  hasListingResultsHistory,
+} from "./listing-return";
 import {
   PublicListingsError,
   fetchPublicListing,
@@ -143,6 +148,30 @@ describe("listing location URL clamp", () => {
         listings: searchListings,
       }),
     ).toEqual({ city: "Konya", district: "Çumra" });
+  });
+});
+
+describe("listing detail return guard", () => {
+  test("recognizes only the explicit in-app results marker", () => {
+    expect(hasListingResultsHistory(LISTING_RESULTS_HISTORY_STATE)).toBe(true);
+    expect(hasListingResultsHistory({ fromListingResults: false })).toBe(false);
+    expect(hasListingResultsHistory({ __TSR_index: 4 })).toBe(false);
+    expect(hasListingResultsHistory(null)).toBe(false);
+  });
+});
+
+describe("static SSR 500 page", () => {
+  test("renders a safe Turkish recovery page without technical detail", () => {
+    const html = renderErrorPage();
+
+    expect(html).toContain('<html lang="tr">');
+    expect(html).toContain("Bu sayfa yüklenemedi");
+    expect(html).toContain("Tekrar dene");
+    expect(html).toContain("Ana sayfaya dön");
+    expect(html).not.toContain("This page didn't load");
+    expect(html).not.toContain("Something went wrong");
+    expect(html).not.toContain("Error:");
+    expect(html).not.toContain("stack");
   });
 });
 
