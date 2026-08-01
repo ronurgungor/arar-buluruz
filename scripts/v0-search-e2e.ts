@@ -41,24 +41,23 @@ try {
   );
 
   console.log("V0 search: canonicalizing invalid location URL state");
-  await gotoOk(
-    page,
-    searchUrl({ q: "", il: "Atlantis", ilce: "Nowhere", sirala: "yeni" }),
-  );
+  await gotoOk(page, searchUrl({ q: "", il: "Atlantis", ilce: "Nowhere", sirala: "yeni" }));
   await page.waitForURL((url) => {
-    return url.searchParams.get("il") === ALL_CITIES && url.searchParams.get("ilce") === ALL_DISTRICTS;
+    return (
+      url.searchParams.get("il") === ALL_CITIES && url.searchParams.get("ilce") === ALL_DISTRICTS
+    );
   });
   const citySelect = page.getByLabel("Konum");
   const districtSelect = page.getByLabel("İlçe");
   assert((await citySelect.inputValue()) === ALL_CITIES, "Invalid city was not clamped.");
-  assert((await districtSelect.inputValue()) === ALL_DISTRICTS, "Invalid district was not clamped.");
+  assert(
+    (await districtSelect.inputValue()) === ALL_DISTRICTS,
+    "Invalid district was not clamped.",
+  );
   assert(await districtSelect.isDisabled(), "District remained enabled after city clamp.");
 
   console.log("V0 search: canonicalizing a city-incompatible district");
-  await gotoOk(
-    page,
-    searchUrl({ q: "", il: "Konya", ilce: "Karşıyaka", sirala: "yeni" }),
-  );
+  await gotoOk(page, searchUrl({ q: "", il: "Konya", ilce: "Karşıyaka", sirala: "yeni" }));
   await page.waitForURL((url) => {
     return url.searchParams.get("il") === "Konya" && url.searchParams.get("ilce") === ALL_DISTRICTS;
   });
