@@ -79,9 +79,7 @@ trackAutomaticCrossOriginRequests(page, crossOriginRequests);
 
 try {
   console.log("V0 mobile: validating Turkish static SSR 500 recovery output");
-  const errorResponse = await context.request.get(
-    `${baseUrl}/?__v0_static_ssr_500_probe=enabled`,
-  );
+  const errorResponse = await context.request.get(`${baseUrl}/?__v0_static_ssr_500_probe=enabled`);
   assert(errorResponse.status() === 500, `Static SSR probe returned ${errorResponse.status()}.`);
   assert(
     errorResponse.headers()["content-type"]?.startsWith("text/html") === true,
