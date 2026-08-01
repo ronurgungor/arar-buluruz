@@ -13,6 +13,12 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { productPhaseLabel } from "../lib/product-phase";
 
+const buildSignature = [
+  import.meta.env.VITE_PUBLIC_V0_RUNTIME === "enabled" ? "public-v0" : "non-public",
+  `listings=${import.meta.env.VITE_LISTINGS_SOURCE ?? "unset"}`,
+  `gate1=${import.meta.env.VITE_GATE1_TEST_OPERATIONS === "enabled" ? "on" : "off"}`,
+].join("|");
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -155,7 +161,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="tr">
+    <html lang="tr" data-arar-build-signature={buildSignature}>
       <head>
         <HeadContent />
       </head>
