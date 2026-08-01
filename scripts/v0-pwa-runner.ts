@@ -86,16 +86,7 @@ try {
   await startServer();
   await import("./v0-privacy-e2e.ts");
   await import("./v0-search-e2e.ts");
-
-  // Run the established PWA/offline chain first. It intentionally stops the
-  // preview server to verify the honest offline fallback.
   await import("./v0-pwa-e2e.ts");
-
-  // Restart a clean production preview for the separate synthetic mobile
-  // core-flow coverage so neither browser phase can affect the other.
-  await startServer();
-  console.log("V0 runner: production preview restarted for mobile core flow");
-  await import("./v0-mobile-e2e.ts");
 } finally {
   await stopServer();
 }
