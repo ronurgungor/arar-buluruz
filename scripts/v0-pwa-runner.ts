@@ -69,6 +69,7 @@ try {
 
   if (!ready) throw new Error("The V0 production preview server did not become ready.");
 
+  await import("./v0-privacy-e2e.ts");
   await import("./v0-pwa-e2e.ts");
 } finally {
   await stopServer();

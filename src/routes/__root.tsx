@@ -73,6 +73,19 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+function ControlledErrorBoundaryProbe() {
+  const probeEnabled = import.meta.env.VITE_V0_ERROR_BOUNDARY_TEST === "enabled";
+  const probeRequested =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("__v0_error_boundary_probe") === "enabled";
+
+  if (probeEnabled && probeRequested) {
+    throw new Error("Controlled public V0 error-boundary probe");
+  }
+
+  return null;
+}
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
@@ -165,6 +178,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ControlledErrorBoundaryProbe />
       <div
         role="note"
         data-testid="v0-notice"
