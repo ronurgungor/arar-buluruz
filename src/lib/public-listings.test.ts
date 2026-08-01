@@ -7,10 +7,7 @@ import {
   listingMatchesQuery,
   normalizeSearchText,
 } from "./listing-search";
-import {
-  LISTING_RESULTS_HISTORY_STATE,
-  hasListingResultsHistory,
-} from "./listing-return";
+import { LISTING_RESULTS_HISTORY_STATE, hasListingResultsHistory } from "./listing-return";
 import {
   PublicListingsError,
   fetchPublicListing,
