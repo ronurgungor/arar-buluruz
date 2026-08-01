@@ -67,6 +67,7 @@ if (buildProfile === "public-v0") {
   }
 
   process.env.VITE_PUBLIC_V0_RUNTIME = "enabled";
+  process.env.VITE_ARAR_BUILD_SIGNATURE = "public-v0|listings=mock|gate1=off";
 } else if (buildProfile === "ci-disabled") {
   if (!isViteBuild || process.env.CI !== "true") {
     failBuildInvariant("The ci-disabled profile is restricted to CI builds.");
@@ -78,6 +79,7 @@ if (buildProfile === "public-v0") {
     failBuildInvariant("The ci-disabled profile must not enable Gate 1 test operations.");
   }
   process.env.VITE_PUBLIC_V0_RUNTIME = "disabled";
+  process.env.VITE_ARAR_BUILD_SIGNATURE = "ci-disabled|listings=disabled|gate1=off";
 } else if (buildProfile === "gate1-ephemeral-ci") {
   if (process.env.CI !== "true") {
     failBuildInvariant("The gate1-ephemeral-ci profile is restricted to CI.");
@@ -93,6 +95,7 @@ if (buildProfile === "public-v0") {
     );
   }
   process.env.VITE_PUBLIC_V0_RUNTIME = "disabled";
+  process.env.VITE_ARAR_BUILD_SIGNATURE = "gate1-ephemeral-ci|listings=supabase|gate1=on";
 } else {
   const modeIndex = process.argv.indexOf("--mode");
   const isDevelopmentModeBuild = modeIndex >= 0 && process.argv[modeIndex + 1] === "development";
@@ -101,6 +104,8 @@ if (buildProfile === "public-v0") {
   }
   process.env.VITE_LISTINGS_SOURCE ??= "mock";
   process.env.VITE_PUBLIC_V0_RUNTIME = "disabled";
+  process.env.VITE_ARAR_BUILD_SIGNATURE =
+    `development|listings=${process.env.VITE_LISTINGS_SOURCE}|gate1=off`;
 }
 
 export default defineConfig({
