@@ -77,7 +77,7 @@ export function clampListingLocation({
 
   const validDistricts = getDistrictsForCity(listings, canonicalCity);
   const canonicalDistrict =
-    district === ALL_DISTRICTS || (district && validDistricts.includes(district))
+    district && (district === ALL_DISTRICTS || validDistricts.includes(district))
       ? district
       : ALL_DISTRICTS;
 
