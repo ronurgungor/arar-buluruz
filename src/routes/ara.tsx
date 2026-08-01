@@ -4,16 +4,21 @@ import { Search as SearchIcon } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { AdSlot } from "@/components/AdSlot";
 import { cities, formatPrice } from "@/data/listings";
+import {
+  ALL_CITIES,
+  ALL_DISTRICTS,
+  clampListingLocation,
+  getDistrictsForCity,
+  listingMatchesQuery,
+} from "@/lib/listing-search";
 import { loadListingsCollection } from "@/lib/public-listings";
 
 type Search = { q?: string; il?: string; ilce?: string; sirala?: "yeni" | "fiyat" | "yakin" };
 
-const ALL_DISTRICTS = "Tüm ilçeler";
-
 export const Route = createFileRoute("/ara")({
   validateSearch: (search: Record<string, unknown>): Search => ({
     q: typeof search.q === "string" ? search.q : "",
-    il: typeof search.il === "string" ? search.il : "Tüm Türkiye",
+    il: typeof search.il === "string" ? search.il : ALL_CITIES,
     ilce: typeof search.ilce === "string" ? search.ilce : ALL_DISTRICTS,
     sirala: search.sirala === "fiyat" || search.sirala === "yakin" ? search.sirala : "yeni",
   }),
@@ -49,35 +54,40 @@ function SearchPage() {
     ? ["yeni", "fiyat", "yakin"]
     : ["yeni", "fiyat"];
 
+  const { city: activeCity, district: activeDistrict } = clampListingLocation({
+    city: il,
+    district: ilce,
+    validCities: cities,
+    listings: listingData.listings,
+  });
+  const hasCity = activeCity !== ALL_CITIES;
+  const districts = useMemo(
+    () => getDistrictsForCity(listingData.listings, activeCity),
+    [activeCity, listingData.listings],
+  );
+
   useEffect(() => {
     setTerm(q ?? "");
   }, [q]);
 
-  const hasCity = Boolean(il) && il !== "Tüm Türkiye";
+  useEffect(() => {
+    if (il === activeCity && ilce === activeDistrict) return;
 
-  const districts = useMemo<string[]>(() => {
-    if (!hasCity) return [];
-    const unique = new Set<string>(
-      listingData.listings
-        .filter((listing: { city: string }) => listing.city === il)
-        .map((listing: { district: string }) => listing.district)
-        .filter(Boolean),
-    );
-    return [...unique].sort((a, b) => a.localeCompare(b, "tr"));
-  }, [hasCity, il, listingData.listings]);
-
-  const activeDistrict = hasCity && ilce && ilce !== ALL_DISTRICTS ? ilce : ALL_DISTRICTS;
+    void navigate({
+      to: "/ara",
+      replace: true,
+      search: (previous: Search) => ({
+        ...previous,
+        il: activeCity,
+        ilce: activeDistrict,
+      }),
+    });
+  }, [activeCity, activeDistrict, il, ilce, navigate]);
 
   const results = useMemo(() => {
-    const tokens: string[] = (q ?? "").trim().toLocaleLowerCase("tr").split(/\s+/).filter(Boolean);
-
     let list = listingData.listings.filter((listing) => {
-      const searchableText = [listing.title, listing.description, ...listing.keywords]
-        .join(" ")
-        .toLocaleLowerCase("tr");
-      const matchesTerm =
-        tokens.length === 0 || tokens.every((token: string) => searchableText.includes(token));
-      const matchesCity = !il || il === "Tüm Türkiye" || listing.city === il;
+      const matchesTerm = listingMatchesQuery(listing, q ?? "");
+      const matchesCity = activeCity === ALL_CITIES || listing.city === activeCity;
       const matchesDistrict =
         activeDistrict === ALL_DISTRICTS || listing.district === activeDistrict;
       return matchesTerm && matchesCity && matchesDistrict;
@@ -92,10 +102,18 @@ function SearchPage() {
       );
     } else list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return list;
-  }, [activeDistrict, effectiveSort, il, listingData.listings, q]);
+  }, [activeCity, activeDistrict, effectiveSort, listingData.listings, q]);
 
   const setSearch = (patch: Partial<Search>) =>
-    navigate({ to: "/ara", search: (prev: Search) => ({ ...prev, ...patch }) });
+    navigate({
+      to: "/ara",
+      search: (previous: Search) => ({
+        ...previous,
+        il: activeCity,
+        ilce: activeDistrict,
+        ...patch,
+      }),
+    });
 
   return (
     <div className="min-h-screen">
@@ -131,7 +149,7 @@ function SearchPage() {
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <select
-            value={il}
+            value={activeCity}
             onChange={(event) => setSearch({ il: event.target.value, ilce: ALL_DISTRICTS })}
             aria-label="Konum"
             className="h-9 max-w-[45%] rounded-full border border-border bg-card px-3 text-sm font-medium outline-none focus:border-primary"
@@ -246,10 +264,10 @@ function SearchPage() {
             {results.length === 0 && (
               <div className="mt-10 text-center">
                 <p className="text-muted-foreground">Sonuç bulunamadı. Farklı bir kelime dene.</p>
-                {il && il !== "Tüm Türkiye" && (
+                {activeCity !== ALL_CITIES && (
                   <button
                     type="button"
-                    onClick={() => setSearch({ il: "Tüm Türkiye" })}
+                    onClick={() => setSearch({ il: ALL_CITIES, ilce: ALL_DISTRICTS })}
                     className="mt-4 h-11 rounded-full bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90"
                   >
                     Tüm Türkiye'de ara
