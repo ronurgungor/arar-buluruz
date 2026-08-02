@@ -1,6 +1,6 @@
 # Arar Buluruz — Backlog
 
-_Last updated: 2026-08-01, Europe/Istanbul_
+_Last updated: 2026-08-02, Europe/Istanbul_
 
 Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 
@@ -95,7 +95,7 @@ Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 
 ## V0 Quality Completion Program
 
-The program is approved for routine implementation and merge under single ownership. No additional founder approval is required between Workstream B and Workstream C. Neither workstream is published separately; one combined Publish/Update gate opens only after both are complete and release readiness is documented.
+The program was completed under single ownership. Workstream B and Workstream C were not published separately; one combined founder-approved Publish/Update was executed only after both workstreams were complete and release readiness was documented.
 
 ### Workstream B — Search and URL correctness
 
@@ -105,28 +105,33 @@ The program is approved for routine implementation and merge under single owners
 - [x] Add unit and production-mode browser regressions for accentless search, false substring rejection and URL canonicalization.
 - [x] Preserve empty-query, city/district dependency, privacy, PWA/offline and Gate 1 behavior.
 - [x] Merge PR #46 with normal merge commit `1ba1e6dfdfc7908e16497f6aeca3880c718fcfcb`.
-- [x] Keep Workstream B unpublished pending Workstream C and the combined release gate.
+- [x] Keep Workstream B unpublished until Workstream C and publish it only through the combined release gate.
 
 ### Workstream C — Narrow UX and mobile coverage completion
 
-- [-] Add synthetic public V0 mobile core-flow coverage around a 390×844 viewport.
-- [ ] Validate mobile home, search, city, district, result, detail and lower contact/footer areas without overlap or horizontal overflow.
-- [ ] Make listing-detail return safe for both in-app history and direct/deep-link entry.
-- [ ] Add a Turkish, non-technical static SSR 500 page with safe retry/home navigation.
-- [ ] Hide the public V0 `Reklam` placeholder without adding advertising or leaving layout gaps.
-- [ ] Rename automated installability evidence to `Chromium manifest/service-worker readiness` without weakening manifest, icon, service-worker or offline checks.
-- [ ] Add focused regressions for the mobile flow, both detail-return paths, static 500, absent ad placeholder and existing privacy/PWA/offline controls.
-- [ ] Run the complete frozen Bun, build-signature, production browser/PWA, privacy, 22/22 pgTAP/RLS, REST and Gate 1 desktop/mobile validation set.
-- [ ] Merge Workstream C with a normal merge commit only when all mandatory checks are green.
-- [ ] Create the narrow documentation-only release-readiness record and open one combined founder Publish/Update decision.
+- [x] Add synthetic public V0 mobile core-flow coverage around a 390×844 viewport.
+- [x] Validate mobile home, search, city, district, result, detail and lower contact/footer areas without overlap or horizontal overflow.
+- [x] Make listing-detail return safe for both in-app history and direct/deep-link entry.
+- [x] Add a Turkish, non-technical static SSR 500 page with safe retry/home navigation.
+- [x] Hide the public V0 `Reklam` placeholder without adding advertising or leaving layout gaps.
+- [x] Rename automated installability evidence to `Chromium manifest/service-worker readiness` without weakening manifest, icon, service-worker or offline checks.
+- [x] Add focused regressions for the mobile flow, both detail-return paths, static 500, absent ad placeholder and existing privacy/PWA/offline controls.
+- [x] Run the complete frozen Bun, build-signature, production browser/PWA, privacy, 22/22 pgTAP/RLS, REST and Gate 1 desktop/mobile validation set.
+- [x] Pass V0 PWA run `30714186574` and standard CI run `30714186578`.
+- [x] Merge Workstream C through PR #48 with normal merge commit `df74dfd5a81be237da2d5471301279e5c657a2af` after all mandatory checks were green.
+- [x] Confirm the green PR merge ref `cbb22b8cf7184dc9b94feb5e421e96b953295f32` and published `main` differ by zero files.
+- [x] Publish the synchronized project as deployment `b45fe46d-7824-428b-9925-2806eb8b6f72` without an agent message or environment mutation.
+- [x] Preserve exact runtime signature `public-v0|listings=mock|gate1=off`.
+- [x] Record the accepted combined publication in `docs/V0_QUALITY_COMPLETION_PUBLICATION.md`.
+- [x] Complete the V0 Quality Completion Program.
 
 ## Current gate status
 
-The active routine gate is **Workstream C — Narrow UX and mobile coverage completion** under the approved V0 Quality Completion Program.
+The **V0 Quality Completion Program is complete**. There is no active product, code, backend, auth, real-data, advertising, analytics, TWA, Play Store or paid-infrastructure implementation gate.
 
-Sohbet 4 proceeds without an intermediate founder decision through bounded implementation, CI repair within scope, PR and normal merge when all mandatory checks are green.
+The next permitted phase is limited to **anonymous, non-directive V0 user-observation preparation** under the existing synthetic/mock and KVKK-min boundary.
 
-No Publish/Update occurs before Workstream C is complete and the single combined release-readiness gate is prepared.
+Do not open a new code or backend gate implicitly. Any consequential implementation, real-data pilot, backend activation or store-distribution step requires a separate explicit founder gate.
 
 ## Frozen until a separate explicit gate
 
@@ -161,10 +166,10 @@ Do not report V0 as proving real listing supply, accounts, listing management, m
 
 ## Operating rules
 
-- D-018's default routine-executor role is assigned to Sohbet 4 for the approved V0 Quality Completion Program.
-- Sohbet 4 is the single active routine coordinator, code writer, backlog manager, CI quality owner and release-candidate preparer.
+- D-018's routine-executor assignment for the V0 Quality Completion Program is fulfilled.
 - Only one code writer operates at a time; no parallel Lovable agent or assistant mutation is permitted.
 - Git history is never force-pushed or rewritten.
-- Workstream B flows automatically into Workstream C without a new founder decision.
-- Lovable Publish/Update and production deployment require the single explicit bounded founder gate after both workstreams are complete.
+- The accepted publication is identity-bound to `df74dfd5a81be237da2d5471301279e5c657a2af` and deployment `b45fe46d-7824-428b-9925-2806eb8b6f72`.
+- Anonymous observation preparation must remain non-directive and must not collect personal data.
+- No new implementation or publication proceeds without a separate explicit founder gate.
 - No secret, credential, real user record or unnecessary personal data belongs in repository documentation.
