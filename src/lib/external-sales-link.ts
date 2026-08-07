@@ -101,9 +101,10 @@ const SHOPIER_PROVIDER: ExternalSalesProviderCandidate = {
 };
 
 const PROVIDER_BY_EXACT_HOST = new Map<string, ExternalSalesProviderCandidate>(
-  SHOPIER_EXACT_HOSTS.map(
-    (host): [string, ExternalSalesProviderCandidate] => [host, SHOPIER_PROVIDER],
-  ),
+  SHOPIER_EXACT_HOSTS.map((host): [string, ExternalSalesProviderCandidate] => [
+    host,
+    SHOPIER_PROVIDER,
+  ]),
 );
 
 function invalid(reason: ExternalSalesInvalidReason): ExternalSalesLinkInvalid {
@@ -125,6 +126,10 @@ function normalizeHostname(hostname: string): string {
 
 function hasMalformedPercentEncoding(value: string): boolean {
   return /%(?![0-9a-f]{2})/i.test(value);
+}
+
+function containsNonAscii(value: string): boolean {
+  return Array.from(value).some((character) => (character.codePointAt(0) ?? 0) > 0x7f);
 }
 
 function isIpv4Literal(hostname: string): boolean {
@@ -198,7 +203,7 @@ export function validateExternalSalesLink(rawInput: string): ExternalSalesLinkVa
   if (KNOWN_SHORTENER_HOSTS.has(normalizedHost)) return invalid("URL_SHORTENER_NOT_ALLOWED");
 
   const provider = PROVIDER_BY_EXACT_HOST.get(normalizedHost) ?? null;
-  const authorityHasNonAscii = /[^\x00-\x7f]/.test(rawAuthority);
+  const authorityHasNonAscii = containsNonAscii(rawAuthority);
 
   if (provider && authorityHasNonAscii) {
     return invalid("IDNA_PROVIDER_ALIAS_NOT_ALLOWED");
