@@ -138,15 +138,16 @@ The program was completed under single ownership. Workstream B and Workstream C 
 - [x] Inspect and preserve the existing migration/RLS/REST assets without adding a remote migration or production database.
 - [x] Document the future environment contract, off-VPS backup/empty-server restore requirement and minimum production runbook.
 - [x] Keep VPS purchase, paid services, Auth, Storage, SMTP, secrets, remote Supabase and real data closed.
-- [ ] Merge this gate only after frozen install, lint, unit/red-team tests, bare public V0 build/signature, production-mode V0 privacy/PWA and full existing Gate 1 CI are green.
+- [x] Pass frozen install, lint, unit/red-team tests, bare public V0 build/signature, production-mode V0 privacy/PWA and full existing Gate 1 CI on PR #50 head `caf126cdb021a518c10dde890a34df3f8f4abe5d`.
+- [x] Merge PR #50 normally as `351321f63a72028f2976d3279b5202c370ce14c1`.
 
 ## Current gate status
 
-The active implementation gate is **Founder external-sales + fraud + TR-backend preparation**, limited to the repository-only scope above.
+The **Founder external-sales + fraud + TR-backend preparation** implementation gate is complete and closed.
 
-No public activation is authorized. After the implementation PR is fully green and normally merged, this gate closes and the public V0 remains on its already accepted synthetic/mock deployment unless a separate Publish/Update gate is explicitly opened.
+There is no active public external-sales, backend, auth, real-data, infrastructure-purchase or publication gate. The accepted public V0 remains on its synthetic/mock deployment until a separate founder Publish/Update or real-data gate is explicitly opened.
 
-The next permitted non-code phase remains **anonymous, non-directive V0 user-observation preparation**. A real external-sales pilot or real backend/data phase requires a new founder gate.
+The next permitted phase is **anonymous, non-directive V0 user-observation preparation**. A real external-sales pilot or real backend/personal-data phase requires a new founder gate.
 
 ## Frozen until a separate explicit gate
 
