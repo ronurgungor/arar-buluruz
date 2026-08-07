@@ -1,6 +1,6 @@
 # Arar Buluruz — Backlog
 
-_Last updated: 2026-08-02, Europe/Istanbul_
+_Last updated: 2026-08-07, Europe/Istanbul_
 
 Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 
@@ -14,7 +14,6 @@ Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 - [x] Complete Gate 1 PostgreSQL migration, RLS, adapter and test preparation through PR #25 without remote backend activation.
 - [x] Preserve Gate 1 as a reusable technical asset rather than treating it as an active real pilot.
 - [x] Canonicalize D-019: **V0 — UX ve değer önerisi doğrulaması**.
-- [x] Freeze backend/provider switching until a measured D-019 trigger exists.
 - [x] Preserve provider-independent/no-rebuild boundaries.
 
 ## V0 and KVKK-min package
@@ -125,13 +124,29 @@ The program was completed under single ownership. Workstream B and Workstream C 
 - [x] Record the accepted combined publication in `docs/V0_QUALITY_COMPLETION_PUBLICATION.md`.
 - [x] Complete the V0 Quality Completion Program.
 
+## Founder external-sales + fraud + TR-backend preparation gate
+
+- [x] Canonicalize D-020: provider-neutral **External Sales Link / Haricî Satış Bağlantısı**; Shopier is only an independent third-party example/provider candidate, not an integration or partnership.
+- [x] Freeze the future single-field UX copy without rendering it in public V0.
+- [x] Add a dependency-free HTTPS URL validator with exact-host provider registry, canonical representation and three-state result model.
+- [x] Add fail-closed/manual-review handling for userinfo, encoded authority, IP literals, internal hosts, custom ports, IDNA/punycode ambiguity, overlong/malformed URLs and known shorteners.
+- [x] Keep URL syntax/security, provider identity, ownership, product match, moderation, complaint state and kill-switch as separate fraud dimensions.
+- [x] Keep new/changed links pending and prevent public CTA generation before explicit moderation approval.
+- [x] Add red-team unit coverage for the founder attack matrix.
+- [x] Preserve the public V0 boundary: no external-sales field, CTA, real URL, real transaction or personal-data collection.
+- [x] Canonicalize D-021: future real-data target is hybrid + Türkiye-located self-hosted Supabase on Linux VPS.
+- [x] Inspect and preserve the existing migration/RLS/REST assets without adding a remote migration or production database.
+- [x] Document the future environment contract, off-VPS backup/empty-server restore requirement and minimum production runbook.
+- [x] Keep VPS purchase, paid services, Auth, Storage, SMTP, secrets, remote Supabase and real data closed.
+- [ ] Merge this gate only after frozen install, lint, unit/red-team tests, bare public V0 build/signature, production-mode V0 privacy/PWA and full existing Gate 1 CI are green.
+
 ## Current gate status
 
-The **V0 Quality Completion Program is complete**. There is no active product, code, backend, auth, real-data, advertising, analytics, TWA, Play Store or paid-infrastructure implementation gate.
+The active implementation gate is **Founder external-sales + fraud + TR-backend preparation**, limited to the repository-only scope above.
 
-The next permitted phase is limited to **anonymous, non-directive V0 user-observation preparation** under the existing synthetic/mock and KVKK-min boundary.
+No public activation is authorized. After the implementation PR is fully green and normally merged, this gate closes and the public V0 remains on its already accepted synthetic/mock deployment unless a separate Publish/Update gate is explicitly opened.
 
-Do not open a new code or backend gate implicitly. Any consequential implementation, real-data pilot, backend activation or store-distribution step requires a separate explicit founder gate.
+The next permitted non-code phase remains **anonymous, non-directive V0 user-observation preparation**. A real external-sales pilot or real backend/data phase requires a new founder gate.
 
 ## Frozen until a separate explicit gate
 
@@ -139,37 +154,39 @@ Do not open a new code or backend gate implicitly. Any consequential implementat
 - [ ] Do not send a Lovable agent message for publication, rollback or diagnosis.
 - [ ] Do not create a remote Supabase project or apply a remote migration.
 - [ ] Do not connect secrets or environment values.
-- [ ] Do not enter real listings or personal data.
-- [ ] Do not add auth, Storage, Realtime or Edge Functions.
+- [ ] Do not enter real listings, external sales links or personal data.
+- [ ] Do not add/activate real auth, Storage, Realtime or Edge Functions.
 - [ ] Do not add advertising or analytics.
 - [ ] Do not add TWA, Android or Play Store packaging.
-- [ ] Do not buy paid or recurring infrastructure.
+- [ ] Do not buy a VPS, paid fraud/reputation service, SMS/KYC, monitoring SaaS or other recurring infrastructure.
+- [ ] Do not Publish/Update this repository implementation without a separate explicit founder gate.
 
-## D-019 backend reopening triggers
+## D-021 next production/backend gate triggers
 
-The backend decision may reopen only when at least one of these is real and measured:
+A future Türkiye self-hosted production POC gate may open when a real backend/personal-data pilot is close enough to justify infrastructure selection and cost. That gate must provide at minimum:
 
-- [ ] external user accounts;
-- [ ] real personal data;
-- [ ] an unworkable KVKK transfer model;
-- [ ] measured free-tier or uptime failure;
-- [ ] confirmed photo/storage need;
-- [ ] measured cost or technical necessity.
+- [ ] proposed Türkiye VPS provider/location and recurring price;
+- [ ] current pinned self-hosted Supabase version/resource requirements;
+- [ ] expected data/storage/load envelope;
+- [ ] minimum KVKK/privacy/data-flow map;
+- [ ] public/private network exposure plan;
+- [ ] off-VPS backup target and empty-server restore plan;
+- [ ] Auth/SMTP/Storage scope, if any;
+- [ ] rollback plan, 72-hour stability plan and operational owner.
 
-Without a trigger, do not recommend Supabase ↔ Türkiye self-managed switching. Supabase Free remains development/technical-validation only.
+Restore onto a completely empty environment is mandatory. Restore failure means production NO-GO.
 
 ## V0 evaluation boundary
 
 V0 may evaluate only product comprehension, search/discovery, listing cards/details, mobile/desktop usability, PWA installation and general interest.
 
-Do not report V0 as proving real listing supply, accounts, listing management, moderation sustainability, seller-contact operations or supply-demand loop formation.
+Do not report V0 as proving real listing supply, accounts, listing management, moderation sustainability, seller-contact operations, external-sales safety or supply-demand loop formation.
 
 ## Operating rules
 
-- D-018's routine-executor assignment for the V0 Quality Completion Program is fulfilled.
+- D-018 remains the routine-execution authority inside an explicitly opened founder gate.
 - Only one code writer operates at a time; no parallel Lovable agent or assistant mutation is permitted.
 - Git history is never force-pushed or rewritten.
-- The accepted publication is identity-bound to `df74dfd5a81be237da2d5471301279e5c657a2af` and deployment `b45fe46d-7824-428b-9925-2806eb8b6f72`.
-- Anonymous observation preparation must remain non-directive and must not collect personal data.
-- No new implementation or publication proceeds without a separate explicit founder gate.
+- The accepted public V0 publication remains identity-bound to `df74dfd5a81be237da2d5471301279e5c657a2af` and deployment `b45fe46d-7824-428b-9925-2806eb8b6f72` until separately republished.
+- External-sales security preparation must remain feature-disabled in public V0.
 - No secret, credential, real user record or unnecessary personal data belongs in repository documentation.

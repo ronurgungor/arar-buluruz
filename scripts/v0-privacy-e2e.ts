@@ -114,6 +114,14 @@ try {
     (await page.locator("form, input, textarea, select").count()) === 0,
     "Public V0 listing demo collected data.",
   );
+  assert(
+    (await page.getByText("Satış bağlantısı (isteğe bağlı)", { exact: true }).count()) === 0,
+    "Public V0 exposed the feature-disabled external sales link field.",
+  );
+  assert(
+    (await page.getByText("Satıcının Shopier sayfasına git", { exact: true }).count()) === 0,
+    "Public V0 exposed an external Shopier CTA.",
+  );
 
   await gotoOk(page, "/giris");
   await page.getByText("Pilot sürecinde giriş bulunmuyor.", { exact: true }).waitFor();
