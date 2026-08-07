@@ -1,6 +1,6 @@
 # Arar Buluruz — Decision Log
 
-_Last updated: 2026-07-31, Europe/Istanbul_
+_Last updated: 2026-08-07, Europe/Istanbul_
 
 This is an append-oriented record of consequential product, technical and operating decisions. It preserves **what was decided, why, alternatives rejected and what would cause reconsideration**.
 
@@ -55,11 +55,11 @@ Each new entry should include:
 ## D-005 — Founder-owned future backend
 
 - **Date:** 2026-07-28
-- **Status:** Ownership principle active; Supabase provider commitment superseded by D-019
+- **Status:** Ownership principle active; provider target now superseded by D-021
 - **Decision:** Any future backend must be founder-controlled; Lovable backend remains disabled. The earlier Supabase-specific provider commitment is no longer an active next-step decision.
 - **Rationale:** Preserve account, billing, administrator, data and provider-exit control.
 - **Requirements:** GitHub-canonical schema/migrations; reviewed RLS, auth, backups, region, retention/KVKK, secrets and export/restore.
-- **Review trigger:** Backend/provider selection reopens only under D-019 triggers.
+- **Review trigger:** Future backend activation follows D-021 and still requires a separate founder gate.
 
 ## D-006 — One active code writer
 
@@ -155,14 +155,14 @@ Each new entry should include:
 ## D-016 — Reduced founder-operated persistence pilot
 
 - **Date:** 2026-07-30
-- **Status:** Gate 1 technical asset retained; real-pilot sequencing frozen and superseded by D-019
+- **Status:** Gate 1 technical asset retained; real-pilot sequencing frozen and superseded by D-019/D-021
 - **Decision:** The completed Gate 1 work remains a reusable PostgreSQL migration/RLS/adapter validation asset. It is not the active product phase and does not authorize a real pilot.
 - **Data model:** The prepared `listings` migration contains `id`, `title`, `description`, `price_amount`, `province`, `district`, `seller_display_name`, `search_keywords`, `status`, `created_at`, `updated_at`, `published_at`, `expires_at` and `unpublished_at`. Initial status values are `draft`, `published` and `unpublished`.
 - **Public boundary:** The prepared RLS visibility condition is `status = 'published' and published_at <= now() and expires_at > now()`. Anonymous/public INSERT, UPDATE and DELETE remain prohibited.
 - **Canonical schema:** Schema and security changes remain migration-canonical in GitHub.
 - **Approval boundary:** No remote Supabase organization/project, environment connection, real data or pilot publication is authorized.
 - **Evidence:** PR #25; head `1d9d0f6112464e5078d90df510488f7a786cddef`; normal merge commit `994b8b1705d52434be0c000093a052fa0e519542`; frozen Bun install, lint, unit/build, clean local reset, 22/22 pgTAP, REST/RLS and desktop/mobile E2E passed before merge.
-- **Review trigger:** Only the D-019 backend-reopening triggers.
+- **Review trigger:** D-021's separately approved production/backend POC gate.
 
 ## D-017 — Web-first delivery and minimal PWA boundary
 
@@ -188,7 +188,7 @@ Each new entry should include:
 ## D-019 — V0 UX/value validation freeze and no-rebuild guardrails
 
 - **Date:** 2026-07-31
-- **Status:** Active; supersedes D-005, D-016 and D-017 where they conflict
+- **Status:** Active except the backend-provider freeze is superseded by D-021
 - **Phase:** **V0 — UX ve değer önerisi doğrulaması.**
 - **Validated only:** Product comprehension; search and listing discovery; listing cards and detail pages; mobile/desktop usability; minimal-PWA installability; general user interest.
 - **Not validated:** Real listing supply; account creation; listing ownership/management; sustainable moderation; seller-contact operations; or a functioning supply-demand loop.
@@ -196,7 +196,35 @@ Each new entry should include:
 - **Minimal-PWA boundary:** Only manifest, durable identity, correct icons, installability and a safe/honest offline-error screen. No push, background sync, full offline listings, cache-first dynamic listings, auth, real backend, advertising, analytics, TWA or Play Store.
 - **No-rebuild architecture:** PostgreSQL migrations remain canonical; UI/domain rules remain provider-independent; Supabase calls stay behind adapters; future user identity uses an internal UUID rather than email/phone foreign keys; no choice may block a future nullable `listings.owner_user_id`; JWT/auth-claim shape stays out of the domain model; and no Supabase Storage, Realtime, Edge Functions or provider-heavy feature is added before backend selection.
 - **Supabase Free:** May be considered only for development and technical verification. It is not assumed to be reliable production infrastructure for a real external-user pilot.
-- **Backend freeze:** Do not reopen or recommend Supabase ↔ Türkiye self-managed switching unless at least one trigger exists: external user accounts; real personal data; an unworkable KVKK transfer model; measured free-tier/uptime failure; confirmed photo/storage need; or measured cost/technical necessity.
-- **Execution:** Prepare and validate the narrow minimal-PWA package independently. Merge remains routine after evidence; Lovable Publish/Update requires one separate founder approval.
+- **Backend freeze:** Historical freeze superseded only by D-021's target-architecture decision. Production activation, paid infrastructure, real data, Auth, Storage and secrets remain separately gated.
+- **Execution:** V0 stays synthetic/mock unless a separate founder gate explicitly changes the live-data phase.
 - **Rationale:** Validate the value proposition at zero incremental service cost while preserving reusable migration/domain boundaries and avoiding premature backend churn.
-- **Rollback:** Revert the minimal-PWA implementation commit/merge; no remote backend, secret, personal data or provider resource is created.
+- **Rollback:** Revert the affected implementation merge; no remote backend, secret or personal data is created merely by architectural preparation.
+
+## D-020 — Provider-neutral external sales link and fraud baseline
+
+- **Date:** 2026-08-07
+- **Status:** Active architecture/security baseline; public V0 activation closed
+- **Decision:** The product concept is **External Sales Link / Haricî Satış Bağlantısı**, not a Shopier integration. Sellers may eventually provide one optional HTTPS link to an allowed third-party sales/payment/shipping service or their own sales page. Arar Buluruz does not collect/hold transaction funds, access Shopier accounts, use Shopier API/OAuth, import orders or buy shipping labels.
+- **UX contract:** One field only: label `Satış bağlantısı (isteğe bağlı)`; persistent helper `Shopier gibi bir ödeme/kargo hizmetini veya kendi satış sayfanızı kullanıyorsanız bağlantısını ekleyebilirsiniz.`; placeholder `Örn. https://shopier.com/...`. No provider dropdown or second Shopier question.
+- **Shopier boundary:** Plain nominative text only. No logo/badge/colors, partnership/support wording, “güvenli satın al”, verified-seller/product claim, escrow equivalence, API or OAuth. The initial exact-host registry is limited to `shopier.com` and `www.shopier.com`; unverified Shopier hosts are not guessed.
+- **Security classification:** Non-empty candidates produce only `INVALID`, `KNOWN_PROVIDER_CANDIDATE` or `CUSTOM_DOMAIN_REQUIRES_REVIEW`. No result is called safe or verified.
+- **Fraud model:** URL syntax/security, provider identity, URL ownership, listing/product match, moderation, complaints and kill-switch remain separate dimensions. New/changed links start pending; public CTA requires explicit moderation approval.
+- **Current implementation boundary:** Dependency-free pure URL validation/canonicalization and tests are authorized. Scraping, server-side arbitrary fetch, redirect crawling, DNS resolution, reputation SaaS, ownership proof, real external links, real transactions and public activation are not.
+- **Rationale:** Preserve provider neutrality, prevent hostname spoofing/SSRF-adjacent design mistakes and create a reusable duplicate/moderation boundary before real data or payments exist.
+- **Evidence:** `docs/EXTERNAL_SALES_LINK_SECURITY.md` plus the dedicated unit/red-team suite; merge/PR identity to be appended in the implementation report.
+- **Review trigger:** Shopier written response; a real external-sales pilot; a need to add another provider; or a backend/moderation gate that introduces persistent links.
+
+## D-021 — Hybrid architecture with Türkiye self-hosted Supabase target
+
+- **Date:** 2026-08-07
+- **Status:** Target architecture active; paid production/backend activation closed
+- **Decision:** When real personal data/backend production is justified, the target data plane is self-hosted Supabase on a Türkiye-located Linux VPS. Frontend/CI layers that do not carry personal data may remain on external services as appropriate. A personal computer is not a production server.
+- **Supersession:** This decision supersedes only D-019's provider-selection freeze. D-019's synthetic V0, no-real-data, KVKK-min, no-rebuild and separate-publication boundaries remain active until separately changed.
+- **Preparation now:** Reuse canonical PostgreSQL migrations, RLS tests, REST adapter boundaries, synthetic data and zero-cost CI/local Supabase assets. Document compatibility, environment contract, backup/restore and minimum runbook. Do not create unnecessary infra code.
+- **Production POC gate:** Before real production, a separately approved Türkiye VPS POC must prove Docker startup/reboot recovery, migrations, applicable Auth/RLS/Storage checks, HTTPS, non-public Postgres and Studio/admin, off-VPS backup, restore onto a completely empty environment, log rotation, uptime alerting, rate limiting, rollback and at least 72 hours of stability. Restore failure is automatic NO-GO.
+- **Cost boundary:** No VPS, SMS, KYC, fraud SaaS, monitoring SaaS, paid database/storage or other recurring infrastructure in this gate. Security, mandatory law/KVKK and data-loss prevention cannot be waived to preserve zero cost.
+- **Legal boundary:** Before real personal data/users, minimum KVKK/privacy notice, processing purpose, retention/deletion and provider/data-flow mapping must be ready. Paid legal advice, if needed, receives a separate founder gate.
+- **Rationale:** Keep cash cost near zero before market entry while preserving a migration-canonical, provider-independent path to a Türkiye-hosted data plane without rebuilding the application domain.
+- **Evidence:** `docs/TR_SELF_HOSTED_SUPABASE_PREP.md`; the current Gate 1 migration/RLS/REST assets remain unchanged by this decision.
+- **Next founder trigger:** A real backend/personal-data pilot close enough to justify selecting and paying for a Türkiye VPS and running the mandatory production POC.
