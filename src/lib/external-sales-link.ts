@@ -101,7 +101,9 @@ const SHOPIER_PROVIDER: ExternalSalesProviderCandidate = {
 };
 
 const PROVIDER_BY_EXACT_HOST = new Map<string, ExternalSalesProviderCandidate>(
-  SHOPIER_EXACT_HOSTS.map((host) => [host, SHOPIER_PROVIDER]),
+  SHOPIER_EXACT_HOSTS.map(
+    (host): [string, ExternalSalesProviderCandidate] => [host, SHOPIER_PROVIDER],
+  ),
 );
 
 function invalid(reason: ExternalSalesInvalidReason): ExternalSalesLinkInvalid {
