@@ -109,10 +109,11 @@ try {
   );
 
   await gotoOk(page, "/ilan-ver");
-  await page.getByRole("heading", { level: 1, name: "İlan verme demosu" }).waitFor();
+  await page.getByRole("heading", { level: 1, name: "Demo ilan oluşturma" }).waitFor();
+  assert((await page.locator("form").count()) === 1, "Public V0 demo listing form is missing.");
   assert(
-    (await page.locator("form, input, textarea, select").count()) === 0,
-    "Public V0 listing demo collected data.",
+    (await page.locator('input[type="email"], input[type="tel"]').count()) === 0,
+    "Public V0 demo listing form exposed email or phone input.",
   );
   assert(
     (await page.getByText("Satış bağlantısı (isteğe bağlı)", { exact: true }).count()) === 0,
@@ -129,6 +130,8 @@ try {
 
   await gotoOk(page, "/gizlilik");
   await page.getByRole("heading", { level: 1, name: "Gizlilik" }).waitFor();
+  await page.getByText("yalnız tarayıcıda geçici olarak kullanılır", { exact: false }).waitFor();
+  await page.getByText("sunucuya göndermez, kaydetmez veya yayınlamaz", { exact: false }).waitFor();
 
   console.log("V0 privacy: validating fail-closed error forwarding");
   await gotoOk(page, "/?__v0_error_boundary_probe=enabled");
