@@ -261,6 +261,11 @@ begin
     end if;
   end if;
 
+  -- Do not silently normalize an unknown operator control value; the CHECK must reject it.
+  if new.public_cta_decision not in ('block_public_cta', 'allow_public_cta') then
+    return new;
+  end if;
+
   -- Defense in depth: a complaint/review downgrade must never leave the CTA switch open.
   if not (
     new.ownership_status = 'confirmed'
