@@ -95,7 +95,10 @@ try {
   console.log("V0 search: exposing the full Istanbul catalog independent from mock supply");
   await gotoOk(page, searchUrl({ q: "", il: "İstanbul", ilce: ALL_DISTRICTS, sirala: "yeni" }));
   const istanbulOptions = await districtSelect.locator("option").allTextContents();
-  assert(istanbulOptions.length === 40, `Istanbul district selector has ${istanbulOptions.length - 1} districts instead of 39.`);
+  assert(
+    istanbulOptions.length === 40,
+    `Istanbul district selector has ${istanbulOptions.length - 1} districts instead of 39.`,
+  );
   for (const district of ["Adalar", "Kadıköy", "Şişli", "Zeytinburnu"]) {
     assert(istanbulOptions.includes(district), `Istanbul catalog is missing ${district}.`);
   }
@@ -136,7 +139,10 @@ try {
   console.log("V0 search: selecting a catalog district with zero mock supply");
   await gotoOk(page, searchUrl({ q: "", il: "İstanbul", ilce: "Adalar", sirala: "yeni" }));
   await page.getByText("Sonuç bulunamadı", { exact: true }).waitFor();
-  assert((await districtSelect.inputValue()) === "Adalar", "Zero-supply district was not preserved.");
+  assert(
+    (await districtSelect.inputValue()) === "Adalar",
+    "Zero-supply district was not preserved.",
+  );
   assert(
     new URL(page.url()).searchParams.get("ilce") === "Adalar",
     "Zero-supply district disappeared from canonical URL state.",
