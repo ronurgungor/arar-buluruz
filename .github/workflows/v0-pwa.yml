@@ -150,6 +150,12 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/v0-pwa-browsers
         run: bunx playwright install --with-deps chromium
 
+      - name: Run bounded PWA hang diagnostic
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/v0-pwa-browsers
+          BASE_URL: http://127.0.0.1:4174
+        run: timeout 90s bun scripts/v0-pwa-diagnostic.ts
+
       - name: Run Chromium manifest/service-worker readiness and offline validation
         env:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/v0-pwa-browsers
