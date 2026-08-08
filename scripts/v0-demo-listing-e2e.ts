@@ -171,12 +171,15 @@ try {
   console.log("V0 demo listing: rejecting oversized photo without network or preview allocation");
   const photoInput = page.getByTestId("demo-photo-input");
   const createdBeforeHuge = backProbe?.created ?? 0;
+  const oversizedPhotoPath = path.join(resultsDir, "too-large.jpg");
+  fs.writeFileSync(oversizedPhotoPath, Buffer.alloc(1));
+  fs.truncateSync(oversizedPhotoPath, 8 * 1024 * 1024 + 1);
   trackInteractionRequests = true;
-  await photoInput.setInputFiles({
-    name: "too-large.jpg",
-    mimeType: "image/jpeg",
-    buffer: Buffer.alloc(8 * 1024 * 1024 + 1),
-  });
+  try {
+    await photoInput.setInputFiles(oversizedPhotoPath);
+  } finally {
+    fs.rmSync(oversizedPhotoPath, { force: true });
+  }
   await page.getByText("Fotoğraf en fazla 8 MB olabilir.", { exact: true }).waitFor();
   const hugeProbe = await page.evaluate(
     () =>
