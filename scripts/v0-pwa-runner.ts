@@ -65,10 +65,7 @@ async function waitForProcessExit(
   process: ReturnType<typeof Bun.spawn>,
   timeoutMs: number,
 ): Promise<number | null> {
-  return Promise.race([
-    process.exited,
-    Bun.sleep(timeoutMs).then(() => null),
-  ]);
+  return Promise.race([process.exited, Bun.sleep(timeoutMs).then(() => null)]);
 }
 
 async function terminateProcess(process: ReturnType<typeof Bun.spawn>) {
