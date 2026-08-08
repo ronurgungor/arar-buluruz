@@ -1,9 +1,5 @@
 export const LISTING_PHOTO_MAX_BYTES = 8 * 1024 * 1024;
-export const LISTING_PHOTO_ALLOWED_MIME_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-] as const;
+export const LISTING_PHOTO_ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
 export type ListingPhotoMimeType = (typeof LISTING_PHOTO_ALLOWED_MIME_TYPES)[number];
 export type ListingPhotoValidationError =
@@ -12,8 +8,7 @@ export type ListingPhotoValidationError =
   | "FILE_TOO_LARGE"
   | "CONTENT_SIGNATURE_MISMATCH";
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const EXTENSION_BY_MIME: Record<ListingPhotoMimeType, string> = {
   "image/jpeg": "jpg",
