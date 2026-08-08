@@ -89,8 +89,14 @@ try {
   assert((await page.locator("form").count()) === 1, "Public V0 demo listing form is missing.");
   assert((await page.getByLabel("Başlık").count()) === 1, "Demo title field is missing.");
   assert((await page.getByLabel("Fiyat (TL)").count()) === 1, "Demo price field is missing.");
-  assert((await page.getByLabel("İl").count()) === 1, "Demo city field is missing.");
-  assert((await page.getByLabel("İlçe").count()) === 1, "Demo district field is missing.");
+  assert(
+    (await page.getByRole("combobox", { name: "İl", exact: true }).count()) === 1,
+    "Demo city field is missing or not uniquely accessible as İl.",
+  );
+  assert(
+    (await page.getByRole("combobox", { name: "İlçe", exact: true }).count()) === 1,
+    "Demo district field is missing or not uniquely accessible as İlçe.",
+  );
   assert((await page.getByLabel("Açıklama").count()) === 1, "Demo description field is missing.");
   assert(
     (await page.getByTestId("demo-photo-input").count()) === 1,
@@ -199,8 +205,8 @@ try {
 
   await page.getByLabel("Başlık").fill("Demo masa ilanı");
   await page.getByLabel("Fiyat (TL)").fill("12abc");
-  await page.getByLabel("İl").selectOption("İstanbul");
-  await page.getByLabel("İlçe").selectOption("Adalar");
+  await page.getByRole("combobox", { name: "İl", exact: true }).selectOption("İstanbul");
+  await page.getByRole("combobox", { name: "İlçe", exact: true }).selectOption("Adalar");
   await page.getByLabel("Açıklama").fill("Bu içerik yalnız demo form davranışını test eder.");
   await page.getByRole("button", { name: "Demo ilan oluştur" }).click();
   await page.getByText("Geçerli bir fiyat girin.", { exact: true }).waitFor();
@@ -263,9 +269,12 @@ try {
     (await page.getByLabel("Fiyat (TL)").inputValue()) === "",
     "Reload restored demo price input.",
   );
-  assert((await page.getByLabel("İl").inputValue()) === "", "Reload restored demo city input.");
   assert(
-    (await page.getByLabel("İlçe").isDisabled()) === true,
+    (await page.getByRole("combobox", { name: "İl", exact: true }).inputValue()) === "",
+    "Reload restored demo city input.",
+  );
+  assert(
+    (await page.getByRole("combobox", { name: "İlçe", exact: true }).isDisabled()) === true,
     "Reload did not reset district dependency.",
   );
 
@@ -296,16 +305,25 @@ mobilePage.setDefaultNavigationTimeout(15_000);
 try {
   await gotoOk(mobilePage, "/ilan-ver");
   await mobilePage.getByRole("heading", { level: 1, name: "Demo ilan oluşturma" }).waitFor();
-  await mobilePage.getByLabel("İl").selectOption("Tekirdağ");
-  await mobilePage.getByLabel("İlçe").selectOption("Çorlu");
+  await mobilePage.getByRole("combobox", { name: "İl", exact: true }).selectOption("Tekirdağ");
+  await mobilePage.getByRole("combobox", { name: "İlçe", exact: true }).selectOption("Çorlu");
 
-  for (const label of ["Başlık", "Fiyat (TL)", "İl", "İlçe", "Açıklama"]) {
+  for (const label of ["Başlık", "Fiyat (TL)", "Açıklama"]) {
     const field = mobilePage.getByLabel(label);
     await field.scrollIntoViewIfNeeded();
     await field.focus();
     const box = await field.boundingBox();
     assert(box !== null, `${label} has no mobile bounding box.`);
     assert(box.x >= 0 && box.x + box.width <= 390, `${label} overflows the 390px viewport.`);
+  }
+
+  for (const name of ["İl", "İlçe"]) {
+    const field = mobilePage.getByRole("combobox", { name, exact: true });
+    await field.scrollIntoViewIfNeeded();
+    await field.focus();
+    const box = await field.boundingBox();
+    assert(box !== null, `${name} has no mobile bounding box.`);
+    assert(box.x >= 0 && box.x + box.width <= 390, `${name} overflows the 390px viewport.`);
   }
 
   assert(
