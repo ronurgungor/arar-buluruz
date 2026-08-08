@@ -66,9 +66,12 @@ const pendingInsert = await fetch(`${baseUrl}/rest/v1/listings`, {
 });
 await requireOk(pendingInsert, "service-role pending listing insert");
 
-const hiddenPending = await fetch(`${baseUrl}/rest/v1/listings?id=eq.${listingId}&select=id,title`, {
-  headers: apiHeaders(anonKey),
-});
+const hiddenPending = await fetch(
+  `${baseUrl}/rest/v1/listings?id=eq.${listingId}&select=id,title`,
+  {
+    headers: apiHeaders(anonKey),
+  },
+);
 await requireOk(hiddenPending, "anonymous pending-listing read");
 if (((await hiddenPending.json()) as unknown[]).length !== 0) {
   throw new Error("Anonymous Data API exposed the pending synthetic listing.");
@@ -197,13 +200,19 @@ const anonPrivateRead = await fetch(`${storageBase}/object/listing_photos/${enco
 });
 await requireRejected(anonPrivateRead, "anonymous private-bucket read");
 
-const signedUrlResponse = await fetch(`${storageBase}/object/sign/listing_photos/${encodedPhotoPath}`, {
-  method: "POST",
-  headers: apiHeaders(serviceRoleKey),
-  body: JSON.stringify({ expiresIn: 60 }),
-});
+const signedUrlResponse = await fetch(
+  `${storageBase}/object/sign/listing_photos/${encodedPhotoPath}`,
+  {
+    method: "POST",
+    headers: apiHeaders(serviceRoleKey),
+    body: JSON.stringify({ expiresIn: 60 }),
+  },
+);
 await requireOk(signedUrlResponse, "trusted signed-URL creation");
-const signedPayload = (await signedUrlResponse.json()) as { signedURL?: string; signedUrl?: string };
+const signedPayload = (await signedUrlResponse.json()) as {
+  signedURL?: string;
+  signedUrl?: string;
+};
 const signedPath = signedPayload.signedURL ?? signedPayload.signedUrl;
 if (!signedPath) throw new Error("Storage did not return a signed URL.");
 
