@@ -2,6 +2,9 @@ import path from "node:path";
 
 const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:4174";
 const serverEntry = path.resolve(".output/server/index.mjs");
+const browserSuiteTimeoutMs = 30_000;
+const processExitTimeoutMs = 5_000;
+const pwaOnly = process.env.ARAR_V0_PWA_ONLY === "enabled";
 
 if (!(await Bun.file(serverEntry).exists())) {
   throw new Error("The V0 production preview output is missing.");
@@ -58,6 +61,51 @@ async function startServer() {
   await waitForServerReady();
 }
 
+async function waitForProcessExit(
+  process: ReturnType<typeof Bun.spawn>,
+  timeoutMs: number,
+): Promise<number | null> {
+  return Promise.race([
+    process.exited,
+    Bun.sleep(timeoutMs).then(() => null),
+  ]);
+}
+
+async function terminateProcess(process: ReturnType<typeof Bun.spawn>) {
+  if (process.exitCode !== null) return;
+
+  process.kill();
+  const gracefulExit = await waitForProcessExit(process, processExitTimeoutMs);
+  if (gracefulExit !== null || process.exitCode !== null) return;
+
+  process.kill(9);
+  const forcedExit = await waitForProcessExit(process, processExitTimeoutMs);
+  if (forcedExit === null && process.exitCode === null) {
+    throw new Error("A V0 browser validation process could not be terminated.");
+  }
+}
+
+async function runBrowserSuite(script: string, label: string) {
+  const child = Bun.spawn(["bun", path.resolve(script)], {
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      BASE_URL: baseUrl,
+    },
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+
+  const exitCode = await waitForProcessExit(child, browserSuiteTimeoutMs);
+  if (exitCode === null) {
+    await terminateProcess(child);
+    throw new Error(`${label} exceeded ${browserSuiteTimeoutMs}ms.`);
+  }
+  if (exitCode !== 0) {
+    throw new Error(`${label} failed with exit code ${exitCode}.`);
+  }
+}
+
 async function stopServer() {
   const activeServer = server;
   if (!activeServer || activeServer.exitCode !== null) {
@@ -65,17 +113,7 @@ async function stopServer() {
     return;
   }
 
-  activeServer.kill();
-  const exited = await Promise.race([
-    activeServer.exited.then(() => true),
-    Bun.sleep(5_000).then(() => false),
-  ]);
-
-  if (!exited && activeServer.exitCode === null) {
-    activeServer.kill(9);
-    await activeServer.exited;
-  }
-
+  await terminateProcess(activeServer);
   server = undefined;
   await waitForServerDown();
 }
@@ -84,9 +122,13 @@ Object.assign(globalThis, { __stopV0Server: stopServer });
 
 try {
   await startServer();
-  await import("./v0-privacy-e2e.ts");
-  await import("./v0-search-e2e.ts");
-  await import("./v0-demo-listing-e2e.ts");
+
+  if (!pwaOnly) {
+    await runBrowserSuite("scripts/v0-privacy-e2e.ts", "V0 privacy browser validation");
+    await runBrowserSuite("scripts/v0-search-e2e.ts", "V0 search browser validation");
+    await runBrowserSuite("scripts/v0-demo-listing-e2e.ts", "V0 demo listing browser validation");
+  }
+
   await import("./v0-pwa-e2e.ts");
 } finally {
   await stopServer();
