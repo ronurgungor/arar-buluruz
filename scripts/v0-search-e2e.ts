@@ -17,6 +17,40 @@ async function gotoOk(page: Page, url: string) {
   assert(response?.ok() === true, `${url} returned HTTP ${response?.status() ?? "unknown"}.`);
 }
 
+async function assertChevronInset(page: Page, label: string) {
+  const select = page.getByLabel(label);
+  const metrics = await select.evaluate((element) => {
+    const selectElement = element as HTMLSelectElement;
+    const selectRect = selectElement.getBoundingClientRect();
+    const icon = selectElement.parentElement?.querySelector("svg");
+    const iconRect = icon?.getBoundingClientRect();
+    const styles = getComputedStyle(selectElement);
+    return {
+      appearance: styles.appearance,
+      paddingRight: Number.parseFloat(styles.paddingRight),
+      iconRightInset: iconRect ? selectRect.right - iconRect.right : -1,
+    };
+  });
+
+  assert(metrics.appearance === "none", `${label} still uses the browser-edge native chevron.`);
+  assert(metrics.paddingRight >= 36, `${label} does not reserve enough text/icon spacing.`);
+  assert(
+    metrics.iconRightInset >= 10 && metrics.iconRightInset <= 14,
+    `${label} chevron has an unexpected right inset: ${metrics.iconRightInset}px.`,
+  );
+}
+
+async function assertNoHorizontalOverflow(page: Page, route: string) {
+  const dimensions = await page.evaluate(() => ({
+    viewport: window.innerWidth,
+    document: document.documentElement.scrollWidth,
+  }));
+  assert(
+    dimensions.document <= dimensions.viewport,
+    `${route} overflows horizontally: ${JSON.stringify(dimensions)}`,
+  );
+}
+
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
 const page = await context.newPage();
@@ -55,6 +89,32 @@ try {
     "Invalid district was not clamped.",
   );
   assert(await districtSelect.isDisabled(), "District remained enabled after city clamp.");
+  await assertChevronInset(page, "Konum");
+  await assertChevronInset(page, "İlçe");
+
+  console.log("V0 search: exposing the full Istanbul catalog independent from mock supply");
+  await gotoOk(page, searchUrl({ q: "", il: "İstanbul", ilce: ALL_DISTRICTS, sirala: "yeni" }));
+  const istanbulOptions = await districtSelect.locator("option").allTextContents();
+  assert(istanbulOptions.length === 40, `Istanbul district selector has ${istanbulOptions.length - 1} districts instead of 39.`);
+  for (const district of ["Adalar", "Kadıköy", "Şişli", "Zeytinburnu"]) {
+    assert(istanbulOptions.includes(district), `Istanbul catalog is missing ${district}.`);
+  }
+
+  console.log("V0 search: validating at least three additional province catalogs");
+  const provinceChecks: Array<[string, number, string]> = [
+    ["Ankara", 25, "Keçiören"],
+    ["İzmir", 30, "Konak"],
+    ["Tekirdağ", 11, "Süleymanpaşa"],
+  ];
+  for (const [city, expectedCount, expectedDistrict] of provinceChecks) {
+    await gotoOk(page, searchUrl({ q: "", il: city, ilce: ALL_DISTRICTS, sirala: "yeni" }));
+    const options = await districtSelect.locator("option").allTextContents();
+    assert(
+      options.length === expectedCount + 1,
+      `${city} district selector has ${options.length - 1} districts instead of ${expectedCount}.`,
+    );
+    assert(options.includes(expectedDistrict), `${city} catalog is missing ${expectedDistrict}.`);
+  }
 
   console.log("V0 search: canonicalizing a city-incompatible district");
   await gotoOk(page, searchUrl({ q: "", il: "Konya", ilce: "Karşıyaka", sirala: "yeni" }));
@@ -72,9 +132,58 @@ try {
   await page.getByText("Sahibinden temiz bahçe traktörü", { exact: true }).waitFor();
   assert((await citySelect.inputValue()) === "Konya", "Valid city changed unexpectedly.");
   assert((await districtSelect.inputValue()) === "Çumra", "Valid district changed unexpectedly.");
+
+  console.log("V0 search: selecting a catalog district with zero mock supply");
+  await gotoOk(page, searchUrl({ q: "", il: "İstanbul", ilce: "Adalar", sirala: "yeni" }));
+  await page.getByText("Sonuç bulunamadı", { exact: true }).waitFor();
+  assert((await districtSelect.inputValue()) === "Adalar", "Zero-supply district was not preserved.");
+  assert(
+    new URL(page.url()).searchParams.get("ilce") === "Adalar",
+    "Zero-supply district disappeared from canonical URL state.",
+  );
+
+  await districtSelect.selectOption(ALL_DISTRICTS);
+  await page.waitForURL((url) => url.searchParams.get("ilce") === ALL_DISTRICTS);
+  await page.getByText("2+1 kiralık daire", { exact: true }).waitFor();
+
+  console.log("V0 search: resetting district when province changes");
+  await districtSelect.selectOption("Kadıköy");
+  await page.waitForURL((url) => url.searchParams.get("ilce") === "Kadıköy");
+  await citySelect.selectOption("Konya");
+  await page.waitForURL((url) => {
+    return url.searchParams.get("il") === "Konya" && url.searchParams.get("ilce") === ALL_DISTRICTS;
+  });
+  assert(
+    (await districtSelect.inputValue()) === ALL_DISTRICTS,
+    "Changing province did not reset the district selection.",
+  );
+  await assertNoHorizontalOverflow(page, "/ara desktop");
 } finally {
   await context.close();
+}
+
+console.log("V0 search: validating 390x844 location controls");
+const mobileContext = await browser.newContext({
+  viewport: { width: 390, height: 844 },
+  isMobile: true,
+  hasTouch: true,
+});
+const mobilePage = await mobileContext.newPage();
+mobilePage.setDefaultTimeout(15_000);
+mobilePage.setDefaultNavigationTimeout(15_000);
+
+try {
+  await gotoOk(
+    mobilePage,
+    searchUrl({ q: "", il: "İstanbul", ilce: ALL_DISTRICTS, sirala: "yeni" }),
+  );
+  await mobilePage.getByLabel("İlçe").waitFor();
+  await assertChevronInset(mobilePage, "Konum");
+  await assertChevronInset(mobilePage, "İlçe");
+  await assertNoHorizontalOverflow(mobilePage, "/ara mobile location controls");
+} finally {
+  await mobileContext.close();
   await browser.close();
 }
 
-console.log("V0 search and URL browser validation passed.");
+console.log("V0 search, location catalog and URL browser validation passed.");
