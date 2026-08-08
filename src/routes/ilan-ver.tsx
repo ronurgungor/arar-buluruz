@@ -253,6 +253,7 @@ function DemoListingForm() {
             <span className="relative mt-1 block">
               <select
                 required
+                aria-label="İl"
                 value={city}
                 onChange={(event) => {
                   setCity(event.target.value);
@@ -279,6 +280,7 @@ function DemoListingForm() {
             <span className="relative mt-1 block">
               <select
                 required
+                aria-label="İlçe"
                 value={district}
                 disabled={!city}
                 onChange={(event) => setDistrict(event.target.value)}
