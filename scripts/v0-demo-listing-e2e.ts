@@ -20,6 +20,7 @@ async function readPersistence(page: Page) {
   return page.evaluate(async () => ({
     localStorageKeys: Object.keys(localStorage),
     sessionStorageKeys: Object.keys(sessionStorage),
+    sessionStorageEntries: Object.entries(sessionStorage),
     indexedDbNames:
       typeof indexedDB.databases === "function"
         ? (await indexedDB.databases()).map((database) => database.name ?? "")
@@ -288,7 +289,7 @@ try {
   );
   assert(
     persistenceAfterReload.sessionStorageKeys.length === 0,
-    "Reload found persisted sessionStorage.",
+    `Reload found persisted sessionStorage: ${JSON.stringify(persistenceAfterReload.sessionStorageEntries)}.`,
   );
   assert(persistenceAfterReload.indexedDbNames.length === 0, "Reload found persisted IndexedDB.");
 } finally {
