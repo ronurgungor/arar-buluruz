@@ -28,6 +28,60 @@ async function readPersistence(page: Page) {
   }));
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function assertOnlyRouterScrollRestoration(entries: Array<[string, string]>) {
+  for (const [key, value] of entries) {
+    assert(
+      /^tsr-scroll-restoration-v1_\d+$/.test(key),
+      `Reload found unexpected sessionStorage key: ${key}.`,
+    );
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      throw new Error(`Router scroll-restoration sessionStorage is not valid JSON: ${key}.`);
+    }
+
+    assert(isRecord(parsed), `Router scroll-restoration payload is not an object: ${key}.`);
+    for (const routeState of Object.values(parsed)) {
+      assert(isRecord(routeState), `Router scroll-restoration route state is invalid: ${key}.`);
+      for (const scrollState of Object.values(routeState)) {
+        assert(isRecord(scrollState), `Router scroll-restoration target state is invalid: ${key}.`);
+        const scrollKeys = Object.keys(scrollState);
+        assert(
+          scrollKeys.every((scrollKey) => scrollKey === "scrollX" || scrollKey === "scrollY"),
+          `Router scroll-restoration payload contains non-scroll data: ${key}.`,
+        );
+        assert(
+          Object.values(scrollState).every(
+            (coordinate) => typeof coordinate === "number" && Number.isFinite(coordinate),
+          ),
+          `Router scroll-restoration payload contains an invalid coordinate: ${key}.`,
+        );
+      }
+    }
+  }
+
+  const serializedEntries = JSON.stringify(entries);
+  for (const demoValue of [
+    "Demo masa ilanı",
+    "1250,50",
+    "İstanbul",
+    "Adalar",
+    "Bu içerik yalnız demo form davranışını test eder.",
+    "demo-photo.webp",
+  ]) {
+    assert(
+      !serializedEntries.includes(demoValue),
+      `Reload persisted demo form data in sessionStorage: ${demoValue}.`,
+    );
+  }
+}
+
 async function assertNoHorizontalOverflow(page: Page, route: string) {
   const dimensions = await page.evaluate(() => ({
     viewport: window.innerWidth,
@@ -287,10 +341,7 @@ try {
     persistenceAfterReload.localStorageKeys.length === 0,
     "Reload found persisted localStorage.",
   );
-  assert(
-    persistenceAfterReload.sessionStorageKeys.length === 0,
-    `Reload found persisted sessionStorage: ${JSON.stringify(persistenceAfterReload.sessionStorageEntries)}.`,
-  );
+  assertOnlyRouterScrollRestoration(persistenceAfterReload.sessionStorageEntries);
   assert(persistenceAfterReload.indexedDbNames.length === 0, "Reload found persisted IndexedDB.");
 } finally {
   await context.close();
