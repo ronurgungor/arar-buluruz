@@ -31,7 +31,11 @@ async function bounded<T>(label: string, operation: () => Promise<T>): Promise<T
 
 async function closeBounded(label: string, operation: () => Promise<void>) {
   try {
-    await Promise.race([operation(), Bun.sleep(5_000)]);
+    const closed = await Promise.race([
+      operation().then(() => true),
+      Bun.sleep(5_000).then(() => false),
+    ]);
+    console.log(`V0 PWA DIAG CLEANUP ${closed ? "PASS" : "TIMEOUT"}: ${label}`);
   } catch (error) {
     console.error(`V0 PWA DIAG cleanup error: ${label}`, error);
   }
@@ -148,7 +152,11 @@ async function stopServer() {
     server.exited.then(() => true),
     Bun.sleep(5_000).then(() => false),
   ]);
-  if (!exited && server.exitCode === null) server.kill(9);
+  console.log(`V0 PWA DIAG CLEANUP ${exited ? "PASS" : "TIMEOUT"}: server exit`);
+  if (!exited && server.exitCode === null) {
+    server.kill(9);
+    await Promise.race([server.exited, Bun.sleep(2_000)]);
+  }
 }
 
 let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
@@ -192,6 +200,102 @@ try {
   );
   await bounded("search tracking markup", () => assertNoTrackingMarkup(page));
   await bounded("search overflow", () => assertNoHorizontalOverflow(page));
+
+  const filterUrl = `${baseUrl}/ara?q=&il=T%C3%BCm+T%C3%BCrkiye&ilce=T%C3%BCm+il%C3%A7eler&sirala=yeni`;
+  await bounded("filter goto", () => gotoOk(page, filterUrl));
+  const citySelect = page.getByLabel("Konum");
+  const districtSelect = page.getByLabel("İlçe");
+  await bounded("filter district visible", () => districtSelect.waitFor());
+  await bounded("filter district disabled", async () => {
+    assert(await districtSelect.isDisabled(), "District should start disabled.");
+  });
+  await bounded("filter select Konya", () => citySelect.selectOption({ label: "Konya" }));
+  await bounded("filter Konya URL", () =>
+    page.waitForURL(
+      (url) =>
+        url.searchParams.get("il") === "Konya" && url.searchParams.get("ilce") === "Tüm ilçeler",
+    ),
+  );
+  await bounded("filter select Çumra", () => districtSelect.selectOption({ label: "Çumra" }));
+  await bounded("filter Çumra URL", () =>
+    page.waitForURL((url) => url.searchParams.get("ilce") === "Çumra"),
+  );
+  await bounded("filter Konya listing", () =>
+    page.getByText("Sahibinden temiz bahçe traktörü", { exact: true }).waitFor(),
+  );
+  await bounded("filter select İzmir", () => citySelect.selectOption({ label: "İzmir" }));
+  await bounded("filter İzmir URL", () =>
+    page.waitForURL(
+      (url) =>
+        url.searchParams.get("il") === "İzmir" && url.searchParams.get("ilce") === "Tüm ilçeler",
+    ),
+  );
+  await bounded("filter İzmir listing", () =>
+    page.getByText("Ahşap yemek masası ve 4 sandalye", { exact: true }).waitFor(),
+  );
+  await bounded("filter overflow", () => assertNoHorizontalOverflow(page));
+
+  const detailHref = await bounded("detail href", () =>
+    page.locator('a[href^="/ilan/"]').first().getAttribute("href"),
+  );
+  assert(detailHref, "Diagnostic search did not expose a listing-detail link.");
+  await bounded("detail goto", () => gotoOk(page, `${baseUrl}${detailHref}`));
+  await bounded("detail tracking", () => assertNoTrackingMarkup(page));
+  await bounded("detail overflow", () => assertNoHorizontalOverflow(page));
+
+  const listingId = detailHref.split("/").filter(Boolean).at(-1);
+  assert(listingId, "Diagnostic listing ID is missing.");
+  await bounded("complaint goto", () => gotoOk(page, `${baseUrl}/sikayet/${listingId}`));
+  await bounded("complaint heading", () =>
+    page.getByRole("heading", { level: 1, name: "Şikâyet demosu" }).waitFor(),
+  );
+  await bounded("complaint controls", async () => {
+    assert((await page.locator("form, input, textarea, select").count()) === 0, "Complaint controls exist.");
+  });
+  await bounded("complaint tracking", () => assertNoTrackingMarkup(page));
+
+  await bounded("demo listing goto", () => gotoOk(page, `${baseUrl}/ilan-ver`));
+  await bounded("demo listing heading", () =>
+    page.getByRole("heading", { level: 1, name: "Demo ilan oluşturma" }).waitFor(),
+  );
+  await bounded("demo listing form count", async () => {
+    assert((await page.locator("form").count()) === 1, "Demo listing form is missing.");
+  });
+  await bounded("demo listing contact controls", async () => {
+    assert(
+      (await page.locator('input[type="email"], input[type="tel"]').count()) === 0,
+      "Demo listing contact controls exist.",
+    );
+  });
+  await bounded("demo listing sales field", async () => {
+    assert(
+      (await page.getByText("Satış bağlantısı (isteğe bağlı)", { exact: true }).count()) === 0,
+      "Frozen sales field exists.",
+    );
+  });
+  await bounded("demo listing tracking", () => assertNoTrackingMarkup(page));
+  await bounded("demo listing overflow", () => assertNoHorizontalOverflow(page));
+
+  await bounded("login goto", () => gotoOk(page, `${baseUrl}/giris`));
+  await bounded("login message", () =>
+    page.getByText("Pilot sürecinde giriş bulunmuyor.", { exact: true }).waitFor(),
+  );
+  await bounded("login inputs", async () => {
+    assert((await page.locator("input").count()) === 0, "Login inputs exist.");
+  });
+  await bounded("login tracking", () => assertNoTrackingMarkup(page));
+
+  await bounded("privacy goto", () => gotoOk(page, `${baseUrl}/gizlilik`));
+  await bounded("privacy heading", () =>
+    page.getByRole("heading", { level: 1, name: "Gizlilik" }).waitFor(),
+  );
+  await bounded("privacy tracking", () => assertNoTrackingMarkup(page));
+  await bounded("privacy overflow", () => assertNoHorizontalOverflow(page));
+  await bounded("privacy screenshot", () =>
+    page
+      .screenshot({ path: "test-results/v0-pwa/diagnostic-privacy.png", fullPage: true })
+      .then(() => undefined),
+  );
 
   console.log("V0 PWA DIAG COMPLETE");
 } finally {
