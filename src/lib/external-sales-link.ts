@@ -76,17 +76,18 @@ export type ExternalSalesLinkValidation = ExternalSalesLinkInvalid | ExternalSal
 export type ExternalSalesOwnershipStatus = "not_checked" | "pending" | "confirmed" | "failed";
 export type ExternalSalesListingMatchStatus = "not_checked" | "pending" | "matched" | "mismatch";
 export type ExternalSalesModerationStatus = "pending" | "approved" | "rejected";
-export type ExternalSalesComplaintStatus = "none" | "open" | "restricted";
-export type ExternalSalesKillSwitchStatus = "enabled" | "disabled";
+export type ExternalSalesComplaintStatus = "clear" | "open" | "restricted";
+export type ExternalSalesPublicCtaDecision = "block_public_cta" | "allow_public_cta";
 
 export type ExternalSalesFraudDimensions = {
-  urlSyntaxSecurity: ExternalSalesLinkClassification;
+  canonicalUrl: string;
+  urlSyntaxSecurity: Exclude<ExternalSalesLinkClassification, "INVALID">;
   providerIdentification: "shopier_candidate" | "custom_domain";
   urlOwnership: ExternalSalesOwnershipStatus;
   listingProductMatch: ExternalSalesListingMatchStatus;
   moderationStatus: ExternalSalesModerationStatus;
   complaintStatus: ExternalSalesComplaintStatus;
-  killSwitch: ExternalSalesKillSwitchStatus;
+  publicCtaDecision: ExternalSalesPublicCtaDecision;
 };
 
 export type ExternalSalesCta = {
@@ -244,21 +245,56 @@ export function createPendingExternalSalesFraudDimensions(
   validation: ExternalSalesLinkValid,
 ): ExternalSalesFraudDimensions {
   return {
+    canonicalUrl: validation.canonicalUrl,
     urlSyntaxSecurity: validation.classification,
     providerIdentification: validation.provider ? "shopier_candidate" : "custom_domain",
     urlOwnership: "not_checked",
     listingProductMatch: "not_checked",
     moderationStatus: "pending",
-    complaintStatus: "none",
-    killSwitch: "enabled",
+    complaintStatus: "clear",
+    publicCtaDecision: "block_public_cta",
   };
+}
+
+export function resetExternalSalesReviewForLinkChange(
+  validation: ExternalSalesLinkValid,
+): ExternalSalesFraudDimensions {
+  return createPendingExternalSalesFraudDimensions(validation);
+}
+
+export function areEquivalentExternalSalesLinks(left: string, right: string): boolean {
+  const leftValidation = validateExternalSalesLink(left);
+  const rightValidation = validateExternalSalesLink(right);
+
+  if (leftValidation.classification === "INVALID" || rightValidation.classification === "INVALID") {
+    return false;
+  }
+
+  return leftValidation.canonicalUrl === rightValidation.canonicalUrl;
+}
+
+export function isExternalSalesCtaEligible(
+  validation: ExternalSalesLinkValid,
+  dimensions: ExternalSalesFraudDimensions,
+): boolean {
+  return (
+    dimensions.canonicalUrl === validation.canonicalUrl &&
+    dimensions.urlSyntaxSecurity === validation.classification &&
+    dimensions.providerIdentification ===
+      (validation.provider ? "shopier_candidate" : "custom_domain") &&
+    dimensions.urlOwnership === "confirmed" &&
+    dimensions.listingProductMatch === "matched" &&
+    dimensions.moderationStatus === "approved" &&
+    dimensions.complaintStatus === "clear" &&
+    dimensions.publicCtaDecision === "allow_public_cta"
+  );
 }
 
 export function getExternalSalesCta(
   validation: ExternalSalesLinkValid,
-  moderationStatus: ExternalSalesModerationStatus,
+  dimensions: ExternalSalesFraudDimensions,
 ): ExternalSalesCta | null {
-  if (moderationStatus !== "approved") return null;
+  if (!isExternalSalesCtaEligible(validation, dimensions)) return null;
 
   if (validation.provider?.id === "shopier") {
     return {

@@ -1,10 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import {
   EXTERNAL_SALES_LINK_UI_COPY,
+  areEquivalentExternalSalesLinks,
   createPendingExternalSalesFraudDimensions,
   getExternalSalesCta,
+  isExternalSalesCtaEligible,
+  resetExternalSalesReviewForLinkChange,
   validateExternalSalesLink,
   validateOptionalExternalSalesLink,
+  type ExternalSalesFraudDimensions,
 } from "./external-sales-link";
 
 function expectInvalid(input: string, reason?: string) {
@@ -13,6 +17,19 @@ function expectInvalid(input: string, reason?: string) {
   if (reason && result.classification === "INVALID") expect(result.reason).toBe(reason);
   expect(result.provider).toBeNull();
   expect(result.canonicalUrl).toBeNull();
+}
+
+function fullyApprovedState(canonicalUrl: string): ExternalSalesFraudDimensions {
+  return {
+    canonicalUrl,
+    urlSyntaxSecurity: "KNOWN_PROVIDER_CANDIDATE",
+    providerIdentification: "shopier_candidate",
+    urlOwnership: "confirmed",
+    listingProductMatch: "matched",
+    moderationStatus: "approved",
+    complaintStatus: "clear",
+    publicCtaDecision: "allow_public_cta",
+  };
 }
 
 describe("external sales UX contract", () => {
@@ -70,34 +87,114 @@ describe("external sales provider classification and canonicalization", () => {
     });
   });
 
-  test("never exposes an external CTA before moderation approval", () => {
+  test("treats normalized equivalents as the same canonical URL without globally banning reuse", () => {
+    expect(
+      areEquivalentExternalSalesLinks(
+        "https://WWW.SHOPIER.COM.:443/item#section",
+        "https://shopier.com/item",
+      ),
+    ).toBe(true);
+    expect(
+      areEquivalentExternalSalesLinks(
+        "https://shopier.com/item?id=1",
+        "https://shopier.com/item?id=2",
+      ),
+    ).toBe(false);
+    expect(areEquivalentExternalSalesLinks("javascript:alert(1)", "https://shopier.com/item")).toBe(
+      false,
+    );
+  });
+});
+
+describe("external sales public CTA fail-closed policy", () => {
+  test("pending state blocks CTA and uses semantically explicit public control naming", () => {
     const result = validateExternalSalesLink("https://shopier.com/store/item");
-    expect(result.classification).toBe("KNOWN_PROVIDER_CANDIDATE");
     if (result.classification === "INVALID") throw new Error("Expected a valid candidate.");
 
-    expect(getExternalSalesCta(result, "pending")).toBeNull();
-    expect(getExternalSalesCta(result, "rejected")).toBeNull();
-    expect(getExternalSalesCta(result, "approved")).toEqual({
+    const pending = createPendingExternalSalesFraudDimensions(result);
+    expect(pending).toEqual({
+      canonicalUrl: "https://shopier.com/store/item",
+      urlSyntaxSecurity: "KNOWN_PROVIDER_CANDIDATE",
+      providerIdentification: "shopier_candidate",
+      urlOwnership: "not_checked",
+      listingProductMatch: "not_checked",
+      moderationStatus: "pending",
+      complaintStatus: "clear",
+      publicCtaDecision: "block_public_cta",
+    });
+    expect(JSON.stringify(pending)).not.toContain('"killSwitch"');
+    expect(getExternalSalesCta(result, pending)).toBeNull();
+  });
+
+  test("requires every eligibility dimension before producing a Shopier CTA", () => {
+    const result = validateExternalSalesLink("https://shopier.com/store/item");
+    if (result.classification === "INVALID") throw new Error("Expected a valid candidate.");
+
+    const approved = fullyApprovedState(result.canonicalUrl);
+    expect(isExternalSalesCtaEligible(result, approved)).toBe(true);
+    expect(getExternalSalesCta(result, approved)).toEqual({
       label: "Satıcının Shopier sayfasına git",
       helper: "Haricî site: shopier.com",
       href: "https://shopier.com/store/item",
     });
+
+    const blockedStates: ExternalSalesFraudDimensions[] = [
+      { ...approved, canonicalUrl: "https://shopier.com/other" },
+      { ...approved, providerIdentification: "custom_domain" },
+      { ...approved, urlOwnership: "pending" },
+      { ...approved, listingProductMatch: "mismatch" },
+      { ...approved, moderationStatus: "pending" },
+      { ...approved, complaintStatus: "open" },
+      { ...approved, complaintStatus: "restricted" },
+      { ...approved, publicCtaDecision: "block_public_cta" },
+    ];
+
+    for (const state of blockedStates) {
+      expect(isExternalSalesCtaEligible(result, state)).toBe(false);
+      expect(getExternalSalesCta(result, state)).toBeNull();
+    }
   });
 
-  test("keeps fraud dimensions separate instead of producing a verified boolean", () => {
-    const result = validateExternalSalesLink("https://seller.example.com/item");
-    expect(result.classification).toBe("CUSTOM_DOMAIN_REQUIRES_REVIEW");
-    if (result.classification === "INVALID") throw new Error("Expected a review candidate.");
+  test("requires the same full-state policy for a generic seller page", () => {
+    const result = validateExternalSalesLink("https://seller.example.org/product/42");
+    if (result.classification === "INVALID") throw new Error("Expected a valid candidate.");
 
-    expect(createPendingExternalSalesFraudDimensions(result)).toEqual({
-      urlSyntaxSecurity: "CUSTOM_DOMAIN_REQUIRES_REVIEW",
+    const approved: ExternalSalesFraudDimensions = {
+      canonicalUrl: result.canonicalUrl,
+      urlSyntaxSecurity: result.classification,
       providerIdentification: "custom_domain",
-      urlOwnership: "not_checked",
-      listingProductMatch: "not_checked",
-      moderationStatus: "pending",
-      complaintStatus: "none",
-      killSwitch: "enabled",
+      urlOwnership: "confirmed",
+      listingProductMatch: "matched",
+      moderationStatus: "approved",
+      complaintStatus: "clear",
+      publicCtaDecision: "allow_public_cta",
+    };
+
+    expect(getExternalSalesCta(result, approved)).toEqual({
+      label: "Satıcının satış sayfasına git",
+      helper: "Haricî site: seller.example.org",
+      href: "https://seller.example.org/product/42",
     });
+  });
+
+  test("link change resets every review dimension back to fail-closed", () => {
+    const first = validateExternalSalesLink("https://shopier.com/store/item-a");
+    const changed = validateExternalSalesLink("https://shopier.com/store/item-b");
+    if (first.classification === "INVALID" || changed.classification === "INVALID") {
+      throw new Error("Expected valid candidates.");
+    }
+
+    const oldApproved = fullyApprovedState(first.canonicalUrl);
+    expect(getExternalSalesCta(first, oldApproved)).not.toBeNull();
+
+    const reset = resetExternalSalesReviewForLinkChange(changed);
+    expect(reset.canonicalUrl).toBe(changed.canonicalUrl);
+    expect(reset.urlOwnership).toBe("not_checked");
+    expect(reset.listingProductMatch).toBe("not_checked");
+    expect(reset.moderationStatus).toBe("pending");
+    expect(reset.complaintStatus).toBe("clear");
+    expect(reset.publicCtaDecision).toBe("block_public_cta");
+    expect(getExternalSalesCta(changed, reset)).toBeNull();
   });
 });
 
