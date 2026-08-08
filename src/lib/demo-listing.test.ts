@@ -27,8 +27,8 @@ describe("demo listing local photo guard", () => {
 
   test("rejects unsupported types and oversized files before preview creation", () => {
     expect(validateDemoPhoto({ type: "image/svg+xml", size: 1024 })).toContain("JPEG");
-    expect(
-      validateDemoPhoto({ type: "image/jpeg", size: MAX_DEMO_PHOTO_BYTES + 1 }),
-    ).toContain("8 MB");
+    expect(validateDemoPhoto({ type: "image/jpeg", size: MAX_DEMO_PHOTO_BYTES + 1 })).toContain(
+      "8 MB",
+    );
   });
 });
