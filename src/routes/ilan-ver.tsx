@@ -179,7 +179,9 @@ function DemoListingForm() {
                   className="aspect-[4/3] w-full object-cover"
                 />
                 <div className="flex min-w-0 items-center justify-between gap-3 px-3 py-2">
-                  <span className="min-w-0 truncate text-xs text-muted-foreground">{photoName}</span>
+                  <span className="min-w-0 truncate text-xs text-muted-foreground">
+                    {photoName}
+                  </span>
                   <button
                     type="button"
                     onClick={clearPhoto}
@@ -197,7 +199,9 @@ function DemoListingForm() {
               >
                 <ImagePlus aria-hidden className="h-6 w-6 text-muted-foreground" />
                 <span className="mt-2 text-sm font-semibold">Fotoğraf seç</span>
-                <span className="mt-1 text-xs text-muted-foreground">JPEG, PNG veya WebP · en fazla 8 MB</span>
+                <span className="mt-1 text-xs text-muted-foreground">
+                  JPEG, PNG veya WebP · en fazla 8 MB
+                </span>
               </label>
             )}
             <p className="mt-2 text-xs text-muted-foreground">
