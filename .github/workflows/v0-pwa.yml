@@ -160,6 +160,7 @@ jobs:
         env:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/v0-pwa-browsers
           BASE_URL: http://127.0.0.1:4174
+          DEBUG: pw:api
         run: timeout 120s bun scripts/v0-pwa-runner.ts
 
       - name: Run isolated Chromium mobile core-flow validation
