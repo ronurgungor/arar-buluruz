@@ -250,7 +250,10 @@ try {
     page.getByRole("heading", { level: 1, name: "Şikâyet demosu" }).waitFor(),
   );
   await bounded("complaint controls", async () => {
-    assert((await page.locator("form, input, textarea, select").count()) === 0, "Complaint controls exist.");
+    assert(
+      (await page.locator("form, input, textarea, select").count()) === 0,
+      "Complaint controls exist.",
+    );
   });
   await bounded("complaint tracking", () => assertNoTrackingMarkup(page));
 
