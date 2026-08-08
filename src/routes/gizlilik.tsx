@@ -34,9 +34,11 @@ function PrivacyPage() {
           <section>
             <h2 className="font-semibold">Bu sürümde toplanmayan veriler</h2>
             <p className="mt-2 text-muted-foreground">
-              Gerçek hesap açılmaz. Gerçek ilan, telefon, e-posta veya iletişim formu verisi
-              alınmaz. Reklam ve analytics kullanılmaz. Zorunlu olmayan çerez veya tracker bulunmaz;
-              bu nedenle çerez onay bandı gösterilmez.
+              Demo ilan oluşturma ekranına yazdığınız başlık, fiyat, konum ve açıklama ile
+              seçtiğiniz yerel fotoğraf yalnız tarayıcıda geçici olarak kullanılır; uygulama bu
+              içeriği sunucuya göndermez, kaydetmez veya yayınlamaz. Gerçek hesap açılmaz. Telefon,
+              e-posta veya iletişim formu verisi alınmaz. Reklam ve analytics kullanılmaz. Zorunlu
+              olmayan çerez veya tracker bulunmaz; bu nedenle çerez onay bandı gösterilmez.
             </p>
           </section>
 

@@ -150,6 +150,20 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/v0-pwa-browsers
         run: bunx playwright install --with-deps chromium
 
+      - name: Run focused Chromium PWA validation
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/v0-pwa-browsers
+          BASE_URL: http://127.0.0.1:4174
+          ARAR_V0_PWA_ONLY: enabled
+        run: timeout 120s bun scripts/v0-pwa-runner.ts
+
+      - name: Repeat focused Chromium PWA validation
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/v0-pwa-browsers
+          BASE_URL: http://127.0.0.1:4174
+          ARAR_V0_PWA_ONLY: enabled
+        run: timeout 120s bun scripts/v0-pwa-runner.ts
+
       - name: Run Chromium manifest/service-worker readiness and offline validation
         env:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/v0-pwa-browsers

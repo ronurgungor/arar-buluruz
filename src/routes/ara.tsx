@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search as SearchIcon } from "lucide-react";
+import { ChevronDown, Search as SearchIcon } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
-import { cities, formatPrice } from "@/data/listings";
+import { formatPrice } from "@/data/listings";
+import { locationCities } from "@/data/turkiye-locations";
 import {
   ALL_CITIES,
   ALL_DISTRICTS,
@@ -43,6 +44,9 @@ const sortLabels: Record<NonNullable<Search["sirala"]>, string> = {
   yakin: "Yakın (örnek)",
 };
 
+const locationSelectClass =
+  "h-11 w-full appearance-none rounded-full border border-border bg-card pl-3 pr-9 text-sm font-medium outline-none focus:border-primary disabled:opacity-50";
+
 function SearchPage() {
   const { q, il, ilce, sirala } = Route.useSearch();
   const listingData = Route.useLoaderData();
@@ -57,14 +61,10 @@ function SearchPage() {
   const { city: activeCity, district: activeDistrict } = clampListingLocation({
     city: il,
     district: ilce,
-    validCities: cities,
-    listings: listingData.listings,
+    validCities: locationCities,
   });
   const hasCity = activeCity !== ALL_CITIES;
-  const districts = useMemo(
-    () => getDistrictsForCity(listingData.listings, activeCity),
-    [activeCity, listingData.listings],
-  );
+  const districts = useMemo(() => getDistrictsForCity(activeCity), [activeCity]);
 
   useEffect(() => {
     setTerm(q ?? "");
@@ -148,28 +148,40 @@ function SearchPage() {
         </form>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <select
-            value={activeCity}
-            onChange={(event) => setSearch({ il: event.target.value, ilce: ALL_DISTRICTS })}
-            aria-label="Konum"
-            className="h-11 max-w-[45%] rounded-full border border-border bg-card px-3 text-sm font-medium outline-none focus:border-primary"
-          >
-            {cities.map((city) => (
-              <option key={city}>{city}</option>
-            ))}
-          </select>
-          <select
-            value={activeDistrict}
-            disabled={!hasCity}
-            onChange={(event) => setSearch({ ilce: event.target.value })}
-            aria-label="İlçe"
-            className="h-11 max-w-[45%] rounded-full border border-border bg-card px-3 text-sm font-medium outline-none focus:border-primary disabled:opacity-50"
-          >
-            <option>{ALL_DISTRICTS}</option>
-            {districts.map((district) => (
-              <option key={district}>{district}</option>
-            ))}
-          </select>
+          <div className="relative min-w-0 max-w-[45%]">
+            <select
+              value={activeCity}
+              onChange={(event) => setSearch({ il: event.target.value, ilce: ALL_DISTRICTS })}
+              aria-label="Konum"
+              className={locationSelectClass}
+            >
+              {locationCities.map((city) => (
+                <option key={city}>{city}</option>
+              ))}
+            </select>
+            <ChevronDown
+              aria-hidden
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            />
+          </div>
+          <div className="relative min-w-0 max-w-[45%]">
+            <select
+              value={activeDistrict}
+              disabled={!hasCity}
+              onChange={(event) => setSearch({ ilce: event.target.value })}
+              aria-label="İlçe"
+              className={locationSelectClass}
+            >
+              <option>{ALL_DISTRICTS}</option>
+              {districts.map((district) => (
+                <option key={district}>{district}</option>
+              ))}
+            </select>
+            <ChevronDown
+              aria-hidden
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            />
+          </div>
 
           {availableSorts.map((key) => (
             <button

@@ -1,10 +1,10 @@
+import { getDistrictsForCity as getCatalogDistrictsForCity } from "@/data/turkiye-locations";
 import type { ListingView } from "./public-listings";
 
 export const ALL_CITIES = "Tüm Türkiye";
 export const ALL_DISTRICTS = "Tüm ilçeler";
 
 type SearchableListing = Pick<ListingView, "title" | "description" | "keywords">;
-type LocatedListing = Pick<ListingView, "city" | "district">;
 
 const TURKISH_CHARACTER_FOLD: Record<string, string> = {
   ç: "c",
@@ -42,29 +42,19 @@ export function listingMatchesQuery(listing: SearchableListing, query: string): 
   return queryTokens.every((token) => listingWords.some((word) => word.startsWith(token)));
 }
 
-export function getDistrictsForCity(listings: readonly LocatedListing[], city: string): string[] {
+export function getDistrictsForCity(city: string): readonly string[] {
   if (city === ALL_CITIES) return [];
-
-  return [
-    ...new Set(
-      listings
-        .filter((listing) => listing.city === city)
-        .map((listing) => listing.district)
-        .filter(Boolean),
-    ),
-  ].sort((left, right) => left.localeCompare(right, "tr"));
+  return getCatalogDistrictsForCity(city);
 }
 
 export function clampListingLocation({
   city,
   district,
   validCities,
-  listings,
 }: {
   city?: string;
   district?: string;
   validCities: readonly string[];
-  listings: readonly LocatedListing[];
 }): { city: string; district: string } {
   const canonicalCity = city && validCities.includes(city) ? city : ALL_CITIES;
 
@@ -72,7 +62,7 @@ export function clampListingLocation({
     return { city: canonicalCity, district: ALL_DISTRICTS };
   }
 
-  const validDistricts = getDistrictsForCity(listings, canonicalCity);
+  const validDistricts = getDistrictsForCity(canonicalCity);
   const canonicalDistrict =
     district && (district === ALL_DISTRICTS || validDistricts.includes(district))
       ? district

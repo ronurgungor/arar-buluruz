@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { locationCities } from "@/data/turkiye-locations";
 import { renderErrorPage } from "./error-page";
 import {
   ALL_CITIES,
@@ -72,8 +73,6 @@ const searchListings = [
   },
 ];
 
-const validCities = [ALL_CITIES, "Ankara", "Bursa", "Gaziantep", "İstanbul", "İzmir", "Konya"];
-
 describe("search normalization and prefix matching", () => {
   test("folds Turkish characters, case and repeated whitespace consistently", () => {
     expect(normalizeSearchText("  ÇORLU   ŞİŞLİ  ")).toBe("corlu sisli");
@@ -108,21 +107,19 @@ describe("listing location URL clamp", () => {
       clampListingLocation({
         city: "Atlantis",
         district: "Merkez",
-        validCities,
-        listings: searchListings,
+        validCities: locationCities,
       }),
     ).toEqual({ city: ALL_CITIES, district: ALL_DISTRICTS });
   });
 
-  test("clamps an invalid district for a valid city", () => {
+  test("preserves a catalog district even when mock supply is zero", () => {
     expect(
       clampListingLocation({
         city: "Konya",
-        district: "Merkez",
-        validCities,
-        listings: searchListings,
+        district: "Selçuklu",
+        validCities: locationCities,
       }),
-    ).toEqual({ city: "Konya", district: ALL_DISTRICTS });
+    ).toEqual({ city: "Konya", district: "Selçuklu" });
   });
 
   test("clamps a district that belongs to another city", () => {
@@ -130,8 +127,7 @@ describe("listing location URL clamp", () => {
       clampListingLocation({
         city: "Konya",
         district: "Çankaya",
-        validCities,
-        listings: searchListings,
+        validCities: locationCities,
       }),
     ).toEqual({ city: "Konya", district: ALL_DISTRICTS });
   });
@@ -141,8 +137,7 @@ describe("listing location URL clamp", () => {
       clampListingLocation({
         city: "Konya",
         district: "Çumra",
-        validCities,
-        listings: searchListings,
+        validCities: locationCities,
       }),
     ).toEqual({ city: "Konya", district: "Çumra" });
   });

@@ -288,15 +288,20 @@ async function runDesktop() {
     );
     await assertNoTrackingMarkup(page, `/sikayet/${listingId}`);
 
-    console.log("V0 PWA: validating disabled real operations");
+    console.log("V0 PWA: validating demo listing route without real operations");
     await gotoOk(page, `${baseUrl}/ilan-ver`);
-    await page.getByRole("heading", { level: 1, name: "İlan verme demosu" }).waitFor();
-    assert((await page.locator("form").count()) === 0, "V0 rendered a listing form.");
+    await page.getByRole("heading", { level: 1, name: "Demo ilan oluşturma" }).waitFor();
+    assert((await page.locator("form").count()) === 1, "V0 demo listing form is missing.");
     assert(
-      (await page.locator("input, textarea, select").count()) === 0,
-      "V0 collected listing data.",
+      (await page.locator('input[type="email"], input[type="tel"]').count()) === 0,
+      "V0 demo listing form exposed email or phone input.",
+    );
+    assert(
+      (await page.getByText("Satış bağlantısı (isteğe bağlı)", { exact: true }).count()) === 0,
+      "V0 demo listing form exposed the frozen external-sales field.",
     );
     await assertNoTrackingMarkup(page, "/ilan-ver");
+    await assertNoHorizontalOverflow(page, "/ilan-ver");
 
     await gotoOk(page, `${baseUrl}/giris`);
     await page.getByText("Pilot sürecinde giriş bulunmuyor.", { exact: true }).waitFor();
@@ -307,6 +312,7 @@ async function runDesktop() {
     await gotoOk(page, `${baseUrl}/gizlilik`);
     await page.getByRole("heading", { level: 1, name: "Gizlilik" }).waitFor();
     await page.getByText("synthetic/mock ilanlarla", { exact: false }).waitFor();
+    await page.getByText("yalnız tarayıcıda geçici olarak kullanılır", { exact: false }).waitFor();
     await page.getByText("Gerçek hesap açılmaz", { exact: false }).waitFor();
     await page.getByText("Reklam ve analytics kullanılmaz", { exact: false }).waitFor();
     await page.getByText("Zorunlu olmayan çerez veya tracker", { exact: false }).waitFor();
