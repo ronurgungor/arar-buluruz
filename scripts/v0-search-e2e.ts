@@ -150,7 +150,7 @@ try {
 
   await districtSelect.selectOption(ALL_DISTRICTS);
   await page.waitForURL((url) => url.searchParams.get("ilce") === ALL_DISTRICTS);
-  await page.getByText("2+1 kiralık daire", { exact: true }).waitFor();
+  await page.getByText("2+1 kiralık daire, asansörlü", { exact: true }).waitFor();
 
   console.log("V0 search: resetting district when province changes");
   await districtSelect.selectOption("Kadıköy");
