@@ -20,9 +20,10 @@ async function readPersistence(page: Page) {
   return page.evaluate(async () => ({
     localStorageKeys: Object.keys(localStorage),
     sessionStorageKeys: Object.keys(sessionStorage),
-    indexedDbNames: typeof indexedDB.databases === "function"
-      ? (await indexedDB.databases()).map((database) => database.name ?? "")
-      : [],
+    indexedDbNames:
+      typeof indexedDB.databases === "function"
+        ? (await indexedDB.databases()).map((database) => database.name ?? "")
+        : [],
   }));
 }
 
@@ -91,14 +92,32 @@ try {
   assert((await page.getByLabel("İl").count()) === 1, "Demo city field is missing.");
   assert((await page.getByLabel("İlçe").count()) === 1, "Demo district field is missing.");
   assert((await page.getByLabel("Açıklama").count()) === 1, "Demo description field is missing.");
-  assert((await page.getByTestId("demo-photo-input").count()) === 1, "Demo photo field is missing.");
-  assert((await page.locator('input[type="email"], input[type="tel"]').count()) === 0, "Demo form exposed email or phone input.");
-  assert((await page.getByText(/ad[- ]?soyad|kategori|satış bağlantısı/i).count()) === 0, "Demo form exposed a forbidden personal/category/external-sales field.");
-  assert((await page.getByText(/ilan(?:ınız)? yayınlandı/i).count()) === 0, "Demo form contains misleading published language.");
+  assert(
+    (await page.getByTestId("demo-photo-input").count()) === 1,
+    "Demo photo field is missing.",
+  );
+  assert(
+    (await page.locator('input[type="email"], input[type="tel"]').count()) === 0,
+    "Demo form exposed email or phone input.",
+  );
+  assert(
+    (await page.getByText(/ad[- ]?soyad|kategori|satış bağlantısı/i).count()) === 0,
+    "Demo form exposed a forbidden personal/category/external-sales field.",
+  );
+  assert(
+    (await page.getByText(/ilan(?:ınız)? yayınlandı/i).count()) === 0,
+    "Demo form contains misleading published language.",
+  );
 
   const initialPersistence = await readPersistence(page);
-  assert(initialPersistence.localStorageKeys.length === 0, "Demo route started with localStorage data.");
-  assert(initialPersistence.sessionStorageKeys.length === 0, "Demo route started with sessionStorage data.");
+  assert(
+    initialPersistence.localStorageKeys.length === 0,
+    "Demo route started with localStorage data.",
+  );
+  assert(
+    initialPersistence.sessionStorageKeys.length === 0,
+    "Demo route started with sessionStorage data.",
+  );
   assert(initialPersistence.indexedDbNames.length === 0, "Demo route started with IndexedDB data.");
 
   console.log("V0 demo listing: validating back-navigation reset and object URL cleanup");
@@ -109,21 +128,39 @@ try {
     buffer: Buffer.from("local preview only"),
   });
   await page.getByAltText("Seçilen demo fotoğraf önizlemesi").waitFor();
-  const firstPreviewSrc = await page.getByAltText("Seçilen demo fotoğraf önizlemesi").getAttribute("src");
-  assert(firstPreviewSrc?.startsWith("blob:") === true, "Demo photo preview was not browser-local blob data.");
+  const firstPreviewSrc = await page
+    .getByAltText("Seçilen demo fotoğraf önizlemesi")
+    .getAttribute("src");
+  assert(
+    firstPreviewSrc?.startsWith("blob:") === true,
+    "Demo photo preview was not browser-local blob data.",
+  );
   await page.getByRole("link", { name: "Arar Buluruz ana sayfa" }).click();
   await page.waitForURL(new URL("/", baseUrl).toString());
   await page.goBack({ waitUntil: "domcontentloaded" });
   await page.getByRole("heading", { level: 1, name: "Demo ilan oluşturma" }).waitFor();
-  assert((await page.getByLabel("Başlık").inputValue()) === "", "Back navigation restored demo title state.");
-  assert((await page.getByAltText("Seçilen demo fotoğraf önizlemesi").count()) === 0, "Back navigation restored a demo photo preview.");
-
-  const backProbe = await page.evaluate(() =>
-    (window as typeof window & { __demoObjectUrlProbe?: { created: number; revoked: number } })
-      .__demoObjectUrlProbe,
+  assert(
+    (await page.getByLabel("Başlık").inputValue()) === "",
+    "Back navigation restored demo title state.",
   );
-  assert(backProbe?.created === 1, `Expected one local object URL before back navigation: ${JSON.stringify(backProbe)}.`);
-  assert((backProbe?.revoked ?? 0) >= 1, `Object URL was not revoked on navigation: ${JSON.stringify(backProbe)}.`);
+  assert(
+    (await page.getByAltText("Seçilen demo fotoğraf önizlemesi").count()) === 0,
+    "Back navigation restored a demo photo preview.",
+  );
+
+  const backProbe = await page.evaluate(
+    () =>
+      (window as typeof window & { __demoObjectUrlProbe?: { created: number; revoked: number } })
+        .__demoObjectUrlProbe,
+  );
+  assert(
+    backProbe?.created === 1,
+    `Expected one local object URL before back navigation: ${JSON.stringify(backProbe)}.`,
+  );
+  assert(
+    (backProbe?.revoked ?? 0) >= 1,
+    `Object URL was not revoked on navigation: ${JSON.stringify(backProbe)}.`,
+  );
 
   console.log("V0 demo listing: rejecting oversized photo without network or preview allocation");
   const photoInput = page.getByTestId("demo-photo-input");
@@ -135,12 +172,16 @@ try {
     buffer: Buffer.alloc(8 * 1024 * 1024 + 1),
   });
   await page.getByRole("alert").filter({ hasText: "Fotoğraf en fazla 8 MB olabilir." }).waitFor();
-  const hugeProbe = await page.evaluate(() =>
-    (window as typeof window & { __demoObjectUrlProbe?: { created: number; revoked: number } })
-      .__demoObjectUrlProbe,
+  const hugeProbe = await page.evaluate(
+    () =>
+      (window as typeof window & { __demoObjectUrlProbe?: { created: number; revoked: number } })
+        .__demoObjectUrlProbe,
   );
   assert(hugeProbe?.created === createdBeforeHuge, "Oversized photo created an object URL.");
-  assert(interactionRequests.length === 0, `Oversized photo triggered network traffic: ${interactionRequests.join(" | ")}`);
+  assert(
+    interactionRequests.length === 0,
+    `Oversized photo triggered network traffic: ${interactionRequests.join(" | ")}`,
+  );
 
   console.log("V0 demo listing: validating malformed price and local preview");
   await photoInput.setInputFiles({
@@ -151,7 +192,10 @@ try {
   const preview = page.getByAltText("Seçilen demo fotoğraf önizlemesi");
   await preview.waitFor();
   const previewSrc = await preview.getAttribute("src");
-  assert(previewSrc?.startsWith("blob:") === true, "Selected photo did not remain a local blob preview.");
+  assert(
+    previewSrc?.startsWith("blob:") === true,
+    "Selected photo did not remain a local blob preview.",
+  );
 
   await page.getByLabel("Başlık").fill("Demo masa ilanı");
   await page.getByLabel("Fiyat (TL)").fill("12abc");
@@ -160,7 +204,10 @@ try {
   await page.getByLabel("Açıklama").fill("Bu içerik yalnız demo form davranışını test eder.");
   await page.getByRole("button", { name: "Demo ilan oluştur" }).click();
   await page.getByRole("alert").filter({ hasText: "Geçerli bir fiyat girin." }).waitFor();
-  assert(interactionRequests.length === 0, `Malformed price submit triggered network traffic: ${interactionRequests.join(" | ")}`);
+  assert(
+    interactionRequests.length === 0,
+    `Malformed price submit triggered network traffic: ${interactionRequests.join(" | ")}`,
+  );
 
   console.log("V0 demo listing: validating double-submit lock and zero-write success");
   await page.getByLabel("Fiyat (TL)").fill("1250,50");
@@ -172,11 +219,15 @@ try {
   await page
     .getByText("Bu testte bilgileriniz kaydedilmedi veya yayınlanmadı.", { exact: true })
     .waitFor();
-  assert(interactionRequests.length === 0, `Demo photo/submit triggered HTTP traffic: ${interactionRequests.join(" | ")}`);
+  assert(
+    interactionRequests.length === 0,
+    `Demo photo/submit triggered HTTP traffic: ${interactionRequests.join(" | ")}`,
+  );
 
-  const successProbe = await page.evaluate(() =>
-    (window as typeof window & { __demoObjectUrlProbe?: { created: number; revoked: number } })
-      .__demoObjectUrlProbe,
+  const successProbe = await page.evaluate(
+    () =>
+      (window as typeof window & { __demoObjectUrlProbe?: { created: number; revoked: number } })
+        .__demoObjectUrlProbe,
   );
   assert(
     (successProbe?.revoked ?? 0) >= (successProbe?.created ?? 0),
@@ -185,24 +236,48 @@ try {
 
   const persistenceAfterSubmit = await readPersistence(page);
   assert(persistenceAfterSubmit.localStorageKeys.length === 0, "Demo submit wrote localStorage.");
-  assert(persistenceAfterSubmit.sessionStorageKeys.length === 0, "Demo submit wrote sessionStorage.");
+  assert(
+    persistenceAfterSubmit.sessionStorageKeys.length === 0,
+    "Demo submit wrote sessionStorage.",
+  );
   assert(persistenceAfterSubmit.indexedDbNames.length === 0, "Demo submit wrote IndexedDB.");
 
-  await page.screenshot({ path: path.join(resultsDir, "desktop-demo-listing-success.png"), fullPage: true });
+  await page.screenshot({
+    path: path.join(resultsDir, "desktop-demo-listing-success.png"),
+    fullPage: true,
+  });
 
   console.log("V0 demo listing: validating reload clears the ephemeral result");
   trackInteractionRequests = false;
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.getByRole("heading", { level: 1, name: "Demo ilan oluşturma" }).waitFor();
-  assert((await page.getByRole("heading", { level: 1, name: "Demo ilan oluşturuldu." }).count()) === 0, "Reload restored demo success state.");
-  assert((await page.getByLabel("Başlık").inputValue()) === "", "Reload restored demo title input.");
-  assert((await page.getByLabel("Fiyat (TL)").inputValue()) === "", "Reload restored demo price input.");
+  assert(
+    (await page.getByRole("heading", { level: 1, name: "Demo ilan oluşturuldu." }).count()) === 0,
+    "Reload restored demo success state.",
+  );
+  assert(
+    (await page.getByLabel("Başlık").inputValue()) === "",
+    "Reload restored demo title input.",
+  );
+  assert(
+    (await page.getByLabel("Fiyat (TL)").inputValue()) === "",
+    "Reload restored demo price input.",
+  );
   assert((await page.getByLabel("İl").inputValue()) === "", "Reload restored demo city input.");
-  assert((await page.getByLabel("İlçe").isDisabled()) === true, "Reload did not reset district dependency.");
+  assert(
+    (await page.getByLabel("İlçe").isDisabled()) === true,
+    "Reload did not reset district dependency.",
+  );
 
   const persistenceAfterReload = await readPersistence(page);
-  assert(persistenceAfterReload.localStorageKeys.length === 0, "Reload found persisted localStorage.");
-  assert(persistenceAfterReload.sessionStorageKeys.length === 0, "Reload found persisted sessionStorage.");
+  assert(
+    persistenceAfterReload.localStorageKeys.length === 0,
+    "Reload found persisted localStorage.",
+  );
+  assert(
+    persistenceAfterReload.sessionStorageKeys.length === 0,
+    "Reload found persisted sessionStorage.",
+  );
   assert(persistenceAfterReload.indexedDbNames.length === 0, "Reload found persisted IndexedDB.");
 } finally {
   await context.close();
@@ -238,7 +313,10 @@ try {
     "Demo price input does not request a mobile decimal keyboard.",
   );
   await assertNoHorizontalOverflow(mobilePage, "/ilan-ver mobile");
-  await mobilePage.screenshot({ path: path.join(resultsDir, "mobile-demo-listing.png"), fullPage: true });
+  await mobilePage.screenshot({
+    path: path.join(resultsDir, "mobile-demo-listing.png"),
+    fullPage: true,
+  });
 } finally {
   await mobileContext.close();
   await browser.close();
