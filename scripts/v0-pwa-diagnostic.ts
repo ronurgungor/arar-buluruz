@@ -37,8 +37,6 @@ async function closeBounded(label: string, operation: () => Promise<void>) {
   }
 }
 
-let server: ReturnType<typeof Bun.spawn> | undefined;
-
 async function waitForServerReady() {
   for (let attempt = 1; attempt <= 30; attempt += 1) {
     try {
@@ -47,21 +45,12 @@ async function waitForServerReady() {
         signal: AbortSignal.timeout(1_000),
       });
       if (response.ok) return;
-    } catch {}
+    } catch {
+      // Retry until the bounded readiness window closes.
+    }
     await Bun.sleep(500);
   }
   throw new Error("Diagnostic preview server did not become ready.");
-}
-
-async function stopServer() {
-  const activeServer = server;
-  if (!activeServer || activeServer.exitCode !== null) return;
-  activeServer.kill();
-  const exited = await Promise.race([
-    activeServer.exited.then(() => true),
-    Bun.sleep(5_000).then(() => false),
-  ]);
-  if (!exited && activeServer.exitCode === null) activeServer.kill(9);
 }
 
 async function gotoOk(page: Page, url: string) {
@@ -102,7 +91,9 @@ async function ensureControlledServiceWorker(page: Page) {
     }
     await page.waitForTimeout(500);
   }
-  throw new Error(`Service worker did not control diagnostic page: ${JSON.stringify(await readServiceWorkerState(page))}`);
+  throw new Error(
+    `Service worker did not control diagnostic page: ${JSON.stringify(await readServiceWorkerState(page))}`,
+  );
 }
 
 async function assertCacheBoundary(page: Page) {
@@ -133,9 +124,11 @@ async function assertNoHorizontalOverflow(page: Page) {
   }));
 }
 
-if (!(await Bun.file(serverEntry).exists())) throw new Error("Diagnostic production output is missing.");
+if (!(await Bun.file(serverEntry).exists())) {
+  throw new Error("Diagnostic production output is missing.");
+}
 
-server = Bun.spawn(["bun", serverEntry], {
+const server = Bun.spawn(["bun", serverEntry], {
   cwd: process.cwd(),
   env: {
     ...process.env,
@@ -148,13 +141,26 @@ server = Bun.spawn(["bun", serverEntry], {
   stderr: "inherit",
 });
 
+async function stopServer() {
+  if (server.exitCode !== null) return;
+  server.kill();
+  const exited = await Promise.race([
+    server.exited.then(() => true),
+    Bun.sleep(5_000).then(() => false),
+  ]);
+  if (!exited && server.exitCode === null) server.kill(9);
+}
+
 let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
 let context: BrowserContext | undefined;
 
 try {
   await waitForServerReady();
   browser = await chromium.launch({ headless: true });
-  context = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: "allow" });
+  context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    serviceWorkers: "allow",
+  });
   const page = await context.newPage();
   page.setDefaultTimeout(15_000);
   page.setDefaultNavigationTimeout(15_000);
@@ -162,18 +168,28 @@ try {
   await bounded("manifest", () => assertManifest(context!));
   await bounded("home goto", () => gotoOk(page, baseUrl));
   await bounded("home notice", () => page.getByTestId("v0-notice").waitFor());
-  await bounded("home sample notice", () => page.getByText("İlanlar örnektir", { exact: false }).waitFor());
+  await bounded("home sample notice", () =>
+    page.getByText("İlanlar örnektir", { exact: false }).waitFor(),
+  );
   await bounded("home privacy link", () => page.getByRole("link", { name: "Gizlilik" }).waitFor());
   await bounded("service worker control", () => ensureControlledServiceWorker(page));
   await bounded("cache boundary", () => assertCacheBoundary(page));
   await bounded("home tracking markup", () => assertNoTrackingMarkup(page));
   await bounded("home overflow", () => assertNoHorizontalOverflow(page));
-  await bounded("home screenshot", () => page.screenshot({ path: "test-results/v0-pwa/diagnostic-home.png", fullPage: true }).then(() => undefined));
+  await bounded("home screenshot", () =>
+    page
+      .screenshot({ path: "test-results/v0-pwa/diagnostic-home.png", fullPage: true })
+      .then(() => undefined),
+  );
 
   const searchUrl = `${baseUrl}/ara?q=trakt%C3%B6r&il=T%C3%BCm+T%C3%BCrkiye&sirala=yeni`;
   await bounded("search goto", () => gotoOk(page, searchUrl));
-  await bounded("search result count", () => page.getByText("ilan bulundu", { exact: false }).waitFor());
-  await bounded("search sample sort", () => page.getByText("Yakın (örnek)", { exact: true }).first().waitFor());
+  await bounded("search result count", () =>
+    page.getByText("ilan bulundu", { exact: false }).waitFor(),
+  );
+  await bounded("search sample sort", () =>
+    page.getByText("Yakın (örnek)", { exact: true }).first().waitFor(),
+  );
   await bounded("search tracking markup", () => assertNoTrackingMarkup(page));
   await bounded("search overflow", () => assertNoHorizontalOverflow(page));
 
