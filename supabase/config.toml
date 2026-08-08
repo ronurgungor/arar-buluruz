@@ -23,6 +23,12 @@ enabled = false
 
 [storage]
 enabled = false
+file_size_limit = "8MiB"
+
+[storage.buckets.listing_photos]
+public = false
+file_size_limit = "8MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
 
 [realtime]
 enabled = false
