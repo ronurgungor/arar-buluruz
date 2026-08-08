@@ -15,6 +15,8 @@
  * Existing V0 province display spelling is preserved where it already formed part of URL state.
  */
 
+// Prettier intentionally skips the compact immutable snapshot below; surrounding code remains formatted.
+// prettier-ignore
 const DISTRICT_SOURCE_BY_CITY = {
   "Adana": "ALADAĞ|CEYHAN|ÇUKUROVA|FEKE|İMAMOĞLU|KARAİSALI|KARATAŞ|KOZAN|POZANTI|SAİMBEYLİ|SARIÇAM|SEYHAN|TUFANBEYLİ|YUMURTALIK|YÜREĞİR",
   "Adıyaman": "BESNİ|ÇELİKHAN|GERGER|GÖLBAŞI|KAHTA|MERKEZ|SAMSAT|SİNCİK|TUT",
@@ -103,8 +105,9 @@ export type LocationCity = keyof typeof DISTRICT_SOURCE_BY_CITY;
 
 function toTurkishDisplayName(value: string): string {
   const lower = value.toLocaleLowerCase("tr-TR");
-  return lower.replace(/(^|[\s-])(\p{L})/gu, (_match, prefix: string, letter: string) =>
-    `${prefix}${letter.toLocaleUpperCase("tr-TR")}`,
+  return lower.replace(
+    /(^|[\s-])(\p{L})/gu,
+    (_match, prefix: string, letter: string) => `${prefix}${letter.toLocaleUpperCase("tr-TR")}`,
   );
 }
 
