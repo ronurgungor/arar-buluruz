@@ -171,7 +171,7 @@ try {
     mimeType: "image/jpeg",
     buffer: Buffer.alloc(8 * 1024 * 1024 + 1),
   });
-  await page.getByRole("alert").filter({ hasText: "Fotoğraf en fazla 8 MB olabilir." }).waitFor();
+  await page.getByText("Fotoğraf en fazla 8 MB olabilir.", { exact: true }).waitFor();
   const hugeProbe = await page.evaluate(
     () =>
       (window as typeof window & { __demoObjectUrlProbe?: { created: number; revoked: number } })
@@ -203,7 +203,7 @@ try {
   await page.getByLabel("İlçe").selectOption("Adalar");
   await page.getByLabel("Açıklama").fill("Bu içerik yalnız demo form davranışını test eder.");
   await page.getByRole("button", { name: "Demo ilan oluştur" }).click();
-  await page.getByRole("alert").filter({ hasText: "Geçerli bir fiyat girin." }).waitFor();
+  await page.getByText("Geçerli bir fiyat girin.", { exact: true }).waitFor();
   assert(
     interactionRequests.length === 0,
     `Malformed price submit triggered network traffic: ${interactionRequests.join(" | ")}`,
