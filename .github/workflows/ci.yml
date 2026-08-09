@@ -136,6 +136,9 @@ jobs:
       - name: Run pgTAP database and RLS tests
         run: supabase test db
 
+      - name: Run isolated trusted-photo role probes and DB health sentinel
+        run: bash scripts/trusted-photo-db-role-probes.sh
+
       - name: Seed transient integration fixtures
         shell: bash
         run: |
