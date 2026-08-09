@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import {
@@ -8,14 +7,7 @@ import {
   buildControlledWhatsAppHref,
 } from "./prototype-contact";
 
-const FORBIDDEN_FOUNDER_PHONE_SHA256 =
-  "3102fd0f13efd19910ef0c2b510aeb265d9bdf02cec6e0dd6cbf270af632a141";
 const SOURCE_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx"]);
-
-function hashDigits(value: string): string {
-  const digits = value.replace(/\D/g, "");
-  return createHash("sha256").update(digits).digest("hex");
-}
 
 function sourceFiles(root: string): string[] {
   const files: string[] = [];
@@ -28,6 +20,11 @@ function sourceFiles(root: string): string[] {
     }
   }
   return files;
+}
+
+function isTurkishMobileNumberLiteral(value: string): boolean {
+  const digits = value.replace(/\D/g, "");
+  return /^(?:90|0)?5\d{9}$/.test(digits);
 }
 
 describe("prototype contact safety boundary", () => {
@@ -48,15 +45,15 @@ describe("prototype contact safety boundary", () => {
     expect(url.searchParams.get("text")).toBe("Synthetic Gate 1 payload");
   });
 
-  test("does not contain the founder personal phone in current application source", () => {
+  test("does not embed Turkish mobile phone literals in current application source", () => {
     const phoneLikePattern = /\+?\d[\d\s().-]{8,}\d/g;
     const violations: string[] = [];
 
     for (const file of sourceFiles(path.resolve("src"))) {
       const contents = readFileSync(file, "utf8");
       for (const candidate of contents.match(phoneLikePattern) ?? []) {
-        if (hashDigits(candidate) === FORBIDDEN_FOUNDER_PHONE_SHA256) {
-          violations.push(path.relative(process.cwd(), file));
+        if (isTurkishMobileNumberLiteral(candidate)) {
+          violations.push(`${path.relative(process.cwd(), file)}: ${candidate}`);
         }
       }
     }
