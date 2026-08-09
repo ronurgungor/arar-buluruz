@@ -47,17 +47,17 @@ describe("prototype contact safety boundary", () => {
 
   test("does not embed Turkish mobile phone literals in current application source", () => {
     const phoneLikePattern = /\+?\d[\d\s().-]{8,}\d/g;
-    const violations: string[] = [];
+    const violations = new Set<string>();
 
     for (const file of sourceFiles(path.resolve("src"))) {
       const contents = readFileSync(file, "utf8");
       for (const candidate of contents.match(phoneLikePattern) ?? []) {
         if (isTurkishMobileNumberLiteral(candidate)) {
-          violations.push(`${path.relative(process.cwd(), file)}: ${candidate}`);
+          violations.add(path.relative(process.cwd(), file));
         }
       }
     }
 
-    expect(violations).toEqual([]);
+    expect([...violations]).toEqual([]);
   });
 });
