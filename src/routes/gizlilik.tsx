@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PROTOTYPE_CONTACT } from "@/lib/prototype-contact";
 
 export const Route = createFileRoute("/gizlilik")({
   head: () => ({
@@ -51,27 +50,12 @@ function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="font-semibold">Kontrollü iletişim kanalı</h2>
+            <h2 className="font-semibold">İletişim</h2>
             <p className="mt-2 text-muted-foreground">
-              Mevcut kontrollü iletişim kanalı merkezi telefon ve WhatsApp hattıdır. V0 sayfaları bu
-              kanala yazılan mesajları veya arama içeriğini toplamaz.
+              Bu V0 sürümünde gerçek telefon veya WhatsApp iletişim hattı yayımlanmaz ve uygulama
+              iletişim mesajı toplamaz. Gerçek iletişim modeli, kişisel veri akışı açılmadan önce
+              ayrıca belirlenip bu metne yansıtılacaktır.
             </p>
-            <div className="mt-3 flex flex-wrap gap-3">
-              <a
-                href={PROTOTYPE_CONTACT.phoneHref}
-                className="font-semibold text-primary underline-offset-4 hover:underline"
-              >
-                Telefon
-              </a>
-              <a
-                href={PROTOTYPE_CONTACT.whatsappHref}
-                target="_blank"
-                rel="noreferrer"
-                className="font-semibold text-primary underline-offset-4 hover:underline"
-              >
-                WhatsApp
-              </a>
-            </div>
           </section>
 
           <section>
