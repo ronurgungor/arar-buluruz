@@ -38,9 +38,11 @@ type TestImageConstructor = new (
 ) => TestImagePipeline;
 
 function getTestImageConstructor(): TestImageConstructor {
-  const runtime = (globalThis as typeof globalThis & {
-    Bun?: { Image?: TestImageConstructor };
-  }).Bun;
+  const runtime = (
+    globalThis as typeof globalThis & {
+      Bun?: { Image?: TestImageConstructor };
+    }
+  ).Bun;
   if (!runtime?.Image) throw new Error("Bun.Image is required for trusted photo tests.");
   return runtime.Image;
 }
@@ -110,7 +112,12 @@ function writeIfdEntry(
   view.setUint32(offset + 8, valueOrOffset, true);
 }
 
-function writeRational(view: DataView, offset: number, numerator: number, denominator: number): void {
+function writeRational(
+  view: DataView,
+  offset: number,
+  numerator: number,
+  denominator: number,
+): void {
   view.setUint32(offset, numerator, true);
   view.setUint32(offset + 4, denominator, true);
 }
@@ -184,7 +191,10 @@ function hasSyntheticExifGpsIfd(bytes: Uint8Array): boolean {
   const segmentLength = ((bytes[4] ?? 0) << 8) | (bytes[5] ?? 0);
   const payloadStart = 6;
   const payloadEnd = payloadStart + segmentLength - 2;
-  if (payloadEnd > bytes.byteLength || !containsAscii(bytes.subarray(payloadStart, payloadEnd), "Exif\0\0")) {
+  if (
+    payloadEnd > bytes.byteLength ||
+    !containsAscii(bytes.subarray(payloadStart, payloadEnd), "Exif\0\0")
+  ) {
     return false;
   }
 
@@ -241,7 +251,9 @@ async function makeSyntheticJpegWithExifGpsXmp(): Promise<Uint8Array> {
   );
 }
 
-function makeMetadata(overrides: Partial<StoredListingPhotoMetadata> = {}): StoredListingPhotoMetadata {
+function makeMetadata(
+  overrides: Partial<StoredListingPhotoMetadata> = {},
+): StoredListingPhotoMetadata {
   return {
     listingId,
     photoId,
