@@ -278,6 +278,20 @@ async function runDesktop() {
     await assertNoTrackingMarkup(page, detailHref);
     await assertNoHorizontalOverflow(page, detailHref);
 
+    const publicContactLinks = page.getByTestId("detail-contact-bar").locator("a");
+    assert((await publicContactLinks.count()) === 2, "Public V0 contact controls are missing.");
+    for (let index = 0; index < 2; index += 1) {
+      const link = publicContactLinks.nth(index);
+      assert(
+        (await link.getAttribute("href")) === "#contact-demo",
+        "Public V0 exposed a routable contact target.",
+      );
+      assert(
+        (await link.getAttribute("aria-disabled")) === "true",
+        "Public V0 contact control was not marked disabled.",
+      );
+    }
+
     const listingId = detailHref.split("/").filter(Boolean).at(-1);
     assert(listingId, "Listing ID could not be derived from the detail route.");
     await gotoOk(page, `${baseUrl}/sikayet/${listingId}`);
@@ -317,7 +331,10 @@ async function runDesktop() {
     await page.getByText("Reklam ve analytics kullanılmaz", { exact: false }).waitFor();
     await page.getByText("Zorunlu olmayan çerez veya tracker", { exact: false }).waitFor();
     await page.getByText("teknik erişim kayıtları tutabilir", { exact: false }).waitFor();
-    await page.getByText("merkezi telefon ve WhatsApp hattıdır", { exact: false }).waitFor();
+    await page.getByText("gerçek telefon veya WhatsApp iletişim hattı yayımlanmaz", {
+      exact: false,
+    }).waitFor();
+    await page.getByText("uygulama iletişim mesajı toplamaz", { exact: false }).waitFor();
     assert(
       (await page.locator("form, input, textarea, select").count()) === 0,
       "Privacy page collected data.",
