@@ -1,6 +1,6 @@
 # Arar Buluruz — New Chat Bootstrap
 
-_Last reviewed: 2026-07-31, Europe/Istanbul_
+_Last reviewed: 2026-08-09, Europe/Istanbul_
 
 ## Mandatory reading order
 
@@ -9,106 +9,130 @@ _Last reviewed: 2026-07-31, Europe/Istanbul_
 3. [`ARAR_BULURUZ_CURRENT_STATE.md`](ARAR_BULURUZ_CURRENT_STATE.md)
 4. [`ARAR_BULURUZ_DECISION_LOG.md`](ARAR_BULURUZ_DECISION_LOG.md)
 5. [`ARAR_BULURUZ_BACKLOG.md`](ARAR_BULURUZ_BACKLOG.md)
-6. [`AI_TEAM_CAPABILITIES.md`](AI_TEAM_CAPABILITIES.md)
-7. [`WORK_CODEX_CAPABILITY_PROFILE.md`](WORK_CODEX_CAPABILITY_PROFILE.md)
-8. [`FOUNDER_WINDOWS_DEV_MACHINE_PROFILE.md`](FOUNDER_WINDOWS_DEV_MACHINE_PROFILE.md) only for founder-local execution
-9. Relevant dated evidence
+6. [`REAL_CORLU_PILOT_BACKEND_PREP.md`](REAL_CORLU_PILOT_BACKEND_PREP.md)
+7. [`EXTERNAL_SALES_LINK_SECURITY.md`](EXTERNAL_SALES_LINK_SECURITY.md)
+8. [`TR_SELF_HOSTED_SUPABASE_PREP.md`](TR_SELF_HOSTED_SUPABASE_PREP.md)
+9. relevant dated evidence
 
 GitHub `main`, the exact branch/PR and executable evidence override summaries and chat memory.
 
-## Application snapshot
+## Current canonical snapshot
 
-- Product: mobile-first, search-first classified-listing concept for Türkiye.
 - Repository: `ronurgungor/arar-buluruz`.
-- Public URL: `https://arar-buluruz.lovable.app`.
-- Frontend: React, TanStack Start, TypeScript, Tailwind/shadcn.
-- Package boundary: Bun `1.3.14` and `bun.lock`.
-- Lovable: frontend editor/hosting surface only; its backend features remain disabled.
-- Gate 1 PostgreSQL migration/RLS/adapter/test work is retained as a reusable technical asset but is not an active real pilot.
-- V0 minimal-PWA implementation merged through PR #28; Lovable Publish/Update has not yet occurred.
+- Current canonical main before this documentation-sync gate: `9376ba60dfc049a4df27ce25255fa5923b2a154e`.
+- PR #52 merged successfully and its V0 usability release was publicly published.
+- Public-runtime smoke testing passed.
+- Users found the application understandable.
+- Initial real supply intent is validated: real users explicitly said their actual listings may be published.
+- PR #53 merged successfully as current `main` `9376ba60dfc049a4df27ce25255fa5923b2a154e`.
+- Post-merge CI `31280761870` succeeded.
+- Post-merge V0 minimal PWA run `31280761873` succeeded.
 
-## Active phase — V0
+## Repository state is not the public runtime
 
-**V0 — UX ve değer önerisi doğrulaması** is the only active product phase.
+This distinction is mandatory.
 
-V0 may validate only:
+### Repository `main`
 
-- whether people understand the product;
-- search and listing discovery;
-- listing cards and detail pages;
-- mobile and desktop usability;
-- minimal-PWA installability;
-- general user interest.
+`main` now contains inactive preparation for a future controlled real Çorlu pilot, including migration/RLS/private-schema/Storage/external-sales/runbook preparation.
 
-V0 must not be reported as validating:
+This preparation is not live production functionality.
 
-- real listing creation;
-- account creation;
-- listing ownership or management;
+### Currently deployed public V0
+
+The public runtime still uses:
+
+- synthetic/mock listings;
+- a zero-data demo listing form;
+- no real backend connection;
+- no real personal data;
+- no real Storage;
+- no Auth;
+- no public external-sales CTA.
+
+Do not infer deployed behavior solely from repository capabilities.
+
+## Product evidence boundary
+
+Current evidence supports:
+
+- users understand the core product;
+- search/discovery and the V0 usability flow are usable enough for the current stage;
+- initial seller/supply intent exists.
+
+Current evidence does **not** prove:
+
+- successful real listing operations;
+- seller identity/ownership workflows;
 - sustainable moderation;
-- the seller-contact operating model;
-- a functioning supply-demand loop.
+- the future seller-contact model;
+- safe public external-sales use;
+- a functioning supply-demand loop;
+- production backend operations.
 
-The live V0 uses synthetic/mock listings only and must disclose that it is a test version. It uses no real account, real listing, real seller phone/email, advertising or analytics.
+The next proposed real pilot remains **5–10 founder-controlled real Çorlu listings**, but no real-data activation is authorized.
 
-## Minimal-PWA boundary
+## External-sales / Shopier boundary
 
-Allowed:
+The accepted model is provider-neutral **Satış bağlantısı / External Sales Link**.
 
-- manifest;
-- durable application identity;
-- correct icons;
-- installability;
-- safe and honest offline/error screen.
+- no Shopier API;
+- no OAuth;
+- no seller credential access;
+- no scraping;
+- no iframe;
+- Shopier is an independent third-party provider, not an Arar integration or partnership;
+- a seller may later supply their own public sales URL;
+- Arar Buluruz does not process or hold payment funds;
+- the functionality is currently not public.
 
-Excluded:
+Do not promote any later research recommendation about a particular provider, contact model or backup vendor into a founder decision unless the decision log explicitly records it.
 
-- push notifications;
-- background sync;
-- full offline listings;
-- cache-first dynamic listings;
-- auth or real backend;
-- advertising or analytics;
-- TWA or Play Store.
+## Hard founder financial constraint
 
-## Backend freeze and no-rebuild rules
+Arar Buluruz currently earns no revenue.
 
-- Do not reopen backend selection unless there is an external user account, real personal data, an unworkable KVKK transfer model, measured free-tier/uptime failure, confirmed photo/storage need, or measured cost/technical necessity.
-- Without a trigger, do not recommend switching between Supabase and Türkiye self-managed infrastructure.
-- Supabase Free is development/technical-validation only; do not assume it is production infrastructure for a real external-user pilot.
-- Keep PostgreSQL migrations canonical in GitHub.
-- Keep UI and domain rules provider-independent.
-- Keep Supabase calls inside adapters.
-- Future user identity is an internal UUID; email/phone are not foreign keys.
-- Do not block a future nullable `listings.owner_user_id`.
-- Do not embed JWT/auth claim shape in the domain model.
-- Do not add Supabase Storage, Realtime, Edge Functions or provider-heavy features before backend selection.
+Until a separate explicit **FOUNDER BUDGET / REVENUE GATE** is opened and approved:
+
+- no paid VPS;
+- no paid hosted backend;
+- no paid backup;
+- no recurring paid production infrastructure.
+
+Technical readiness is not spending authorization. Existing self-hosting documents describe future technical prerequisites only.
+
+## Privacy boundary
+
+Real personal-data collection remains blocked.
+
+No real seller contact, photo, listing or other personal data may be entered before a separate founder-approved real-data gate completes the required privacy/KVKK and production controls.
 
 ## Team and authority
 
-- **Founder:** owns consequential product, backend, data, KVKK, cost and publish decisions.
-- **Main assistant:** default routine implementer/coordinator within approved reversible scope.
-- **Codex:** optional execution/test specialist when its terminal environment adds material value.
-- **Work:** optional independent strategy/risk review for consequential uncertainty.
+- **Founder:** owns consequential product, backend, data, KVKK, cost and publication decisions.
+- **Main assistant:** routine implementer/coordinator inside an explicitly approved reversible scope.
+- **Independent reviewers (including Claude):** advisory only. Findings are inputs to founder decision-making and are not automatic implementation authorization.
 - **Lovable:** bounded frontend writer/hosting surface; never backend owner.
 
-Only one writer operates at a time. Routine feature-branch, PR, CI and merge work may proceed under D-018. Stop before Lovable Publish/Update, production deploy, remote backend, secrets/environment, real data, auth, storage, paid service, advertising or analytics.
+Only one writer operates at a time. Stop before production deploy, Lovable Publish/Update, remote backend, secrets/environment mutation, real data, Auth/Storage activation, paid service, advertising or analytics unless the founder explicitly opens the relevant gate.
 
-## Current task order
+## Next activity
 
-1. Present the merged V0 minimal-PWA diff, CI, screenshots, risks and rollback to the founder.
-2. Obtain one explicit founder decision on Lovable Publish/Update.
-3. If approved, perform only Lovable Publish/Update and verify the public V0 runtime.
-4. If not approved, leave the public snapshot unchanged.
-5. Keep backend and real-user work frozen until a D-019 trigger exists.
+After this documentation-only sync is merged, the next activity is an **independent Claude full-repository review**.
+
+That review is research/advisory only:
+
+- no repository mutation is implied;
+- no recommendation is automatically accepted;
+- no new architecture/product decision is created merely because Claude proposes it;
+- implementation requires a separate founder-authorized gate.
 
 ## Knowledge write-back
 
 - durable principle → project memory;
 - current implementation/runtime → current state;
 - pending work → backlog;
-- consequential choice → decision log;
-- test result → dated evidence;
-- local-machine constraint → founder machine profile.
+- consequential founder choice → decision log;
+- test or publication result → dated evidence where appropriate.
 
 No secret, credential, private user record or unnecessary personal data belongs in these files.
