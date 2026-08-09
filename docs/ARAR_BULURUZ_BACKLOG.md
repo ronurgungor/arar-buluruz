@@ -1,6 +1,6 @@
 # Arar Buluruz — Backlog
 
-_Last updated: 2026-08-07, Europe/Istanbul_
+_Last updated: 2026-08-09, Europe/Istanbul_
 
 Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 
@@ -141,13 +141,62 @@ The program was completed under single ownership. Workstream B and Workstream C 
 - [x] Pass frozen install, lint, unit/red-team tests, bare public V0 build/signature, production-mode V0 privacy/PWA and full existing Gate 1 CI on PR #50 head `caf126cdb021a518c10dde890a34df3f8f4abe5d`.
 - [x] Merge PR #50 normally as `351321f63a72028f2976d3279b5202c370ce14c1`.
 
-## Current gate status
+## Superseding current state — PR #52 / PR #53 and pre-Claude review
+
+The older “Current gate status” wording below is retained as historical sequence context but is superseded by this section.
+
+### V0 usability publication and observed evidence
+
+- [x] Merge PR #52, **Complete V0 location and demo listing usability**, advancing `main` to `714298af58049b3c2ee2b5b345b36c63b6e7f865`.
+- [x] Publicly publish the PR #52 V0 usability release.
+- [x] Pass the public runtime/user smoke test.
+- [x] Record that users found the application understandable.
+- [x] Record initial real supply intent: real users explicitly said their actual listings may be published.
+- [x] Keep this evidence narrow: initial supply intent is validated, but real listing operations, moderation sustainability, seller-contact operations and a functioning supply-demand loop are not yet validated.
+
+### Real Çorlu pilot backend preparation
+
+- [x] Prepare the future founder-controlled 5–10 real Çorlu listing backend/data/security foundation through PR #53 without activating it.
+- [x] Merge PR #53 normally as `9376ba60dfc049a4df27ce25255fa5923b2a154e`.
+- [x] Pass post-merge CI `31280761870`.
+- [x] Pass post-merge V0 minimal PWA `31280761873`.
+- [x] Preserve the public runtime as mock/synthetic + zero-data demo with no real backend, personal data, Storage, Auth or external-sales CTA.
+
+### Documentation sync before independent review
+
+- [-] Synchronize canonical documentation with the post-PR53 repository/public-runtime split, supply-intent evidence and founder zero-spend boundary.
+- [ ] Run an independent Claude full-repository review after this documentation sync merges.
+- [ ] Treat Claude findings as advisory only; do not automatically implement recommendations.
+- [ ] Open a separate founder-authorized gate for any implementation resulting from the review.
+
+### Hard FOUNDER BUDGET / REVENUE gate
+
+Arar Buluruz currently earns no revenue.
+
+Until a separate explicit founder budget/revenue decision is opened and approved:
+
+- [ ] **DEFER** paid Türkiye VPS purchase.
+- [ ] **DEFER** paid hosted backend/database.
+- [ ] **DEFER** paid independent backup service.
+- [ ] **DEFER** all other recurring paid production infrastructure.
+
+Technical readiness, a provider shortlist, a successful future POC or completion of D-021 prerequisites does **not** itself authorize spending.
+
+### Real-data activation remains closed
+
+- [ ] Do not enter real seller listing/contact/photo data.
+- [ ] Do not connect the public runtime to the prepared real backend.
+- [ ] Do not enable production Storage/Auth/secrets.
+- [ ] Do not activate public external-sales CTA.
+- [ ] Keep the future real pilot target at 5–10 founder-controlled Çorlu listings until a separate founder real-data/public-activation gate is opened.
+
+## Current gate status — historical/superseded wording
 
 The **Founder external-sales + fraud + TR-backend preparation** implementation gate is complete and closed.
 
 There is no active public external-sales, backend, auth, real-data, infrastructure-purchase or publication gate. The accepted public V0 remains on its synthetic/mock deployment until a separate founder Publish/Update or real-data gate is explicitly opened.
 
-The next permitted phase is **anonymous, non-directive V0 user-observation preparation**. A real external-sales pilot or real backend/personal-data phase requires a new founder gate.
+The next permitted phase was recorded at that time as **anonymous, non-directive V0 user-observation preparation**. Current/superseding state is the PR #52/#53 and pre-Claude-review section above.
 
 ## Frozen until a separate explicit gate
 
@@ -164,7 +213,9 @@ The next permitted phase is **anonymous, non-directive V0 user-observation prepa
 
 ## D-021 next production/backend gate triggers
 
-A future Türkiye self-hosted production POC gate may open when a real backend/personal-data pilot is close enough to justify infrastructure selection and cost. That gate must provide at minimum:
+A future Türkiye self-hosted production POC gate may open only after both the technical prerequisites and the separate FOUNDER BUDGET / REVENUE gate permit it. Technical readiness alone does not permit purchase.
+
+A future decision package must provide at minimum:
 
 - [ ] proposed Türkiye VPS provider/location and recurring price;
 - [ ] current pinned self-hosted Supabase version/resource requirements;
@@ -173,21 +224,20 @@ A future Türkiye self-hosted production POC gate may open when a real backend/p
 - [ ] public/private network exposure plan;
 - [ ] off-VPS backup target and empty-server restore plan;
 - [ ] Auth/SMTP/Storage scope, if any;
-- [ ] rollback plan, 72-hour stability plan and operational owner.
+- [ ] rollback plan, 72-hour stability plan and operational owner;
+- [ ] explicit founder budget/revenue authorization for any recurring paid infrastructure.
 
-Restore onto a completely empty environment is mandatory. Restore failure means production NO-GO.
+Restore onto a completely empty environment remains mandatory once a production POC is separately authorized. Restore failure means production NO-GO.
 
 ## V0 evaluation boundary
 
-V0 may evaluate only product comprehension, search/discovery, listing cards/details, mobile/desktop usability, PWA installation and general interest.
-
-Do not report V0 as proving real listing supply, accounts, listing management, moderation sustainability, seller-contact operations, external-sales safety or supply-demand loop formation.
+Current evidence now supports product comprehension and initial real seller/supply intent. It does not yet prove real listing operations, accounts, listing management, moderation sustainability, seller-contact operations, external-sales safety or a functioning supply-demand loop.
 
 ## Operating rules
 
 - D-018 remains the routine-execution authority inside an explicitly opened founder gate.
 - Only one code writer operates at a time; no parallel Lovable agent or assistant mutation is permitted.
 - Git history is never force-pushed or rewritten.
-- The accepted public V0 publication remains identity-bound to `df74dfd5a81be237da2d5471301279e5c657a2af` and deployment `b45fe46d-7824-428b-9925-2806eb8b6f72` until separately republished.
+- The public V0 remains synthetic/mock until a separate founder publication/real-data activation changes it.
 - External-sales security preparation must remain feature-disabled in public V0.
 - No secret, credential, real user record or unnecessary personal data belongs in repository documentation.
