@@ -1,160 +1,154 @@
 # Arar Buluruz — Current State
 
-_Last updated: 2026-08-01, Europe/Istanbul_
+_Last updated: 2026-08-09, Europe/Istanbul_
 
 ## Canonical repository state
 
 - Repository: `ronurgungor/arar-buluruz`; default branch: `main`.
-- GitHub `main` is canonical. Read its exact SHA at task start rather than trusting a copied “current SHA.”
-- V0 minimal-PWA implementation merged through PR #28 with normal merge commit `16da297ddac5461d3cba6fa8fc76bbc095bbb2c3`.
-- V0 KVKK-min cleanup merged through PR #30 with normal merge commit `399489b3a452a22664136bc43115cc796cf71fc6`.
-- The first Lovable publish failed its synthetic-listing acceptance condition and was unpublished; repository recovery was completed through PR #33 and recorded through PR #35.
-- PR #36 corrected production mock-source behavior and production-mode validation with merge commit `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7`.
-- PR #37 recorded corrected V0 production readiness with merge commit `59e5d987f4d73be486958a3d36d371cfa5dd2abe`.
-- PR #39 preserved the approved accessibility and Turkish-language refinements while restoring the frozen package boundary, with merge commit `accd0c8b305d0e3a7ec0e01c91175f0501a5adb5`.
-- PR #40 preserved the dependent district filter while restoring `package.json` and `bun.lock`, with merge commit `edb293b69348ba615b67122908b8cbd9ff4707ef`.
-- Package boundary remains Bun `1.3.14` and canonical `bun.lock`; no dependency upgrade from either Lovable pass was accepted.
-- Gate 1 PostgreSQL/RLS/adapter work remains a reusable technical asset and is not an active real pilot.
+- Canonical `main` before this documentation-sync gate: `9376ba60dfc049a4df27ce25255fa5923b2a154e`.
+- PR #52, **Complete V0 location and demo listing usability**, merged successfully. Its merge advanced `main` to `714298af58049b3c2ee2b5b345b36c63b6e7f865`.
+- PR #52's V0 usability release was subsequently published to the public Lovable V0.
+- Public smoke testing passed after that publication.
+- Users found the application understandable.
+- Initial supply intent is now validated: real users explicitly said their actual listings may be published in Arar Buluruz.
+- PR #53, **Prepare real Çorlu pilot backend with fail-closed data boundaries**, merged successfully with normal merge commit/current `main` `9376ba60dfc049a4df27ce25255fa5923b2a154e`.
+- Post-merge CI run `31280761870` — **SUCCESS**.
+- Post-merge V0 minimal PWA run `31280761873` — **SUCCESS**.
 
-## Active phase and data boundary
+## Critical state distinction: repository != deployed public runtime
 
-The only active product phase is **V0 — UX ve değer önerisi doğrulaması**.
+This distinction is intentional and must be preserved in every review.
 
-V0 may validate only product comprehension, search/discovery, listing cards/details, mobile/desktop usability, minimal-PWA installability and general interest.
+### Repository `main`
 
-V0 must not be reported as validating real listing creation, accounts, listing ownership/management, sustainable moderation, seller-contact operations, real marketplace activity or a supply-demand loop.
+Repository `main` now contains the public V0 application **plus inactive technical preparation** for a future founder-controlled real Çorlu pilot.
 
-The accepted V0 remains synthetic/mock only:
+PR #53 added, among other preparation:
 
-- visible site-wide V0/test notice;
-- synthetic search and listing-detail experience;
-- non-collecting `/ilan-ver`, `/giris` and `/sikayet/$id` demo routes;
-- no real account, listing, seller phone/e-mail or form-data collection;
-- no advertising or analytics;
-- no optional cookie or tracker implemented by the application;
-- `noindex/nofollow/noarchive/nosnippet` protection.
+- extended listing lifecycle and Çorlu pilot location constraints;
+- a non-exposed `private` schema for minimum contact, photo metadata and external-sales review state;
+- fail-closed RLS/grant boundaries;
+- a private Storage contract and synthetic Storage validation assets while committed product Storage remains disabled;
+- full-state provider-neutral external-sales CTA review logic;
+- self-hosted production, backup, restore and rollback contracts.
 
-## Minimal-PWA and KVKK-min boundary
+These capabilities are repository preparation, not proof that a production backend exists or is connected.
 
-Present in the accepted source:
+### Currently deployed public V0
 
-- `/gizlilik` and a visible home-page privacy link;
-- system UI fonts with no Google Fonts request;
-- durable manifest identity, start URL and scope;
-- standard, maskable and Apple touch icons;
-- secure-context service-worker registration;
-- network-first navigation handling;
-- cache limited to the offline page, manifest and icons;
-- honest offline screen stating that dynamic listings are not stored offline.
+The live public V0 remains:
 
-Excluded: push, background/periodic sync, full offline listings, cache-first dynamic listings, auth, real backend, advertising, analytics, TWA and Play Store.
+- synthetic/mock listings;
+- a zero-data demo listing form;
+- no real backend connection;
+- no real personal data;
+- no real Storage;
+- no Auth;
+- no public external-sales CTA;
+- no public Shopier integration or transaction processing.
 
-## First publish incident and rollback
+Do **not** describe PR #53 preparation as live production functionality.
 
-The first conditionally approved Lovable Publish/Update used source merge `399489b3a452a22664136bc43115cc796cf71fc6` and deployment ID `36edff5e-7334-4d6f-b6da-60d0e35c69dd`.
+## Current product evidence
 
-The public shell loaded, but public `/ara` showed “İlanlar henüz gösterilemiyor / Pilot ilan bağlantısı henüz etkin değil” instead of synthetic listings. That deployment was rejected and founder-side Unpublish was completed on 2026-07-31.
+The current V0 evidence supports the following narrow conclusions:
 
-The root cause was not a Lovable environment failure. Application logic converted explicit production `mock` to `disabled` when `import.meta.env.DEV` was false, while the earlier browser runner used `vite dev` and did not exercise production mode.
+- the public application is understandable to users;
+- the core search/discovery and listing-detail experience has passed the current usability/smoke boundary;
+- initial seller/supply intent exists because real users explicitly offered their own listings for publication.
 
-A prior Lovable agent message also unexpectedly consumed `1.3` credits and pushed a dependency/lock/generated-route mutation despite a no-mutation instruction. PR #33 reverted that mutation without force-push or history rewrite. Do not use Lovable agent messages for publication or rollback.
+This does **not** establish:
 
-## Production-source correction and evidence
+- a functioning real marketplace;
+- successful real listing intake/publishing operations;
+- sustainable moderation;
+- the future seller-contact operating model;
+- account ownership/management;
+- public external-sales safety in real use;
+- a functioning supply-demand loop;
+- production backend reliability.
 
-PR #36 made the narrow correction:
+## Future controlled real pilot target
 
-- explicit `VITE_LISTINGS_SOURCE=mock` is honored in development and production;
-- unconfigured production remains safely `disabled`;
-- explicit `disabled` and `supabase` behavior is preserved;
-- the normal Cloudflare deploy-target build remains intact;
-- a separate zero-cost `node-server` production-mode build is used only for browser validation;
-- the PWA runner starts and stops the prebuilt output directly;
-- service-worker control uses bounded reload attempts before the real-server-outage offline check.
+The next real-data target, when separately authorized, remains:
 
-No dependency, backend, remote Supabase project, secret, real data, Lovable setting or deployment was added by the correction.
+- **5–10 founder-controlled real Çorlu listings**;
+- manual/founder moderation;
+- no public self-service database writes;
+- no seller dashboard or account requirement by default;
+- no payment processing by Arar Buluruz.
 
-Validation on PR #36 head `20bfc9562bda5661204f086783dbfd2d14ecebcb`:
+Real personal-data collection is still blocked.
 
-- standard CI run `30655419577` — success;
-- lint, unit tests and disabled-backend build — success;
-- 22/22 pgTAP, local migration/RLS, REST integration and Gate 1 desktop/mobile E2E — success;
-- V0 PWA run `30655419570` — success;
-- Cloudflare deploy-target production build — success;
-- production-mode synthetic search/detail, disabled real operations, privacy, desktop/mobile layout, service worker, cache boundary and honest offline fallback — success;
-- evidence artifact `8803163231`;
-- artifact SHA-256 `4543ecd8af8bd46700b7477d8fccceef871b5542b509a83a43073cb52c27d35b`.
+## External-sales / Shopier state
 
-GitHub comparison confirmed that `59e5d987f4d73be486958a3d36d371cfa5dd2abe` differs from application-fix merge `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7` only in `docs/ARAR_BULURUZ_CURRENT_STATE.md` and `docs/ARAR_BULURUZ_BACKLOG.md`. The published application code is therefore the production-mode-validated application code.
+The canonical product decision is provider-neutral **Satış bağlantısı / External Sales Link**.
 
-## Accepted corrected V0 publication
+Shopier is treated only as an independent third-party provider candidate:
 
-Founder approval was given for a bounded Lovable Publish/Update of the already synchronized project.
+- no API integration;
+- no OAuth;
+- no Shopier credential access;
+- no scraping;
+- no iframe;
+- no partnership/verification claim;
+- a seller may later provide their own public sales URL;
+- Arar Buluruz does not process or hold payment funds.
 
-Publication record:
+Repository `main` contains inactive review/security preparation for this model. The public V0 exposes no external-sales field or CTA.
 
-- public URL: `https://arar-buluruz.lovable.app`;
-- Lovable project: `dca896f8-bb48-4a67-ae49-0493610ca6ad`;
-- deployment ID: `ddf816c6-9bf1-44af-8cfa-b242d437cc36`;
-- synchronized and published source identity: `59e5d987f4d73be486958a3d36d371cfa5dd2abe`;
-- application correction identity: `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7`;
-- Lovable project metadata after deployment: `is_published: true`, public URL active;
-- no Lovable agent message, environment/listing-source change, backend activation, secret, real data, advertising, analytics or paid operation was used.
+No VPS provider, backup vendor or future seller-contact model is selected merely because a research report recommended one.
 
-Acceptance was grounded in three matching controls:
+## Hard founder financial boundary
 
-1. Lovable was synchronized to the exact current `main` SHA before Publish/Update and remained without later agent edits.
-2. GitHub confirmed current `main` and the validated application correction differ only by documentation.
-3. The exact application code passed the production-mode browser/PWA suite covering the mandatory V0 notice, synthetic `/ara` results, absence of the disconnected-state messages, synthetic detail navigation, `/gizlilik`, non-collecting real-operation demo routes, manifest/icons/service worker, honest offline fallback and absence of auth/backend/analytics/ad-network/Google-Fonts requests.
+Arar Buluruz currently earns **no revenue**.
 
-No acceptance criterion produced a failure signal, so rollback was not triggered. The corrected publication is accepted as **V0 — UX ve değer önerisi doğrulaması**.
+Accordingly:
 
-This acceptance does not establish a real marketplace, real user accounts, real listing behavior, moderation sustainability, seller-contact operations or supply-demand validation.
+- no paid VPS now;
+- no paid hosted backend now;
+- no paid backup now;
+- no recurring paid production infrastructure now.
 
-## Post-publication accessibility and district-filter pass
+Any paid recurring infrastructure requires a separate explicit **FOUNDER BUDGET / REVENUE GATE**.
 
-Two founder-approved, bounded Lovable agent passes were used after the accepted V0 publication:
+Existing D-021/self-hosting documents may define technical prerequisites and production acceptance tests. Passing those prerequisites does **not** authorize spending while the budget/revenue gate is closed.
 
-- the accessibility/language pass translated the 404 and root error UI, added consistent `focus-visible` treatment and added a polite search-result live region;
-- the district-filter pass added optional `ilce` URL state and a dependent district selector derived only from the existing synthetic listings.
+## Privacy/data boundary
 
-Both passes unexpectedly changed Lovable development dependencies despite explicit package boundaries. Those package and lockfile changes were rejected and restored through PR #39 and PR #40. The accepted final application difference consists only of the intended frontend changes and one matching Gate 1 localized-text assertion.
+No real seller listing/contact/photo data is authorized today.
 
-The district filter behavior is bounded as follows:
+Before any real personal-data collection, a separate founder gate must approve the exact privacy/KVKK and data-flow prerequisites, including the operational notice/request/deletion/security/provider boundaries required for the actual chosen pilot design.
 
-- the district selector is disabled until a specific city is selected;
-- available districts are derived from the current synthetic listings for that city and sorted with Turkish locale rules;
-- changing the city resets the district to `Tüm ilçeler`;
-- city and district are represented in URL search state;
-- no national district dataset, real location, geolocation or backend capability was added.
+Repository technical preparation alone is not a lawful-basis or activation decision.
 
-Validation for the cleaned district-filter source passed frozen package installation, lint, unit tests, production build, 22/22 pgTAP/RLS, REST integration, Gate 1 desktop/mobile E2E and production-mode V0 PWA/offline checks.
+## Backend/self-hosting state
 
-Founder approval was then given to update the public project from synchronized source `edb293b69348ba615b67122908b8cbd9ff4707ef`.
+D-021 remains the future technical target architecture: a founder-controlled, Türkiye-located self-hosted Supabase-compatible data plane on Linux VPS when justified and separately approved.
 
-Latest publication update:
+Current state remains **inactive preparation only**:
 
-- deployment ID: `d6040da8-3425-46b7-8f89-b1e4241af61f`;
-- public URL: `https://arar-buluruz.lovable.app`;
-- Lovable project status after deployment: `completed`, `is_published: true`;
-- published screenshot/source identity prefix: `edb293b6`;
-- no environment, listing-source, backend, secret, real-data, advertising, analytics or paid-infrastructure change was made.
+- no VPS purchased;
+- no hosted production database;
+- no remote production Storage;
+- no production secrets/environment activation;
+- no real data;
+- no public backend connection.
 
-## Backend and no-rebuild position
+A future VPS purchase additionally requires the separate FOUNDER BUDGET / REVENUE GATE; technical readiness alone is insufficient.
 
-- Backend/provider selection remains frozen under D-019.
-- Do not recommend Supabase ↔ Türkiye self-managed switching without a measured D-019 trigger.
-- Supabase Free remains development/technical-validation only.
-- PostgreSQL migrations remain canonical in GitHub.
-- UI/domain rules remain provider-independent; provider calls stay in adapters.
-- Future identity remains an internal UUID; e-mail/phone are not foreign keys.
-- Do not block a future nullable `listings.owner_user_id`.
-- JWT/auth claims remain outside the domain model.
-- No Storage, Realtime, Edge Functions or provider-heavy capability is added before backend selection.
+## Historical evidence preservation
+
+Older dated publication, recovery, Workstream B/C and V0 quality-completion records remain historically valid for the state they recorded. They should not be rewritten to pretend they were created after PR #52 or PR #53.
+
+When an older operational document calls a completed program “active,” use the newer current-state/backlog record or an explicit `Superseded/current state` note rather than rewriting the dated historical evidence.
 
 ## Current gate
 
-The corrected synthetic V0 publication and the bounded accessibility/district-filter updates are complete and accepted.
+The documentation-sync gate is documentation-only and exists solely to align repository context before an independent full-repository review.
 
-There is no active product, backend, auth, advertising, analytics, TWA, Play Store or paid-infrastructure implementation gate. Do not open one implicitly.
+After this documentation merge, the **next activity is the Claude full-repository review**.
 
-Permitted next work is limited to observing V0 UX/value-proposition evidence under the existing synthetic and privacy boundary. Any consequential implementation, real-data pilot, backend activation or store-distribution step requires a separate explicit founder gate.
+That review is independent and advisory only. Its findings do not authorize code changes, architecture changes, paid infrastructure, real-data activation or publication. Any implementation resulting from the review requires a separate founder gate.
+
+There is currently **no authorized implementation, paid-infrastructure, real-data or public real-listing activation gate**.
