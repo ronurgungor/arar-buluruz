@@ -20,7 +20,7 @@ function ListingRules() {
   return (
     <PublisherInfoPage
       title="İlan Kuralları"
-      intro="Amaç, az sayıda da olsa gerçek, anlaşılır ve güvenli biçimde incelenebilir ilan yayımlamaktır. Kurallar hem ilan verenleri hem ilan arayanları korumak için uygulanır."
+      intro="Amaç, gerçek, anlaşılır ve güvenli biçimde incelenebilir ilanlar yayımlamaktır. Kurallar hem ilan verenleri hem ilan arayanları korumak için uygulanır."
       sections={[
         {
           title: "İlan doğru ve yeterli bilgi vermeli",
@@ -40,14 +40,14 @@ function ListingRules() {
             "Silahlar, patlayıcılar ve benzeri yüksek riskli ürünler.",
             "Tütün ve nikotin ürünleri, keyif verici/uyuşturucu maddeler ve alkol.",
             "Kumar ürün veya hizmetleri ile reçeteli veya kısıtlı ilaçlar.",
-            "Google Publisher Policy veya Publisher Restrictions açısından yüksek risk oluşturan diğer içerikler.",
+            "Kullanıcıların veya platformun güvenliğini ciddi biçimde riske atan diğer içerikler.",
           ],
         },
         {
-          title: "İlk gerçek pilotta manuel inceleme",
+          title: "İnceleme ve yayından kaldırma",
           paragraphs: [
-            "İlk 5–10 gerçek ilanlık pilotta her ilan yayın öncesinde kurucu tarafından manuel incelenir. Google tarafından kısıtlı kabul edilen yüksek riskli kategoriler için sayfa bazlı reklam hariç tutma sistemi kurmak yerine ilan yayınlanmaz.",
-            "Kurallara aykırı, şüpheli veya sonradan sorunlu olduğu anlaşılan ilan yayından kaldırılabilir.",
+            "İlanlar yayımlanmadan önce veya yayımlandıktan sonra kurallara uygunluk açısından incelenebilir. Yasa dışı, yasak, yanıltıcı, aldatıcı veya yüksek riskli içerikler reddedilebilir.",
+            "Kurallara aykırı olduğu veya sonradan sorun oluşturduğu anlaşılan ilanlar yayından kaldırılabilir. Arar Buluruz, kullanıcıların ve platformun güvenliğini korumak için gerektiğinde daha sıkı yayın kuralları uygulayabilir.",
           ],
         },
         {
