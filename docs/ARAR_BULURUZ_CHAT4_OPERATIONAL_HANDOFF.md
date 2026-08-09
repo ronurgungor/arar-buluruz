@@ -1,5 +1,7 @@
 # Arar Buluruz — Sohbet 4 operasyonel devir ve V0 Quality Completion Program
 
+> **Superseded/current state — 2026-08-09:** This is a dated operational handoff and remains historically accurate for 2026-08-01. The V0 Quality Completion Program described below is complete. PR #52 was later merged and publicly published; its public smoke test passed, users found the application understandable, and initial real seller/supply intent was observed. PR #53 was later merged as `9376ba60dfc049a4df27ce25255fa5923b2a154e`, adding **inactive** real-Çorlu-pilot backend/security preparation while the deployed public V0 remains mock/zero-data with no real backend, personal data, Storage, Auth or external-sales CTA. Current gate/order lives in `ARAR_BULURUZ_CURRENT_STATE.md` and `ARAR_BULURUZ_BACKLOG.md`. Paid infrastructure is deferred under the separate FOUNDER BUDGET / REVENUE gate. The next activity after documentation sync is independent Claude review; review findings are advisory only.
+
 _Date: 2026-08-01, Europe/Istanbul_
 
 ## Purpose
