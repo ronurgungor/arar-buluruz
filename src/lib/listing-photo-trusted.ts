@@ -28,7 +28,10 @@ export type TrustedListingPhotoIngestionStore = {
 };
 
 export type TrustedListingPhotoDeliveryStore = {
-  getDeliverablePhoto(listingId: string, photoId: string): Promise<StoredListingPhotoMetadata | null>;
+  getDeliverablePhoto(
+    listingId: string,
+    photoId: string,
+  ): Promise<StoredListingPhotoMetadata | null>;
   createSignedUrl(objectPath: string, expiresInSeconds: number): Promise<string>;
 };
 
@@ -140,8 +143,7 @@ export async function createActiveListingPhotoSignedUrl(
   },
   store: TrustedListingPhotoDeliveryStore,
 ): Promise<string | null> {
-  const expiresInSeconds =
-    input.expiresInSeconds ?? LISTING_PHOTO_SIGNED_URL_DEFAULT_SECONDS;
+  const expiresInSeconds = input.expiresInSeconds ?? LISTING_PHOTO_SIGNED_URL_DEFAULT_SECONDS;
   assertSignedUrlTtl(expiresInSeconds);
 
   const expectedObjectPath = buildListingPhotoObjectPath(
