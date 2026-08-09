@@ -1,79 +1,97 @@
 # Arar Buluruz
 
-Türkiye geneline hitap eden, ücretsiz ilan verme ve ilan arama hizmeti sunmayı amaçlayan, aşırı sade ve hızlı bir mobil-öncelikli web uygulaması/PWA prototipi.
+Türkiye geneline hitap eden, ücretsiz ilan verme ve ilan arama hizmeti sunmayı amaçlayan, sade ve hızlı bir mobil-öncelikli web uygulaması/PWA projesi.
 
-**Live prototype:** https://arar-buluruz.lovable.app
+**Public V0:** https://arar-buluruz.lovable.app
 
 ## Start here — humans and AI agents
 
-Every new chat should first use the common bootstrap:
+Every new chat or independent reviewer should first use the common bootstrap:
 
-1. [`docs/AI_CHAT_BOOTSTRAP.md`](docs/AI_CHAT_BOOTSTRAP.md) — application, current work, team roles/capabilities and governance in one entry point
-2. [`AGENTS.md`](AGENTS.md) — operating contract, approvals and source priority
-3. [`docs/ARAR_BULURUZ_PROJECT_MEMORY.md`](docs/ARAR_BULURUZ_PROJECT_MEMORY.md) — durable project knowledge
-4. [`docs/ARAR_BULURUZ_CURRENT_STATE.md`](docs/ARAR_BULURUZ_CURRENT_STATE.md) — current implementation and verified state
-5. [`docs/ARAR_BULURUZ_BACKLOG.md`](docs/ARAR_BULURUZ_BACKLOG.md) — pending and ordered work
-6. [`docs/ARAR_BULURUZ_DECISION_LOG.md`](docs/ARAR_BULURUZ_DECISION_LOG.md) — consequential decisions and rationale
-7. [`docs/AI_TEAM_CAPABILITIES.md`](docs/AI_TEAM_CAPABILITIES.md) — team capability registry and routing rules
-8. [`docs/WORK_CODEX_CAPABILITY_PROFILE.md`](docs/WORK_CODEX_CAPABILITY_PROFILE.md) — detailed Work and Codex capabilities, limits and handoff standards
+1. [`docs/AI_CHAT_BOOTSTRAP.md`](docs/AI_CHAT_BOOTSTRAP.md)
+2. [`AGENTS.md`](AGENTS.md)
+3. [`docs/ARAR_BULURUZ_PROJECT_MEMORY.md`](docs/ARAR_BULURUZ_PROJECT_MEMORY.md)
+4. [`docs/ARAR_BULURUZ_CURRENT_STATE.md`](docs/ARAR_BULURUZ_CURRENT_STATE.md)
+5. [`docs/ARAR_BULURUZ_DECISION_LOG.md`](docs/ARAR_BULURUZ_DECISION_LOG.md)
+6. [`docs/ARAR_BULURUZ_BACKLOG.md`](docs/ARAR_BULURUZ_BACKLOG.md)
+7. relevant technical contracts and dated evidence
 
-GitHub `main` and the exact branch/PR under review remain more authoritative than summaries. An AI without repository access must say so and request the minimum missing context.
-
-A new project chat should understand before acting:
-
-- what the application is and currently does;
-- what work is completed, pending and next;
-- the founder, main assistant, Codex, Work and Lovable roles;
-- each teammate's nominal capabilities, demonstrated capabilities, session limits and approval boundaries.
+GitHub `main` and the exact branch/PR under review are more authoritative than summaries or old chat memory.
 
 ## Product thesis
 
-- Users type what they need directly instead of browsing a category tree.
-- Search, listing creation and direct contact should remain simple and fast.
+- Users type what they need directly instead of browsing a required category tree.
+- Search, listing creation and contact should remain simple and fast.
 - Mobile use and one-handed interaction take priority.
-- The prototype must clearly distinguish mock data and disabled actions from real capabilities.
+- Mock, inactive and real capabilities must never be presented as equivalent.
 - The project is independent from Tarladan and shares no code, data, integrations or brand assets with it.
 
-## Current scope
+## Current repository vs public runtime
 
-The current stage is frontend-only and uses local mock data.
+These are intentionally different and must not be conflated.
 
-Not enabled:
+### Repository `main`
 
-- database or backend;
-- Supabase/Lovable Cloud;
-- authentication or SMS;
-- real photo storage;
-- payments;
-- advertising SDK/network;
-- secrets or external services;
-- real user or seller data.
+Current canonical `main` contains the public V0 application **plus inactive preparation** for a future founder-controlled real Çorlu pilot. PR #53 added schema/security/Storage/external-sales preparation and production runbook contracts, but did not activate a remote backend or real-data path.
 
-These require separate analysis and explicit founder approval as defined in `AGENTS.md`.
+### Currently deployed public V0
 
-## Core screens
+The public runtime remains:
 
-1. Home: Arar Buluruz wordmark, large search input, location, listing and profile access.
-2. Search results: photo, title, price, location and minimal sorting/filter controls.
-3. Listing detail: photos, title, price, description, location, seller name, call, WhatsApp and complaint flow.
-4. Listing creation: prototype photo slots, title, price, location, description and editable preview.
-5. Login/profile placeholder.
+- synthetic/mock listings;
+- a zero-data demo listing form;
+- no real backend connection;
+- no real personal data;
+- no real Storage;
+- no Auth;
+- no public external-sales CTA.
 
-## Product constraints
+PR #52's V0 usability release was published, its public smoke test passed, users found the application understandable, and real users explicitly stated that their actual listings may be published. This validates **initial supply intent**, not a functioning real marketplace or sustainable operating model.
 
-- No visible category menu or required category selection.
-- No unnecessary cards, carousel, news feed, campaign area or social features.
-- No rating system, map, live chat, payment, shipping or order flow without a proven need.
-- Main search screen has no ad placeholder.
-- Ads remain design placeholders only and must not be deceptive or full-screen.
+## Future controlled pilot target
+
+The future target remains **5–10 founder-controlled real Çorlu listings**. Repository preparation does not authorize activation.
+
+The provider-neutral external-sales decision remains:
+
+- no Shopier API;
+- no OAuth;
+- no seller credential access;
+- no scraping or iframe;
+- Shopier is an independent third-party provider;
+- a seller may later supply their own public sales URL;
+- Arar Buluruz does not process or hold payment funds.
+
+This functionality is not public today.
+
+## Hard financial boundary
+
+Arar Buluruz currently earns no revenue.
+
+Therefore, until a separate explicit **FOUNDER BUDGET / REVENUE GATE** is approved:
+
+- no paid VPS;
+- no paid hosted backend;
+- no paid backup;
+- no recurring paid production infrastructure.
+
+Technical readiness, a provider shortlist or a completed self-hosting runbook is **not spending authorization**.
+
+## Privacy and activation boundary
+
+Real personal-data collection remains blocked. No real seller listing/contact/photo data may be entered merely because the repository contains inactive backend preparation.
+
+Future real-data activation requires a separate founder gate after privacy/KVKK, infrastructure, network, RLS/Storage, backup/restore and stability prerequisites pass.
 
 ## Technology
 
 - React + TanStack Start + TypeScript
 - Tailwind CSS + shadcn/ui
 - Bun `1.3.14`; canonical lockfile: `bun.lock`
-- Vite/Nitro Cloudflare module build
-- Lovable frontend editor/hosting connection
+- Vite/Nitro with the existing Lovable frontend/hosting connection
+- PostgreSQL/Supabase-compatible migration and RLS assets retained in GitHub
+
+Lovable remains a bounded frontend writer/hosting surface. Its database, auth, storage, secrets and edge functions are not the active production backend.
 
 ## Development
 
@@ -90,12 +108,4 @@ bun run lint
 bun run build
 ```
 
-Do not run `npm install`, `npm ci` or create a second lockfile. Do not rewrite published Git history or force-push.
-
-## Lovable
-
-The project is connected to:
-
-https://lovable.dev/projects/dca896f8-bb48-4a67-ae49-0493610ca6ad
-
-Lovable remains a bounded frontend writer/hosting surface. Its database, auth, storage, secrets and edge functions stay disabled.
+Do not run `npm install`, `npm ci`, create a second lockfile, force-push or rewrite published Git history.
