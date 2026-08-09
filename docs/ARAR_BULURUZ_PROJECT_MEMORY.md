@@ -36,6 +36,14 @@ Arar Buluruz is a simple, mobile-first, search-first classified-listing concept 
 - listing and discovery should remain lightweight;
 - advertising, payments and heavier marketplace systems require measured need and separate approval.
 
+Arar Buluruz is intended to become a business, not a permanent hobby prototype. The economic operating principle is:
+
+- complete all reasonably feasible revenue-readiness work at **0 TL recurring production cost** first;
+- begin recurring production spending only when it becomes necessary and separately founder-approved;
+- once recurring spend begins, minimize the remaining time to a monetizable Phase 2 launch.
+
+The current primary Phase 2 monetization **hypothesis** is Google programmatic advertising while core listing/search remains free. This is not an advertising implementation authorization. Ads, analytics and advertising SDKs remain separately gated.
+
 Do not add social feeds, ratings, maps, in-app chat, payment, shipping or order flows without measured need and explicit founder scope approval.
 
 ## Current evidence boundary
@@ -76,6 +84,8 @@ The public runtime remains:
 
 Never infer that repository preparation is active production functionality.
 
+The current source hardening contract additionally requires that founder/personal telephone numbers are not embedded as application contact targets. Public V0 contact actions stay fail-closed and Gate 1 browser coverage may use only an explicit non-personal test sentinel.
+
 ## Technical baseline
 
 - Frontend: React, TanStack Start and TypeScript.
@@ -103,17 +113,17 @@ This is a **technical target**, not a current purchase or activation authorizati
 
 ## Hard zero-spend boundary
 
-D-022 is a hard founder constraint:
+D-022 remains a hard founder spending gate, but zero spend is a sequencing rule rather than the business objective itself:
 
-- Arar Buluruz currently earns no revenue;
 - no paid VPS now;
 - no paid hosted backend now;
 - no paid backup now;
-- no other recurring paid production infrastructure now.
+- no other recurring paid production infrastructure now;
+- continue completing useful revenue-readiness work that can be proven at 0 TL first.
 
-Any such spend requires a separate explicit **FOUNDER BUDGET / REVENUE GATE**.
+Any recurring production spend requires a separate explicit **FOUNDER BUDGET / REVENUE GATE**. When that gate is eventually opened, the decision should consider both recurring cost and how quickly the remaining work can reach a monetizable Phase 2.
 
-Technical readiness, provider research, a production POC plan or a self-hosting runbook does not authorize spending.
+Technical readiness, provider research, a production POC plan or a self-hosting runbook does not authorize spending by itself.
 
 ## External-sales / Shopier boundary
 
@@ -138,6 +148,12 @@ A research report may recommend a particular VPS provider, backup vendor or sell
 Real personal-data collection remains blocked.
 
 Repository tables/contracts for future contact, photos or external links are inactive preparation. They do not authorize collection or publication of real seller data.
+
+Future real-photo handling has a mandatory trust boundary before any uploaded photo can become publicly retrievable:
+
+`untrusted bytes -> byte/MIME/signature limits -> trusted image decode -> orientation normalization -> approved re-encode -> sanitized bytes -> controlled private storage/delivery`
+
+The prepared sanitizer must fail closed on malformed/unsupported/oversized input or decoder/encoder failure and must remove unnecessary container metadata such as EXIF/GPS/XMP through actual decode/re-encode rather than string stripping. Real Storage and public photo delivery remain closed until a separate activation gate wires and revalidates this boundary.
 
 A future real-data gate must approve the actual privacy/KVKK/data-flow and operational controls before any real seller listing/contact/photo data is entered.
 
