@@ -42,9 +42,11 @@ type TestImageConstructor = new (
 ) => TestImagePipeline;
 
 function getTestImageConstructor(): TestImageConstructor {
-  const runtime = (globalThis as typeof globalThis & {
-    Bun?: { Image?: TestImageConstructor };
-  }).Bun;
+  const runtime = (
+    globalThis as typeof globalThis & {
+      Bun?: { Image?: TestImageConstructor };
+    }
+  ).Bun;
   if (!runtime?.Image) throw new Error("Bun.Image is required for the local photo integration.");
   return runtime.Image;
 }
@@ -363,7 +365,9 @@ const storedMetadata = await ingestTrustedListingPhoto(
 );
 
 if (storedMetadata.mimeType !== "image/webp" || !storedMetadata.objectPath.endsWith(".webp")) {
-  throw new Error(`Trusted ingestion did not canonicalize Storage metadata: ${JSON.stringify(storedMetadata)}`);
+  throw new Error(
+    `Trusted ingestion did not canonicalize Storage metadata: ${JSON.stringify(storedMetadata)}`,
+  );
 }
 if (!uploadedSanitizedBytes || storedMetadata.byteSize !== uploadedSanitizedBytes.byteLength) {
   throw new Error("Trusted ingestion metadata byte size does not match the sanitized upload.");
@@ -439,7 +443,10 @@ if (
 }
 
 const deliverableMetadata = await deliveryStore.getDeliverablePhoto(listingId, photoId);
-if (!deliverableMetadata || JSON.stringify(deliverableMetadata) !== JSON.stringify(storedMetadata)) {
+if (
+  !deliverableMetadata ||
+  JSON.stringify(deliverableMetadata) !== JSON.stringify(storedMetadata)
+) {
   throw new Error(
     `Delivery metadata does not match trusted ingestion metadata: ${JSON.stringify(deliverableMetadata)}`,
   );
@@ -450,7 +457,10 @@ const signedReadUrl = await createActiveListingPhotoSignedUrl(
   deliveryStore,
 );
 if (!signedReadUrl) throw new Error("Active published listing did not produce a signed photo URL.");
-const signedRead = await requireOk(await fetch(signedReadUrl), "active signed sanitized photo read");
+const signedRead = await requireOk(
+  await fetch(signedReadUrl),
+  "active signed sanitized photo read",
+);
 const signedBytes = new Uint8Array(await signedRead.arrayBuffer());
 if (validateListingPhotoContentSignature("image/webp", signedBytes) !== null) {
   throw new Error("Signed delivery did not return canonical WebP bytes.");
@@ -459,13 +469,18 @@ if (signedBytes.byteLength !== storedMetadata.byteSize) {
   throw new Error("Signed delivered object size does not match private metadata.");
 }
 if (Array.from(signedBytes).join(",") !== Array.from(uploadedSanitizedBytes).join(",")) {
-  throw new Error("Signed delivered object does not match the sanitized bytes uploaded by the trusted path.");
+  throw new Error(
+    "Signed delivered object does not match the sanitized bytes uploaded by the trusted path.",
+  );
 }
 
 await requireRejected(
-  await fetch(`${storageBase}/object/listing_photos/${encodeObjectPath(storedMetadata.objectPath)}`, {
-    headers: apiHeaders(anonKey, "application/octet-stream"),
-  }),
+  await fetch(
+    `${storageBase}/object/listing_photos/${encodeObjectPath(storedMetadata.objectPath)}`,
+    {
+      headers: apiHeaders(anonKey, "application/octet-stream"),
+    },
+  ),
   "anonymous private-bucket read",
 );
 
