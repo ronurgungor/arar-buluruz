@@ -100,6 +100,9 @@ jobs:
       - name: Run pgTAP RLS and backend contract tests
         run: supabase test db
 
+      - name: Run isolated trusted-photo role probes and DB health sentinel
+        run: bash scripts/trusted-photo-db-role-probes.sh
+
       - name: Run synthetic REST and Storage integration
         shell: bash
         run: |
