@@ -143,7 +143,7 @@ function Home() {
             <Link
               key={item.to}
               to={item.to}
-              className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center underline underline-offset-4 hover:text-foreground"
             >
               {item.label}
             </Link>
