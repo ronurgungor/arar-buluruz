@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public;
 
-select no_plan();
+select plan(27);
 
 select has_function(
   'public',
@@ -18,53 +18,81 @@ select has_function(
   'active-listing photo delivery gate exists'
 );
 
-select ok(
-  has_function_privilege(
-    'service_role',
-    'public.register_sanitized_listing_photo(uuid,uuid,text,bigint,smallint)',
-    'EXECUTE'
-  ),
-  'service_role can register sanitized photo metadata'
+select schema_privs_are(
+  'private',
+  'anon',
+  array[]::text[],
+  'anon has no USAGE or CREATE privilege on private schema'
 );
-select ok(
-  not has_function_privilege(
-    'anon',
-    'public.register_sanitized_listing_photo(uuid,uuid,text,bigint,smallint)',
-    'EXECUTE'
-  ),
-  'anon cannot register sanitized photo metadata'
+select schema_privs_are(
+  'private',
+  'authenticated',
+  array[]::text[],
+  'authenticated has no USAGE or CREATE privilege on private schema'
 );
-select ok(
-  not has_function_privilege(
-    'authenticated',
-    'public.register_sanitized_listing_photo(uuid,uuid,text,bigint,smallint)',
-    'EXECUTE'
-  ),
-  'authenticated cannot register sanitized photo metadata'
+
+select table_privs_are(
+  'private',
+  'listing_photos',
+  'anon',
+  array[]::text[],
+  'anon has no table privileges on private listing_photos'
 );
-select ok(
-  has_function_privilege(
-    'service_role',
-    'public.get_deliverable_listing_photo(uuid,uuid)',
-    'EXECUTE'
-  ),
-  'service_role can evaluate the private photo delivery gate'
+select table_privs_are(
+  'private',
+  'listing_photos',
+  'authenticated',
+  array[]::text[],
+  'authenticated has no table privileges on private listing_photos'
 );
-select ok(
-  not has_function_privilege(
-    'anon',
-    'public.get_deliverable_listing_photo(uuid,uuid)',
-    'EXECUTE'
-  ),
-  'anon cannot obtain private photo metadata through the delivery helper'
+
+select function_privs_are(
+  'public',
+  'register_sanitized_listing_photo',
+  array['uuid', 'uuid', 'text', 'bigint', 'smallint'],
+  'anon',
+  array[]::text[],
+  'anon cannot execute sanitized photo metadata registration'
 );
-select ok(
-  not has_function_privilege(
-    'authenticated',
-    'public.get_deliverable_listing_photo(uuid,uuid)',
-    'EXECUTE'
-  ),
-  'authenticated cannot obtain private photo metadata through the delivery helper'
+select function_privs_are(
+  'public',
+  'register_sanitized_listing_photo',
+  array['uuid', 'uuid', 'text', 'bigint', 'smallint'],
+  'authenticated',
+  array[]::text[],
+  'authenticated cannot execute sanitized photo metadata registration'
+);
+select function_privs_are(
+  'public',
+  'register_sanitized_listing_photo',
+  array['uuid', 'uuid', 'text', 'bigint', 'smallint'],
+  'service_role',
+  array['EXECUTE'],
+  'service_role can execute sanitized photo metadata registration'
+);
+select function_privs_are(
+  'public',
+  'get_deliverable_listing_photo',
+  array['uuid', 'uuid'],
+  'anon',
+  array[]::text[],
+  'anon cannot execute private photo delivery metadata gate'
+);
+select function_privs_are(
+  'public',
+  'get_deliverable_listing_photo',
+  array['uuid', 'uuid'],
+  'authenticated',
+  array[]::text[],
+  'authenticated cannot execute private photo delivery metadata gate'
+);
+select function_privs_are(
+  'public',
+  'get_deliverable_listing_photo',
+  array['uuid', 'uuid'],
+  'service_role',
+  array['EXECUTE'],
+  'service_role can execute private photo delivery metadata gate'
 );
 
 select ok(
@@ -315,42 +343,6 @@ select is(
   0,
   'expired listing has no deliverable photo metadata'
 );
-
-set local role anon;
-select throws_ok(
-  $$ select * from private.listing_photos $$,
-  '42501',
-  null,
-  'anon cannot directly query private photo metadata'
-);
-select throws_ok(
-  $$ select * from public.get_deliverable_listing_photo(
-    '61000000-0000-4000-8000-000000000003',
-    '62000000-0000-4000-8000-000000000003'
-  ) $$,
-  '42501',
-  null,
-  'anon cannot execute the private photo delivery metadata gate'
-);
-reset role;
-
-set local role authenticated;
-select throws_ok(
-  $$ select * from private.listing_photos $$,
-  '42501',
-  null,
-  'authenticated cannot directly query private photo metadata'
-);
-select throws_ok(
-  $$ select * from public.get_deliverable_listing_photo(
-    '61000000-0000-4000-8000-000000000003',
-    '62000000-0000-4000-8000-000000000003'
-  ) $$,
-  '42501',
-  null,
-  'authenticated cannot execute the private photo delivery metadata gate'
-);
-reset role;
 
 select * from finish();
 rollback;
