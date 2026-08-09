@@ -34,7 +34,10 @@ function withRobotsHeader(request: Request, response: Response): Response {
 
     if (response.status < 400) {
       try {
-        directive = robotsForRequestPath(getRuntimeDiscoveryProfile(), new URL(request.url).pathname);
+        directive = robotsForRequestPath(
+          getRuntimeDiscoveryProfile(),
+          new URL(request.url).pathname,
+        );
       } catch {
         directive = PUBLIC_V0_ROBOTS;
       }

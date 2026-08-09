@@ -19,9 +19,9 @@ async function assertPublicNoindex(page: Page, route: string) {
     robots: Array.from(document.querySelectorAll<HTMLMetaElement>('meta[name="robots"]')).map(
       (meta) => meta.content,
     ),
-    googlebot: Array.from(
-      document.querySelectorAll<HTMLMetaElement>('meta[name="googlebot"]'),
-    ).map((meta) => meta.content),
+    googlebot: Array.from(document.querySelectorAll<HTMLMetaElement>('meta[name="googlebot"]')).map(
+      (meta) => meta.content,
+    ),
   }));
 
   assert(directives.robots.length > 0, `${route} has no robots meta directive.`);
