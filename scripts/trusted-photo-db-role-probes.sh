@@ -7,6 +7,29 @@ if [[ -z "$db_container" ]]; then
   exit 1
 fi
 
+dump_db_diagnostics() {
+  local health_output
+  local health_status
+
+  echo "PostgreSQL container state after probe anomaly:"
+  docker inspect "$db_container" \
+    --format 'status={{.State.Status}} running={{.State.Running}} restarting={{.State.Restarting}} exit_code={{.State.ExitCode}}{{if .State.Health}} health={{.State.Health.Status}}{{end}}' \
+    || true
+
+  echo "PostgreSQL container log tail around probe anomaly:"
+  docker logs --since 2m "$db_container" 2>&1 | tail -n 400 || true
+
+  set +e
+  health_output="$(
+    docker exec -i "$db_container" \
+      psql -X -v ON_ERROR_STOP=1 -Atq -U postgres -d postgres -c 'SELECT 1;' 2>&1
+  )"
+  health_status=$?
+  set -e
+
+  echo "Fresh post-anomaly database health probe exit=${health_status}: ${health_output}"
+}
+
 run_denied_probe() {
   local role="$1"
   local label="$2"
@@ -33,6 +56,7 @@ SQL
   if ! grep -Eq 'ERROR:[[:space:]]+42501:' <<<"$output"; then
     echo "${label} failed, but not with expected SQLSTATE 42501."
     printf '%s\n' "$output"
+    dump_db_diagnostics
     exit 1
   fi
 
@@ -67,6 +91,7 @@ health_result="$(
 
 if [[ "$health_result" != "1" ]]; then
   echo "Post-probe database health sentinel failed: expected SELECT 1 -> 1, got '${health_result}'."
+  dump_db_diagnostics
   exit 1
 fi
 
