@@ -1,10 +1,10 @@
 # Arar Buluruz — Shared Project Memory
 
-_Last reviewed: 2026-07-31, Europe/Istanbul_
+_Last reviewed: 2026-08-09, Europe/Istanbul_
 
 ## Purpose
 
-This file stores durable project identity, product principles and architecture boundaries. Current implementation belongs in `ARAR_BULURUZ_CURRENT_STATE.md`; pending work belongs in `ARAR_BULURUZ_BACKLOG.md`; consequential decisions belong in `ARAR_BULURUZ_DECISION_LOG.md`.
+This file stores durable project identity, product principles and architecture/governance boundaries. Current implementation belongs in `ARAR_BULURUZ_CURRENT_STATE.md`; pending work belongs in `ARAR_BULURUZ_BACKLOG.md`; consequential founder decisions belong in `ARAR_BULURUZ_DECISION_LOG.md`.
 
 ## Canonical source order
 
@@ -24,7 +24,6 @@ This file stores durable project identity, product principles and architecture b
 - Founder-local checkout: `C:\Projects\arar-buluruz`
 - Public URL: `https://arar-buluruz.lovable.app`
 - Lovable project ID: `dca896f8-bb48-4a67-ae49-0493610ca6ad`
-- Lovable workspace ID: `AERDgNbVzztF411nAuzp`
 - Arar Buluruz is independent from Tarladan and shares no code, data, integrations or brand assets.
 
 ## Product thesis
@@ -32,87 +31,139 @@ This file stores durable project identity, product principles and architecture b
 Arar Buluruz is a simple, mobile-first, search-first classified-listing concept for Türkiye:
 
 - people type what they need instead of navigating a required category tree;
-- listings are fast to scan and easy to contact;
+- listings are fast to scan and easy to act on;
 - unnecessary platform complexity stays hidden;
-- the product aims to keep listing and discovery free and lightweight;
-- advertising may be evaluated later only through a separate approved decision.
+- listing and discovery should remain lightweight;
+- advertising, payments and heavier marketplace systems require measured need and separate approval.
 
-Do not add social feeds, ratings, maps, in-app chat, payment, shipping or order flows without measured need and explicit scope approval.
+Do not add social feeds, ratings, maps, in-app chat, payment, shipping or order flows without measured need and explicit founder scope approval.
 
-## Active phase principle
+## Current evidence boundary
 
-The active phase is **V0 — UX ve değer önerisi doğrulaması**.
+The published V0 has validated:
 
-V0 validates only product comprehension, search/discovery, listing card/detail UX, mobile/desktop usability, minimal-PWA installability and general interest. It does not validate real listing supply, accounts, listing management, moderation, seller contact operations or a supply-demand loop.
+- product comprehension: users found the application understandable;
+- the current search/discovery/listing-detail usability boundary;
+- **initial real supply intent**: real users explicitly said their actual listings may be published.
 
-The live V0 uses synthetic/mock listings and visibly states that it is a test version. It contains no real account, real listing, real seller phone/email, advertising or analytics.
+It has not validated:
+
+- real listing intake/ownership operations;
+- account management;
+- moderation sustainability;
+- the future seller-contact model;
+- public external-sales safety;
+- a functioning supply-demand loop;
+- production backend reliability.
+
+The future first controlled real-data target remains **5–10 founder-controlled Çorlu listings** when separately authorized.
+
+## Repository/public-runtime separation
+
+GitHub `main` and the currently deployed public V0 are intentionally not identical in capability.
+
+Repository `main` contains inactive real-pilot backend/schema/security preparation merged through PR #53.
+
+The public runtime remains:
+
+- synthetic/mock listings;
+- zero-data demo listing flow;
+- no real backend connection;
+- no real personal data;
+- no real Storage;
+- no Auth;
+- no public external-sales CTA.
+
+Never infer that repository preparation is active production functionality.
 
 ## Technical baseline
 
 - Frontend: React, TanStack Start and TypeScript.
 - UI: Tailwind CSS and shadcn/ui.
 - Package manager: Bun `1.3.14`; `bun.lock` is canonical.
-- Build: Vite/Nitro with the existing Lovable configuration.
-- Lovable is a frontend editor and hosting surface, not backend owner.
-- Lovable database, auth, storage, secrets and edge functions remain disabled.
-- Gate 1 PostgreSQL migration, RLS, REST adapter and tests remain reusable technical preparation, not an active remote backend or pilot.
-
-## Minimal-PWA boundary
-
-The minimal PWA is limited to:
-
-- manifest;
-- durable application identity;
-- correct icons;
-- installability;
-- safe and honest offline/error behavior.
-
-It excludes push, background sync, complete offline listings, cache-first dynamic listings, auth, real backend, ads, analytics, TWA and Play Store.
+- Lovable is a frontend editor/hosting surface, not backend owner.
+- PostgreSQL migrations, RLS and backend-preparation assets remain GitHub-canonical.
+- PR #53 adds inactive preparation for a future controlled real Çorlu pilot; it does not activate a remote production system.
 
 ## No-rebuild architecture boundaries
 
 - PostgreSQL schema and migrations remain GitHub-canonical.
-- UI and domain business rules remain independent from the backend provider.
-- Supabase calls remain inside an adapter layer.
-- Future user identity is represented by an internal UUID; email and phone are not foreign keys.
+- UI and domain business rules remain provider-independent.
+- Supabase-specific calls stay behind adapter/server boundaries.
+- Future user identity is an internal UUID; email and phone are not foreign keys.
 - No decision may prevent a future nullable `listings.owner_user_id`.
-- Auth claim/JWT shape is not embedded in the domain model.
-- Supabase Storage, Realtime, Edge Functions and provider-heavy capabilities are not introduced before backend selection.
+- Auth claim/JWT shape stays out of the domain model.
 - Lovable never receives permanent backend ownership or unilateral control.
 
-## Backend decision freeze
+## Future data-plane target
 
-Backend/provider selection remains closed until at least one measured trigger exists:
+D-021 keeps the future technical target as a founder-controlled, Türkiye-located self-hosted Supabase-compatible data plane on Linux VPS when a real-data phase is justified.
 
-- external user accounts;
-- real personal data;
-- an unworkable KVKK transfer model;
-- measured free-tier or uptime failure;
-- confirmed photo/storage need;
-- measured cost or technical necessity.
+This is a **technical target**, not a current purchase or activation authorization.
 
-Without a trigger, do not recommend switching between Supabase and Türkiye self-managed infrastructure. Supabase Free may be used only for development and technical verification; it is not presumed to be production infrastructure for a real external-user pilot.
+## Hard zero-spend boundary
 
-Any future backend must remain under founder control, use GitHub-canonical migrations, and receive separate review for region, RLS, auth, backups, retention/KVKK, secrets, export/restore and provider exit.
+D-022 is a hard founder constraint:
 
-## Controlled synthetic contact
+- Arar Buluruz currently earns no revenue;
+- no paid VPS now;
+- no paid hosted backend now;
+- no paid backup now;
+- no other recurring paid production infrastructure now.
 
-- Controlled prototype number: `+905321739111`
-- Call target: `tel:+905321739111`
-- WhatsApp target: `https://wa.me/905321739111`
+Any such spend requires a separate explicit **FOUNDER BUDGET / REVENUE GATE**.
 
-This target is synthetic/prototype-only and does not prove a future seller-contact model.
+Technical readiness, provider research, a production POC plan or a self-hosting runbook does not authorize spending.
+
+## External-sales / Shopier boundary
+
+The accepted product model is provider-neutral **External Sales Link / Satış bağlantısı**, not a Shopier integration.
+
+- no Shopier API;
+- no OAuth;
+- no seller credential access;
+- no scraping;
+- no iframe;
+- no partnership/verification claim;
+- Shopier is an independent third party;
+- a seller may later provide their own public sales URL;
+- Arar Buluruz does not process or hold payment funds.
+
+The functionality is not public today.
+
+A research report may recommend a particular VPS provider, backup vendor or seller-contact model. Such recommendations are non-binding unless the founder explicitly records a decision in the decision log.
+
+## Privacy/data boundary
+
+Real personal-data collection remains blocked.
+
+Repository tables/contracts for future contact, photos or external links are inactive preparation. They do not authorize collection or publication of real seller data.
+
+A future real-data gate must approve the actual privacy/KVKK/data-flow and operational controls before any real seller listing/contact/photo data is entered.
 
 ## Operating model
 
 - GitHub `main` is canonical.
 - Only one code writer operates at a time.
-- The main assistant is the default routine executor/coordinator when current tools are sufficient.
-- Work and Codex are optional specialists, not mandatory handoffs.
+- The main assistant is the default routine executor/coordinator inside an explicitly approved scope.
+- Independent reviewers, including Claude, are advisory only.
 - Validation depth follows touched risk rather than ritual repetition.
-- Feature branch, PR, CI and routine merge may proceed under D-018.
-- Founder approval is required before Lovable Publish/Update, another production deploy, remote backend, environment/secrets, real data, auth, storage, paid services, advertising or analytics.
+- Founder approval is required before production deploy, Lovable Publish/Update, remote backend activation, environment/secrets, real data, Auth/Storage activation, paid services, advertising or analytics.
 - Never force-push or rewrite published history.
+
+## Independent-review governance
+
+An external or independent AI review may identify defects, risks or recommendations. Its output is evidence/advice, not authorization.
+
+No reviewer recommendation automatically becomes:
+
+- a founder product decision;
+- a new architecture decision;
+- a vendor selection;
+- a paid commitment;
+- a repository implementation task.
+
+Any consequential follow-up requires a separate founder-approved gate.
 
 ## Knowledge and privacy
 

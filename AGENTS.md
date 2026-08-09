@@ -11,18 +11,18 @@
 
 # Arar Buluruz Agent Guide
 
-Bu dosya, projede çalışan ana sohbet, Lovable, Codex, Work ve diğer AI/denetim sohbetleri için kısa çalışma sözleşmesidir.
+Bu dosya, projede çalışan ana sohbet, Lovable, Codex, Work, Claude ve diğer AI/denetim sohbetleri için çalışma sözleşmesidir.
 
 ## Her yeni görevde zorunlu başlangıç
 
 1. `docs/AI_CHAT_BOOTSTRAP.md` dosyasını ortak giriş noktası olarak oku.
-2. Repository, branch ve mümkünse exact SHA'yı doğrula.
-3. Uygulama için project memory/current state'i, görevler için backlog'u, takım için capability registry ve Work/Codex profilini oku; yerel kurucu bilgisayarında çalışma gerekiyorsa `docs/FOUNDER_WINDOWS_DEV_MACHINE_PROFILE.md` dosyasını da oku.
-4. Gerçek erişimini tahmin etme; okuyamadığın kaynakları açıkça belirt.
+2. Repository, branch ve exact SHA'yı doğrula.
+3. Project memory/current state, decision log ve backlog'u görev bağlamına göre oku.
+4. Gerçek erişimini tahmin etme; okuyamadığın kaynağı açıkça belirt.
 5. Eski sohbet hafızasını GitHub'daki güncel bilgiye tercih etme.
-6. Yazma işleminden önce aktif kod yazarını ve onay kapsamını doğrula.
+6. Yazma işleminden önce aktif yazar ve onay kapsamını doğrula.
 
-Rutin ve düşük riskli bir işte bu başlangıç kısa tutulabilir; gereksiz törene dönüşmemelidir.
+Rutin ve düşük riskli görevlerde bu başlangıç kısa tutulabilir.
 
 ## Kanonik kaynak sırası
 
@@ -35,119 +35,177 @@ Rutin ve düşük riskli bir işte bu başlangıç kısa tutulabilir; gereksiz t
 7. `docs/ARAR_BULURUZ_DECISION_LOG.md`
 8. `docs/AI_TEAM_CAPABILITIES.md`
 9. `docs/WORK_CODEX_CAPABILITY_PROFILE.md`
-10. `docs/FOUNDER_WINDOWS_DEV_MACHINE_PROFILE.md` — yalnız yerel geliştirme, test veya güvenli yönetim kapasitesiyle ilgili görevlerde
+10. `docs/FOUNDER_WINDOWS_DEV_MACHINE_PROFILE.md` — yalnız yerel geliştirme/test için
 11. `docs/ARAR_BULURUZ_BACKLOG.md`
-12. Tarihli kanıt/test dokümanları
-13. Eski sohbetler ve geçmiş notlar yalnız gerektiğinde
+12. İlgili teknik kontratlar ve tarihli kanıtlar
+13. Eski sohbetler yalnız gerektiğinde
 
 Çelişki halinde daha yukarıdaki kaynak esas alınır.
 
 ## Bilgi dosyalarının görevleri
 
-- **AI Chat Bootstrap:** Her yeni sohbete uygulama, görevler, takım ve yönetişim hakkında ortak başlangıç bağlamı verir.
-- **Project Memory:** Kalıcı ürün tezi, kimlikler, mimari sınırlar, sahiplik ve çalışma ilkeleri.
-- **Current State:** Güncel uygulama davranışı, doğrulanmış SHA, CI/runtime durumu ve bilinen riskler.
-- **Decision Log:** Önemli kararlar, gerekçeleri, ertelenen alternatifler ve yeniden değerlendirme tetikleri.
-- **AI Team Capabilities:** Gerçekte doğrulanmış veya açıkça beyan edilmiş araç/AI erişimleri, yazma/okuma sınırları ve doğru görev yönlendirmesi.
-- **Work/Codex Capability Profile:** Work ve Codex'in ayrıntılı rol, nominal yetenek, proje kanıtı, oturum sınırı ve teslim standartları.
-- **Founder Windows Dev Machine Profile:** Kurucunun yerel bilgisayarının geliştirme/test uygunluğu, doğrulanmış araçları, güvenlik eksikleri ve hangi işlerin CI/VPS'e bırakılacağı.
-- **Backlog:** Bekleyen ve sıralanmış işler.
-- **Dated Evidence:** Belirli bir tarihteki test, dry-run veya denetim kanıtı.
+- **AI Chat Bootstrap:** Yeni sohbete uygulama, güncel görev ve gate bağlamı verir.
+- **Project Memory:** Kalıcı ürün tezi, mimari/yönetişim sınırları ve sahiplik ilkeleri.
+- **Current State:** Güncel repository + deployed runtime ayrımı, SHA/CI/runtime gerçekleri ve bilinen riskler.
+- **Decision Log:** Kabul edilmiş önemli founder kararları, gerekçe ve review trigger'ları.
+- **Backlog:** Açık/deferred gate ve gelecek işler.
+- **Technical docs:** Gelecek implementation/production kontratları; tek başına harcama veya aktivasyon yetkisi değildir.
+- **Dated evidence:** Belirli bir tarihteki test, publication veya review kanıtı; tarihsel olarak korunur.
 
-Önemli bir bilgi yalnız sohbet içinde bırakılmaz; doğru dosyaya yazılır.
+Önemli bilgi yalnız sohbet içinde bırakılmaz.
 
 ## Roller
 
-- **Ana sohbet:** Varsayılan ürün/teknik uygulayıcı ve koordinasyon merkezi. Mevcut bağlantı ve araçlarla güvenli biçimde yapabildiği kod, dokümantasyon, GitHub ve inceleme işlerini doğrudan yürütür; gerektiğinde uzmanlara yönlendirir.
-- **Kurucu:** Ürün gözlemi ve nihai karar mercii; ayrı onay kapılarını açar.
-- **Lovable:** Güvenli ve incelemeye açık koşullarda sınırları belirli frontend, mobil UX ve görsel akış işleri.
-- **Codex:** Repository incelemesiyle terminal, test, debugging veya kapsamlı kod uygulamasının birlikte gerektiği işlerde kullanılan uygulama/test uzmanı.
-- **Work:** Ürün stratejisi, mimari, backend, güvenlik, KVKK, gerçek veri, public pilot ve geri dönüşü pahalı kararlarda kullanılan bağımsız analiz ve risk-denetim uzmanı.
+- **Ana sohbet:** Varsayılan ürün/teknik uygulayıcı ve koordinasyon merkezi; açık onay kapsamındaki reversible repository işlerini yürütür.
+- **Kurucu:** Nihai ürün, veri, KVKK, bütçe, backend ve publication karar mercii.
+- **Lovable:** Sınırları belirli frontend editör/hosting yüzeyi; backend sahibi değildir.
+- **Codex:** Repository/terminal/test/debugging gerektiğinde kullanılan uygulama/test uzmanı.
+- **Work:** Strateji, mimari, backend, güvenlik, KVKK, gerçek veri ve maliyetli kararlarda bağımsız analiz/risk denetimi.
+- **Claude ve diğer bağımsız reviewer'lar:** Advisory/review rolü; önerileri otomatik implementation yetkisi oluşturmaz.
 
-Takımdaşların rol ve yetenekleri `docs/AI_TEAM_CAPABILITIES.md` ile `docs/WORK_CODEX_CAPABILITY_PROFILE.md` içinde okunmalıdır. Nominal yetenek, o oturumdaki erişim ve proje için verilmiş işlem yetkisi birbirinden ayrılır.
+Nominal yetenek, mevcut oturum erişimi ve proje işlem yetkisi birbirinden ayrılır.
 
-Work, Codex, Lovable veya ana sohbet çıktısı tek başına emir ya da kesin proje kararı değildir. Öneriler kanonik kaynaklar, kanıt, kapsam ve kurucu iradesiyle değerlendirilir. İkinci veya üçüncü görüş yalnız kararın önemi, belirsizliği, güvenlik/KVKK etkisi ya da geri dönüş maliyeti koordinasyon maliyetini haklı çıkardığında alınır; rutin olarak tekrarlanmaz.
-
-Her uzman devri, çözmesi beklenen somut belirsizliği veya sağlayacağı eksik yeteneği açıkça belirtmelidir.
+Hiçbir AI çıktısı tek başına founder kararı değildir. Özellikle reviewer önerileri vendor seçimi, product karar, architecture değişikliği, paid commitment veya implementation task olarak otomatik kabul edilmez.
 
 ## Tek yazıcı kuralı
 
-Aynı anda yalnız bir araç kod yazar. Yazar değişmeden önce mevcut görev tamamlanır veya durdurulur; değişiklikler Git ile güvenli hale getirilir; exact branch ve SHA doğrulanır.
+Aynı anda yalnız bir araç repository'yi yazar. Yazar değişmeden önce mevcut görev tamamlanır veya durdurulur; exact branch/SHA doğrulanır.
 
 ## Onay modeli
 
-Kurucu, backlog'da tanımlı düşük riskli ve geri dönüşü kolay görevler için sürekli uygulama onayı vermiştir. Ana sohbet; kapsam sapması veya ciddi belirsizlik yoksa feature branch, commit, PR ve merge adımlarını tamamlayabilir. Lovable Publish/Update ve diğer production publish/deploy işlemleri için görev bazlı açık kurucu onayı gerekir.
+Kurucu, açıkça tanımlı düşük riskli/reversible repository işlerinde rutin branch/commit/PR/CI/merge yetkisi verebilir.
 
-Aşağıdaki işlemler için görev bazlı açık kurucu kararı gerekir. Work veya Codex incelemesi, risk ve belirsizlik bunu haklı çıkarıyorsa karar desteği olarak kullanılır; kurucu onayının yerine geçmez:
+Aşağıdaki işlemler için görev bazlı açık founder kararı gerekir:
 
-- Backend, database, auth, SMS, storage veya edge function açma
-- Secret veya environment değişikliği
-- Gerçek kullanıcı/satıcı verisi
-- Ödeme veya reklam ağı entegrasyonu
-- Ücretli ya da recurring servis
-- KVKK, güvenlik, public pilot veya geri dönüşü pahalı mimari karar
-- Lovable Publish/Update veya başka production publish/deploy
-- Git geçmişini değiştirme veya force-push
+- backend/database/Auth/Storage/edge-function aktivasyonu;
+- secret veya environment değişikliği;
+- gerçek kullanıcı/satıcı verisi;
+- ödeme/reklam ağı entegrasyonu;
+- ücretli veya recurring servis;
+- KVKK/güvenlik/public pilot veya geri dönüşü pahalı mimari karar;
+- Lovable Publish/Update veya başka production deploy;
+- Git geçmişini rewrite/force-push.
 
-Test başarısızsa, kapsam belirsizse veya geri dönüş planı yeterli değilse otomatik onay kullanılmaz.
+Test başarısızsa, kapsam belirsizse veya rollback yeterli değilse otomatik/rutin onay kullanılmaz.
 
 ## Teknik kurallar
 
 - Repository: `ronurgungor/arar-buluruz`
-- Yerel klasör: `C:\Projects\arar-buluruz`
+- Founder-local klasör: `C:\Projects\arar-buluruz`
 - Public adres: `https://arar-buluruz.lovable.app`
 - `bun.lock` kanoniktir.
-- Pinned Bun version: `1.3.14`.
+- Pinned Bun: `1.3.14`.
 - Varsayılan kontroller: `bun run lint` ve `bun run build`.
-- `npm run lint/build` teknik olarak yasak değildir.
 - `npm install`, `npm ci`, ikinci lockfile veya izinsiz dependency değişikliği yapılmaz.
-- İlgisiz refactor ve biçimlendirme aynı göreve eklenmez.
-- Test derinliği alışkanlığa değil, değişikliğin riskine ve dokunduğu davranışa göre seçilir.
-- Yerel bilgisayarda yapılacak işlerin kapasite ve güvenlik sınırları `docs/FOUNDER_WINDOWS_DEV_MACHINE_PROFILE.md` ile eşleştirilir.
+- İlgisiz refactor/formatting aynı göreve eklenmez.
+- Git history force-push/rewrite yapılmaz.
+- Test derinliği değişikliğin riskine göre seçilir.
 
-## V0 faz kilidi ve doğrulama sınırı
+## Current evidence and V0 boundary
 
-- Aktif fazın adı **“V0 — UX ve değer önerisi doğrulaması”**dır.
-- V0 yalnız ürünün anlaşılmasını, arama ve ilan keşfini, ilan kartı/detay deneyimini, mobil/desktop kullanılabilirliği, minimal PWA kurulabilirliğini ve genel kullanıcı ilgisini doğrular.
-- V0; kullanıcıların gerçekten ilan vereceğini, hesap açacağını, ilan yöneteceğini, moderasyonun sürdürülebileceğini, satıcı iletişim modelinin çalışacağını veya arz-talep döngüsünün oluşacağını doğrulamış sayılmaz.
-- Canlı V0 yalnız synthetic/mock ilan kullanır. Gerçek kullanıcı hesabı, gerçek ilan, gerçek satıcı telefonu/e-postası, reklam ve analytics kullanılmaz. Test sürümü olduğu dürüstçe belirtilir.
-- Minimal PWA yalnız manifest, kalıcı uygulama kimliği, doğru ikonlar, kurulabilirlik ve güvenli/dürüst offline-hata ekranıdır.
-- Push, background sync, tam offline ilan, dinamik ilanlarda cache-first, auth, gerçek backend, reklam, analytics, TWA ve Play Store V0 kapsamı dışındadır.
-- Backend kararı; dış kullanıcı hesabı, gerçek kişisel veri, uygulanamaz KVKK aktarım modeli, ölçülmüş free-tier/uptime sorunu, kesinleşmiş fotoğraf/storage ihtiyacı veya ölçülmüş maliyet/teknik zorunluluk oluşmadan yeniden açılmaz.
-- Bu tetikleyiciler olmadan Supabase ile Türkiye self-managed arasında yön değişikliği önerilmez.
-- Supabase Free yalnız geliştirme ve teknik doğrulama adayıdır; gerçek dış kullanıcı pilotunda güvenilir production altyapısı olduğu varsayılmaz.
+Public V0 remains synthetic/mock and honestly test-scoped.
 
-## No-rebuild mimari sınırları
+Current evidence now supports:
 
-- PostgreSQL şeması ve migration'lar GitHub'da kanonik kalır.
-- UI ve domain iş kuralları backend sağlayıcısından bağımsız tutulur.
-- Supabase çağrıları yalnız adapter katmanında kalır; domain modeline yayılmaz.
-- Gelecekte kullanıcı kimliği internal UUID ile temsil edilir; e-posta veya telefon foreign key yapılmaz.
-- İleride `listings.owner_user_id` nullable olarak eklenebilmesini engelleyen karar alınmaz.
-- Auth claim/JWT biçimi domain modeline gömülmez.
-- Backend kararı kesinleşmeden Supabase Storage, Realtime, Edge Functions veya provider-specific yoğun özellik eklenmez.
+- users found the application understandable;
+- current search/discovery/listing-detail usability boundary;
+- **initial real seller/supply intent**, because real users explicitly said their actual listings may be published.
 
-## Backend sahipliği ve çıkış planı
+Do **not** inflate this into proof of:
 
-- Lovable database kapalı kalır; Lovable üzerinden database, auth, storage, secret veya edge function etkinleştirilmez.
-- Backend sağlayıcısı V0 boyunca dondurulmuştur; mevcut Supabase adapter/migration yatırımı teknik hazırlık olarak korunur fakat remote proje veya production taahhüdü sayılmaz.
-- Gelecekteki backend kurucunun doğrudan kontrolünde olmalıdır; hesap, organizasyon, billing ve yönetici erişimleri kurucunun kontrolünde tutulur.
-- Şema ve tüm migration'lar ilk günden GitHub'da kanonik tutulur. Dashboard değişiklikleri migration'a dönüştürülmeden kalıcı kabul edilmez.
-- Uygulama yalnız açıkça yönetilen environment değişkenleriyle backend'e bağlanır; Lovable'a kalıcı backend sahipliği veya tek taraflı kontrol verilmez.
-- Gerçek veri öncesinde yedekleme, export/restore, bölge, RLS, auth, veri saklama/KVKK ve sağlayıcıdan çıkış planı uygun bağımsız inceleme ile değerlendirilip kurucu tarafından onaylanır.
+- real listing intake/ownership operations;
+- account management;
+- sustainable moderation;
+- future seller-contact model;
+- public external-sales safety;
+- production backend reliability;
+- functioning supply-demand loop.
+
+The deployed public V0 still has:
+
+- mock/synthetic listings;
+- zero-data demo listing form;
+- no real backend connection;
+- no real personal data;
+- no real Storage;
+- no Auth;
+- no public external-sales CTA.
+
+Repository `main` may contain inactive future-pilot preparation that is intentionally not deployed. Never equate repository capability with live runtime capability.
+
+## Minimal-PWA boundary
+
+Minimal PWA remains limited to manifest, durable app identity, correct icons, installability and safe/honest offline/error behavior.
+
+Push, background sync, complete offline listings, cache-first dynamic data, TWA and Play Store remain separately gated.
+
+## No-rebuild architecture boundaries
+
+- PostgreSQL schema/migrations remain GitHub-canonical.
+- UI/domain rules remain backend-provider independent.
+- Supabase/provider calls remain behind adapter/server boundaries.
+- Future user identity is an internal UUID; email/phone are not foreign keys.
+- Future nullable `listings.owner_user_id` must not be blocked.
+- Auth/JWT claim shape stays out of domain model.
+- Lovable does not receive permanent backend ownership.
+
+## Backend target and activation boundary
+
+D-021 supersedes the old provider-selection freeze only at the **technical target** level: when a future real-data phase is justified, the target data plane is founder-controlled, Türkiye-located self-hosted Supabase-compatible infrastructure on Linux VPS.
+
+This does not mean a VPS is purchased or the backend is live.
+
+Current `main` contains inactive real-Çorlu-pilot backend/security preparation through PR #53. Public runtime remains mock/zero-data.
+
+Real data requires a separate privacy/KVKK + production activation gate.
+
+## Hard FOUNDER BUDGET / REVENUE gate
+
+D-022 is active.
+
+Arar Buluruz currently earns no revenue. Therefore, until a separate explicit founder budget/revenue decision is approved:
+
+- no paid VPS;
+- no paid hosted backend;
+- no paid backup;
+- no recurring paid production infrastructure.
+
+A provider shortlist, technical readiness, completed runbook, successful review or future POC prerequisites do **not** authorize spending.
+
+Security/law/data-loss requirements cannot be weakened to preserve zero cost; if a required control needs paid infrastructure, activation remains deferred until funded.
+
+## External-sales / Shopier boundary
+
+Canonical model: provider-neutral **Satış bağlantısı / External Sales Link**.
+
+- no Shopier API;
+- no OAuth;
+- no seller credential access;
+- no scraping;
+- no iframe;
+- Shopier is an independent third party;
+- Arar does not process/hold payment funds;
+- functionality currently not public.
+
+A later research recommendation about a VPS provider, backup vendor or contact model is non-binding unless the founder explicitly records it in the decision log.
+
+## Current review sequence
+
+After the documentation-sync gate merges, the next activity is an **independent Claude full-repository review**.
+
+Claude review is research/advisory only. It must not automatically mutate the repository or open another implementation/production gate. Any consequential follow-up requires separate founder authorization.
 
 ## Görev akışı
 
-1. Başlangıç branch'i, SHA, aktif yazar ve kapsam doğrulanır.
-2. Uygulama, görevler ve takım bağlamı bootstrap üzerinden okunur.
-3. Ana sohbet işi güvenli ve doğru biçimde yapabiliyorsa doğrudan devam eder; uzman devri ancak belirgin ek değer sağlıyorsa yapılır.
-4. Dar feature branch'te minimum diff hazırlanır.
-5. Diff, hedef davranışlar ve riskle orantılı testler incelenir.
-6. Gerekirse ve değer katıyorsa Codex veya Work'ten bağımsız/uzman kontrol alınır.
-7. Onay modeline göre PR hazırlanır ve merge edilir veya karar için durulur.
-8. Publish gerekiyorsa ayrı açık kurucu onayı alınır.
-9. Milestone sonrası current state, backlog, decision log ve gerekiyorsa capability registry/profile güncellenir.
+1. Branch/SHA/aktif yazar/kapsam doğrulanır.
+2. Bootstrap + ilgili canonical docs okunur.
+3. Minimum diff hazırlanır.
+4. Riskle orantılı test/check çalıştırılır.
+5. Gerekliyse bağımsız review alınır.
+6. Onay modeline göre PR/merge yapılır veya founder kararı için durulur.
+7. Publish/deploy/paid/real-data adımları her zaman ayrı gate'tir.
+8. Milestone sonrası uygun canonical docs güncellenir.
 
 ## Raporlama
 
-Kurucuya teknik ayrıntı yığını değil; yapılan değişiklik, kanıt, kalan risk ve gereken karar sunulur. Test çalışmadıysa başarılıymış gibi gösterilmez. Bir AI erişemediği kaynağı okumuş veya gerçekleştiremediği işlemi yapmış gibi davranmaz.
+Kurucuya yapılan değişiklik, kanıt, kalan risk ve gereken karar sunulur. Çalışmayan test başarılıymış gibi gösterilmez; erişilmeyen kaynak okunmuş gibi davranılmaz.

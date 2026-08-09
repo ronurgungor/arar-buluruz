@@ -2,6 +2,8 @@
 
 _Date: 2026-08-07, Europe/Istanbul_
 
+> **Current status — 2026-08-09:** The product decision below remains active: provider-neutral External Sales Link, no Shopier API/OAuth/credentials/scraping/iframe, and no Arar payment handling. PR #53 later added inactive persistent review/security preparation and a stricter full-state CTA eligibility contract. That repository preparation is **not public**: the deployed V0 still exposes no external-sales field, real seller URL or CTA. No VPS provider, backup provider or seller-contact model is selected by this document or by later non-binding research.
+
 ## Founder decision
 
 The canonical product concept is **External Sales Link / Haricî Satış Bağlantısı**. It is provider-neutral and is not a Shopier integration.
@@ -109,11 +111,25 @@ A new or changed valid link starts with moderation status `pending`. URL ownersh
 
 The default model keeps the kill-switch enabled as a capability boundary: future moderation can suppress the external link without deleting the listing or rewriting historical evidence.
 
-## Future public CTA boundary
+## Current full-state CTA contract after PR #53
 
-A CTA is produced only after moderation state is explicitly `approved`.
+The earlier baseline requirement “moderation approved” remains necessary but is no longer sufficient by itself.
 
-Recognized Shopier candidate:
+Current repository preparation requires all of the following before a public CTA can be produced in a future separately activated real-data phase:
+
+1. current URL re-validates and is not `INVALID`;
+2. stored canonical URL equals the current canonical URL;
+3. stored URL-security classification equals current validation;
+4. stored provider identification matches current provider classification;
+5. ownership status is `confirmed`;
+6. listing/product-match status is `matched`;
+7. moderation status is `approved`;
+8. complaint status is `clear`;
+9. explicit operator decision is `allow_public_cta`.
+
+Anything else is fail-closed and produces no CTA.
+
+Recognized Shopier candidate copy remains:
 
 - `Satıcının Shopier sayfasına git`
 - `Haricî site: shopier.com`
@@ -125,24 +141,9 @@ Other approved domain:
 
 The CTA is an external-navigation disclosure, not a security endorsement.
 
-## Future moderation model
+## Historical baseline note
 
-Future persistence/operations must support these as separate facts or events:
-
-- new link → pending;
-- changed link → pending;
-- manual approval/rejection;
-- canonical URL uniqueness;
-- external-link kill-switch;
-- complaint state;
-- listing hide/review state;
-- seller suspension state;
-- audit trail;
-- point-in-time URL ownership evidence;
-- listing/product/price match evidence;
-- appeal/review state.
-
-No database migration for these future states is added in this gate. The existing Gate 1 `public.listings` schema and RLS asset remain unchanged until a later real-backend/data-model founder gate.
+The original 2026-08-07 gate added no database migration for persistent external-link review states. That statement remains historically true for that gate. PR #53 subsequently introduced inactive persistent review state under a separate founder-authorized backend-preparation gate. See `REAL_CORLU_PILOT_BACKEND_PREP.md` for the current repository contract.
 
 ## Future incident operation target
 
@@ -150,14 +151,13 @@ When a fraudulent seller/link is established in a future real-data phase, the ta
 
 1. disable the external sales link immediately;
 2. place the listing into review/hidden state;
-3. block the account from adding new listings/links;
-4. prevent reuse of the canonical URL;
-5. retain only minimum necessary incident evidence;
-6. warn affected users where legally/operationally appropriate;
-7. direct users to the relevant third-party provider's dispute channel;
-8. preserve an appeal path for false positives.
+3. prevent reuse/continued publication as appropriate to the approved operating model;
+4. retain only minimum necessary incident evidence;
+5. warn affected users where legally/operationally appropriate;
+6. direct users to the relevant third-party provider's dispute channel;
+7. preserve an appeal/review path where applicable.
 
-This is an operational target, not functionality activated by the current repository change.
+This is an operational target, not functionality activated by the current repository state.
 
 ## Deferred network/reputation controls
 
@@ -174,7 +174,7 @@ Not implemented now:
 - Web Risk;
 - any paid or network-dependent fraud service.
 
-A future URL reputation service requires a separate founder/backend gate plus current commercial-use/terms fact-checking.
+A future URL reputation service requires a separate founder/backend gate plus current commercial-use/terms fact-checking. Any paid service additionally requires the FOUNDER BUDGET / REVENUE gate.
 
 ## Shopier fact boundary
 
@@ -194,4 +194,4 @@ Until then, none of those capabilities or claims is enabled.
 
 This module is not connected to `/ilan-ver`, listing detail, synthetic data or another public V0 route. Public V0 continues to use synthetic/mock listings and collects no external sales URL or transaction data.
 
-Publication remains a separate founder gate. This implementation must not be treated as authorization to expose real external links.
+Publication remains a separate founder gate. Repository preparation must not be treated as authorization to expose real external links.

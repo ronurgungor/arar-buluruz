@@ -8,6 +8,29 @@ This repository state prepares the controlled **5–10 real Çorlu listing** bac
 
 This gate creates **no** VPS, remote Supabase project, remote Storage bucket, production secret, user account, real listing, real contact datum or public backend connection. The current public V0 remains mock listings + zero-data demo form. No deployment is authorized by this work.
 
+## Current status after merge
+
+PR #53 has been merged into `main` as `9376ba60dfc049a4df27ce25255fa5923b2a154e`. Post-merge CI `31280761870` and V0 minimal PWA `31280761873` succeeded.
+
+This means the preparation described here is now present in the repository, **not** that it is live in production. The deployed public V0 still uses mock/synthetic listings and has no real backend connection, real personal data, real Storage, Auth or public external-sales CTA.
+
+## Hard founder budget/revenue override
+
+Arar Buluruz currently earns no revenue.
+
+Therefore the technical purchase/readiness conditions in this document are **necessary future prerequisites only**. They are not sufficient spending authorization.
+
+Until a separate explicit **FOUNDER BUDGET / REVENUE GATE** is opened and approved:
+
+- no paid VPS;
+- no paid hosted backend;
+- no paid backup;
+- no recurring paid production infrastructure.
+
+A provider shortlist, a successful technical review, a complete runbook, or even satisfaction of all technical purchase prerequisites below does **not** authorize a purchase while that founder financial gate remains closed.
+
+No particular VPS provider, backup vendor or seller-contact model is selected by this document. Research recommendations remain non-binding unless separately recorded as founder decisions.
+
 ## Minimum pilot data model
 
 ### Public listing projection: `public.listings`
@@ -45,7 +68,7 @@ The real pilot is database-locked to canonical `Tekirdağ / Çorlu`. A compatibi
 
 ### Private contact: `private.listing_contacts`
 
-One private contact record per listing:
+One private contact record per listing can be represented by the prepared schema:
 
 - `listing_id`
 - `preferred_channel`: `phone` or `whatsapp`
@@ -53,6 +76,8 @@ One private contact record per listing:
 - timestamps
 
 No required surname, legal name, email, address, birth date, account profile or identity document is added. `seller_display_name` remains a public display string and should not require a legal full name.
+
+**Preparation is not collection authorization.** The exact real-pilot contact model remains a separate founder/privacy decision. The presence of this table does not require or authorize inserting real phone/WhatsApp data.
 
 ### Private photo metadata: `private.listing_photos`
 
@@ -90,15 +115,15 @@ The canonical URL is indexed but **not globally unique**. Two listings may legit
 
 `anon` and `authenticated` receive no `USAGE` on `private`. The API exposes `public` (plus Supabase's unavoidable Storage API schema), not `private`. The public browser never receives a service-role key.
 
-Real seller contact data remains blocked until a separate current KVKK/privacy fact-check approves, at minimum:
+Real seller personal data remains blocked until a separate current privacy/KVKK/data-flow gate approves the exact pilot model. At minimum that later gate must resolve:
 
-1. controller/contact identity and minimum notice wording,
+1. controller/contact identity and notice wording,
 2. purpose and lawful processing basis,
 3. public-vs-private fields and recipients/data flow,
 4. retention/deletion rules,
 5. processor/provider and cross-border/data-location review,
-6. seller consent/authorization where needed for publication/contact exposure,
-7. complaint/deletion/withdrawal operational procedure.
+6. publication/contact authorization where actually needed,
+7. complaint/deletion/request operational procedure.
 
 This document is a technical privacy boundary, not a legal conclusion.
 
@@ -152,6 +177,8 @@ Lifecycle:
 - hard listing deletion: delete Storage objects through Storage API first, then remove metadata/listing; do **not** manually delete `storage.objects` rows
 - periodic orphan reconciliation: compare Storage object listing-prefix inventory with `private.listing_photos`; quarantine/report unexpected objects before deletion
 
+Any additional photo-sanitization or metadata-stripping proposal remains a future privacy/security review item unless separately founder-approved and implemented.
+
 ## External-sales / Shopier model
 
 There is no Shopier API, OAuth, credential sharing, scraping or iframe.
@@ -176,7 +203,7 @@ A public external-sales CTA may be produced **only if all conditions are true**:
 
 Anything else returns no CTA.
 
-The ambiguous kill-switch names `enabled/disabled` are removed. The semantic state is:
+The semantic operator state is:
 
 - `block_public_cta`
 - `allow_public_cta`
@@ -207,17 +234,17 @@ No Shopier logo, badge, partnership claim or safety guarantee is introduced.
 8. tests Storage MIME/size/private-read/signed-read behavior using synthetic bytes,
 9. destroys local data after the run.
 
-Current existing V0/CI/PWA checks remain separate and must also be green before merge.
+Current existing V0/CI/PWA checks remain separate.
 
 ## Future Türkiye self-hosted production contract
 
-The future stack must be the official Supabase Docker self-hosting distribution pinned to one tested release/commit; do not copy an unpinned `latest` stack into this repository. At activation, re-read the upstream self-hosted changelog before selecting the pin. This is especially important in August 2026 because the upstream default gateway is transitioning from Kong to Envoy, and the current self-hosted default Postgres generation is 17.
+The future stack must be the official Supabase Docker self-hosting distribution pinned to one tested release/commit; do not copy an unpinned `latest` stack into this repository. At activation, re-read the upstream self-hosted changelog before selecting the pin.
 
 Minimum candidate service set for this no-Auth pilot:
 
-- PostgreSQL 17 from the pinned Supabase release
+- PostgreSQL from the pinned Supabase release
 - PostgREST
-- Storage API
+- Storage API if the separately approved pilot requires it
 - API gateway from that same pinned release
 
 Auth, Realtime, Edge Runtime, image transformation, Analytics/Logflare/Vector, Studio and Supavisor are not product requirements for the 5–10 listing pilot. Remove/disable only after the pinned-stack POC proves there is no dependency break; do not hand-assemble incompatible service versions.
@@ -226,7 +253,7 @@ Network contract:
 
 - Türkiye-located Linux VPS
 - Docker Engine + Compose
-- DNS + HTTPS reverse proxy (Caddy or Nginx are acceptable candidates)
+- DNS + HTTPS reverse proxy
 - only intended HTTPS application/API surface Internet-reachable
 - direct PostgreSQL not Internet-reachable
 - Studio not Internet-reachable; if temporarily needed, use a protected private/tunnel path
@@ -236,7 +263,7 @@ Network contract:
 - OS/container security update runbook
 - rate limiting at the public edge/gateway after load envelope is known
 
-See `ops/self-hosted/production.env.contract.example` for non-secret variable classes. Exact upstream variable names must be generated/revalidated from the pinned release rather than assumed from a moving `master` branch.
+See `ops/self-hosted/production.env.contract.example` for non-secret variable classes. Exact upstream variable names must be generated/revalidated from the pinned release rather than assumed from a moving branch.
 
 ## Backup and restore gate
 
@@ -253,18 +280,20 @@ Before any real personal data, the backup bundle must contain two independently 
 
 ### B. Storage
 
-- complete `listing_photos` object set copied through the supported Storage/S3 interface; do not assume copying arbitrary files into the Storage volume recreates valid Storage metadata
-- object inventory with path, byte size and cryptographic hash
-- encrypted off-VPS copy
+If real listing photos are in the approved pilot scope:
 
-Proposed minimum backup retention at pilot activation: **7 daily + 4 weekly** complete recoverable backup sets, subject to the separate privacy/retention decision before real data. Failed backups alert the operator and do not silently rotate away the last known-good set.
+- complete `listing_photos` object set copied through the supported Storage/S3 interface;
+- object inventory with path, byte size and cryptographic hash;
+- encrypted off-VPS copy.
+
+Retention duration is a separate privacy/operations decision before real data; a prior proposed `7 daily + 4 weekly` pattern is a non-binding technical proposal, not a founder-approved retention rule.
 
 ### Mandatory two-part restore drill
 
 Before public real data, both drills must pass on empty environments:
 
-1. **Migration reconstruction drill** — fresh pinned stack, replay repository migrations from zero, seed bucket configuration, run pgTAP/RLS/REST/Storage synthetic checks.
-2. **Disaster restore drill** — separate clean server/environment, decrypt verified backup, restore database according to the pinned release procedure, restore Storage objects through supported Storage/S3 semantics, then verify object inventory/hashes and application/RLS behavior.
+1. **Migration reconstruction drill** — fresh pinned stack, replay repository migrations from zero, seed required bucket configuration, run pgTAP/RLS/REST/Storage synthetic checks.
+2. **Disaster restore drill** — separate clean server/environment, decrypt verified backup, restore database according to the pinned release procedure, restore Storage objects through supported semantics if applicable, then verify object inventory/hashes and application/RLS behavior.
 
 `ops/self-hosted/restore-verification.sql` provides invariant checks that do not depend on real row values.
 
@@ -287,34 +316,40 @@ Do not attempt an in-place Postgres-major downgrade. Restore into a compatible p
 | Failure | Early signal | Preventive control | Activation response |
 | --- | --- | --- | --- |
 | Pending/rejected listing leaks | anon test sees non-active UUID | RLS + column grants + negative REST tests | real-data NO-GO |
-| Seller phone leaks | private schema reachable via Data API | non-exposed `private`, no anon schema usage | block backend/public real data |
+| Seller contact leaks | private schema reachable via Data API | non-exposed `private`, no anon schema usage | block backend/public real data |
 | Malicious/incorrect photo upload | MIME/signature mismatch or oversized object | allowlist + 8 MiB + opaque path + signature check | reject object; investigate trusted path |
 | Old reviewed URL remains live after edit/complaint | CTA state remains allow after identity/review downgrade | reset trigger + full-state pure CTA function | force block CTA; review link |
 | Service-role credential enters browser/Git | secret scan or network bundle contains key | server-only secret contract + CI scan | rotate immediately; no activation |
 | VPS loss destroys DB/photos | only same-disk backup exists | encrypted off-VPS DB + object backup | real-data NO-GO until restore proven |
 | Upstream self-host update breaks stack | compose/changelog changes, gateway/PG mismatch | exact release pin + POC + backup | remain on last tested pin |
-| Cost creep before validation | paid service appears in architecture | no VPS/hosted DB/paid SaaS in this gate | founder approval required |
+| Cost creep before validation | paid service appears in architecture | D-022 FOUNDER BUDGET / REVENUE gate | do not purchase |
 
-## Exact VPS purchase/activation trigger
+## Exact VPS technical-readiness and purchase trigger
 
-### Purchase authorization trigger
+### Technical-readiness conditions
 
-Purchase a Türkiye VPS **only when all are true**:
+A future Türkiye VPS is technically ready for founder purchase consideration only when all are true:
 
-1. the real-pilot backend preparation PR is merged and all CI/PWA regressions are green;
-2. 5–10 specific seller-authorized Çorlu listings are ready to enter the pilot;
-3. current KVKK/privacy fact-check has approved the exact personal-data flow, notice and retention/deletion process;
-4. a specific Türkiye-hosted VPS provider/location, monthly price and resource envelope have founder approval;
-5. an independent encrypted off-VPS backup destination is selected;
+1. the real-pilot backend preparation is merged and relevant CI/PWA regressions are green;
+2. the exact real-pilot scope and seller-authorized listing set are ready;
+3. current privacy/KVKK review has approved the exact personal-data flow, notice and retention/deletion process;
+4. a specific Türkiye-hosted VPS provider/location, monthly price and resource envelope have been reviewed;
+5. an independent encrypted off-VPS backup destination has been reviewed;
 6. an operator is named for patching, backups, restore and incident response;
-7. the exact Supabase self-hosted release pin and gateway/PG compatibility have been reverified against current upstream documentation.
+7. the exact self-hosted Supabase release pin and compatibility have been reverified.
+
+### Separate spending authorization
+
+**Even if every technical-readiness condition above passes, purchase remains NO-GO while D-022 is closed.**
+
+A purchase requires a separate explicit **FOUNDER BUDGET / REVENUE GATE** approving the recurring cost and exit implications.
 
 ### Public real-data activation trigger
 
-Buying the VPS is **not** permission to publish real data. Activation requires the fresh VPS to pass HTTPS/network isolation, migrations-from-zero, RLS, Storage, backup, **clean-server restore**, object recovery/hash verification, rollback and stability checks, followed by a separate founder PUBLIC REAL LISTING activation gate.
+Buying the VPS, if ever separately approved, is **not** permission to publish real data. Activation requires the fresh environment to pass HTTPS/network isolation, migrations-from-zero, RLS, approved Storage scope, backup, **clean-server restore**, object recovery/hash verification where applicable, rollback and stability checks, followed by a separate founder PUBLIC REAL LISTING activation gate.
 
-Until then `VITE_LISTINGS_SOURCE` for the current public V0 must not be switched to the real backend.
+Until then the current public V0 must not be switched to the real backend.
 
 ## Recurring cost now
 
-**0 TL recurring infrastructure cost introduced by this gate.** GitHub/local CI, migrations, synthetic fixtures, documentation and pure security/domain code only.
+**0 TL recurring production infrastructure is authorized by this preparation.** GitHub/local CI, migrations, synthetic fixtures, documentation and pure security/domain preparation only.

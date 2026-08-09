@@ -1,6 +1,6 @@
 # Arar Buluruz — Decision Log
 
-_Last updated: 2026-08-07, Europe/Istanbul_
+_Last updated: 2026-08-09, Europe/Istanbul_
 
 This is an append-oriented record of consequential product, technical and operating decisions. It preserves **what was decided, why, alternatives rejected and what would cause reconsideration**.
 
@@ -228,3 +228,23 @@ Each new entry should include:
 - **Rationale:** Keep cash cost near zero before market entry while preserving a migration-canonical, provider-independent path to a Türkiye-hosted data plane without rebuilding the application domain.
 - **Evidence:** `docs/TR_SELF_HOSTED_SUPABASE_PREP.md`; the current Gate 1 migration/RLS/REST assets remain unchanged by this decision.
 - **Next founder trigger:** A real backend/personal-data pilot close enough to justify selecting and paying for a Türkiye VPS and running the mandatory production POC.
+
+## D-022 — Zero-spend budget/revenue gate for recurring production infrastructure
+
+- **Date:** 2026-08-09
+- **Status:** Active hard founder constraint
+- **Decision:** Arar Buluruz currently earns no revenue. No paid VPS, paid hosted backend, paid backup or other recurring paid production infrastructure is authorized until a separate explicit **FOUNDER BUDGET / REVENUE GATE** is opened and approved.
+- **Rationale:** Technical preparedness must not silently create recurring spend before the project has revenue or a founder-approved budget reason to incur it.
+- **Consequence:** D-021 and technical runbooks may continue to define future production prerequisites, provider requirements, POC acceptance, backup/restore and rollback. Satisfying those technical conditions does **not** authorize a purchase while D-022 is closed.
+- **Deferred alternatives:** Selecting a production VPS vendor, selecting a paid backup vendor, or committing to recurring infrastructure based solely on a research recommendation or technical readiness.
+- **Review trigger:** Explicit founder budget/revenue authorization after the business case, recurring price and exit/rollback implications are reviewed.
+
+## D-023 — Initial real supply intent is validated, but operational marketplace supply is not
+
+- **Date:** 2026-08-09
+- **Status:** Active evidence boundary
+- **Decision:** Founder-accepted post-publication user feedback establishes that users found the application understandable and that real users explicitly said their own listings may be published. This is sufficient to record **initial real supply intent** as validated.
+- **Rationale:** The prior V0 boundary correctly avoided claiming real supply without evidence; the new user statements are direct evidence of willingness to supply listings.
+- **Limit:** This does not validate real listing intake, listing ownership, seller-contact operations, moderation sustainability, payment/external-sales safety, transaction conversion or a functioning supply-demand loop.
+- **Consequence:** The future first real pilot target may remain 5–10 founder-controlled Çorlu listings, but real personal-data collection and public real-listing activation still require separate founder gates.
+- **Review trigger:** Actual controlled pilot operations, measured seller completion/retention, moderation outcomes and buyer behavior.
