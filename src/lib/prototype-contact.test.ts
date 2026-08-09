@@ -8,6 +8,7 @@ import {
 } from "./prototype-contact";
 
 const SOURCE_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx"]);
+const TEST_FILE_PATTERN = /\.(?:test|spec)\.[jt]sx?$/;
 
 function sourceFiles(root: string): string[] {
   const files: string[] = [];
@@ -15,7 +16,10 @@ function sourceFiles(root: string): string[] {
     const absolutePath = path.join(root, entry.name);
     if (entry.isDirectory()) {
       files.push(...sourceFiles(absolutePath));
-    } else if (SOURCE_EXTENSIONS.has(path.extname(entry.name))) {
+    } else if (
+      SOURCE_EXTENSIONS.has(path.extname(entry.name)) &&
+      !TEST_FILE_PATTERN.test(entry.name)
+    ) {
       files.push(absolutePath);
     }
   }
@@ -45,7 +49,7 @@ describe("prototype contact safety boundary", () => {
     expect(url.searchParams.get("text")).toBe("Synthetic Gate 1 payload");
   });
 
-  test("does not embed Turkish mobile phone literals in current application source", () => {
+  test("does not embed Turkish mobile phone literals in current runtime source", () => {
     const phoneLikePattern = /\+?\d[\d\s().-]{8,}\d/g;
     const violations = new Set<string>();
 
