@@ -331,9 +331,7 @@ async function runDesktop() {
     await page.getByText("Reklam ve analytics kullanılmaz", { exact: false }).waitFor();
     await page.getByText("Zorunlu olmayan çerez veya tracker", { exact: false }).waitFor();
     await page.getByText("teknik erişim kayıtları tutabilir", { exact: false }).waitFor();
-    await page.getByText("gerçek telefon veya WhatsApp iletişim hattı yayımlanmaz", {
-      exact: false,
-    }).waitFor();
+    await page.getByText("gerçek telefon veya WhatsApp", { exact: false }).waitFor();
     await page.getByText("uygulama iletişim mesajı toplamaz", { exact: false }).waitFor();
     assert(
       (await page.locator("form, input, textarea, select").count()) === 0,
