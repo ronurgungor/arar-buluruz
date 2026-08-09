@@ -37,7 +37,7 @@ function HowItWorks() {
         {
           title: "3. İletişim ve ödeme ayrı aşamalardır",
           paragraphs: [
-            "İlgili fazda satıcı iletişimi açıldığında iletişim yöntemi ilanda açıkça gösterilir. Arar Buluruz ödeme tutmaz, emanet/escrow hizmeti vermez ve alıcı koruması garantisi sunmaz.",
+            "İletişim özelliği etkin olduğunda satıcı iletişim yöntemi ilanda açıkça gösterilir. Arar Buluruz ödeme tutmaz, emanet/escrow hizmeti vermez ve alıcı koruması garantisi sunmaz.",
             "Bir satıcı ileride kendi haricî satış bağlantısını paylaşırsa işlem o bağımsız hizmette gerçekleşir. Bu, Arar Buluruz ile o hizmet arasında ortaklık veya güvenlik garantisi olduğu anlamına gelmez.",
           ],
         },
