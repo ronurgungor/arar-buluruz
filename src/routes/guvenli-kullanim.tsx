@@ -8,7 +8,8 @@ export const Route = createFileRoute("/guvenli-kullanim")({
       { title: "Güvenli Kullanım ve Şikâyet — Arar Buluruz" },
       {
         name: "description",
-        content: "İlan değerlendirirken dikkat edilmesi gerekenler ve sorunlu ilan bildirim sınırları.",
+        content:
+          "İlan değerlendirirken dikkat edilmesi gerekenler ve sorunlu ilan bildirim sınırları.",
       },
       { name: "robots", content: getRuntimeRobotsDirective("publisher-info") },
     ],

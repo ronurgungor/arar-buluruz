@@ -10,6 +10,7 @@ import {
   renderSitemapXml,
   resolveDiscoveryProfile,
   robotsForDiscoverySurface,
+  robotsForRequestPath,
 } from "./discovery-contract";
 
 describe("discovery readiness contract", () => {
@@ -24,6 +25,8 @@ describe("discovery readiness contract", () => {
 
     expect(robotsForDiscoverySurface("closed", "home")).toBe(PUBLIC_V0_ROBOTS);
     expect(robotsForDiscoverySurface("closed", "listing-detail")).toBe(PUBLIC_V0_ROBOTS);
+    expect(robotsForRequestPath("closed", "/")).toBe(PUBLIC_V0_ROBOTS);
+    expect(robotsForRequestPath("closed", "/ilan/synthetic-demo")).toBe(PUBLIC_V0_ROBOTS);
   });
 
   test("real-content discovery requires the real listings source", () => {
@@ -49,10 +52,19 @@ describe("discovery readiness contract", () => {
     expect(robotsForDiscoverySurface("real-content", "publisher-info")).toBe(INDEXABLE_ROBOTS);
     expect(robotsForDiscoverySurface("real-content", "listing-detail")).toBe(INDEXABLE_ROBOTS);
     expect(robotsForDiscoverySurface("real-content", "search")).toBe(PUBLIC_V0_ROBOTS);
-    expect(
-      robotsForDiscoverySurface("real-content", "search", { usefulRealSearch: true }),
-    ).toBe(INDEXABLE_ROBOTS);
+    expect(robotsForDiscoverySurface("real-content", "search", { usefulRealSearch: true })).toBe(
+      INDEXABLE_ROBOTS,
+    );
     expect(robotsForDiscoverySurface("real-content", "utility")).toBe(PUBLIC_V0_ROBOTS);
+
+    expect(robotsForRequestPath("real-content", "/")).toBe(INDEXABLE_ROBOTS);
+    expect(robotsForRequestPath("real-content", "/nasil-calisir")).toBe(INDEXABLE_ROBOTS);
+    expect(robotsForRequestPath("real-content", "/ilan/real-id")).toBe(INDEXABLE_ROBOTS);
+    expect(robotsForRequestPath("real-content", "/ara")).toBe(PUBLIC_V0_ROBOTS);
+    expect(robotsForRequestPath("real-content", "/ilan-ver")).toBe(PUBLIC_V0_ROBOTS);
+    expect(robotsForRequestPath("real-content", "/sikayet/real-id")).toBe(PUBLIC_V0_ROBOTS);
+    expect(robotsForRequestPath("real-content", "/giris")).toBe(PUBLIC_V0_ROBOTS);
+    expect(robotsForRequestPath("real-content", "/gizlilik")).toBe(PUBLIC_V0_ROBOTS);
   });
 
   test("production sitemap URLs are absolute and contain only approved static pages plus supplied real IDs", () => {

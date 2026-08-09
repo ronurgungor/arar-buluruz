@@ -2,12 +2,7 @@ export const PUBLIC_V0_ROBOTS = "noindex, nofollow, noarchive, nosnippet";
 export const INDEXABLE_ROBOTS = "index, follow";
 
 export type DiscoveryProfile = "closed" | "real-content";
-export type DiscoverySurface =
-  | "home"
-  | "publisher-info"
-  | "listing-detail"
-  | "search"
-  | "utility";
+export type DiscoverySurface = "home" | "publisher-info" | "listing-detail" | "search" | "utility";
 
 type DiscoveryProfileInput = {
   publicV0Runtime: boolean;
@@ -20,6 +15,8 @@ export const PERMANENT_PUBLISHER_PATHS = [
   "/ilan-kurallari",
   "/guvenli-kullanim",
 ] as const;
+
+const permanentPublisherPathSet = new Set<string>(PERMANENT_PUBLISHER_PATHS);
 
 export function resolveDiscoveryProfile({
   publicV0Runtime,
@@ -65,6 +62,13 @@ export function getRuntimeRobotsDirective(
   return robotsForDiscoverySurface(getRuntimeDiscoveryProfile(), surface, options);
 }
 
+export function robotsForRequestPath(profile: DiscoveryProfile, pathname: string): string {
+  if (profile !== "real-content") return PUBLIC_V0_ROBOTS;
+  if (pathname === "/" || permanentPublisherPathSet.has(pathname)) return INDEXABLE_ROBOTS;
+  if (/^\/ilan\/[^/]+\/?$/.test(pathname)) return INDEXABLE_ROBOTS;
+  return PUBLIC_V0_ROBOTS;
+}
+
 export function normalizeCanonicalOrigin(rawOrigin: string | undefined): string | null {
   if (!rawOrigin?.trim()) return null;
 
@@ -106,9 +110,7 @@ function escapeXml(value: string): string {
 }
 
 export function renderSitemapXml(urls: readonly string[]): string {
-  const entries = urls.map(
-    (url) => `  <url>\n    <loc>${escapeXml(url)}</loc>\n  </url>`,
-  );
+  const entries = urls.map((url) => `  <url>\n    <loc>${escapeXml(url)}</loc>\n  </url>`);
 
   return [
     `<?xml version="1.0" encoding="UTF-8"?>`,

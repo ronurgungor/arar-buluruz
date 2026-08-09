@@ -10,6 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { getRuntimeRobotsDirective } from "../lib/discovery-contract";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { productPhaseLabel } from "../lib/product-phase";
 
@@ -89,65 +90,69 @@ function ControlledErrorBoundaryProbe() {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { name: "theme-color", content: "#397a56" },
-      { name: "application-name", content: "Arar Buluruz" },
-      { name: "mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-      { name: "apple-mobile-web-app-title", content: "Arar Buluruz" },
-      { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
-      { name: "googlebot", content: "noindex, nofollow, noarchive, nosnippet" },
-      { title: "Arar Buluruz — V0 test sürümü" },
-      {
-        name: "description",
-        content:
-          "Arama ve ilan keşfi deneyimini doğrulayan Arar Buluruz V0 test sürümü. İlanlar örnektir.",
-      },
-      {
-        property: "og:title",
-        content: "Arar Buluruz — V0 test sürümü",
-      },
-      {
-        property: "og:description",
-        content:
-          "Arama ve ilan keşfi deneyimini doğrulayan test sürümü. Gerçek hesap veya ilan işlemi bulunmaz.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      {
-        name: "twitter:title",
-        content: "Arar Buluruz — V0 test sürümü",
-      },
-      {
-        name: "twitter:description",
-        content: "Arama ve ilan keşfi deneyimini doğrulayan test sürümü. İlanlar örnektir.",
-      },
-      {
-        property: "og:image",
-        content:
-          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/8948598a-fdf4-454b-9683-442283b920a8",
-      },
-      {
-        name: "twitter:image",
-        content:
-          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/8948598a-fdf4-454b-9683-442283b920a8",
-      },
-    ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-      { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png", sizes: "180x180" },
-      { rel: "icon", href: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-    ],
-  }),
+  head: () => {
+    const robotsDirective = getRuntimeRobotsDirective("home");
+
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { name: "theme-color", content: "#397a56" },
+        { name: "application-name", content: "Arar Buluruz" },
+        { name: "mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+        { name: "apple-mobile-web-app-title", content: "Arar Buluruz" },
+        { name: "robots", content: robotsDirective },
+        { name: "googlebot", content: robotsDirective },
+        { title: "Arar Buluruz — V0 test sürümü" },
+        {
+          name: "description",
+          content:
+            "Arama ve ilan keşfi deneyimini doğrulayan Arar Buluruz V0 test sürümü. İlanlar örnektir.",
+        },
+        {
+          property: "og:title",
+          content: "Arar Buluruz — V0 test sürümü",
+        },
+        {
+          property: "og:description",
+          content:
+            "Arama ve ilan keşfi deneyimini doğrulayan test sürümü. Gerçek hesap veya ilan işlemi bulunmaz.",
+        },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+        {
+          name: "twitter:title",
+          content: "Arar Buluruz — V0 test sürümü",
+        },
+        {
+          name: "twitter:description",
+          content: "Arama ve ilan keşfi deneyimini doğrulayan test sürümü. İlanlar örnektir.",
+        },
+        {
+          property: "og:image",
+          content:
+            "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/8948598a-fdf4-454b-9683-442283b920a8",
+        },
+        {
+          name: "twitter:image",
+          content:
+            "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/8948598a-fdf4-454b-9683-442283b920a8",
+        },
+      ],
+      links: [
+        {
+          rel: "stylesheet",
+          href: appCss,
+        },
+        { rel: "manifest", href: "/manifest.webmanifest" },
+        { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png", sizes: "180x180" },
+        { rel: "icon", href: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
+        { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      ],
+    };
+  },
 
   shellComponent: RootShell,
   component: RootComponent,
