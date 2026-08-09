@@ -59,9 +59,7 @@ function makeSyntheticPng(metadataText?: string): Uint8Array {
 
   const chunks = [pngChunk("IHDR", ihdr)];
   if (metadataText) {
-    chunks.push(
-      pngChunk("tEXt", new TextEncoder().encode(`XML:com.adobe.xmp\0${metadataText}`)),
-    );
+    chunks.push(pngChunk("tEXt", new TextEncoder().encode(`XML:com.adobe.xmp\0${metadataText}`)));
   }
 
   const rgbaScanline = new Uint8Array([0, 0xff, 0x20, 0x20, 0xff]);
