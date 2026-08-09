@@ -1,59 +1,48 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
-import { listings } from "@/data/listings";
+import {
+  PUBLIC_V0_ROBOTS,
+  buildProductionSitemapUrls,
+  getRuntimeDiscoveryProfile,
+  normalizeCanonicalOrigin,
+  renderSitemapXml,
+} from "@/lib/discovery-contract";
+import { loadListingsCollection } from "@/lib/public-listings";
 
-// TODO: replace with your project URL once a project name or custom domain is set.
-const BASE_URL = "";
-
-interface SitemapEntry {
-  path: string;
-  lastmod?: string;
-  changefreq?: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
-  priority?: string;
+function sitemapResponse(xml: string, options: { closed?: boolean; status?: number } = {}) {
+  return new Response(xml, {
+    status: options.status ?? 200,
+    headers: {
+      "Content-Type": "application/xml; charset=utf-8",
+      "Cache-Control": options.closed ? "public, max-age=300" : "public, max-age=3600",
+      ...(options.closed ? { "X-Robots-Tag": PUBLIC_V0_ROBOTS } : {}),
+    },
+  });
 }
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
-        const entries: SitemapEntry[] = [
-          { path: "/", changefreq: "daily", priority: "1.0" },
-          { path: "/ara", changefreq: "daily", priority: "0.8" },
-          { path: "/ilan-ver", changefreq: "monthly", priority: "0.7" },
-          { path: "/giris", changefreq: "monthly", priority: "0.3" },
-          ...listings.map((l) => ({
-            path: `/ilan/${l.id}`,
-            changefreq: "weekly" as const,
-            priority: "0.6",
-          })),
-        ];
+        if (getRuntimeDiscoveryProfile() !== "real-content") {
+          return sitemapResponse(renderSitemapXml([]), { closed: true });
+        }
 
-        const urls = entries.map((e) =>
-          [
-            `  <url>`,
-            `    <loc>${BASE_URL}${e.path}</loc>`,
-            e.lastmod ? `    <lastmod>${e.lastmod}</lastmod>` : null,
-            e.changefreq ? `    <changefreq>${e.changefreq}</changefreq>` : null,
-            e.priority ? `    <priority>${e.priority}</priority>` : null,
-            `  </url>`,
-          ]
-            .filter(Boolean)
-            .join("\n"),
+        const canonicalOrigin = normalizeCanonicalOrigin(process.env.ARAR_CANONICAL_ORIGIN);
+        if (!canonicalOrigin) {
+          return sitemapResponse(renderSitemapXml([]), { closed: true, status: 503 });
+        }
+
+        const listingData = await loadListingsCollection();
+        if (listingData.state !== "ready" || listingData.source !== "supabase") {
+          return sitemapResponse(renderSitemapXml([]), { closed: true, status: 503 });
+        }
+
+        const urls = buildProductionSitemapUrls(
+          canonicalOrigin,
+          listingData.listings.map((listing) => listing.id),
         );
-
-        const xml = [
-          `<?xml version="1.0" encoding="UTF-8"?>`,
-          `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`,
-          ...urls,
-          `</urlset>`,
-        ].join("\n");
-
-        return new Response(xml, {
-          headers: {
-            "Content-Type": "application/xml",
-            "Cache-Control": "public, max-age=3600",
-          },
-        });
+        return sitemapResponse(renderSitemapXml(urls));
       },
     },
   },
