@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Search } from "lucide-react";
 import { cities } from "@/data/listings";
 import { Wordmark } from "@/components/Wordmark";
+import { getRuntimeRobotsDirective } from "@/lib/discovery-contract";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/")({
         content:
           "Arama ve ilan keşfi deneyimini doğrulayan Arar Buluruz V0 test sürümü. İlanlar örnektir.",
       },
+      { name: "robots", content: getRuntimeRobotsDirective("home") },
       {
         property: "og:title",
         content: "Arar Buluruz — V0 test sürümü",
@@ -28,6 +30,13 @@ export const Route = createFileRoute("/")({
 });
 
 const exampleSearches = ["traktör", "kiralık daire", "ikinci el masa", "oto"] as const;
+
+const infoLinks = [
+  { to: "/nasil-calisir", label: "Nasıl Çalışır" },
+  { to: "/ilan-kurallari", label: "İlan Kuralları" },
+  { to: "/guvenli-kullanim", label: "Güvenli Kullanım" },
+  { to: "/gizlilik", label: "Gizlilik" },
+] as const;
 
 function Home() {
   const navigate = useNavigate();
@@ -126,14 +135,20 @@ function Home() {
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Hedefimiz: ilan vermek her zaman ücretsiz.
         </p>
-        <p className="mt-3 text-center text-xs text-muted-foreground">
-          <Link
-            to="/gizlilik"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center px-1 underline underline-offset-4 hover:text-foreground"
-          >
-            Gizlilik
-          </Link>
-        </p>
+        <nav
+          aria-label="Arar Buluruz bilgi ve kuralları"
+          className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
+        >
+          {infoLinks.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center underline underline-offset-4 hover:text-foreground"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
       </div>
     </main>
   );

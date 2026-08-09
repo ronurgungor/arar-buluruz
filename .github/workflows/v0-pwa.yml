@@ -43,6 +43,7 @@ jobs:
           test ! -e npm-shrinkwrap.json
           test ! -e yarn.lock
           test ! -e pnpm-lock.yaml
+          test ! -e public/ads.txt
           test -f public/manifest.webmanifest
           test -f public/sw.js
           test -f public/offline.html
@@ -95,6 +96,12 @@ jobs:
             VITE_LISTINGS_SOURCE=disabled
 
           assert_public_build_fails \
+            discovery-profile \
+            ARAR_BUILD_PROFILE=public-v0 \
+            VITE_LISTINGS_SOURCE=mock \
+            VITE_DISCOVERY_PROFILE=real-content
+
+          assert_public_build_fails \
             unknown-profile \
             ARAR_BUILD_PROFILE=unknown
 
@@ -102,8 +109,10 @@ jobs:
         shell: bash
         run: |
           unset ARAR_BUILD_PROFILE
+          unset ARAR_CANONICAL_ORIGIN
           unset ARAR_V0_BROWSER_TEST
           unset VITE_LISTINGS_SOURCE
+          unset VITE_DISCOVERY_PROFILE
           unset VITE_GATE1_TEST_OPERATIONS
           unset VITE_PUBLIC_V0_RUNTIME
           unset VITE_V0_ERROR_BOUNDARY_TEST

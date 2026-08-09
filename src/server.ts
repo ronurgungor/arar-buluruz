@@ -1,9 +1,13 @@
 import "./lib/error-capture";
 
+import {
+  PUBLIC_V0_ROBOTS,
+  getRuntimeDiscoveryProfile,
+  robotsForRequestPath,
+} from "./lib/discovery-contract";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
-const ROBOTS_DIRECTIVE = "noindex, nofollow, noarchive, nosnippet";
 const STATIC_SSR_PROBE_PARAM = "__v0_static_ssr_500_probe";
 
 type ServerEntry = {
@@ -21,9 +25,26 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-function withRobotsHeader(response: Response): Response {
+function withRobotsHeader(request: Request, response: Response): Response {
   const headers = new Headers(response.headers);
-  headers.set("X-Robots-Tag", ROBOTS_DIRECTIVE);
+  const contentType = headers.get("content-type") ?? "";
+
+  if (contentType.includes("text/html")) {
+    let directive = PUBLIC_V0_ROBOTS;
+
+    if (response.status < 400) {
+      try {
+        directive = robotsForRequestPath(
+          getRuntimeDiscoveryProfile(),
+          new URL(request.url).pathname,
+        );
+      } catch {
+        directive = PUBLIC_V0_ROBOTS;
+      }
+    }
+
+    headers.set("X-Robots-Tag", directive);
+  }
 
   return new Response(response.body, {
     status: response.status,
@@ -75,17 +96,17 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     if (isControlledStaticSsrProbe(request)) {
-      return withRobotsHeader(createStaticErrorResponse());
+      return withRobotsHeader(request, createStaticErrorResponse());
     }
 
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       const normalizedResponse = await normalizeCatastrophicSsrResponse(response);
-      return withRobotsHeader(normalizedResponse);
+      return withRobotsHeader(request, normalizedResponse);
     } catch (error) {
       console.error(error);
-      return withRobotsHeader(createStaticErrorResponse());
+      return withRobotsHeader(request, createStaticErrorResponse());
     }
   },
 };

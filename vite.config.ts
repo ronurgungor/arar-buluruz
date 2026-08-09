@@ -9,6 +9,9 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 const buildProfiles = ["public-v0", "ci-disabled", "gate1-ephemeral-ci", "development"] as const;
 type BuildProfile = (typeof buildProfiles)[number];
 
+const discoveryProfiles = ["closed", "real-content"] as const;
+type DiscoveryProfile = (typeof discoveryProfiles)[number];
+
 function failBuildInvariant(message: string): never {
   throw new Error(`[Arar Buluruz build invariant] ${message}`);
 }
@@ -37,13 +40,26 @@ function resolveBuildProfile(): BuildProfile {
   return "public-v0";
 }
 
+function resolveDiscoveryProfile(): DiscoveryProfile {
+  const configuredProfile = process.env.VITE_DISCOVERY_PROFILE;
+  if (!configuredProfile) return "closed";
+  if (!discoveryProfiles.includes(configuredProfile as DiscoveryProfile)) {
+    failBuildInvariant(`Unknown VITE_DISCOVERY_PROFILE: ${configuredProfile}`);
+  }
+  return configuredProfile as DiscoveryProfile;
+}
+
 const buildProfile = resolveBuildProfile();
+const discoveryProfile = resolveDiscoveryProfile();
 const isViteBuild = process.argv.includes("build");
 const listingsSource = process.env.VITE_LISTINGS_SOURCE;
 
 if (buildProfile === "public-v0") {
   if (!isViteBuild) {
     failBuildInvariant("The public-v0 profile may only be used with vite build.");
+  }
+  if (discoveryProfile !== "closed") {
+    failBuildInvariant("Public V0 must keep the discovery profile closed.");
   }
   if (listingsSource === undefined) {
     process.env.VITE_LISTINGS_SOURCE = "mock";
@@ -106,6 +122,12 @@ if (buildProfile === "public-v0") {
   process.env.VITE_PUBLIC_V0_RUNTIME = "disabled";
   process.env.VITE_ARAR_BUILD_SIGNATURE = `development|listings=${process.env.VITE_LISTINGS_SOURCE}|gate1=off`;
 }
+
+if (discoveryProfile === "real-content" && process.env.VITE_LISTINGS_SOURCE !== "supabase") {
+  failBuildInvariant("The real-content discovery profile requires VITE_LISTINGS_SOURCE=supabase.");
+}
+
+process.env.VITE_DISCOVERY_PROFILE = discoveryProfile;
 
 export default defineConfig({
   tanstackStart: {

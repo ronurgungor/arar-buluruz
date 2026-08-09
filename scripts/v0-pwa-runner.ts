@@ -124,6 +124,10 @@ try {
     await runBrowserSuite("scripts/v0-privacy-e2e.ts", "V0 privacy browser validation");
     await runBrowserSuite("scripts/v0-search-e2e.ts", "V0 search browser validation");
     await runBrowserSuite("scripts/v0-demo-listing-e2e.ts", "V0 demo listing browser validation");
+    await runBrowserSuite(
+      "scripts/v0-discovery-readiness-e2e.ts",
+      "V0 discovery readiness browser validation",
+    );
   }
 
   await import("./v0-pwa-e2e.ts");
