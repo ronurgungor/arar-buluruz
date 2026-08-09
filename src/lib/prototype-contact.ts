@@ -1,12 +1,9 @@
-const phoneE164 = "+905321739111";
-const whatsappNumber = phoneE164.replace(/\D/g, "");
+export const PUBLIC_V0_DISABLED_CONTACT_HREF = "#contact-demo" as const;
 
-export const PROTOTYPE_CONTACT = {
-  phoneE164,
-  whatsappNumber,
-  phoneHref: `tel:${phoneE164}`,
-  whatsappHref: `https://wa.me/${whatsappNumber}`,
+export const TEST_ONLY_CONTACT = {
+  phoneHref: "tel:0",
+  whatsappHref: "https://wa.me/0",
 } as const;
 
 export const buildControlledWhatsAppHref = (message: string) =>
-  `${PROTOTYPE_CONTACT.whatsappHref}?text=${encodeURIComponent(message)}`;
+  `${TEST_ONLY_CONTACT.whatsappHref}?text=${encodeURIComponent(message)}`;
