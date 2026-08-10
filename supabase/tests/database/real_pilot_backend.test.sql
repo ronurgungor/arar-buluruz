@@ -10,7 +10,11 @@ select ok(
   'private schema exists'
 );
 
-select has_table('private', 'listing_contacts', 'private listing_contacts exists');
+select hasnt_table(
+  'private',
+  'listing_contacts',
+  'obsolete private listing_contacts source is removed'
+);
 select has_table('private', 'listing_photos', 'private listing_photos exists');
 select has_table(
   'private',
@@ -39,11 +43,6 @@ select ok(
 );
 
 select ok(
-  has_table_privilege('service_role', 'private.listing_contacts', 'INSERT'),
-  'service_role can write private contact metadata'
-);
-
-select ok(
   has_table_privilege('service_role', 'private.listing_photos', 'INSERT'),
   'service_role can write private photo metadata'
 );
@@ -51,16 +50,6 @@ select ok(
 select ok(
   has_table_privilege('service_role', 'private.listing_external_sales_links', 'INSERT'),
   'service_role can write private external-link review state'
-);
-
-select ok(
-  (
-    select c.relrowsecurity
-    from pg_catalog.pg_class c
-    join pg_catalog.pg_namespace n on n.oid = c.relnamespace
-    where n.nspname = 'private' and c.relname = 'listing_contacts'
-  ),
-  'RLS is enabled on private listing_contacts'
 );
 
 select ok(
@@ -92,6 +81,11 @@ insert into public.listings (
   district,
   seller_display_name,
   search_keywords,
+  contact_channel,
+  contact_e164,
+  contact_verified_at,
+  contact_verification_method,
+  publication_instruction_at,
   status,
   published_at,
   expires_at,
@@ -107,6 +101,11 @@ values
     'Corlu',
     'Synthetic Seller',
     array['active'],
+    'whatsapp',
+    '+12025550123',
+    now() - interval '3 hours',
+    'whatsapp_same_number',
+    now() - interval '2 hours',
     'published',
     now() - interval '1 hour',
     now() + interval '1 day',
@@ -121,6 +120,11 @@ values
     'Çorlu',
     'Synthetic Seller',
     array['pending'],
+    'whatsapp',
+    '+12025550124',
+    null,
+    null,
+    null,
     'pending',
     null,
     null,
@@ -135,6 +139,11 @@ values
     'Çorlu',
     'Synthetic Seller',
     array['rejected'],
+    null,
+    null,
+    null,
+    null,
+    null,
     'rejected',
     null,
     null,
@@ -149,6 +158,11 @@ values
     'Çorlu',
     'Synthetic Seller',
     array['expired'],
+    'phone',
+    '+12025550125',
+    now() - interval '3 days',
+    'manual_callback',
+    now() - interval '2 days 12 hours',
     'published',
     now() - interval '2 days',
     now() - interval '1 day',
@@ -163,6 +177,11 @@ values
     'Çorlu',
     'Synthetic Seller',
     array['duplicate'],
+    null,
+    null,
+    null,
+    null,
+    null,
     'pending',
     null,
     null,
@@ -177,6 +196,11 @@ values
     'Çorlu',
     'Synthetic Seller',
     array['duplicate'],
+    null,
+    null,
+    null,
+    null,
+    null,
     'pending',
     null,
     null,
@@ -229,34 +253,44 @@ select results_eq(
   'anon sees only active published real-pilot rows; pending, rejected and expired stay hidden'
 );
 
+select results_eq(
+  $$
+    select contact_channel, contact_e164
+    from public.listings
+    where id::text like '10000000-%'
+    order by id
+  $$,
+  $$ values ('whatsapp'::text, '+12025550123'::text) $$,
+  'anon contact enumeration follows the same active published RLS boundary'
+);
+
 reset role;
 
 select lives_ok(
   $$
-    insert into private.listing_contacts (
-      listing_id,
-      preferred_channel,
-      contact_e164
-    ) values (
-      '10000000-0000-4000-8000-000000000002',
-      'whatsapp',
-      '+905551112233'
-    )
+    update public.listings
+    set
+      contact_verified_at = now() - interval '2 minutes',
+      contact_verification_method = 'whatsapp_same_number'
+    where id = '10000000-0000-4000-8000-000000000002'
   $$,
-  'minimum preferred-contact row accepts a synthetic E.164 WhatsApp number'
+  'pending synthetic contact can record present-control verification'
+);
+
+select lives_ok(
+  $$
+    update public.listings
+    set publication_instruction_at = now() - interval '1 minute'
+    where id = '10000000-0000-4000-8000-000000000002'
+  $$,
+  'pending synthetic contact can record the publication instruction audit fact'
 );
 
 select throws_ok(
   $$
-    insert into private.listing_contacts (
-      listing_id,
-      preferred_channel,
-      contact_e164
-    ) values (
-      '10000000-0000-4000-8000-000000000003',
-      'email',
-      'synthetic@example.invalid'
-    )
+    update public.listings
+    set contact_channel = 'email'
+    where id = '10000000-0000-4000-8000-000000000002'
   $$,
   '23514',
   null,
@@ -265,9 +299,9 @@ select throws_ok(
 
 select throws_ok(
   $$
-    update private.listing_contacts
+    update public.listings
     set contact_e164 = '05551112233'
-    where listing_id = '10000000-0000-4000-8000-000000000002'
+    where id = '10000000-0000-4000-8000-000000000002'
   $$,
   '23514',
   null,
@@ -493,13 +527,6 @@ select throws_ok(
 );
 
 set local role anon;
-
-select throws_ok(
-  $$ select * from private.listing_contacts $$,
-  '42501',
-  null,
-  'anon cannot query private contact data'
-);
 
 select throws_ok(
   $$ select * from private.listing_photos $$,

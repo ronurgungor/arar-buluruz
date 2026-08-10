@@ -1,6 +1,6 @@
 # Arar Buluruz — Real Çorlu Pilot Backend Preparation
 
-_Date: 2026-08-09, Europe/Istanbul_
+_Date: 2026-08-10, Europe/Istanbul_
 
 ## Gate scope
 
@@ -10,7 +10,7 @@ This gate creates **no** VPS, remote Supabase project, remote Storage bucket, pr
 
 ## Current repository baseline for this gate
 
-The canonical starting `main` for the trusted-photo implementation gate is `7482bf0b0619606b13d3843c0b14f738380a0cd7`, after PR #56. The earlier real-pilot backend foundation from PR #53 remains inactive repository preparation.
+The canonical starting `main` for the simplified public seller-contact implementation gate is `46b436c957ff8defb6f6dca6e739fdb91d1e6216`, after PR #57 merged the trusted-photo preparation.
 
 This means the preparation described here is present in the repository, **not** that it is live in production. The deployed public V0 still uses mock/synthetic listings and has no real backend connection, real personal data, real Storage, Auth or public external-sales CTA.
 
@@ -29,13 +29,13 @@ Until a separate explicit **FOUNDER BUDGET / REVENUE GATE** is opened and approv
 
 A provider shortlist, a successful technical review, a complete runbook, or even satisfaction of all technical purchase prerequisites below does **not** authorize a purchase while that founder financial gate remains closed.
 
-No particular VPS provider, backup vendor or seller-contact model is selected by this document. Research recommendations remain non-binding unless separately recorded as founder decisions.
+No particular VPS provider or backup vendor is selected by this document. The seller-contact model is now separately founder-selected as the simplified intentionally public one-channel pilot contract described below; that product decision still does not authorize real-data activation.
 
 ## Minimum pilot data model
 
-### Public listing projection: `public.listings`
+### Listing and seller-contact source of truth: `public.listings`
 
-The existing listing table remains the public-domain source of truth and keeps its current columns:
+The existing listing table remains the public-domain source of truth and contains:
 
 - `id`
 - `title`
@@ -51,6 +51,11 @@ The existing listing table remains the public-domain source of truth and keeps i
 - `published_at`
 - `expires_at`
 - `unpublished_at`
+- `contact_channel`
+- `contact_e164`
+- `contact_verified_at`
+- `contact_verification_method`
+- `publication_instruction_at`
 
 No category field is introduced.
 
@@ -66,18 +71,27 @@ Stored lifecycle states are deliberately small:
 
 The real pilot is database-locked to canonical `Tekirdağ / Çorlu`. A compatibility trigger normalizes only the previous synthetic spellings `Tekirdag / Corlu`; any other location is rejected. Geographic expansion requires a separate founder-approved migration.
 
-### Private contact: `private.listing_contacts`
+### Simplified intentionally public seller contact
 
-One private contact record per listing can be represented by the prepared schema:
+The initial 5–10 listing pilot uses one authoritative seller-contact value on `public.listings` rather than a duplicated private/public number or an anonymous privileged resolver.
 
-- `listing_id`
-- `preferred_channel`: `phone` or `whatsapp`
-- `contact_e164`
-- timestamps
+Per listing:
 
-No required surname, legal name, email, address, birth date, account profile or identity document is added. `seller_display_name` remains a public display string and should not require a legal full name.
+- `contact_channel`: exactly one of `whatsapp` or `phone`;
+- `contact_e164`: the one authoritative E.164 contact value;
+- `contact_verified_at`: operational present-control verification timestamp;
+- `contact_verification_method`: `whatsapp_same_number`, `manual_callback` or `founder_equivalent`, constrained to the selected channel;
+- `publication_instruction_at`: operational audit fact that the seller instructed publication of that contact.
 
-**Preparation is not collection authorization.** The exact real-pilot contact model remains a separate founder/privacy decision. The presence of this table does not require or authorize inserting real phone/WhatsApp data.
+The former preparation-only `private.listing_contacts` table is removed so there is no stale second phone-number source.
+
+Only `contact_channel` and `contact_e164` receive anonymous SELECT privilege, and existing listing RLS limits rows to active published listings. Verification and publication-instruction audit fields remain unavailable to anon.
+
+**Intentional disclosure consequence:** a caller that knows the public PostgREST surface can request `contact_channel` and `contact_e164` for all rows currently allowed by active-listing RLS. This is accepted for the 5–10 listing intentionally-public pilot and is not described as a privacy/security boundary. The normal Arar UI still requests contact only for listing detail and does not intentionally place it in collection-card payloads, sitemap, structured metadata, analytics or logs.
+
+No contact resolver, click-to-reveal security theatre, founder relay, in-app messaging, SMS OTP, Auth, CAPTCHA, contact click analytics or separate `public_contact_enabled` switch is introduced.
+
+**Preparation is not collection authorization.** No real phone number may be entered until the separate real-data privacy/KVKK activation gate closes.
 
 ### Private photo metadata: `private.listing_photos`
 
@@ -111,23 +125,34 @@ The canonical URL is indexed but **not globally unique**. Two listings may legit
 
 ## Public/private personal-data boundary
 
-`public` contains only data intended to be shown in a listing. Contact details, photo operational metadata and external-link review dimensions are in the non-exposed `private` schema.
+`public.listings` contains listing data intended for anonymous publication. Under the simplified pilot decision, the selected `contact_channel` and `contact_e164` are also intentionally public **only while the row satisfies the anonymous active-listing RLS contract**. Verification/audit fields are not anonymously selectable.
 
-`anon` and `authenticated` receive no `USAGE` on `private`. The API exposes `public` (plus Supabase's unavoidable Storage API schema), not `private`. The public browser never receives a service-role key.
+Photo operational metadata and external-link review dimensions remain in the non-exposed `private` schema. `anon` and `authenticated` receive no `USAGE` on `private`. The API exposes `public` (plus Supabase's unavoidable Storage API schema), not `private`. The public browser never receives a service-role key.
+
+Public contact disclosure is a materially different exposure boundary from merely retaining a contact privately: active contact can be copied, cached or scraped after publication, and later unpublish cannot revoke copies already obtained by third parties.
 
 Real seller personal data remains blocked until a separate current privacy/KVKK/data-flow gate approves the exact pilot model. At minimum that later gate must resolve:
 
-1. controller/contact identity and notice wording,
-2. purpose and lawful processing basis,
-3. public-vs-private fields and recipients/data flow,
-4. retention/deletion rules,
-5. processor/provider and cross-border/data-location review,
-6. publication/contact authorization where actually needed,
-7. complaint/deletion/request operational procedure.
+1. exact data controller identity and operational privacy contact,
+2. exact Article 5 legal basis for collecting/maintaining seller contact,
+3. exact legal basis for intentional public disclosure,
+4. collection-time aydınlatma,
+5. recipient/alıcı-group definition,
+6. WhatsApp/provider data-flow assessment,
+7. hosting/CDN/log/backup/operator-device data-flow map,
+8. Article 9 cross-border assessment where applicable,
+9. retention/deletion rule,
+10. data-subject request procedure,
+11. wrong-person phone complaint process,
+12. current VERBİS applicability assessment.
+
+`publication_instruction_at` is an operational audit fact. It is **not** automatically labelled KVKK explicit consent. The real-data activation gate must determine the applicable legal basis for each processing/disclosure purpose instead of assuming consent is always or never required.
+
+No fixed T+7 contact-retention period is asserted by this repository as law. Any later candidate period must be labelled **PRODUCT / DATA-MINIMIZATION PROPOSAL — NOT STATUTORY RETENTION PERIOD** until the real-data activation gate approves it.
 
 This document is a technical privacy boundary, not a legal conclusion.
 
-## Manual moderation lifecycle
+## Manual moderation and seller-contact lifecycle
 
 Founder/admin operation is trusted-only. There is no anonymous insert/update/delete and no self-service seller dashboard.
 
@@ -143,13 +168,48 @@ Automatic effective expiry:
 
 `published + expires_at <= now() -> hidden by RLS`
 
-Only rows satisfying **all** of the following are anonymously readable:
+An anonymously readable/contactable listing must satisfy all of:
 
-- `status = 'published'`
-- `published_at <= now()`
-- `expires_at > now()`
+- `status = 'published'`;
+- `published_at <= now()`;
+- `expires_at > now()`;
+- `unpublished_at is null`;
+- verified contact exists;
+- a matching verification method exists;
+- `publication_instruction_at` exists.
 
-Admin publication can initially use a direct protected database path or a server-side path holding the service-role credential. Studio/Postgres must not become public Internet admin surfaces. No public admin panel is required for 5–10 founder-operated listings.
+The database rejects publication without complete contact readiness.
+
+Operational future verification contract:
+
+- WhatsApp: seller proves present control from the same number intended for publication;
+- phone: founder manual callback or an equivalent founder verification;
+- verification proves present control only, not legal identity, item ownership or permanent ownership of the number.
+
+Contact identity change is fail-closed:
+
+1. changing `contact_channel` or `contact_e164` clears verification + publication instruction;
+2. if the listing was live, the trigger moves it to `unpublished` immediately;
+3. new contact is verified again;
+4. a new publication instruction is recorded;
+5. listing is explicitly republished.
+
+If the seller withdraws the public-contact instruction, clearing `publication_instruction_at` while live automatically unpublishes the listing. There is no founder-relay fallback.
+
+Admin publication can initially use a direct protected database path or a trusted service-role path. Studio/Postgres must not become public Internet admin surfaces. No public admin panel is required for 5–10 founder-operated listings.
+
+## Public seller-contact UX contract
+
+The normal detail page shows exactly one CTA for a real active listing:
+
+- default WhatsApp: `WhatsApp’tan yaz`;
+- seller-selected phone: `Satıcıyı ara`.
+
+WhatsApp target is derived at runtime from the E.164 value; no `whatsapp_url` is stored. Phone target is derived as `tel:` from the same E.164 value.
+
+The normal collection-card query intentionally excludes contact. Sitemap generation consumes the collection payload and only emits listing URLs. The listing-detail metadata uses title, price and location and does not place contact in JSON-LD/search metadata. UI omission is product/data-minimization behavior, **not** a security guarantee: raw active-listing Data API enumeration remains possible and accepted for this pilot contract.
+
+WhatsApp username support is deferred; the pilot does not depend on it until actual availability for intended Turkish pilot accounts is separately verified.
 
 ## Photo Storage model
 
@@ -206,7 +266,7 @@ The database gate returns a photo only when **all** are true:
 - stored MIME is `image/webp`;
 - stored byte size remains inside the trusted boundary.
 
-`anon` and `authenticated` have no execute privilege on the metadata-registration or delivery-gate RPCs and no `USAGE` on the private schema. Both RPCs are `SECURITY DEFINER` with an explicitly empty `search_path`; only `service_role` receives execute privilege.
+`anon` and `authenticated` have no execute privilege on the metadata-registration or delivery-gate RPCs and no `USAGE` on the private schema. Both RPCs are `SECURITY INVOKER` with an explicitly empty `search_path`; only `service_role` receives execute privilege.
 
 The application helper revalidates the returned listing/photo IDs, path, MIME and byte-size contract before asking Storage for a signed URL. Signed URL TTL is configurable from 1 to 300 seconds; the current default is 60 seconds and the existing five-minute maximum remains the hard conservative ceiling.
 
@@ -276,7 +336,7 @@ No Shopier logo, badge, partnership claim or safety guarantee is introduced.
 3. starts only the local services required for API/database/Storage validation,
 4. rebuilds the database from zero migrations,
 5. seeds the private bucket from `config.toml`,
-6. runs pgTAP/RLS tests, including service-role-only RPC privilege/search-path and lifecycle negatives,
+6. runs pgTAP/RLS tests, including the seller-contact lifecycle/public-enumeration contract and service-role-only photo RPC privilege/search-path checks,
 7. generates only synthetic image data and proves a real decodable JPEG carrying synthetic EXIF/GPS/XMP is re-encoded to metadata-free canonical WebP,
 8. runs the trusted ingestion helper so only sanitized WebP reaches the private Storage object path,
 9. persists matching private metadata and proves path/MIME/byte-size consistency,
@@ -368,7 +428,9 @@ Do not attempt an in-place Postgres-major downgrade. Restore into a compatible p
 | Failure | Early signal | Preventive control | Activation response |
 | --- | --- | --- | --- |
 | Pending/rejected listing leaks | anon test sees non-active UUID | RLS + column grants + negative REST tests | real-data NO-GO |
-| Seller contact leaks | private schema reachable via Data API | non-exposed `private`, no anon schema usage | block backend/public real data |
+| Seller contact exposed before publication | anon query returns contact for non-active row | single-source contact + active-listing RLS + lifecycle tests | real-data NO-GO |
+| Active seller contact is scraped/spammed | contact enumeration or seller complaint | accepted public-disclosure model; fast unpublish/remove workflow; reconsider architecture if abuse is material | unpublish; handle complaint; review model |
+| Contact changes while stale verification remains | changed number is still public | fail-closed trigger resets verification/instruction and unpublishes | block republish until reverified |
 | Malicious/incorrect photo upload | decode/signature/size failure or raw object appears | trusted decode/re-encode, canonical WebP-only Storage path, 8 MiB + 50M-pixel guards | reject object; investigate trusted path |
 | Photo metadata write fails after upload | sanitized object exists without metadata | compensating delete + explicit orphan path on cleanup failure | reconcile before continuing |
 | Old reviewed URL remains live after edit/complaint | CTA state remains allow after identity/review downgrade | reset trigger + full-state pure CTA function | force block CTA; review link |

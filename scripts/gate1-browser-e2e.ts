@@ -6,6 +6,7 @@ const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:4173";
 const visibleListingId = "00000000-0000-4000-8000-000000000101";
 const draftListingId = "00000000-0000-4000-8000-000000000102";
 const expiredListingId = "00000000-0000-4000-8000-000000000103";
+const expectedPublicWhatsAppPath = "/12025550123";
 const whatsappUrlPattern = /^https:\/\/wa\.me\//;
 const expectedNotFoundConsoleError =
   "console: Failed to load resource: the server responded with a status of 404 ()";
@@ -210,20 +211,19 @@ async function runProfile(browser: Browser, profile: BrowserProfile) {
     `${profile.name} real listing detail exposed a mock ad slot.`,
   );
 
-  const detailWhatsAppHref = await page
-    .getByRole("link", { name: "WhatsApp" })
-    .getAttribute("href");
+  const publicContactLink = page.getByRole("link", { name: "WhatsApp’tan yaz" });
+  const detailWhatsAppHref = await publicContactLink.getAttribute("href");
   assert(detailWhatsAppHref, `${profile.name} visible listing did not expose a WhatsApp href.`);
-  const detailMessage = readWhatsAppMessage(
-    detailWhatsAppHref,
-    profile.name,
-    "visible listing detail",
+  const publicContactUrl = new URL(detailWhatsAppHref);
+  assert(
+    publicContactUrl.protocol === "https:" &&
+      publicContactUrl.hostname === "wa.me" &&
+      publicContactUrl.pathname === expectedPublicWhatsAppPath,
+    `${profile.name} visible listing did not derive the expected WhatsApp target: ${detailWhatsAppHref}`,
   );
-  assertMessageLines(
-    detailMessage,
-    [`İlan ID: ${visibleListingId}`],
-    profile.name,
-    "visible listing detail",
+  assert(
+    (await page.getByRole("link", { name: "Satıcıyı ara" }).count()) === 0,
+    `${profile.name} visible listing exposed both seller contact channels instead of exactly one.`,
   );
 
   await assertNoHorizontalOverflow(page, profile.name, "/ilan/$id");

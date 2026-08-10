@@ -29,6 +29,7 @@ const photoId = "40000000-0000-4000-8000-000000000001";
 const anonProbePhotoId = "40000000-0000-4000-8000-000000000002";
 const invalidMimePhotoId = "40000000-0000-4000-8000-000000000003";
 const oversizePhotoId = "40000000-0000-4000-8000-000000000004";
+const sellerContactE164 = "+12025550123";
 const PNG_SIGNATURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 type TestImagePipeline = {
@@ -171,6 +172,8 @@ const pendingInsert = await fetch(`${baseUrl}/rest/v1/listings`, {
     district: "Corlu",
     seller_display_name: "Synthetic Seller",
     search_keywords: ["synthetic", "pilot"],
+    contact_channel: "whatsapp",
+    contact_e164: sellerContactE164,
     status: "pending",
   }),
 });
@@ -453,6 +456,9 @@ await requireOk(
       Prefer: "return=representation",
     },
     body: JSON.stringify({
+      contact_verified_at: new Date(now.getTime() - 2 * 60 * 1000).toISOString(),
+      contact_verification_method: "whatsapp_same_number",
+      publication_instruction_at: new Date(now.getTime() - 60 * 1000).toISOString(),
       status: "published",
       published_at: now.toISOString(),
       expires_at: expires.toISOString(),
@@ -462,7 +468,7 @@ await requireOk(
 );
 
 const visiblePublished = await fetch(
-  `${baseUrl}/rest/v1/listings?id=eq.${listingId}&select=id,title,province,district`,
+  `${baseUrl}/rest/v1/listings?id=eq.${listingId}&select=id,title,province,district,contact_channel,contact_e164`,
   { headers: apiHeaders(anonKey) },
 );
 await requireOk(visiblePublished, "anonymous active-listing read");
@@ -470,12 +476,16 @@ const publishedRows = (await visiblePublished.json()) as Array<{
   id: string;
   province: string;
   district: string;
+  contact_channel: string;
+  contact_e164: string;
 }>;
 if (
   publishedRows.length !== 1 ||
   publishedRows[0]?.id !== listingId ||
   publishedRows[0]?.province !== "Tekirdağ" ||
-  publishedRows[0]?.district !== "Çorlu"
+  publishedRows[0]?.district !== "Çorlu" ||
+  publishedRows[0]?.contact_channel !== "whatsapp" ||
+  publishedRows[0]?.contact_e164 !== sellerContactE164
 ) {
   throw new Error(`Unexpected public published row: ${JSON.stringify(publishedRows)}`);
 }

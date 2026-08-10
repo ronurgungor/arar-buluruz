@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public;
 
-select plan(22);
+select no_plan();
 
 select has_table(
   'public',
@@ -28,9 +28,14 @@ select columns_are(
     'updated_at',
     'published_at',
     'expires_at',
-    'unpublished_at'
+    'unpublished_at',
+    'contact_channel',
+    'contact_e164',
+    'contact_verified_at',
+    'contact_verification_method',
+    'publication_instruction_at'
   ],
-  'listings has only the approved Gate 1 columns'
+  'listings has the approved pilot and seller-contact columns'
 );
 
 select ok(
@@ -64,6 +69,16 @@ select ok(
 );
 
 select ok(
+  has_column_privilege('anon', 'public.listings', 'contact_channel', 'SELECT'),
+  'anon can select the intentional public contact channel on RLS-visible rows'
+);
+
+select ok(
+  has_column_privilege('anon', 'public.listings', 'contact_e164', 'SELECT'),
+  'anon can select the intentional public contact value on RLS-visible rows'
+);
+
+select ok(
   not has_column_privilege('anon', 'public.listings', 'status', 'SELECT'),
   'anon cannot select internal status'
 );
@@ -71,6 +86,21 @@ select ok(
 select ok(
   not has_column_privilege('anon', 'public.listings', 'expires_at', 'SELECT'),
   'anon cannot select internal expiry metadata'
+);
+
+select ok(
+  not has_column_privilege('anon', 'public.listings', 'contact_verified_at', 'SELECT'),
+  'anon cannot select contact verification timestamp'
+);
+
+select ok(
+  not has_column_privilege('anon', 'public.listings', 'contact_verification_method', 'SELECT'),
+  'anon cannot select contact verification method'
+);
+
+select ok(
+  not has_column_privilege('anon', 'public.listings', 'publication_instruction_at', 'SELECT'),
+  'anon cannot select publication instruction audit timestamp'
 );
 
 select ok(
@@ -97,6 +127,11 @@ insert into public.listings (
   district,
   seller_display_name,
   search_keywords,
+  contact_channel,
+  contact_e164,
+  contact_verified_at,
+  contact_verification_method,
+  publication_instruction_at,
   status,
   published_at,
   expires_at,
@@ -112,6 +147,11 @@ values
     'Corlu',
     'Test Seller',
     array['visible'],
+    'whatsapp',
+    '+12025550123',
+    now() - interval '2 days',
+    'whatsapp_same_number',
+    now() - interval '36 hours',
     'published',
     now() - interval '1 day',
     now() + interval '1 day',
@@ -126,6 +166,11 @@ values
     'Corlu',
     'Test Seller',
     array['draft'],
+    null,
+    null,
+    null,
+    null,
+    null,
     'draft',
     null,
     null,
@@ -140,6 +185,11 @@ values
     'Corlu',
     'Test Seller',
     array['unpublished'],
+    'phone',
+    '+12025550124',
+    now() - interval '11 days',
+    'manual_callback',
+    now() - interval '10 days 12 hours',
     'unpublished',
     now() - interval '10 days',
     now() + interval '10 days',
@@ -154,6 +204,11 @@ values
     'Corlu',
     'Test Seller',
     array['future'],
+    'whatsapp',
+    '+12025550125',
+    now() - interval '2 hours',
+    'whatsapp_same_number',
+    now() - interval '1 hour',
     'published',
     now() + interval '1 day',
     now() + interval '10 days',
@@ -168,6 +223,11 @@ values
     'Corlu',
     'Test Seller',
     array['expired'],
+    'phone',
+    '+12025550126',
+    now() - interval '11 days',
+    'manual_callback',
+    now() - interval '10 days 12 hours',
     'published',
     now() - interval '10 days',
     now() - interval '1 day',
@@ -184,6 +244,16 @@ select results_eq(
   $$,
   $$ values ('Visible test listing'::text) $$,
   'anon sees only published, already-published and unexpired rows'
+);
+
+select results_eq(
+  $$
+    select contact_channel, contact_e164
+    from public.listings
+    order by id
+  $$,
+  $$ values ('whatsapp'::text, '+12025550123'::text) $$,
+  'anon can obtain the selected contact only for the active published row'
 );
 
 select throws_ok(
@@ -285,6 +355,11 @@ select throws_ok(
       province,
       district,
       seller_display_name,
+      contact_channel,
+      contact_e164,
+      contact_verified_at,
+      contact_verification_method,
+      publication_instruction_at,
       status,
       published_at,
       expires_at
@@ -296,6 +371,11 @@ select throws_ok(
       'Tekirdag',
       'Corlu',
       'Test Seller',
+      'whatsapp',
+      '+12025550127',
+      now() - interval '2 hours',
+      'whatsapp_same_number',
+      now() - interval '1 hour',
       'published',
       now(),
       now() - interval '1 day'
@@ -358,21 +438,34 @@ select throws_ok(
   'invalid status and timestamp lifecycle is rejected'
 );
 
-select is(
-  (
-    select count(*)::integer
-    from information_schema.columns
-    where table_schema = 'public'
-      and table_name = 'listings'
-      and column_name in (
-        'seller_phone',
-        'phone',
-        'contact_phone',
-        'whatsapp_number'
-      )
-  ),
-  0,
-  'no seller phone or WhatsApp column exists'
+select throws_ok(
+  $$
+    insert into public.listings (
+      title,
+      description,
+      price_amount,
+      province,
+      district,
+      seller_display_name,
+      status,
+      published_at,
+      expires_at
+    )
+    values (
+      'Published without contact',
+      'A published pilot listing must not bypass verified public contact readiness.',
+      1,
+      'Tekirdag',
+      'Corlu',
+      'Test Seller',
+      'published',
+      now(),
+      now() + interval '1 day'
+    )
+  $$,
+  '23514',
+  null,
+  'published listing without verified contact and publication instruction is rejected'
 );
 
 select has_trigger(
@@ -380,6 +473,13 @@ select has_trigger(
   'listings',
   'listings_set_updated_at',
   'updated_at trigger exists'
+);
+
+select has_trigger(
+  'public',
+  'listings',
+  'listings_fail_closed_contact_change',
+  'contact change fail-closed trigger exists'
 );
 
 select has_index(

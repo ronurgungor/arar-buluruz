@@ -1,19 +1,16 @@
 # Arar Buluruz — Current State
 
-_Last updated: 2026-08-09, Europe/Istanbul_
+_Last updated: 2026-08-10, Europe/Istanbul_
 
 ## Canonical repository state
 
 - Repository: `ronurgungor/arar-buluruz`; default branch: `main`.
-- Canonical `main` before this documentation-sync gate: `9376ba60dfc049a4df27ce25255fa5923b2a154e`.
-- PR #52, **Complete V0 location and demo listing usability**, merged successfully. Its merge advanced `main` to `714298af58049b3c2ee2b5b345b36c63b6e7f865`.
-- PR #52's V0 usability release was subsequently published to the public Lovable V0.
-- Public smoke testing passed after that publication.
-- Users found the application understandable.
-- Initial supply intent is now validated: real users explicitly said their actual listings may be published in Arar Buluruz.
-- PR #53, **Prepare real Çorlu pilot backend with fail-closed data boundaries**, merged successfully with normal merge commit/current `main` `9376ba60dfc049a4df27ce25255fa5923b2a154e`.
-- Post-merge CI run `31280761870` — **SUCCESS**.
-- Post-merge V0 minimal PWA run `31280761873` — **SUCCESS**.
+- Canonical `main` at the start of the PR #58 seller-contact implementation gate: `46b436c957ff8defb6f6dca6e739fdb91d1e6216`.
+- PR #57, **Prepare trusted real-pilot photo pipeline**, is merged/closed. Its merge commit/current canonical `main` is `46b436c957ff8defb6f6dca6e739fdb91d1e6216`.
+- PR #57 post-merge CI and V0 minimal-PWA checks succeeded; the real-pilot backend-prep workflow was not triggered on the merge push, while its exact-head pre-merge validation was green.
+- The trusted-photo preparation remains inactive repository capability: canonical sanitized WebP ingestion, private Storage metadata and lifecycle-gated short-lived signed delivery are prepared but not activated in production.
+- Users found the current public application understandable.
+- Initial supply intent is validated: real users explicitly said their actual listings may be published in Arar Buluruz.
 
 ## Critical state distinction: repository != deployed public runtime
 
@@ -21,14 +18,14 @@ This distinction is intentional and must be preserved in every review.
 
 ### Repository `main`
 
-Repository `main` now contains the public V0 application **plus inactive technical preparation** for a future founder-controlled real Çorlu pilot.
+Repository `main` contains the public V0 application **plus inactive technical preparation** for a future founder-controlled real Çorlu pilot.
 
-PR #53 added, among other preparation:
+Current inactive preparation includes:
 
 - extended listing lifecycle and Çorlu pilot location constraints;
-- a non-exposed `private` schema for minimum contact, photo metadata and external-sales review state;
 - fail-closed RLS/grant boundaries;
-- a private Storage contract and synthetic Storage validation assets while committed product Storage remains disabled;
+- a private trusted-photo Storage/metadata contract while committed product Storage remains disabled;
+- service-role-only `SECURITY INVOKER` trusted-photo RPCs with empty `search_path`;
 - full-state provider-neutral external-sales CTA review logic;
 - self-hosted production, backup, restore and rollback contracts.
 
@@ -45,9 +42,10 @@ The live public V0 remains:
 - no real Storage;
 - no Auth;
 - no public external-sales CTA;
+- no real seller-contact CTA;
 - no public Shopier integration or transaction processing.
 
-Do **not** describe PR #53 preparation as live production functionality.
+Do **not** describe repository pilot preparation as live production functionality.
 
 ## Current product evidence
 
@@ -62,7 +60,7 @@ This does **not** establish:
 - a functioning real marketplace;
 - successful real listing intake/publishing operations;
 - sustainable moderation;
-- the future seller-contact operating model;
+- seller-contact performance in real operation;
 - account ownership/management;
 - public external-sales safety in real use;
 - a functioning supply-demand loop;
@@ -80,6 +78,25 @@ The next real-data target, when separately authorized, remains:
 
 Real personal-data collection is still blocked.
 
+## Seller-contact state
+
+D-024 records the founder-selected initial pilot contact model:
+
+- one intentionally public seller contact per publishable listing;
+- WhatsApp default, seller may instead select phone;
+- no anonymous privileged contact resolver;
+- no click-to-reveal privacy claim;
+- no founder relay, in-app messaging, Auth, SMS OTP or CAPTCHA dependency;
+- one authoritative E.164 value on `public.listings`;
+- contact verification/publication audit fields remain internal;
+- active published `contact_channel` and `contact_e164` are intentionally anonymously readable under the listing RLS lifecycle;
+- raw PostgREST bulk enumeration of active contacts is an accepted public-disclosure consequence for this small pilot, not a claimed security boundary;
+- contact changes/withdrawal fail closed by unpublishing and resetting readiness as applicable.
+
+PR #58 prepares this contract with **synthetic/local/CI-only** data and remains unmerged until its validation/report gate completes.
+
+No real phone number is authorized by this state.
+
 ## External-sales / Shopier state
 
 The canonical product decision is provider-neutral **Satış bağlantısı / External Sales Link**.
@@ -96,8 +113,6 @@ Shopier is treated only as an independent third-party provider candidate:
 - Arar Buluruz does not process or hold payment funds.
 
 Repository `main` contains inactive review/security preparation for this model. The public V0 exposes no external-sales field or CTA.
-
-No VPS provider, backup vendor or future seller-contact model is selected merely because a research report recommended one.
 
 ## Hard founder financial boundary
 
@@ -118,9 +133,9 @@ Existing D-021/self-hosting documents may define technical prerequisites and pro
 
 No real seller listing/contact/photo data is authorized today.
 
-Before any real personal-data collection, a separate founder gate must approve the exact privacy/KVKK and data-flow prerequisites, including the operational notice/request/deletion/security/provider boundaries required for the actual chosen pilot design.
+Before any real personal-data collection, a separate founder gate must close the exact privacy/KVKK and data-flow prerequisites for the selected public-contact pilot, including controller identity, processing/disclosure legal bases, collection-time aydınlatma, recipients, provider/cross-border flows, retention/deletion, data-subject requests, wrong-person phone complaints and current VERBİS applicability.
 
-Repository technical preparation alone is not a lawful-basis or activation decision.
+Repository technical preparation and `publication_instruction_at` alone are not a lawful-basis or explicit-consent conclusion.
 
 ## Backend/self-hosting state
 
@@ -139,16 +154,20 @@ A future VPS purchase additionally requires the separate FOUNDER BUDGET / REVENU
 
 ## Historical evidence preservation
 
-Older dated publication, recovery, Workstream B/C and V0 quality-completion records remain historically valid for the state they recorded. They should not be rewritten to pretend they were created after PR #52 or PR #53.
+Older dated publication, recovery, Workstream B/C and V0 quality-completion records remain historically valid for the state they recorded. They should not be rewritten to pretend they were created after later PRs.
 
-When an older operational document calls a completed program “active,” use the newer current-state/backlog record or an explicit `Superseded/current state` note rather than rewriting the dated historical evidence.
+When an older operational document calls a completed program “active,” use this newer current-state record or an explicit `Superseded/current state` note rather than rewriting the dated historical evidence.
 
 ## Current gate
 
-The documentation-sync gate is documentation-only and exists solely to align repository context before an independent full-repository review.
+The authorized current implementation gate is **PR #58 seller contact contract preparation**.
 
-After this documentation merge, the **next activity is the Claude full-repository review**.
+Scope remains:
 
-That review is independent and advisory only. Its findings do not authorize code changes, architecture changes, paid infrastructure, real-data activation or publication. Any implementation resulting from the review requires a separate founder gate.
-
-There is currently **no authorized implementation, paid-infrastructure, real-data or public real-listing activation gate**.
+- local/CI only;
+- synthetic data only;
+- no production backend/Storage/Auth activation;
+- no real personal data;
+- no deployment/Lovable publication;
+- no paid infrastructure;
+- stop before merge for founder review.

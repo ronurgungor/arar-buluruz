@@ -10,6 +10,10 @@ import {
   TEST_ONLY_CONTACT,
   buildControlledWhatsAppHref,
 } from "@/lib/prototype-contact";
+import {
+  buildPublicSellerContactHref,
+  getPublicSellerContactLabel,
+} from "@/lib/public-seller-contact";
 
 export const Route = createFileRoute("/ilan/$id")({
   loader: async ({ params }) => {
@@ -90,13 +94,17 @@ function ListingDetail() {
     );
   }
 
+  const publicContact = listing.publicContact;
+  const publicContactHref = publicContact ? buildPublicSellerContactHref(publicContact) : null;
+  const publicContactLabel = publicContact ? getPublicSellerContactLabel(publicContact) : null;
+
   const publicContactDisabled = !gate1TestOperationsEnabled;
-  const whatsappHref = gate1TestOperationsEnabled
+  const fallbackWhatsAppHref = gate1TestOperationsEnabled
     ? buildControlledWhatsAppHref(
         `Merhaba, Arar Buluruz ilanı hakkında bilgi almak istiyorum. İlan ID: ${listing.id}`,
       )
     : PUBLIC_V0_DISABLED_CONTACT_HREF;
-  const phoneHref = gate1TestOperationsEnabled
+  const fallbackPhoneHref = gate1TestOperationsEnabled
     ? TEST_ONLY_CONTACT.phoneHref
     : PUBLIC_V0_DISABLED_CONTACT_HREF;
 
@@ -159,31 +167,51 @@ function ListingDetail() {
         className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
       >
         <div className="mx-auto max-w-2xl px-4 py-3">
-          <p className="mb-2 text-center text-xs text-muted-foreground">
-            {gate1TestOperationsEnabled
-              ? "İletişim yalnız sentetik Gate 1 test hedefine yönlendirilir."
-              : "Demo sürümünde gerçek telefon ve WhatsApp iletişimi kapalıdır."}
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <a
-              href={phoneHref}
-              aria-disabled={publicContactDisabled || undefined}
-              onClick={publicContactDisabled ? (event) => event.preventDefault() : undefined}
-              className="flex h-12 min-h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
-            >
-              Ara
-            </a>
-            <a
-              href={whatsappHref}
-              target={gate1TestOperationsEnabled ? "_blank" : undefined}
-              rel={gate1TestOperationsEnabled ? "noopener noreferrer" : undefined}
-              aria-disabled={publicContactDisabled || undefined}
-              onClick={publicContactDisabled ? (event) => event.preventDefault() : undefined}
-              className="flex h-12 min-h-12 items-center justify-center rounded-full border border-primary text-sm font-bold text-primary hover:bg-accent"
-            >
-              WhatsApp
-            </a>
-          </div>
+          {publicContact && publicContactHref && publicContactLabel ? (
+            <>
+              <p className="mb-2 text-center text-xs text-muted-foreground">
+                {publicContact.channel === "whatsapp"
+                  ? "WhatsApp’a yönlendirileceksiniz; görüşme Arar Buluruz dışında gerçekleşir."
+                  : "Arama cihazınızın telefon uygulaması üzerinden gerçekleşir."}
+              </p>
+              <a
+                href={publicContactHref}
+                target={publicContact.channel === "whatsapp" ? "_blank" : undefined}
+                rel={publicContact.channel === "whatsapp" ? "noopener noreferrer" : undefined}
+                className="flex h-12 min-h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
+              >
+                {publicContactLabel}
+              </a>
+            </>
+          ) : (
+            <>
+              <p className="mb-2 text-center text-xs text-muted-foreground">
+                {gate1TestOperationsEnabled
+                  ? "İletişim yalnız sentetik Gate 1 test hedefine yönlendirilir."
+                  : "Demo sürümünde gerçek telefon ve WhatsApp iletişimi kapalıdır."}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <a
+                  href={fallbackPhoneHref}
+                  aria-disabled={publicContactDisabled || undefined}
+                  onClick={publicContactDisabled ? (event) => event.preventDefault() : undefined}
+                  className="flex h-12 min-h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
+                >
+                  Ara
+                </a>
+                <a
+                  href={fallbackWhatsAppHref}
+                  target={gate1TestOperationsEnabled ? "_blank" : undefined}
+                  rel={gate1TestOperationsEnabled ? "noopener noreferrer" : undefined}
+                  aria-disabled={publicContactDisabled || undefined}
+                  onClick={publicContactDisabled ? (event) => event.preventDefault() : undefined}
+                  className="flex h-12 min-h-12 items-center justify-center rounded-full border border-primary text-sm font-bold text-primary hover:bg-accent"
+                >
+                  WhatsApp
+                </a>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
