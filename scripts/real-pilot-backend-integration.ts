@@ -228,6 +228,44 @@ const anonRegisterProbe = await fetch(`${baseUrl}/rest/v1/rpc/register_sanitized
 });
 await requireRejected(anonRegisterProbe, "anonymous private photo metadata registration");
 
+const invalidPathRegisterProbe = await fetch(
+  `${baseUrl}/rest/v1/rpc/register_sanitized_listing_photo`,
+  {
+    method: "POST",
+    headers: apiHeaders(serviceRoleKey),
+    body: JSON.stringify({
+      p_listing_id: listingId,
+      p_photo_id: invalidMimePhotoId,
+      p_object_path: buildListingPhotoObjectPath(listingId, invalidMimePhotoId, "image/jpeg"),
+      p_byte_size: sanitizedAnonProbe.bytes.byteLength,
+      p_sort_order: 1,
+    }),
+  },
+);
+await requireRejected(
+  invalidPathRegisterProbe,
+  "service-role invalid sanitized photo metadata path",
+);
+
+const invalidByteSizeRegisterProbe = await fetch(
+  `${baseUrl}/rest/v1/rpc/register_sanitized_listing_photo`,
+  {
+    method: "POST",
+    headers: apiHeaders(serviceRoleKey),
+    body: JSON.stringify({
+      p_listing_id: listingId,
+      p_photo_id: oversizePhotoId,
+      p_object_path: buildListingPhotoObjectPath(listingId, oversizePhotoId, "image/webp"),
+      p_byte_size: LISTING_PHOTO_MAX_BYTES + 1,
+      p_sort_order: 2,
+    }),
+  },
+);
+await requireRejected(
+  invalidByteSizeRegisterProbe,
+  "service-role invalid sanitized photo metadata byte size",
+);
+
 const anonProbePath = buildListingPhotoObjectPath(listingId, anonProbePhotoId, "image/webp");
 const anonUpload = await fetch(
   `${storageBase}/object/listing_photos/${encodeObjectPath(anonProbePath)}`,

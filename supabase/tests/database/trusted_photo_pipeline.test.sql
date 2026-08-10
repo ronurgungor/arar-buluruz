@@ -97,7 +97,7 @@ select function_privs_are(
 
 select ok(
   (
-    select p.prosecdef
+    select not p.prosecdef
     from pg_catalog.pg_proc as p
     join pg_catalog.pg_namespace as n on n.oid = p.pronamespace
     where n.nspname = 'public'
@@ -105,7 +105,7 @@ select ok(
       and pg_catalog.pg_get_function_identity_arguments(p.oid) =
         'p_listing_id uuid, p_photo_id uuid, p_object_path text, p_byte_size bigint, p_sort_order smallint'
   ),
-  'sanitized photo metadata bridge is SECURITY DEFINER'
+  'sanitized photo metadata bridge is SECURITY INVOKER'
 );
 select ok(
   (
@@ -121,7 +121,7 @@ select ok(
 );
 select ok(
   (
-    select p.prosecdef
+    select not p.prosecdef
     from pg_catalog.pg_proc as p
     join pg_catalog.pg_namespace as n on n.oid = p.pronamespace
     where n.nspname = 'public'
@@ -129,7 +129,7 @@ select ok(
       and pg_catalog.pg_get_function_identity_arguments(p.oid) =
         'p_listing_id uuid, p_photo_id uuid'
   ),
-  'photo delivery gate is SECURITY DEFINER'
+  'photo delivery gate is SECURITY INVOKER'
 );
 select ok(
   (

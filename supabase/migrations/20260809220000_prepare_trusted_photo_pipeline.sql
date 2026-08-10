@@ -10,7 +10,7 @@ create function public.register_sanitized_listing_photo(
 )
 returns void
 language plpgsql
-security definer
+security invoker
 set search_path = ''
 as $$
 begin
@@ -66,7 +66,7 @@ returns table (
 )
 language sql
 stable
-security definer
+security invoker
 set search_path = ''
 as $$
   select
