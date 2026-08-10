@@ -8,11 +8,11 @@ This repository state prepares the controlled **5–10 real Çorlu listing** bac
 
 This gate creates **no** VPS, remote Supabase project, remote Storage bucket, production secret, user account, real listing, real contact datum or public backend connection. The current public V0 remains mock listings + zero-data demo form. No deployment is authorized by this work.
 
-## Current status after merge
+## Current repository baseline for this gate
 
-PR #53 has been merged into `main` as `9376ba60dfc049a4df27ce25255fa5923b2a154e`. Post-merge CI `31280761870` and V0 minimal PWA `31280761873` succeeded.
+The canonical starting `main` for the trusted-photo implementation gate is `7482bf0b0619606b13d3843c0b14f738380a0cd7`, after PR #56. The earlier real-pilot backend foundation from PR #53 remains inactive repository preparation.
 
-This means the preparation described here is now present in the repository, **not** that it is live in production. The deployed public V0 still uses mock/synthetic listings and has no real backend connection, real personal data, real Storage, Auth or public external-sales CTA.
+This means the preparation described here is present in the repository, **not** that it is live in production. The deployed public V0 still uses mock/synthetic listings and has no real backend connection, real personal data, real Storage, Auth or public external-sales CTA.
 
 ## Hard founder budget/revenue override
 
@@ -91,7 +91,7 @@ Metadata only:
 - display sort order
 - created timestamp
 
-Original filenames are discarded. Real image bytes never belong in Git, repository fixtures or CI artifacts.
+The trusted ingestion boundary persists canonical sanitized metadata as `image/webp` with a controlled `listings/{listing_uuid}/{photo_uuid}.webp` path. Original filenames are discarded. Real image bytes never belong in Git, repository fixtures or CI artifacts.
 
 ### Private external-sales review state: `private.listing_external_sales_links`
 
@@ -157,27 +157,74 @@ Bucket name: `listing_photos`.
 
 The committed repository setting remains `storage.enabled = false`. CI temporarily enables Storage only in the ephemeral runner copy and seeds the configured bucket after database reset.
 
-Bucket contract:
+### Untrusted input boundary
 
-- private bucket (`public = false`)
-- JPEG / PNG / WebP only
-- 8 MiB maximum
-- object path: `listings/{listing_uuid}/{photo_uuid}.{jpg|png|webp}`
-- no original filename in path
-- no SVG, HTML, JavaScript or arbitrary executable MIME
-- application-layer basic magic/signature check before trusted upload; Content-Type is not treated as proof of image content
+The trusted operator/server path accepts image bytes only after all current application checks pass:
 
-Private bucket is intentional. A public bucket would bypass read access control for object delivery. In the future active-listing adapter, photo access should use short-lived signed URLs generated only by a trusted server path after confirming the listing is still public. Proposed initial signed URL TTL: at most 5 minutes, revalidated at activation.
+- declared input MIME is JPEG, PNG or WebP;
+- input byte size is between 1 byte and 8 MiB;
+- basic content signature matches the declared MIME;
+- `Bun.Image` successfully decodes the image with the existing 50,000,000 decoded-pixel ceiling;
+- decoded format matches the declared MIME.
+
+Content-Type is never treated as proof of image content.
+
+### Canonical sanitization and ingestion
+
+Before Storage is touched, `sanitizeListingPhoto()` performs trusted decode and re-encode. The accepted output is canonical WebP only.
+
+The reusable trusted ingestion invariant is:
+
+`untrusted JPEG/PNG/WebP bytes -> decode/re-encode sanitizer -> canonical WebP -> private Storage -> private metadata`
+
+Rules:
+
+- original untrusted bytes are never passed to the Storage uploader;
+- original filename is not accepted by the trusted ingestion helper and is not persisted;
+- output object path is exactly `listings/{listing_uuid}/{photo_uuid}.webp`;
+- the configured private bucket accepts only `image/webp` objects;
+- persisted trusted metadata records the same listing UUID, photo UUID, object path, `image/webp` MIME, sanitized byte size and sort order;
+- metadata registration is exposed only through a service-role-only RPC bridge because the `private` schema remains outside the Data API;
+- if Storage upload succeeds but metadata registration fails, the trusted helper performs a compensating Storage delete;
+- if that compensating delete also fails, the helper fails closed and reports the exact orphan object path for operator reconciliation rather than pretending ingestion succeeded.
+
+No public seller upload, browser service-role operation, admin panel, production drag/drop uploader or remote Storage is introduced by this preparation.
+
+### Active-listing signed delivery gate
+
+Photo delivery remains private-by-default. A trusted server/operator helper may request a signed URL only after a service-role-only database gate returns matching metadata.
+
+The database gate returns a photo only when **all** are true:
+
+- listing exists;
+- `status = 'published'`;
+- `published_at <= now()`;
+- `expires_at > now()`;
+- `unpublished_at is null`;
+- requested photo belongs to the requested listing;
+- object path exactly matches `listings/{listing_uuid}/{photo_uuid}.webp`;
+- stored MIME is `image/webp`;
+- stored byte size remains inside the trusted boundary.
+
+`anon` and `authenticated` have no execute privilege on the metadata-registration or delivery-gate RPCs and no `USAGE` on the private schema. Both RPCs are `SECURITY DEFINER` with an explicitly empty `search_path`; only `service_role` receives execute privilege.
+
+The application helper revalidates the returned listing/photo IDs, path, MIME and byte-size contract before asking Storage for a signed URL. Signed URL TTL is configurable from 1 to 300 seconds; the current default is 60 seconds and the existing five-minute maximum remains the hard conservative ceiling.
 
 Lifecycle:
 
-- `draft/pending/rejected`: no public signed URL issuance
-- `published + active`: trusted path may issue short-lived signed URLs
-- `unpublished/expired`: stop issuing new signed URLs; existing short-lived URLs die naturally
-- hard listing deletion: delete Storage objects through Storage API first, then remove metadata/listing; do **not** manually delete `storage.objects` rows
-- periodic orphan reconciliation: compare Storage object listing-prefix inventory with `private.listing_photos`; quarantine/report unexpected objects before deletion
+- `draft/pending/rejected`: no new signed URL issuance;
+- `published + active`: trusted path may issue a short-lived signed URL;
+- `unpublished/expired`: no new signed URL issuance; an already-issued URL expires naturally after its short TTL;
+- hard listing deletion: delete Storage objects through Storage API first, then remove metadata/listing; do **not** manually delete `storage.objects` rows;
+- periodic orphan reconciliation: compare Storage object listing-prefix inventory with `private.listing_photos`; quarantine/report unexpected objects before deletion.
 
-Any additional photo-sanitization or metadata-stripping proposal remains a future privacy/security review item unless separately founder-approved and implemented.
+### Pixel / memory boundary review
+
+**Decision: KEEP FOR NOW.** The existing 50,000,000 decoded-pixel ceiling is unchanged in this gate.
+
+A worst-case 50,000,000-pixel RGBA raster requires `50,000,000 × 4 = 200,000,000` bytes, approximately **190.7 MiB**, for one decoded pixel buffer alone. Actual peak process memory can be higher because input bytes, codec state, orientation/re-encode working buffers and encoded output may coexist temporarily.
+
+The current intended pilot model is founder-operated and sequential: one trusted photo is processed at a time, with no concurrent public upload handling in this PR. There is therefore no measured evidence yet that justifies replacing the 50M limit with a different arbitrary number. Before any production activation, the exact target server memory envelope and representative photo workload must be measured; if the sequential pipeline does not fit safely alongside the chosen backend services, lower the ceiling based on those measurements before real data is enabled.
 
 ## External-sales / Shopier model
 
@@ -229,12 +276,17 @@ No Shopier logo, badge, partnership claim or safety guarantee is introduced.
 3. starts only the local services required for API/database/Storage validation,
 4. rebuilds the database from zero migrations,
 5. seeds the private bucket from `config.toml`,
-6. runs pgTAP/RLS tests,
-7. tests service-role operational writes and anonymous visibility,
-8. tests Storage MIME/size/private-read/signed-read behavior using synthetic bytes,
-9. destroys local data after the run.
+6. runs pgTAP/RLS tests, including service-role-only RPC privilege/search-path and lifecycle negatives,
+7. generates only synthetic image data and proves a real decodable JPEG carrying synthetic EXIF/GPS/XMP is re-encoded to metadata-free canonical WebP,
+8. runs the trusted ingestion helper so only sanitized WebP reaches the private Storage object path,
+9. persists matching private metadata and proves path/MIME/byte-size consistency,
+10. proves pending/rejected/unpublished/expired listings cannot receive new signed URLs while an active published listing can read the sanitized object through a short-lived signed URL,
+11. proves anonymous users cannot upload or directly read the private bucket and cannot call the private metadata RPCs,
+12. proves the original unsanitized JPEG object path does not exist,
+13. keeps existing Storage MIME/size negative checks,
+14. destroys local data after the run.
 
-Current existing V0/CI/PWA checks remain separate.
+Current existing V0/CI/PWA checks remain separate and must stay green. The public V0 remains mock/synthetic, globally noindex and disconnected from Storage/backend activation.
 
 ## Future Türkiye self-hosted production contract
 
@@ -317,7 +369,8 @@ Do not attempt an in-place Postgres-major downgrade. Restore into a compatible p
 | --- | --- | --- | --- |
 | Pending/rejected listing leaks | anon test sees non-active UUID | RLS + column grants + negative REST tests | real-data NO-GO |
 | Seller contact leaks | private schema reachable via Data API | non-exposed `private`, no anon schema usage | block backend/public real data |
-| Malicious/incorrect photo upload | MIME/signature mismatch or oversized object | allowlist + 8 MiB + opaque path + signature check | reject object; investigate trusted path |
+| Malicious/incorrect photo upload | decode/signature/size failure or raw object appears | trusted decode/re-encode, canonical WebP-only Storage path, 8 MiB + 50M-pixel guards | reject object; investigate trusted path |
+| Photo metadata write fails after upload | sanitized object exists without metadata | compensating delete + explicit orphan path on cleanup failure | reconcile before continuing |
 | Old reviewed URL remains live after edit/complaint | CTA state remains allow after identity/review downgrade | reset trigger + full-state pure CTA function | force block CTA; review link |
 | Service-role credential enters browser/Git | secret scan or network bundle contains key | server-only secret contract + CI scan | rotate immediately; no activation |
 | VPS loss destroys DB/photos | only same-disk backup exists | encrypted off-VPS DB + object backup | real-data NO-GO until restore proven |

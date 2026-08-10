@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test:unit": "bun test src/lib/public-listings.test.ts src/lib/external-sales-link.test.ts src/lib/demo-listing.test.ts src/lib/listing-photo.test.ts src/lib/prototype-contact.test.ts src/lib/discovery-contract.test.ts src/data/turkiye-locations.test.ts",
+    "test:unit": "bun test src/lib/public-listings.test.ts src/lib/external-sales-link.test.ts src/lib/demo-listing.test.ts src/lib/listing-photo.test.ts src/lib/listing-photo-trusted.test.ts src/lib/prototype-contact.test.ts src/lib/discovery-contract.test.ts src/data/turkiye-locations.test.ts",
     "format": "prettier --write ."
   },
   "dependencies": {

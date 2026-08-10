@@ -80,7 +80,7 @@ jobs:
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
         with:
-          version: 2.101.0
+          version: 2.102.0
 
       - name: Restore canonical Bun after Supabase setup
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -135,6 +135,9 @@ jobs:
 
       - name: Run pgTAP database and RLS tests
         run: supabase test db
+
+      - name: Run isolated trusted-photo role probes and DB health sentinel
+        run: bash scripts/trusted-photo-db-role-probes.sh
 
       - name: Seed transient integration fixtures
         shell: bash
