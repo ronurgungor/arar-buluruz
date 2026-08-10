@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import {
   PublicListingsError,
   fetchPublicListing,
@@ -85,5 +87,18 @@ describe("public listings seller-contact payload boundary", () => {
     await expect(fetchPublicListing(baseRow.id, config, fetchMock)).rejects.toBeInstanceOf(
       PublicListingsError,
     );
+  });
+
+  test("keeps contact out of sitemap and structured metadata source paths", () => {
+    const sitemapSource = readFileSync(
+      path.resolve("src/routes/sitemap[.]xml.ts"),
+      "utf8",
+    );
+    const detailSource = readFileSync(path.resolve("src/routes/ilan.$id.tsx"), "utf8");
+
+    expect(sitemapSource).not.toContain("contact_e164");
+    expect(sitemapSource).not.toContain("publicContact");
+    expect(detailSource).not.toContain("application/ld+json");
+    expect(detailSource).not.toContain("schema.org");
   });
 });
