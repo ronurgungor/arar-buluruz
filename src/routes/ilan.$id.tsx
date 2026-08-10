@@ -4,12 +4,8 @@ import { TopBar } from "@/components/TopBar";
 import { formatPrice } from "@/data/listings";
 import { ALL_CITIES, ALL_DISTRICTS } from "@/lib/listing-search";
 import { hasListingResultsHistory } from "@/lib/listing-return";
-import { loadListingDetail } from "@/lib/public-listings";
-import {
-  PUBLIC_V0_DISABLED_CONTACT_HREF,
-  TEST_ONLY_CONTACT,
-  buildControlledWhatsAppHref,
-} from "@/lib/prototype-contact";
+import { buildSellerContactHref, loadListingDetail } from "@/lib/public-listings";
+import { PUBLIC_V0_DISABLED_CONTACT_HREF } from "@/lib/prototype-contact";
 
 export const Route = createFileRoute("/ilan/$id")({
   loader: async ({ params }) => {
@@ -37,8 +33,6 @@ export const Route = createFileRoute("/ilan/$id")({
   },
   component: ListingDetail,
 });
-
-const gate1TestOperationsEnabled = import.meta.env.VITE_GATE1_TEST_OPERATIONS === "enabled";
 
 function ListingDetail() {
   const result = Route.useLoaderData();
@@ -90,15 +84,11 @@ function ListingDetail() {
     );
   }
 
-  const publicContactDisabled = !gate1TestOperationsEnabled;
-  const whatsappHref = gate1TestOperationsEnabled
-    ? buildControlledWhatsAppHref(
-        `Merhaba, Arar Buluruz ilanı hakkında bilgi almak istiyorum. İlan ID: ${listing.id}`,
-      )
-    : PUBLIC_V0_DISABLED_CONTACT_HREF;
-  const phoneHref = gate1TestOperationsEnabled
-    ? TEST_ONLY_CONTACT.phoneHref
-    : PUBLIC_V0_DISABLED_CONTACT_HREF;
+  const sellerContactHref = listing.contact
+    ? buildSellerContactHref(listing.contact, listing.id)
+    : null;
+  const sellerContactLabel =
+    listing.contact?.channel === "phone" ? "Satıcıyı ara" : "WhatsApp’tan yaz";
 
   return (
     <div className="min-h-screen">
@@ -159,31 +149,51 @@ function ListingDetail() {
         className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
       >
         <div className="mx-auto max-w-2xl px-4 py-3">
-          <p className="mb-2 text-center text-xs text-muted-foreground">
-            {gate1TestOperationsEnabled
-              ? "İletişim yalnız sentetik Gate 1 test hedefine yönlendirilir."
-              : "Demo sürümünde gerçek telefon ve WhatsApp iletişimi kapalıdır."}
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <a
-              href={phoneHref}
-              aria-disabled={publicContactDisabled || undefined}
-              onClick={publicContactDisabled ? (event) => event.preventDefault() : undefined}
-              className="flex h-12 min-h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
-            >
-              Ara
-            </a>
-            <a
-              href={whatsappHref}
-              target={gate1TestOperationsEnabled ? "_blank" : undefined}
-              rel={gate1TestOperationsEnabled ? "noopener noreferrer" : undefined}
-              aria-disabled={publicContactDisabled || undefined}
-              onClick={publicContactDisabled ? (event) => event.preventDefault() : undefined}
-              className="flex h-12 min-h-12 items-center justify-center rounded-full border border-primary text-sm font-bold text-primary hover:bg-accent"
-            >
-              WhatsApp
-            </a>
-          </div>
+          {sellerContactHref && listing.contact ? (
+            <>
+              <p className="mb-2 text-center text-xs text-muted-foreground">
+                {listing.contact.channel === "whatsapp"
+                  ? "WhatsApp’a yönlendirileceksiniz; konuşmayı Arar Buluruz yürütmez."
+                  : "Arama cihazınızın telefon uygulaması üzerinden yapılır."}
+              </p>
+              <a
+                href={sellerContactHref}
+                target={listing.contact.channel === "whatsapp" ? "_blank" : undefined}
+                rel={listing.contact.channel === "whatsapp" ? "noopener noreferrer" : undefined}
+                className="flex h-12 min-h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
+              >
+                {sellerContactLabel}
+              </a>
+            </>
+          ) : result.source === "mock" ? (
+            <>
+              <p className="mb-2 text-center text-xs text-muted-foreground">
+                Demo sürümünde gerçek telefon ve WhatsApp iletişimi kapalıdır.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <a
+                  href={PUBLIC_V0_DISABLED_CONTACT_HREF}
+                  aria-disabled="true"
+                  onClick={(event) => event.preventDefault()}
+                  className="flex h-12 min-h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
+                >
+                  Ara
+                </a>
+                <a
+                  href={PUBLIC_V0_DISABLED_CONTACT_HREF}
+                  aria-disabled="true"
+                  onClick={(event) => event.preventDefault()}
+                  className="flex h-12 min-h-12 items-center justify-center rounded-full border border-primary text-sm font-bold text-primary hover:bg-accent"
+                >
+                  WhatsApp
+                </a>
+              </div>
+            </>
+          ) : (
+            <p className="text-center text-sm text-muted-foreground">
+              Bu ilanın satıcı iletişimi şu anda kullanılamıyor.
+            </p>
+          )}
         </div>
       </div>
     </div>
