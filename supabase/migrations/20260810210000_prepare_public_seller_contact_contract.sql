@@ -121,6 +121,24 @@ on public.listings
 for each row
 execute function public.fail_closed_listing_contact_change();
 
+-- Keep one anonymous row gate for both listing visibility and public contact availability.
+drop policy "Public can read active published listings" on public.listings;
+create policy "Public can read active published listings"
+on public.listings
+for select
+to anon
+using (
+  status = 'published'
+  and published_at <= now()
+  and expires_at > now()
+  and unpublished_at is null
+  and contact_channel is not null
+  and contact_e164 is not null
+  and contact_verified_at is not null
+  and contact_verification_method is not null
+  and publication_instruction_at is not null
+);
+
 -- UI omission is not a security boundary. These two columns are intentionally obtainable
 -- for rows that already pass the anonymous active-published listings RLS policy.
 grant select (contact_channel, contact_e164) on table public.listings to anon;
