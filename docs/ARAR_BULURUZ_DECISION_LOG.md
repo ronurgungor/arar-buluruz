@@ -1,6 +1,6 @@
 # Arar Buluruz — Decision Log
 
-_Last updated: 2026-08-09, Europe/Istanbul_
+_Last updated: 2026-08-10, Europe/Istanbul_
 
 This is an append-oriented record of consequential product, technical and operating decisions. It preserves **what was decided, why, alternatives rejected and what would cause reconsideration**.
 
@@ -248,3 +248,18 @@ Each new entry should include:
 - **Limit:** This does not validate real listing intake, listing ownership, seller-contact operations, moderation sustainability, payment/external-sales safety, transaction conversion or a functioning supply-demand loop.
 - **Consequence:** The future first real pilot target may remain 5–10 founder-controlled Çorlu listings, but real personal-data collection and public real-listing activation still require separate founder gates.
 - **Review trigger:** Actual controlled pilot operations, measured seller completion/retention, moderation outcomes and buyer behavior.
+
+## D-024 — Simplified intentionally public seller contact for the initial Çorlu pilot
+
+- **Date:** 2026-08-10
+- **Status:** Founder-selected product/architecture contract; real-data/public activation closed
+- **Decision:** For the founder-operated initial 5–10 listing Çorlu pilot, each publishable listing has exactly one intentionally public seller-contact channel. Default is WhatsApp; the seller may instead select phone. The authoritative contact value is stored once on `public.listings` with verification/publication audit fields. The preparation-only `private.listing_contacts` table is removed rather than duplicated or paired with an anonymous privileged resolver.
+- **Public exposure:** Active published `contact_channel` and `contact_e164` are deliberately anonymously readable under the same listing RLS lifecycle. A raw PostgREST caller may enumerate those two fields for all active published rows; for this small intentionally-public pilot this is an **accepted public-disclosure consequence**, not a hidden security boundary.
+- **Application minimization:** The normal UI exposes the selected CTA only on listing detail. Collection-card payloads, sitemap and structured/search metadata do not intentionally carry contact. UI omission does not make the contact secret.
+- **Lifecycle:** Draft/pending/rejected are non-public. Expired/unpublished cease normal public retrieval. Contact identity changes reset verification and publication instruction and immediately unpublish a live listing; seller withdrawal of the publication instruction also unpublishes. Reverification + new instruction + explicit republish are required.
+- **Verification meaning:** WhatsApp same-number control or founder phone callback/equivalent proves present control only; it does not prove legal identity, item ownership or permanent number ownership. `publication_instruction_at` is an operational audit fact and is not automatically labelled KVKK explicit consent.
+- **Rejected/deferred:** Anonymous contact resolver, cosmetic click-to-reveal, founder relay, in-app messaging, SMS OTP, Auth, CAPTCHA, contact-click analytics, separate `public_contact_enabled`, and WhatsApp username dependency for this pilot.
+- **Privacy/legal boundary:** Real contact collection/publication remains blocked until exact controller identity, Article 5 legal bases, intentional-disclosure basis, collection-time aydınlatma, recipient groups, provider/data flows, Article 9 review where applicable, retention/deletion, data-subject/wrong-number procedure and current VERBİS applicability are resolved. No universal Turkey-hosting or blanket consent claim is created.
+- **Cost:** No paid messaging/relay/auth service is introduced; recurring production cost authorization remains 0 TL.
+- **Evidence:** `docs/REAL_CORLU_PILOT_SELLER_CONTACT.md`; implementation is prepared under PR #58 and must remain synthetic/local/CI-only until a separate activation gate.
+- **Review trigger:** Material scraping/spam/harassment during real pilot, scale beyond founder-operated listings, need for buyer/seller accounts, verified availability of a phone-number-minimizing WhatsApp identifier, or a separately approved privacy/security architecture change.
