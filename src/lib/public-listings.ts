@@ -1,9 +1,6 @@
 import { z } from "zod";
 import { listings as mockListings } from "@/data/listings";
-import {
-  publicSellerContactSchema,
-  type PublicSellerContact,
-} from "@/lib/public-seller-contact";
+import { publicSellerContactSchema, type PublicSellerContact } from "@/lib/public-seller-contact";
 
 export type ListingView = {
   id: string;
@@ -185,9 +182,7 @@ function mapPublicRow(row: z.infer<typeof publicListingRowSchema>): ListingView 
   };
 }
 
-function mapPublicDetailRow(
-  row: z.infer<typeof publicListingDetailRowSchema>,
-): ListingDetailView {
+function mapPublicDetailRow(row: z.infer<typeof publicListingDetailRowSchema>): ListingDetailView {
   return {
     ...mapPublicRow(row),
     publicContact: {
@@ -226,16 +221,13 @@ async function fetchDetailRows(
   config: PublicSupabaseConfig,
   fetchImpl: typeof fetch,
 ): Promise<ListingDetailView[]> {
-  const response = await fetchImpl(
-    createListingsUrl(config, { id, includeContact: true }),
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        apikey: config.publicKey,
-      },
+  const response = await fetchImpl(createListingsUrl(config, { id, includeContact: true }), {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      apikey: config.publicKey,
     },
-  );
+  });
 
   if (!response.ok) {
     throw new PublicListingsError(`Public listings request failed with status ${response.status}.`);
@@ -243,7 +235,9 @@ async function fetchDetailRows(
 
   const parsed = publicListingDetailRowsSchema.safeParse(await response.json());
   if (!parsed.success) {
-    throw new PublicListingsError("Public listing detail response did not match the approved schema.");
+    throw new PublicListingsError(
+      "Public listing detail response did not match the approved schema.",
+    );
   }
 
   return parsed.data.map(mapPublicDetailRow);
@@ -319,9 +313,7 @@ export async function loadListingDetail(id: string): Promise<ListingDetailResult
     return {
       source,
       state: "ready",
-      listing: listing
-        ? { ...listing, distanceKm: listing.distanceKm, publicContact: null }
-        : null,
+      listing: listing ? { ...listing, distanceKm: listing.distanceKm, publicContact: null } : null,
     };
   }
 
