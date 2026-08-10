@@ -90,10 +90,7 @@ describe("public listings seller-contact payload boundary", () => {
   });
 
   test("keeps contact out of sitemap and structured metadata source paths", () => {
-    const sitemapSource = readFileSync(
-      path.resolve("src/routes/sitemap[.]xml.ts"),
-      "utf8",
-    );
+    const sitemapSource = readFileSync(path.resolve("src/routes/sitemap[.]xml.ts"), "utf8");
     const detailSource = readFileSync(path.resolve("src/routes/ilan.$id.tsx"), "utf8");
 
     expect(sitemapSource).not.toContain("contact_e164");
