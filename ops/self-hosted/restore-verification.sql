@@ -2,6 +2,8 @@
 
 -- Run after a clean-server restore. These checks intentionally avoid real row values.
 do $$
+declare
+  anonymous_policy_qual text;
 begin
   if to_regclass('public.listings') is null then
     raise exception 'public.listings is missing';
@@ -77,14 +79,52 @@ begin
 
   if not exists (
     select 1
-    from pg_catalog.pg_policies
-    where schemaname = 'public'
-      and tablename = 'listings'
-      and policyname = 'Public can read active published listings'
-      and cmd = 'SELECT'
-      and roles = array['anon']::name[]
+    from pg_catalog.pg_trigger t
+    join pg_catalog.pg_class c on c.oid = t.tgrelid
+    join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+    join pg_catalog.pg_proc p on p.oid = t.tgfoid
+    join pg_catalog.pg_namespace pn on pn.oid = p.pronamespace
+    where n.nspname = 'public'
+      and c.relname = 'listings'
+      and t.tgname = 'listings_fail_closed_contact_change'
+      and not t.tgisinternal
+      and t.tgenabled <> 'D'
+      and pn.nspname = 'public'
+      and p.proname = 'fail_closed_listing_contact_change'
   ) then
+    raise exception 'fail-closed seller-contact trigger is missing, disabled or attached incorrectly';
+  end if;
+
+  select pg_catalog.pg_get_expr(p.polqual, p.polrelid)
+  into anonymous_policy_qual
+  from pg_catalog.pg_policy p
+  join pg_catalog.pg_class c on c.oid = p.polrelid
+  join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public'
+    and c.relname = 'listings'
+    and p.polname = 'Public can read active published listings'
+    and p.polcmd = 'r'
+    and p.polroles = array[(select oid from pg_catalog.pg_roles where rolname = 'anon')];
+
+  if anonymous_policy_qual is null then
     raise exception 'canonical anonymous active-listing policy is missing';
+  end if;
+
+  -- Restore verification must validate the actual fail-closed predicate, not only
+  -- the policy name. Any OR in this single canonical gate is treated as a weakened
+  -- restore and therefore fails closed.
+  if anonymous_policy_qual ~* '\sOR\s'
+     or anonymous_policy_qual !~* 'status\s*=\s*''published''(::text)?'
+     or anonymous_policy_qual !~* 'published_at\s*<=\s*now\(\)'
+     or anonymous_policy_qual !~* 'expires_at\s*>\s*now\(\)'
+     or anonymous_policy_qual !~* 'unpublished_at\s+IS\s+NULL'
+     or anonymous_policy_qual !~* 'contact_channel\s+IS\s+NOT\s+NULL'
+     or anonymous_policy_qual !~* 'contact_e164\s+IS\s+NOT\s+NULL'
+     or anonymous_policy_qual !~* 'contact_verified_at\s+IS\s+NOT\s+NULL'
+     or anonymous_policy_qual !~* 'contact_verification_method\s+IS\s+NOT\s+NULL'
+     or anonymous_policy_qual !~* 'publication_instruction_at\s+IS\s+NOT\s+NULL'
+  then
+    raise exception 'canonical anonymous listings policy does not preserve the required active-published/contact-readiness predicate: %', anonymous_policy_qual;
   end if;
 
   if exists (

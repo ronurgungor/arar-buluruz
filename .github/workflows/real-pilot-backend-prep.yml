@@ -103,6 +103,19 @@ jobs:
       - name: Run isolated trusted-photo role probes and DB health sentinel
         run: bash scripts/trusted-photo-db-role-probes.sh
 
+      - name: Run restore-time schema and lifecycle verification
+        shell: bash
+        run: |
+          db_container="$(docker ps --format '{{.Names}}' | grep '^supabase_db_' | head -n 1)"
+          if [[ -z "$db_container" ]]; then
+            echo "Local Supabase Postgres container was not found."
+            exit 1
+          fi
+
+          docker exec -i "$db_container" \
+            psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            < ops/self-hosted/restore-verification.sql
+
       - name: Run synthetic REST and Storage integration
         shell: bash
         run: |
