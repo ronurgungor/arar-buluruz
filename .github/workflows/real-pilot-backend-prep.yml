@@ -106,24 +106,15 @@ jobs:
       - name: Run restore-time schema and lifecycle verification
         shell: bash
         run: |
-          status_env="$(supabase status -o env)"
-
-          extract_status_value() {
-            local value
-            value="$(printf '%s\n' "$status_env" | grep "^$1=" | head -n 1)"
-            value="${value#*=}"
-            value="${value#\"}"
-            value="${value%\"}"
-            printf '%s' "$value"
-          }
-
-          db_url="$(extract_status_value DB_URL)"
-          if [[ -z "$db_url" ]]; then
-            echo "Local Supabase DB_URL was not available."
+          db_container="$(docker ps --format '{{.Names}}' | grep '^supabase_db_' | head -n 1)"
+          if [[ -z "$db_container" ]]; then
+            echo "Local Supabase Postgres container was not found."
             exit 1
           fi
 
-          psql "$db_url" -v ON_ERROR_STOP=1 -f ops/self-hosted/restore-verification.sql
+          docker exec -i "$db_container" \
+            psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
+            < ops/self-hosted/restore-verification.sql
 
       - name: Run synthetic REST and Storage integration
         shell: bash
