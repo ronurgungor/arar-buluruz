@@ -40,9 +40,15 @@ if (listings.length !== 1 || listings[0]?.id !== publishedListingId) {
 const published = await retry("Published detail query", () =>
   fetchPublicListing(publishedListingId, config),
 );
-if (!published) throw new Error("Restored published listing is not readable through the app adapter.");
-if (published.publicContact?.channel !== "whatsapp" || published.publicContact.e164 !== expectedContact) {
-  throw new Error("Restored published seller-contact contract did not survive the logical restore.");
+if (!published)
+  throw new Error("Restored published listing is not readable through the app adapter.");
+if (
+  published.publicContact?.channel !== "whatsapp" ||
+  published.publicContact.e164 !== expectedContact
+) {
+  throw new Error(
+    "Restored published seller-contact contract did not survive the logical restore.",
+  );
 }
 
 const draft = await retry("Draft detail query", () => fetchPublicListing(draftListingId, config));
