@@ -81,10 +81,13 @@ insert into public.listings (
 SQL
 
 # Match Supabase's managed-to-self-host guidance: dump roles, schema and data
-# separately so the portable logical backup path itself is exercised.
+# separately so the portable logical backup path itself is exercised. The schema
+# and data dumps are explicitly limited to application-owned schemas. Storage
+# metadata and Storage objects have a separate migration/restore contract and must
+# not be silently folded into this database-only proof.
 supabase db dump --local -f "$dump_dir/roles.sql" --role-only
-supabase db dump --local -f "$dump_dir/schema.sql"
-supabase db dump --local -f "$dump_dir/data.sql" --use-copy --data-only
+supabase db dump --local -f "$dump_dir/schema.sql" --schema public,private
+supabase db dump --local -f "$dump_dir/data.sql" --schema public,private --use-copy --data-only
 
 for file in roles.sql schema.sql data.sql; do
   if [[ ! -s "$dump_dir/$file" ]]; then
@@ -92,6 +95,11 @@ for file in roles.sql schema.sql data.sql; do
     exit 1
   fi
 done
+
+if grep -qE '(COPY|INSERT INTO)[[:space:]]+storage\.' "$dump_dir/data.sql"; then
+  echo "Application data dump unexpectedly contains Storage metadata."
+  exit 1
+fi
 
 # Emulate a clean Supabase target without destroying managed auth/storage/extension
 # schemas. Only application-owned schemas are removed; the target's public schema
