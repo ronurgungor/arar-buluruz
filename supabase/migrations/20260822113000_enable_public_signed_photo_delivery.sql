@@ -84,18 +84,15 @@ revoke all on function public.get_public_listing_photos(uuid)
 grant execute on function public.get_public_listing_photos(uuid)
   to anon, authenticated, service_role;
 
--- Keep the listing_photos bucket private. The operation-aware Storage helper
--- prevents anonymous bucket listing while permitting authenticated-object lookup
--- used by private-object download/signing flows. The second predicate ties object
--- access to the application lifecycle contract instead of trusting path shape alone.
-create policy "Public can read active listing photo objects"
+-- Keep the bucket private. Storage sets storage.operation for each request. Permit
+-- anon SELECT only while Storage is evaluating the signed-URL creation operation;
+-- direct authenticated reads and object/bucket listing remain outside this policy.
+create policy "Public can sign active listing photo objects"
 on storage.objects
 for select
 to anon
 using (
   bucket_id = 'listing_photos'
-  and storage.allow_any_operation(
-    array['object.get_authenticated_info', 'object.get_authenticated']
-  )
+  and storage.allow_only_operation('storage.object.sign')
   and public.is_deliverable_listing_photo_path(name)
 );
