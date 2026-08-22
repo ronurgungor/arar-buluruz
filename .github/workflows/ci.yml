@@ -104,7 +104,7 @@ jobs:
             exit 1
           fi
 
-      - name: Enable GoTrue only in the ephemeral runner copy
+      - name: Enable GoTrue and Storage only in the ephemeral runner copy
         shell: bash
         run: |
           python3 - <<'PY'
@@ -112,23 +112,27 @@ jobs:
 
           config_path = Path("supabase/config.toml")
           config = config_path.read_text(encoding="utf-8")
-          disabled_auth = "[auth]\nenabled = false"
-          enabled_auth = "[auth]\nenabled = true"
+          replacements = {
+              "[auth]\nenabled = false": "[auth]\nenabled = true",
+              "[storage]\nenabled = false": "[storage]\nenabled = true",
+          }
 
-          if disabled_auth not in config:
-              raise SystemExit("Expected the repository auth setting to be disabled.")
+          for old, new in replacements.items():
+              if old not in config:
+                  raise SystemExit(f"Expected fail-closed repository setting not found: {old!r}")
+              config = config.replace(old, new, 1)
 
-          config_path.write_text(config.replace(disabled_auth, enabled_auth, 1), encoding="utf-8")
+          config_path.write_text(config, encoding="utf-8")
           PY
 
           git diff --exit-code -- . ':(exclude)supabase/config.toml'
           git diff --check -- supabase/config.toml
-          grep -A1 '^\[auth\]$' supabase/config.toml
+          grep -A4 '^\[storage\]$' supabase/config.toml
 
-      - name: Start isolated local Supabase stack
+      - name: Start isolated local Supabase stack with Storage
         run: >-
           supabase start
-          -x realtime,storage-api,imgproxy,studio,mailpit,edge-runtime,logflare,vector,supavisor
+          -x realtime,imgproxy,studio,mailpit,edge-runtime,logflare,vector,supavisor
 
       - name: Rebuild database from migrations
         run: supabase db reset --local --no-seed
