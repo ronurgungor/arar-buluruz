@@ -146,8 +146,8 @@ begin
   end if;
 
   -- Photo delivery is part of the first real-pilot scope. The restored target must
-  -- preserve the private bucket, narrow public manifest and lifecycle-aware Storage
-  -- RLS path. Object bytes are verified separately after Storage restore.
+  -- preserve the private bucket, narrow public manifest and lifecycle-aware signed
+  -- URL policy. Object bytes are verified separately after Storage restore.
   if to_regclass('storage.buckets') is null or to_regclass('storage.objects') is null then
     raise exception 'Supabase Storage database schema is missing';
   end if;
@@ -200,15 +200,16 @@ begin
   join pg_catalog.pg_namespace n on n.oid = c.relnamespace
   where n.nspname = 'storage'
     and c.relname = 'objects'
-    and p.polname = 'Public can read active listing photo objects'
+    and p.polname = 'Public can sign active listing photo objects'
     and p.polcmd = 'r'
     and p.polroles = array[(select oid from pg_catalog.pg_roles where rolname = 'anon')];
 
   if storage_policy_qual is null
      or storage_policy_qual !~* 'bucket_id\s*=\s*''listing_photos'''
-     or storage_policy_qual !~* 'allow_any_operation'
+     or storage_policy_qual !~* 'allow_only_operation'
+     or storage_policy_qual !~* 'storage.object.sign'
      or storage_policy_qual !~* 'is_deliverable_listing_photo_path' then
-    raise exception 'Storage photo policy is missing or does not preserve bucket/operation/lifecycle gates: %', storage_policy_qual;
+    raise exception 'Storage photo policy is missing or does not preserve signed-only bucket/lifecycle gates: %', storage_policy_qual;
   end if;
 end;
 $$;
