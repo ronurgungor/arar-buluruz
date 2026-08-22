@@ -33,7 +33,14 @@ cleanup() {
   if [[ "$source_started" == "true" || "$source_preserved" == "true" ]]; then
     supabase stop --no-backup >/dev/null 2>&1 || true
   fi
-  rm -rf "$work_dir"
+
+  # Self-hosted Postgres/Storage containers create root-owned bind-mount files.
+  # Try ordinary removal first and use passwordless CI sudo only when required.
+  rm -rf "$work_dir" 2>/dev/null || {
+    if command -v sudo >/dev/null 2>&1; then
+      sudo rm -rf "$work_dir" >/dev/null 2>&1 || true
+    fi
+  }
 }
 trap cleanup EXIT
 
@@ -103,6 +110,26 @@ wait_for_target_api() {
     sleep 2
   done
   echo "Pinned self-host API did not become ready." >&2
+  return 1
+}
+
+wait_for_target_storage_schema() {
+  for attempt in $(seq 1 60); do
+    readiness="$(
+      docker exec supabase-db psql -X -At -U postgres -d postgres -c \
+        "select to_regclass('storage.objects') is not null
+           and to_regclass('storage.buckets') is not null
+           and to_regprocedure('storage.allow_only_operation(text)') is not null;" \
+        2>/dev/null || true
+    )"
+    if [[ "$readiness" == "t" ]]; then
+      return 0
+    fi
+    sleep 2
+  done
+
+  echo "Pinned self-host Storage database schema did not become ready." >&2
+  docker logs --tail 200 supabase-storage >&2 || true
   return 1
 }
 
@@ -273,6 +300,7 @@ docker compose -f docker-compose.yml -f "$target_compose_override" up -d \
   db rest imgproxy storage meta studio api-gw
 target_started=true
 wait_for_target_api "$target_api_url" "$target_service_role_key"
+wait_for_target_storage_schema
 
 # Exact image and host-exposure assertions are part of the production-readiness
 # review: the synthetic target must not accidentally become a network-accessible service.
@@ -316,9 +344,9 @@ if [[ "$postgres_major" != "17" ]]; then
   exit 1
 fi
 
-# Schema is GitHub-migration canonical. Apply it to the fresh self-host database so
-# cross-schema Storage policies are created against the target's own managed Storage
-# schema. Then restore portable role settings and application data from the source.
+# Schema is GitHub-migration canonical. Apply it only after Storage has completed
+# its own managed schema bootstrap so the cross-schema signing policy has a stable
+# storage.objects target. Then restore portable role settings and app data.
 cd "$repo_root"
 supabase db push --db-url "$target_db_url" --include-all --yes
 
