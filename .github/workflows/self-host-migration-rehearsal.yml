@@ -23,6 +23,10 @@ jobs:
       SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
       SUPABASE_TELEMETRY_DISABLED: "1"
       DO_NOT_TRACK: "1"
+      # The pinned self-host Postgres endpoint is loopback-only and does not terminate TLS.
+      # Supabase CLI 2.102.0 may drop sslmode from --db-url during its internal URL
+      # round-trip, so use the libpq/pgx environment setting that survives that path.
+      PGSSLMODE: disable
 
     steps:
       - name: Check out repository
