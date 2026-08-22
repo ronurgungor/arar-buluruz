@@ -17,7 +17,7 @@ Read in this order:
 5. [`docs/ARAR_BULURUZ_DECISION_LOG.md`](docs/ARAR_BULURUZ_DECISION_LOG.md)
 6. relevant technical contracts and dated evidence
 
-Older `PROJECT_MEMORY`, `BACKLOG`, provider and readiness documents remain historical evidence. If their current-status/provider/budget wording conflicts with the two 2026-08-21 documents above, the newer documents control.
+Older `PROJECT_MEMORY`, `BACKLOG`, provider and readiness documents remain historical evidence. If their current-status/provider/budget wording conflicts with the current-state/strategy documents above, the newer documents control.
 
 GitHub `main` and the exact branch/PR under review remain more authoritative than summaries.
 
@@ -43,27 +43,32 @@ Target operating model after later gates pass:
 ### Now
 
 - repository/local-CI development;
-- founder-owned Supabase Free may be used only for synthetic/mock development data;
+- dedicated founder-owned Supabase Free project may be used only for synthetic/mock development after its separate `Arar Buluruz` organization exists;
+- the existing `tarladan` Supabase organization is out of scope and must remain untouched;
 - production backend OFF;
 - no real personal data/users/listings/photos;
-- no AWS account yet;
+- AWS OFF;
 - no paid infrastructure;
 - target recurring development infrastructure cost: **0 TL**.
 
 ### Before real data
 
-Prepare and prove:
+The repository now has synthetic/local evidence for:
 
-- reproducible SQL migrations;
-- managed Supabase → self-hosted Supabase portability;
-- logical backup/export and clean restore;
+- reproducible PostgreSQL 17 migrations;
+- fail-closed RLS/grants and negative tests;
+- logical DB backup/export and clean restore;
 - application-level restore verification;
-- RLS/grant negative tests;
-- rollback;
-- exact self-hosted Docker release pinning;
-- security/secrets/network configuration;
-- Storage object migration/restore if real photos are used;
-- KVKK/privacy/retention/deletion/takedown controls.
+- private Storage object backup/restore with byte/hash verification;
+- buyer-visible lifecycle-gated short-lived signed-photo delivery;
+- exact self-hosted Supabase release/image pinning;
+- separate self-host Docker target migration/restore;
+- source rollback after destroying the target;
+- loopback-only self-host rehearsal exposure and secret/default checks.
+
+The remaining provider-specific portability checkpoint is the same rehearsal from a **real dedicated managed Supabase Free project** once `Arar Buluruz / arar-buluruz-synthetic-dev` can be created safely. This must never be substituted with a project inside `tarladan`.
+
+Separate privacy/legal and actual production network/TLS/backup-residency gates remain required before real data.
 
 ### Real pilot later
 
@@ -75,16 +80,18 @@ This is a future candidate, not an instruction to open AWS now. Exact Istanbul a
 
 Do not conflate these states.
 
-### Repository `main`
+### Repository / current release candidate
 
 Contains the public V0 plus inactive preparation for:
 
 - founder-controlled listing lifecycle;
 - fail-closed RLS/grants;
 - intentionally-public seller contact with internal readiness/audit fields;
-- trusted private-photo ingestion/delivery primitives;
-- logical backup/clean restore/application verification;
-- future self-host migration.
+- trusted private-photo ingestion;
+- lifecycle-gated public signed-photo delivery;
+- logical DB backup/clean restore/application verification;
+- separate Storage object backup/restore;
+- pinned self-host migration/restore and rollback rehearsal.
 
 ### Public V0
 
@@ -99,16 +106,28 @@ The known deployed V0 remains synthetic/mock and non-collecting unless a separat
 
 Repository merges do not automatically authorize a Lovable Publish/Update or another production deployment.
 
-## Photo scope caveat
+## Photo and Storage readiness
 
-Trusted photo primitives and synthetic Storage integration are prepared, but the public Supabase listing adapter currently maps `photos: []`.
+The public Supabase listing adapter now supports buyer-visible photos from the private `listing_photos` bucket through lifecycle-gated, short-lived signed URLs without exposing service-role secrets.
 
-Therefore:
+Synthetic migration/restore rehearsal separately verifies both database state and Storage object bytes. The pinned self-host test fixture is restored as exactly one 72-byte WebP object and the application verifies SHA-256:
 
-- a zero-photo first real listing can remain the smallest release slice if media is explicitly out of scope;
-- if the first real listing requires photos, buyer-visible signed-photo delivery and Storage object backup/migration/restore proof are required before real activation.
+`fd89cface8e12174fb1c6e78c0a8b0b26be925820eed38713ff1d921d5f969df`
 
-Database restore proof must not be presented as Storage-object restore proof.
+Database restore must still not be presented as equivalent to Storage-object restore; they are deliberately separate backup/verification paths.
+
+## Pinned self-host rehearsal
+
+Current tested synthetic target is pinned to:
+
+- Supabase self-host release `self-hosted/v0.8.0`;
+- upstream commit `241bb11c0627f2981746d37033f57dbfa81d29b0`;
+- PostgreSQL `supabase/postgres:17.6.1.136`;
+- Storage API `supabase/storage-api:v1.60.4`;
+- PostgREST `postgrest/postgrest:v14.12`;
+- Envoy `envoyproxy/envoy:v1.39.0`.
+
+The local synthetic source → separate pinned target → target verification → target destruction → source rollback sequence has passed CI. This is not yet the final hosted-managed Supabase Free → self-host proof; that remains the dedicated-project checkpoint described above.
 
 ## Technology
 
@@ -141,4 +160,4 @@ Do not run `npm install`, `npm ci`, create a second lockfile, force-push or rewr
 
 ## Absolute current prohibition
 
-**REAL DATA COLLECTION and PRODUCTION ACTIVATION remain CLOSED until their later explicit gates pass.**
+**REAL DATA COLLECTION, AWS/PAID INFRASTRUCTURE and PRODUCTION ACTIVATION remain CLOSED until their later explicit gates pass.**
