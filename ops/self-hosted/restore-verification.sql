@@ -4,6 +4,9 @@
 do $$
 declare
   anonymous_policy_qual text;
+  storage_policy_qual text;
+  photo_manifest_oid oid;
+  photo_path_helper_oid oid;
 begin
   if to_regclass('public.listings') is null then
     raise exception 'public.listings is missing';
@@ -140,6 +143,72 @@ begin
       )
   ) then
     raise exception 'published listing exists without complete seller-contact readiness';
+  end if;
+
+  -- Photo delivery is part of the first real-pilot scope. The restored target must
+  -- preserve the private bucket, narrow public manifest and lifecycle-aware Storage
+  -- RLS path. Object bytes are verified separately after Storage restore.
+  if to_regclass('storage.buckets') is null or to_regclass('storage.objects') is null then
+    raise exception 'Supabase Storage database schema is missing';
+  end if;
+
+  if not exists (
+    select 1
+    from storage.buckets
+    where id = 'listing_photos'
+      and name = 'listing_photos'
+      and public = false
+  ) then
+    raise exception 'private listing_photos Storage bucket is missing or public';
+  end if;
+
+  photo_manifest_oid := to_regprocedure('public.get_public_listing_photos(uuid)');
+  photo_path_helper_oid := to_regprocedure('public.is_deliverable_listing_photo_path(text)');
+  if photo_manifest_oid is null or photo_path_helper_oid is null then
+    raise exception 'public photo delivery functions are missing';
+  end if;
+
+  if not (select prosecdef from pg_catalog.pg_proc where oid = photo_manifest_oid)
+     or not (select prosecdef from pg_catalog.pg_proc where oid = photo_path_helper_oid) then
+    raise exception 'photo delivery functions do not preserve required SECURITY DEFINER boundary';
+  end if;
+
+  if position('search_path=""' in coalesce(
+       (select array_to_string(proconfig, ',') from pg_catalog.pg_proc where oid = photo_manifest_oid),
+       ''
+     )) = 0
+     or position('search_path=""' in coalesce(
+       (select array_to_string(proconfig, ',') from pg_catalog.pg_proc where oid = photo_path_helper_oid),
+       ''
+     )) = 0 then
+    raise exception 'photo delivery function search_path is not pinned empty';
+  end if;
+
+  if not has_function_privilege('anon', photo_manifest_oid, 'EXECUTE')
+     or not has_function_privilege('anon', photo_path_helper_oid, 'EXECUTE') then
+    raise exception 'anon photo delivery EXECUTE contract is missing';
+  end if;
+
+  if has_table_privilege('anon', 'private.listing_photos', 'SELECT') then
+    raise exception 'anon gained direct private listing_photos SELECT privilege';
+  end if;
+
+  select pg_catalog.pg_get_expr(p.polqual, p.polrelid)
+  into storage_policy_qual
+  from pg_catalog.pg_policy p
+  join pg_catalog.pg_class c on c.oid = p.polrelid
+  join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'storage'
+    and c.relname = 'objects'
+    and p.polname = 'Public can read active listing photo objects'
+    and p.polcmd = 'r'
+    and p.polroles = array[(select oid from pg_catalog.pg_roles where rolname = 'anon')];
+
+  if storage_policy_qual is null
+     or storage_policy_qual !~* 'bucket_id\s*=\s*''listing_photos'''
+     or storage_policy_qual !~* 'allow_any_operation'
+     or storage_policy_qual !~* 'is_deliverable_listing_photo_path' then
+    raise exception 'Storage photo policy is missing or does not preserve bucket/operation/lifecycle gates: %', storage_policy_qual;
   end if;
 end;
 $$;
