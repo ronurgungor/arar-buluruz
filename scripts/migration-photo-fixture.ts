@@ -89,10 +89,10 @@ function makeSyntheticPng(): Uint8Array {
   ihdr[8] = 8;
   ihdr[9] = 6;
 
-  const scanlines = new Uint8Array([
-    0, 0x12, 0x34, 0x56, 0xff, 0x78, 0x9a, 0xbc, 0xff,
-    0, 0x33, 0x55, 0x77, 0xff, 0xaa, 0xbb, 0xcc, 0xff,
-  ]);
+  const scanlines = concatBytes(
+    new Uint8Array([0, 0x12, 0x34, 0x56, 0xff, 0x78, 0x9a, 0xbc, 0xff]),
+    new Uint8Array([0, 0x33, 0x55, 0x77, 0xff, 0xaa, 0xbb, 0xcc, 0xff]),
+  );
   return concatBytes(
     PNG_SIGNATURE,
     pngChunk("IHDR", ihdr),
@@ -253,9 +253,12 @@ if (restoredSha256 !== expectedSha256 || restoredBytes.byteLength !== sanitized.
 }
 
 await requireRejected(
-  await fetch(`${storageBase}/object/authenticated/listing_photos/${encodeObjectPath(objectPath)}`, {
-    headers: apiHeaders(anonKey, "application/octet-stream"),
-  }),
+  await fetch(
+    `${storageBase}/object/authenticated/listing_photos/${encodeObjectPath(objectPath)}`,
+    {
+      headers: apiHeaders(anonKey, "application/octet-stream"),
+    },
+  ),
   "anonymous direct private-object read",
 );
 await requireRejected(
