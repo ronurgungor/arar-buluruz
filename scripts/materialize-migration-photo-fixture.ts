@@ -77,7 +77,9 @@ if (validateListingPhotoContentSignature("image/webp", sanitized.bytes) !== null
 
 const sha256 = createHash("sha256").update(sanitized.bytes).digest("hex");
 if (sha256 !== CANONICAL_SHA256) {
-  throw new Error(`Synthetic migration photo hash drift: expected ${CANONICAL_SHA256}, got ${sha256}.`);
+  throw new Error(
+    `Synthetic migration photo hash drift: expected ${CANONICAL_SHA256}, got ${sha256}.`,
+  );
 }
 
 await Bun.write(outputPath, sanitized.bytes);
