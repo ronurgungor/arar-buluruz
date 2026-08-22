@@ -1,284 +1,306 @@
 # Arar Buluruz — Current State
 
-_Last updated: 2026-08-11, Europe/Istanbul_
+_Last updated: 2026-08-21, Europe/Istanbul_
 
 ## Canonical repository state
 
-- Repository: `ronurgungor/arar-buluruz`; default branch: `main`.
-- Canonical `main` entering the Activation Readiness Pack gate: `3bb4d793a3a959c3fa8f74914dea6bd3df6731ba`.
-- PR #57, **Prepare trusted real-pilot photo pipeline**, is **MERGED / CLOSED**.
-- PR #58, **Prepare simplified public seller contact contract**, is **MERGED / CLOSED**.
-- PR #58 merge commit is `3bb4d793a3a959c3fa8f74914dea6bd3df6731ba`.
-- PR #58 post-merge CI `31422393794` and V0 minimal PWA `31422393780` succeeded. The Real pilot backend prep workflow was not automatically triggered on the merge push; its exact-head pre-merge validation was green.
-- Issue #59, **Deferred hardening: strengthen restore verification for contact lifecycle invariants**, is **OPEN / P2 / DEFERRED / NON-BLOCKING**.
-- Issue #59 does not represent a current security/privacy/lifecycle leak and is not authorized for standalone implementation in the current gate.
+- Repository: `ronurgungor/arar-buluruz`; canonical branch: `main`.
+- Latest implementation checkpoint before this documentation-only sync: `8d1fdee22307eacad13a471e0a9c524438e03eef`.
+- PR #57 — trusted real-pilot photo pipeline: **MERGED / CLOSED**.
+- PR #58 — simplified intentionally-public seller-contact contract: **MERGED / CLOSED**.
+- PR #60 — Activation Readiness Pack / gate synchronization: **MERGED / CLOSED**.
+- PR #61 — restore-verification hardening for the contact lifecycle: **MERGED / CLOSED**; Issue #59 is **CLOSED / COMPLETED**.
+- PR #62 — portable logical database backup/clean restore/application-level verification: **MERGED / CLOSED**.
+- PR #62 exact-head validation passed all three current workflows: standard CI/Gate 1, V0 minimal PWA and Real pilot backend prep.
+- GitHub `main` is currently not branch-protected; status checks are therefore evidence, not server-enforced merge requirements.
+- No open GitHub issues were present at this checkpoint.
 
 ## Current phase
 
-**Phase 1.75 — Technical Preparation Complete / Real-Pilot Activation Readiness Open**
+**Development execution / pre-production migration-readiness preparation.**
 
-Broad technical preparation is sufficiently mature for the next work to be operational/legal/provider readiness rather than speculative feature expansion.
+The approved strategy is recorded in `docs/EXECUTION_STRATEGY_2026-08-21.md` and supersedes conflicting provider/budget/pilot sequencing language in older documents.
 
-The current objective is to prepare the founder-operated first real Çorlu listing safely with minimum complexity, minimum recurring cost and minimum operational burden.
+Current hard boundaries:
 
-## Current authorized gate
-
-**Activation Readiness Pack**
-
-Authorized scope:
-
-- synchronize canonical current-state documentation after PR #58 merge;
-- create one canonical activation checklist;
-- define minimum founder intake/moderation/contact/photo/expiry/incident SOPs;
-- define publication preview requirements;
-- define data-minimization inventory;
-- create a provider-neutral data-flow map;
-- prepare legal/privacy decision questions without manufacturing legal conclusions;
-- define conceptual kill-switch/rollback operations;
-- run synthetic/tabletop happy-path and failure-path operational rehearsals;
-- define explicit founder activation gates.
-
-Hard boundaries remain:
-
-- no production activation;
-- no provider purchase;
-- no real seller/contact/photo/listing data;
+- mock/synthetic data only;
+- no real seller/listing/contact/photo/personal data;
+- no real users;
+- no production backend activation;
+- no production deployment change;
+- no AWS account creation yet;
 - no paid infrastructure;
-- no deployment/Lovable publication;
-- no advertising activation;
-- real-data collection remains closed.
+- target recurring development infrastructure cost: **0 TL**;
+- no advertising, monetization, payment integration or company-dependent activation work.
 
-## Critical state distinction: repository != deployed public runtime
+**REAL DATA COLLECTION remains CLOSED.**
 
-This distinction remains mandatory in every review.
+## Architecture
 
-### Repository `main`
+Application stack:
 
-Repository `main` contains the public V0 application plus **inactive technical preparation** for a future founder-controlled real Çorlu pilot.
+- React 19;
+- TanStack Start / Router / Query;
+- TypeScript;
+- Tailwind CSS;
+- Bun `1.3.14` with canonical `bun.lock`;
+- Vite/Nitro;
+- PostgreSQL/Supabase-compatible backend contracts.
 
-Current inactive preparation includes:
+Public listing access deliberately does not depend on `@supabase/supabase-js`. `src/lib/public-listings.ts` uses a small REST/fetch adapter against PostgREST and supports three sources:
 
-- extended listing lifecycle and hard Çorlu pilot location constraints;
-- fail-closed anonymous RLS/grant boundaries;
-- intentionally public active seller-contact fields with internal verification/publication audit metadata;
-- contact identity-change/withdrawal fail-closed behavior;
-- private trusted-photo Storage/metadata contract while committed product Storage remains disabled;
-- service-role-only `SECURITY INVOKER` trusted-photo RPCs with empty `search_path`;
-- trusted JPEG/PNG/WebP -> canonical WebP photo sanitization preparation;
-- short-lived lifecycle-gated private-photo delivery helpers;
-- provider-neutral external-sales review/security preparation, still inactive for the first pilot;
-- self-hosted production, backup, restore and rollback preparation.
+- `mock`;
+- `supabase`;
+- `disabled`.
 
-These capabilities are repository preparation. They do not prove a production backend exists, is connected or is authorized to process real data.
+Fail-closed runtime behavior:
 
-### Public V0 publication state
+- development may use mock data;
+- an unconfigured production build does not silently connect to a backend;
+- the Supabase source requires explicit URL/public key configuration;
+- non-local Supabase URLs must use HTTPS.
 
-Arar Buluruz already has a separately accepted public Lovable V0 history. Repository merges/documentation syncs are not treated as a new production activation or publication authorization by themselves.
+## Supabase repository state
 
-The accepted V0 product boundary remains mock/synthetic and non-collecting unless a separate founder Publish/Update/production gate explicitly changes it:
+`supabase/config.toml` remains fail-closed in Git:
+
+- PostgreSQL major version `17`;
+- Auth disabled;
+- Storage disabled;
+- Studio disabled;
+- Realtime/Edge/Analytics disabled;
+- private `listing_photos` bucket contract prepared for controlled tests only.
+
+Current migration chain:
+
+1. `20260730162000_create_listings.sql`
+2. `20260808211500_prepare_real_corlu_pilot_backend.sql`
+3. `20260809220000_prepare_trusted_photo_pipeline.sql`
+4. `20260810210000_prepare_public_seller_contact_contract.sql`
+
+The schema is migration-canonical and currently includes:
+
+- founder-controlled `public.listings` lifecycle;
+- hard initial Çorlu pilot location constraints;
+- fail-closed anonymous RLS;
+- no anonymous/public writes;
+- exactly one intentionally public active seller-contact value on the listing;
+- internal contact verification/publication audit fields;
+- fail-closed contact-change trigger behavior;
+- private trusted-photo metadata/RPC preparation;
+- provider-neutral external-sales preparation that remains inactive.
+
+## Database/RLS test state
+
+Four pgTAP suites currently provide 105 database/security contract tests:
+
+- listings RLS;
+- public seller contact;
+- real-pilot backend contract;
+- trusted-photo pipeline.
+
+Additional CI exercises:
+
+- clean migration replay;
+- local migration-history check;
+- isolated trusted-photo database-role probes;
+- REST/RLS integration;
+- desktop/mobile browser E2E;
+- synthetic Storage integration;
+- restore-time schema/lifecycle verification.
+
+## Logical backup and restore state
+
+PR #61 made restore verification independent and fail-closed by checking the actual restored security/lifecycle contract rather than only object names. It verifies, among other things:
+
+- required application tables and schemas;
+- RLS state;
+- anonymous/private-schema boundaries;
+- public/internal contact column privileges;
+- the enabled `listings_fail_closed_contact_change` trigger and expected function;
+- the canonical anonymous active-published/contact-readiness predicate;
+- absence of incomplete published-contact rows.
+
+PR #62 adds a synthetic logical restore drill that:
+
+1. creates deterministic synthetic published and draft rows;
+2. dumps roles separately;
+3. dumps only application-owned `public,private` schema/data;
+4. removes only the application schemas on the target;
+5. restores roles + schema + data with fail-fast single-transaction behavior;
+6. reruns independent restore verification;
+7. restarts local PostgREST;
+8. verifies the restored database through the actual `public-listings` application adapter;
+9. proves the active synthetic listing/contact is readable while the draft remains anonymously invisible;
+10. then reruns the existing synthetic REST + Storage integration.
+
+The first implementation of this drill correctly failed because an unscoped data dump also contained existing `storage.buckets` metadata and collided on `listing_photos`. The final implementation explicitly scopes database backup to `public,private` and treats Storage metadata/objects as a separate migration/restore contract.
+
+This is strong local/synthetic portability evidence. It is **not yet** a managed-Supabase-to-separate-self-hosted-server rehearsal and does **not** prove Storage object migration.
+
+## Public runtime vs repository
+
+Repository preparation and the already-published public V0 are separate facts.
+
+The known public V0 remains a synthetic/mock, non-collecting runtime unless a separate deployment gate changes it:
 
 - synthetic/mock listings;
-- zero-data demo listing form;
+- zero-data demo listing flow;
 - no authorized real backend connection;
-- no authorized real personal data;
-- no authorized production Storage;
+- no real personal data;
+- no real production Storage;
 - no Auth;
 - no public external-sales CTA;
-- no authorized real seller-contact pilot activation;
-- no public Shopier integration or Arar payment processing.
+- no advertising/payment/monetization activation.
 
-Do not describe inactive repository preparation as live real-pilot functionality.
+Repository merges alone do not authorize a Lovable Publish/Update or another production deployment.
 
-## Current product evidence
+## Minimal pilot product scope
 
-Current evidence supports only these narrow conclusions:
-
-- the public application is understandable to users;
-- core search/discovery and listing-detail experience passed the current V0 usability/smoke boundary;
-- initial seller/supply intent exists because real users explicitly offered their listings for future publication.
-
-This does **not** establish:
-
-- a functioning real marketplace;
-- successful real listing intake/publishing operations;
-- sustainable moderation;
-- seller-contact performance in real operation;
-- account ownership/management;
-- public external-sales safety in real use;
-- a functioning supply-demand loop;
-- production backend reliability;
-- legally approved real-data processing.
-
-## Controlled real-pilot target
-
-The staged target, only after all later gates are separately passed, is:
+The controlled real-pilot rollout, only after later gates pass, is:
 
 1. **1 real Çorlu listing**;
-2. expand to **3** only after review;
-3. expand to **5–10** only after another explicit review.
+2. review;
+3. **3 listings**;
+4. review;
+5. **5–10 listings**.
 
 Operating model:
 
-- founder-operated moderation/publication;
+- founder-operated intake/moderation/publication;
 - no seller Auth/accounts by default;
-- no public self-service database writes;
-- no payment custody by Arar Buluruz;
-- WhatsApp default seller contact; phone optional;
-- exactly one public contact channel;
-- trusted sanitized photos;
-- no Shopier in first pilot;
-- no ads;
-- no broad SEO/indexing expansion initially.
-
-Real personal-data collection is still blocked.
+- no seller dashboard;
+- no public self-service writes;
+- no chat;
+- no payment custody or commission;
+- no advertising/paid listing/subscription during validation;
+- WhatsApp default seller contact, phone optional;
+- exactly one intentionally public seller-contact channel;
+- external sales/Shopier out of the first pilot;
+- aggregate/minimal validation evidence rather than invasive account tracking.
 
 ## Seller-contact state
 
-D-024 and PR #58 establish the initial pilot contact model:
+The current contract is deliberately simple:
 
-- one intentionally public seller contact per publishable listing;
-- WhatsApp default, seller may instead select phone;
+- one authoritative `contact_e164` value on `public.listings`;
+- one `contact_channel` (`whatsapp` or `phone`) when publishable;
+- active published contact is intentionally anonymously readable with the listing;
+- internal readiness/audit fields are not anonymously readable;
+- contact identity/value change fails closed by removing live publication readiness;
 - no anonymous privileged contact resolver;
 - no click-to-reveal privacy claim;
-- no founder relay, in-app messaging, Auth, SMS OTP or CAPTCHA dependency;
-- one authoritative E.164 value on `public.listings`;
-- contact verification/publication audit fields remain internal;
-- active published `contact_channel` and `contact_e164` are intentionally anonymously readable under the listing RLS lifecycle;
-- raw PostgREST bulk enumeration of active contacts is an accepted public-disclosure consequence for this small pilot, not a claimed security boundary;
-- contact changes/withdrawal fail closed by unpublishing and resetting readiness as applicable.
+- no founder relay, in-app messaging, SMS OTP, CAPTCHA or Auth dependency.
 
-Verification proves present control only. It does not prove legal identity, item ownership or permanent number ownership.
+No real phone number is authorized in the current phase.
 
-No real phone number is authorized by the current state.
+## Photo/media state
 
-## Trusted-photo state
+Trusted photo ingestion/delivery primitives are prepared and synthetic backend/Storage integration passes:
 
-PR #57 prepares, but does not activate, the trusted photo path:
+- JPEG/PNG/WebP input validation;
+- 8 MiB input ceiling;
+- decoded-pixel ceiling;
+- sanitization/re-encode to canonical WebP;
+- private controlled object paths/metadata;
+- compensating cleanup behavior;
+- lifecycle-gated delivery metadata;
+- short-lived signed-URL contract.
 
-- accepted untrusted input MIME: JPEG, PNG or WebP;
-- maximum input size: 8 MiB;
-- signature + decode + decoded-format validation;
-- existing 50,000,000 decoded-pixel ceiling;
-- auto-orientation and re-encode to canonical WebP;
-- private controlled object path/metadata;
-- compensating delete on metadata persistence failure;
-- explicit orphan path on cleanup failure;
-- lifecycle-gated service-role-only photo delivery metadata;
-- signed URL TTL 1–300 seconds, default 60 seconds.
+However, buyer-visible real photo delivery is **not wired into the public listings adapter**; the current Supabase mapping returns `photos: []`.
 
-Committed `storage.enabled` remains false. The current public listings adapter does not yet carry real photo URLs; final buyer-visible photo delivery is a provider-specific production acceptance item, not a reason to open a speculative code gate now.
+Therefore:
 
-## External-sales / Shopier state
+- a **zero-photo first real listing** can remain inside the smallest pilot slice if the founder chooses media out of scope;
+- if the first real listing must include photos, buyer-visible signed delivery plus Storage object backup/migration/restore verification becomes a material pre-production blocker before real activation.
 
-The canonical architecture remains provider-neutral **External Sales Link / Haricî Satış Bağlantısı**.
+Do not claim database restore proof covers Storage objects.
 
-For the first real Çorlu pilot, external sales/Shopier is explicitly **out of scope**:
+## Self-host compatibility state
 
-- no Shopier API/OAuth;
-- no credentials;
-- no scraping;
-- no iframe;
-- no partnership/verification claim;
-- no public external-sales CTA;
-- no Arar payment custody.
+The application is intentionally portable toward managed Supabase → self-hosted Supabase:
 
-Existing repository preparation stays inactive and may be reconsidered only after pilot signal and a separate gate.
+- PostgreSQL-native schema/migrations;
+- portable RLS/grants/functions/RPCs;
+- small REST adapter rather than a managed-only domain dependency;
+- local clean-init and logical restore evidence;
+- current PostgreSQL 17 direction matches current Supabase defaults.
 
-## Financial boundary
+Still required before real production:
 
-Arar Buluruz currently authorizes **0 TL recurring production cost**.
+- select and pin the exact self-hosted Supabase Docker release used for production rehearsal;
+- run the migration/restore against a separate self-hosted Docker target rather than the same local CLI stack;
+- perform managed-Supabase → self-host export/import using synthetic data;
+- test rollback on that target;
+- separately prove Storage object backup/restore if photos are in scope;
+- finalize network/TLS/secrets/admin exposure/logging/backup configuration.
 
-Accordingly, no paid VPS, hosted backend, backup, monitoring, SMS/OTP or other recurring production infrastructure may be purchased/activated without explicit founder provider/monthly-cost approval.
+Current planning envelope: approximately 2 vCPU minimum, preferably 8 GB RAM and 40–80+ GB SSD. Do not provision infrastructure merely because these values are recorded.
 
-Provider research/shortlisting is allowed during readiness. Shortlisting is not purchase authorization.
+## Infrastructure sequence
 
-## Privacy / legal boundary
+Current authority: `docs/EXECUTION_STRATEGY_2026-08-21.md`.
 
-No real seller listing/contact/photo data is authorized today.
+### Development now
 
-Before any real personal-data collection, the separate legal/privacy gate must resolve at minimum:
+- personal Supabase Free may be used for synthetic development only;
+- no AWS yet;
+- no paid infrastructure;
+- production remains off.
 
-- exact data-controller identity and controller request/contact channel;
-- Article 5 legal basis for seller-contact collection/storage;
-- legal basis for intentional public disclosure;
-- collection-time aydınlatma;
-- recipient/alıcı groups;
-- WhatsApp/provider data flow;
-- hosting/CDN/log/backup/operator-device flows;
-- Article 9 implications where applicable;
-- retention/deletion and backup deletion propagation;
+### Pre-production
+
+- complete managed → self-host synthetic migration rehearsal;
+- pin tested self-host release;
+- prove backup/restore/application verification/rollback;
+- complete security/privacy gates.
+
+### Real pilot later
+
+Current preferred production candidate is AWS Istanbul Local Zone `eu-central-1-ist-1a`, using a minimal EC2/EBS/Docker/self-hosted-Supabase design and eligible new-customer credits after release readiness.
+
+This is not permission to open the AWS account now. Exact Local Zone instance availability, pricing, credit eligibility and burn rate must be re-checked on activation day. Default EBS snapshot behavior must not be assumed Türkiye-local; the production gate must explicitly configure/verify the intended local snapshot path.
+
+## Privacy/legal real-data gate
+
+Before first real listing, resolve and verify at minimum:
+
+- KVKK aydınlatma/transparency;
+- exact data-controller identity/contact channel;
+- collection/storage/public-disclosure legal basis;
+- retention/deletion policy and backup deletion propagation;
 - data-subject request procedure;
-- wrong-person number complaint handling;
-- current VERBİS applicability;
-- legal characterization of `publication_instruction_at` versus any explicit-consent requirement.
+- wrong-person/incorrect-phone rapid takedown;
+- recipient/data-flow mapping;
+- allowed listing categories/content moderation;
+- production provider/data residency configuration;
+- local backup + successful restore;
+- TLS/network/admin hardening;
+- secrets and least privilege;
+- RLS/grants negative tests;
+- minimum logs;
+- unpublish/kill switch;
+- Storage backup/restore when media is used.
 
-Repository technical preparation and `publication_instruction_at` alone are not a legal-basis or explicit-consent conclusion.
+Technical preparation alone is not a legal authorization.
 
-## Provider / production acceptance boundary
+## Current incomplete items / shortest safe path
 
-No production provider is selected by the current gate.
+The shortest remaining path is deliberately narrow:
 
-After provider selection, Gate 5 must prove the actual production facts, including:
+1. keep product scope frozen;
+2. synchronize canonical documents with the 2026-08-21 execution decision;
+3. create/use a dedicated Arar Buluruz Supabase Free development project only through the separate remote-account gate and only with synthetic data;
+4. rehearse managed Supabase → pinned self-hosted Supabase Docker using synthetic data;
+5. prove separate-target backup/restore/rollback and application reads;
+6. decide whether first real listing is zero-photo; if photos are required, complete buyer-visible signed-photo delivery + Storage migration/restore proof;
+7. perform security/secrets/network review;
+8. keep AWS unopened until the application is genuinely release-ready;
+9. run the separate legal/privacy/real-data gate;
+10. only then open/configure the real-pilot infrastructure and start the 1 → 3 → 5–10 canary.
 
-- hosting/location/sub-processors/data path;
-- TLS and public/admin/network exposure;
-- secrets/configuration;
-- clean migration application;
-- RLS/grant behavior;
-- private Storage/photo path and buyer-visible trusted delivery;
-- backup outside the primary failure domain;
-- empty-environment restore;
-- Storage backup/consistency if real photos are used;
-- log/retention configuration;
-- rollback/kill-switch commands;
-- provider-specific legal/cross-border inputs.
+Do **not** add Auth, accounts, payments, chat, ads, seller dashboards, complex analytics, recommendation engines, microservices, Kubernetes or speculative observability to satisfy this path.
 
-Restore failure remains production NO-GO.
+## Historical-document rule
 
-## Founder activation gate sequence
-
-Passing one gate never authorizes the next:
-
-1. **GATE 1 — Activation Readiness Pack Complete**
-2. **GATE 2 — Legal / Privacy Sign-Off**
-3. **GATE 3 — First Seller Set Ready**
-4. **GATE 4 — Provider / Monthly Cost Approval**
-5. **GATE 5 — Provider-Specific Production Acceptance**
-6. **GATE 6 — Real Data Collection Authorization**
-7. **GATE 7 — First Real Listing Publication Authorization**
-8. **GATE 8 — Expand 1 -> 3**
-9. **GATE 9 — Expand 3 -> 5–10**
-
-The canonical detailed checklist/SOP/rehearsal package is `docs/REAL_PILOT_ACTIVATION_READINESS_PACK.md`.
-
-## Historical evidence preservation
-
-Older dated publication, recovery, Workstream B/C, V0 quality-completion, backend preparation and seller-contact preparation documents remain historically valid for the state they recorded.
-
-Do not rewrite dated historical records to pretend they were created after later PRs/gates. Where old status wording is superseded, use this current-state file and the activation-readiness pack as the current authority.
-
-## Do not do now
-
-Do not implement or activate:
-
-- Auth;
-- seller accounts/dashboard;
-- contact resolver;
-- CAPTCHA;
-- in-app messaging;
-- SMS OTP;
-- contact-click analytics;
-- Shopier/external-sales CTA;
-- AdSense/advertising;
-- broad SEO expansion;
-- public self-service writes;
-- automated/AI moderation;
-- native app;
-- advanced monitoring/WAF/bot platform;
-- Issue #59 standalone hardening;
-- production backend/Storage/Auth;
-- real data;
-- paid infrastructure;
-- deployment/Lovable publication.
-
-**REAL DATA COLLECTION remains CLOSED until a later explicit Gate 6 authorization.**
+Older project-memory, backlog, provider and readiness documents remain historical evidence. Where their current-status wording conflicts with this file or `docs/EXECUTION_STRATEGY_2026-08-21.md`, these two 2026-08-21 documents are the current authority.
