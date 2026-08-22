@@ -238,12 +238,16 @@ async function fetchListingPhotoManifest(
   });
 
   if (!response.ok) {
-    throw new PublicListingsError(`Public listing photos request failed with status ${response.status}.`);
+    throw new PublicListingsError(
+      `Public listing photos request failed with status ${response.status}.`,
+    );
   }
 
   const parsed = publicPhotoManifestRowsSchema.safeParse(await response.json());
   if (!parsed.success) {
-    throw new PublicListingsError("Public listing photos response did not match the approved schema.");
+    throw new PublicListingsError(
+      "Public listing photos response did not match the approved schema.",
+    );
   }
 
   for (const photo of parsed.data) {
@@ -278,7 +282,9 @@ async function createPublicSignedPhotoUrl(
 
   const parsed = signedPhotoResponseSchema.safeParse(await response.json());
   if (!parsed.success) {
-    throw new PublicListingsError("Listing photo signing response did not match the approved schema.");
+    throw new PublicListingsError(
+      "Listing photo signing response did not match the approved schema.",
+    );
   }
 
   const rawSignedUrl = parsed.data.signedURL ?? parsed.data.signedUrl;
@@ -286,12 +292,17 @@ async function createPublicSignedPhotoUrl(
     throw new PublicListingsError("Listing photo signing response did not include a URL.");
   }
 
-  const signedUrl = new URL(rawSignedUrl, baseUrl);
+  const normalizedSignedPath = rawSignedUrl.startsWith("/object/")
+    ? `/storage/v1${rawSignedUrl}`
+    : rawSignedUrl;
+  const signedUrl = new URL(normalizedSignedPath, baseUrl);
   if (signedUrl.origin !== baseUrl.origin) {
     throw new PublicListingsError("Listing photo signing response changed backend origin.");
   }
   if (!signedUrl.pathname.startsWith(`/storage/v1/object/sign/${LISTING_PHOTO_BUCKET}/`)) {
-    throw new PublicListingsError("Listing photo signing response used an unexpected Storage path.");
+    throw new PublicListingsError(
+      "Listing photo signing response used an unexpected Storage path.",
+    );
   }
 
   return signedUrl.toString();
@@ -308,10 +319,7 @@ async function fetchPublicPhotoUrls(
   );
 }
 
-function mapPublicRow(
-  row: z.infer<typeof publicListingRowSchema>,
-  photos: string[],
-): ListingView {
+function mapPublicRow(row: z.infer<typeof publicListingRowSchema>, photos: string[]): ListingView {
   return {
     id: row.id,
     title: row.title,
@@ -362,7 +370,9 @@ async function fetchCollectionRows(
   }
 
   return await Promise.all(
-    parsed.data.map(async (row) => mapPublicRow(row, await fetchPublicPhotoUrls(row.id, config, fetchImpl))),
+    parsed.data.map(async (row) =>
+      mapPublicRow(row, await fetchPublicPhotoUrls(row.id, config, fetchImpl)),
+    ),
   );
 }
 
