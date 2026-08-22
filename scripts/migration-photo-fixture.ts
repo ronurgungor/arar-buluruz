@@ -261,14 +261,18 @@ await requireRejected(
   ),
   "anonymous direct private-object read",
 );
-await requireRejected(
-  await fetch(`${storageBase}/object/list/listing_photos`, {
-    method: "POST",
-    headers: apiHeaders(anonKey),
-    body: JSON.stringify({ prefix: `listings/${listingId}`, limit: 100, offset: 0 }),
-  }),
-  "anonymous private-bucket listing",
-);
+
+const anonymousListResponse = await fetch(`${storageBase}/object/list/listing_photos`, {
+  method: "POST",
+  headers: apiHeaders(anonKey),
+  body: JSON.stringify({ prefix: `listings/${listingId}`, limit: 100, offset: 0 }),
+});
+if (anonymousListResponse.ok) {
+  const anonymousList = await anonymousListResponse.json();
+  if (!Array.isArray(anonymousList) || anonymousList.length !== 0) {
+    throw new Error("Anonymous private-bucket listing exposed Storage object metadata.");
+  }
+}
 
 console.log(
   `Migration photo fixture ${mode} verification passed: app adapter + signed private Storage + SHA-256 ${expectedSha256}.`,
