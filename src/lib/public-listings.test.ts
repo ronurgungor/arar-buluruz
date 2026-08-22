@@ -35,6 +35,11 @@ const publicRow = {
   published_at: "2026-07-30T11:00:00+00:00",
 };
 
+const photoId = "10000000-0000-4000-8000-000000000001";
+const photoObjectPath = `listings/${publicRow.id}/${photoId}.webp`;
+const storageRelativeSignedPhotoPath = `/object/sign/listing_photos/${photoObjectPath}?token=synthetic`;
+const expectedSignedPhotoUrl = `https://example.supabase.co/storage/v1${storageRelativeSignedPhotoPath}`;
+
 const searchListings = [
   {
     title: "2016 model sedan otomobil, düşük km",
@@ -72,6 +77,57 @@ const searchListings = [
     district: "Şahinbey",
   },
 ];
+
+function photoAwareFetch(options?: { signedUrl?: string; objectPath?: string }): typeof fetch {
+  return async (input, init) => {
+    const url = new URL(input instanceof Request ? input.url : input.toString());
+
+    if (url.pathname === "/rest/v1/listings") {
+      return new Response(JSON.stringify([publicRow]), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    if (url.pathname === "/rest/v1/rpc/get_public_listing_photos") {
+      expect(init?.method).toBe("POST");
+      expect(new Headers(init?.headers).get("apikey")).toBe(config.publicKey);
+      expect(new Headers(init?.headers).has("authorization")).toBe(false);
+      expect(JSON.parse(String(init?.body))).toEqual({ p_listing_id: publicRow.id });
+      return new Response(
+        JSON.stringify([
+          {
+            photo_id: photoId,
+            object_path: options?.objectPath ?? photoObjectPath,
+            mime_type: "image/webp",
+            byte_size: 1234,
+            sort_order: 0,
+          },
+        ]),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    }
+
+    if (url.pathname.startsWith("/storage/v1/object/sign/listing_photos/")) {
+      const headers = new Headers(init?.headers);
+      expect(init?.method).toBe("POST");
+      expect(headers.get("apikey")).toBe(config.publicKey);
+      expect(headers.get("authorization")).toBe(`Bearer ${config.publicKey}`);
+      expect(JSON.parse(String(init?.body))).toEqual({ expiresIn: 60 });
+      return new Response(
+        JSON.stringify({
+          signedURL: options?.signedUrl ?? storageRelativeSignedPhotoPath,
+        }),
+        {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        },
+      );
+    }
+
+    throw new Error(`Unexpected fetch URL in test: ${url.toString()}`);
+  };
+}
 
 describe("search normalization and prefix matching", () => {
   test("folds Turkish characters, case and repeated whitespace consistently", () => {
@@ -185,32 +241,29 @@ describe("resolveListingsSource", () => {
 });
 
 describe("public Supabase REST reader", () => {
-  test("selects only approved public columns and uses only the apikey header", async () => {
-    let requestedUrl: URL | undefined;
-    let requestedHeaders: Headers | undefined;
-
+  test("loads approved listing columns and lifecycle-gated private photo signed URLs", async () => {
+    const requests: Array<{ url: URL; headers: Headers }> = [];
+    const baseFetch = photoAwareFetch();
     const fetchMock: typeof fetch = async (input, init) => {
-      requestedUrl = new URL(input instanceof Request ? input.url : input.toString());
-      requestedHeaders = new Headers(init?.headers);
-      return new Response(JSON.stringify([publicRow]), {
-        status: 200,
-        headers: { "content-type": "application/json" },
+      requests.push({
+        url: new URL(input instanceof Request ? input.url : input.toString()),
+        headers: new Headers(init?.headers),
       });
+      return baseFetch(input, init);
     };
 
     const listings = await fetchPublicListings(config, fetchMock);
+    const listingRequest = requests.find((request) => request.url.pathname === "/rest/v1/listings");
 
-    expect(requestedUrl?.pathname).toBe("/rest/v1/listings");
-    expect(requestedUrl?.searchParams.get("order")).toBe("published_at.desc,id.desc");
-
-    const selectedColumns = requestedUrl?.searchParams.get("select") ?? "";
+    expect(listingRequest?.url.searchParams.get("order")).toBe("published_at.desc,id.desc");
+    const selectedColumns = listingRequest?.url.searchParams.get("select") ?? "";
     expect(selectedColumns).toContain("seller_display_name");
     expect(selectedColumns).not.toContain("status");
     expect(selectedColumns).not.toContain("expires_at");
     expect(selectedColumns).not.toContain("phone");
-
-    expect(requestedHeaders?.get("apikey")).toBe(config.publicKey);
-    expect(requestedHeaders?.has("authorization")).toBe(false);
+    expect(selectedColumns).not.toContain("object_path");
+    expect(listingRequest?.headers.get("apikey")).toBe(config.publicKey);
+    expect(listingRequest?.headers.has("authorization")).toBe(false);
 
     expect(listings).toEqual([
       {
@@ -221,7 +274,7 @@ describe("public Supabase REST reader", () => {
         district: publicRow.district,
         seller: publicRow.seller_display_name,
         description: publicRow.description,
-        photos: [],
+        photos: [expectedSignedPhotoUrl],
         createdAt: publicRow.published_at,
         distanceKm: null,
         keywords: publicRow.search_keywords,
@@ -257,6 +310,32 @@ describe("public Supabase REST reader", () => {
     await expect(fetchPublicListings(config, fetchMock)).rejects.toBeInstanceOf(
       PublicListingsError,
     );
+  });
+
+  test("rejects a photo manifest path that does not match listing/photo identity", async () => {
+    await expect(
+      fetchPublicListings(
+        config,
+        photoAwareFetch({ objectPath: `listings/${publicRow.id}/unexpected.webp` }),
+      ),
+    ).rejects.toThrow("Public listing photo path did not match the approved contract.");
+  });
+
+  test("rejects cross-origin signed photo URLs", async () => {
+    await expect(
+      fetchPublicListings(
+        config,
+        photoAwareFetch({
+          signedUrl: "https://attacker.example/storage/v1/object/sign/x?token=bad",
+        }),
+      ),
+    ).rejects.toThrow("Listing photo signing response changed backend origin.");
+  });
+
+  test("rejects signed URLs outside the approved Storage signed route", async () => {
+    await expect(
+      fetchPublicListings(config, photoAwareFetch({ signedUrl: "/rest/v1/listings?token=bad" })),
+    ).rejects.toThrow("Listing photo signing response used an unexpected Storage path.");
   });
 
   test("rejects insecure non-local Supabase URLs", async () => {

@@ -119,7 +119,7 @@ jobs:
       - name: Run synthetic logical backup, clean restore and app-level verification
         run: bash scripts/self-hosted-logical-restore-drill.sh
 
-      - name: Run synthetic REST and Storage integration
+      - name: Run synthetic REST, Storage and public signed-photo integration
         shell: bash
         run: |
           status_env="$(supabase status -o env)"
@@ -146,6 +146,11 @@ jobs:
           LOCAL_SUPABASE_ANON_KEY="$anon_key" \
           LOCAL_SUPABASE_SERVICE_ROLE_KEY="$service_role_key" \
             bun scripts/real-pilot-backend-integration.ts
+
+          MIGRATION_SUPABASE_URL="$api_url" \
+          MIGRATION_SUPABASE_ANON_KEY="$anon_key" \
+          MIGRATION_SUPABASE_SERVICE_ROLE_KEY="$service_role_key" \
+            bun scripts/migration-photo-fixture.ts seed
 
       - name: Stop and remove local Supabase data
         if: always()

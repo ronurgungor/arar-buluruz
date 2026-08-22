@@ -80,30 +80,18 @@ insert into public.listings (
 );
 SQL
 
-# Match Supabase's managed-to-self-host guidance: dump roles, schema and data
-# separately so the portable logical backup path itself is exercised. The schema
-# and data dumps are explicitly limited to application-owned schemas. Storage
-# metadata and Storage objects have a separate migration/restore contract and must
-# not be silently folded into this database-only proof.
-supabase db dump --local -f "$dump_dir/roles.sql" --role-only
-supabase db dump --local -f "$dump_dir/schema.sql" --schema public,private
-supabase db dump --local -f "$dump_dir/data.sql" --schema public,private --use-copy --data-only
-
-for file in roles.sql schema.sql data.sql; do
-  if [[ ! -s "$dump_dir/$file" ]]; then
-    echo "Logical dump $file is empty."
-    exit 1
-  fi
-done
-
-if grep -qE '(COPY|INSERT INTO)[[:space:]]+storage\.' "$dump_dir/data.sql"; then
-  echo "Application data dump unexpectedly contains Storage metadata."
-  exit 1
-fi
+# Exercise the canonical application backup contract. Supabase-managed auth/storage
+# rows stay outside the database dump. The one application-owned policy attached to
+# storage.objects is preserved separately and checksummed by the exporter.
+APPLICATION_BACKUP_DIR="$dump_dir" \
+APPLICATION_DB_CONTAINER="$db_container" \
+  bash scripts/export-application-backup.sh
 
 # Emulate a clean Supabase target without destroying managed auth/storage/extension
 # schemas. Only application-owned schemas are removed; the target's public schema
-# is recreated with the same server-side ownership boundary before restore.
+# is recreated with the same server-side ownership boundary before restore. Dropping
+# public intentionally cascades the cross-schema Storage policy, proving the backup
+# artifact is needed rather than relying on residual target state.
 run_psql <<'SQL'
 drop schema if exists private cascade;
 drop schema if exists public cascade;
@@ -113,7 +101,7 @@ grant usage on schema public to anon, authenticated, service_role;
 alter default privileges in schema public revoke all on tables from anon, authenticated;
 SQL
 
-# Restore the three logical backup parts as one transaction. Triggers are disabled
+# Restore the portable database parts as one transaction. Triggers are disabled
 # only for the data import session, matching the documented Supabase restore flow.
 {
   cat "$dump_dir/roles.sql"
@@ -122,6 +110,10 @@ SQL
   cat "$dump_dir/data.sql"
 } | docker exec -i "$db_container" \
   psql -X --single-transaction -v ON_ERROR_STOP=1 -U postgres -d postgres
+
+# Reattach only the application-owned policy to the target's existing managed
+# storage.objects table. No provider Storage metadata or object rows are replayed.
+run_psql < "$dump_dir/storage-policy.sql"
 
 # Verify restored schema/security/lifecycle invariants independently of the app.
 run_psql < ops/self-hosted/restore-verification.sql
@@ -151,4 +143,4 @@ LOCAL_SUPABASE_URL="$api_url" \
 LOCAL_SUPABASE_ANON_KEY="$anon_key" \
   bun scripts/logical-restore-app-verification.ts
 
-echo "Synthetic logical backup, clean application-schema restore and app-level verification passed."
+echo "Synthetic logical backup, clean application-schema restore, Storage-policy replay and app-level verification passed."

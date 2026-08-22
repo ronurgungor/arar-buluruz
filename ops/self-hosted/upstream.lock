@@ -1,0 +1,11 @@
+# Verified upstream input for the synthetic managed-to-self-host rehearsal.
+# Update only through an explicit dependency review and a green migration rehearsal.
+SUPABASE_SELF_HOSTED_TAG=self-hosted/v0.8.0
+SUPABASE_SELF_HOSTED_COMMIT=241bb11c0627f2981746d37033f57dbfa81d29b0
+DOCKER_COMPOSE_BLOB_SHA=33972e9b13691de594274433eae8a75576512ede
+ENV_EXAMPLE_BLOB_SHA=fe428f5091de533544aa8c6c9515ad815166866d
+GENERATE_KEYS_BLOB_SHA=da1fc19218cf50146e9ca6f7313248ba94d22a2e
+POSTGRES_IMAGE=supabase/postgres:17.6.1.136
+STORAGE_IMAGE=supabase/storage-api:v1.60.4
+POSTGREST_IMAGE=postgrest/postgrest:v14.12
+API_GATEWAY_IMAGE=envoyproxy/envoy:v1.39.0

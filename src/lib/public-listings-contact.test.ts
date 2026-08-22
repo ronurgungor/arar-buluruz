@@ -32,19 +32,39 @@ const detailRow = {
   contact_e164: "+12025550123",
 };
 
+function contactBoundaryFetch(
+  listingRow: typeof baseRow | typeof detailRow,
+  onListingRequest: (url: URL) => void,
+): typeof fetch {
+  return async (input) => {
+    const url = new URL(input instanceof Request ? input.url : input.toString());
+    if (url.pathname === "/rest/v1/listings") {
+      onListingRequest(url);
+      return new Response(JSON.stringify([listingRow]), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+    if (url.pathname === "/rest/v1/rpc/get_public_listing_photos") {
+      return new Response("[]", {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+    throw new Error(`Unexpected URL in seller-contact boundary test: ${url.toString()}`);
+  };
+}
+
 describe("public listings seller-contact payload boundary", () => {
   test("collection query and mapped card payload omit seller contact", async () => {
     let requestedUrl: URL | undefined;
 
-    const fetchMock: typeof fetch = async (input) => {
-      requestedUrl = new URL(input instanceof Request ? input.url : input.toString());
-      return new Response(JSON.stringify([baseRow]), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    };
-
-    const listings = await fetchPublicListings(config, fetchMock);
+    const listings = await fetchPublicListings(
+      config,
+      contactBoundaryFetch(baseRow, (url) => {
+        requestedUrl = url;
+      }),
+    );
     const selectedColumns = requestedUrl?.searchParams.get("select") ?? "";
 
     expect(selectedColumns).not.toContain("contact_channel");
@@ -55,15 +75,13 @@ describe("public listings seller-contact payload boundary", () => {
   test("detail query requests exactly the two public contact fields and maps one channel", async () => {
     let requestedUrl: URL | undefined;
 
-    const fetchMock: typeof fetch = async (input) => {
-      requestedUrl = new URL(input instanceof Request ? input.url : input.toString());
-      return new Response(JSON.stringify([detailRow]), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    };
-
-    const listing = await fetchPublicListing(baseRow.id, config, fetchMock);
+    const listing = await fetchPublicListing(
+      baseRow.id,
+      config,
+      contactBoundaryFetch(detailRow, (url) => {
+        requestedUrl = url;
+      }),
+    );
     const selectedColumns = requestedUrl?.searchParams.get("select") ?? "";
 
     expect(selectedColumns).toContain("contact_channel");
