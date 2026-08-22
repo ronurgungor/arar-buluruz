@@ -37,7 +37,8 @@ const publicRow = {
 
 const photoId = "10000000-0000-4000-8000-000000000001";
 const photoObjectPath = `listings/${publicRow.id}/${photoId}.webp`;
-const signedPhotoPath = `/storage/v1/object/sign/listing_photos/${photoObjectPath}?token=synthetic`;
+const storageRelativeSignedPhotoPath = `/object/sign/listing_photos/${photoObjectPath}?token=synthetic`;
+const expectedSignedPhotoUrl = `https://example.supabase.co/storage/v1${storageRelativeSignedPhotoPath}`;
 
 const searchListings = [
   {
@@ -113,10 +114,12 @@ function photoAwareFetch(options?: { signedUrl?: string; objectPath?: string }):
       expect(headers.get("apikey")).toBe(config.publicKey);
       expect(headers.get("authorization")).toBe(`Bearer ${config.publicKey}`);
       expect(JSON.parse(String(init?.body))).toEqual({ expiresIn: 60 });
-      return new Response(
-        JSON.stringify({ signedURL: options?.signedUrl ?? signedPhotoPath }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
+      return new Response(JSON.stringify({
+        signedURL: options?.signedUrl ?? storageRelativeSignedPhotoPath,
+      }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     throw new Error(`Unexpected fetch URL in test: ${url.toString()}`);
@@ -268,7 +271,7 @@ describe("public Supabase REST reader", () => {
         district: publicRow.district,
         seller: publicRow.seller_display_name,
         description: publicRow.description,
-        photos: [`https://example.supabase.co${signedPhotoPath}`],
+        photos: [expectedSignedPhotoUrl],
         createdAt: publicRow.published_at,
         distanceKm: null,
         keywords: publicRow.search_keywords,
@@ -319,7 +322,9 @@ describe("public Supabase REST reader", () => {
     await expect(
       fetchPublicListings(
         config,
-        photoAwareFetch({ signedUrl: "https://attacker.example/storage/v1/object/sign/x?token=bad" }),
+        photoAwareFetch({
+          signedUrl: "https://attacker.example/storage/v1/object/sign/x?token=bad",
+        }),
       ),
     ).rejects.toThrow("Listing photo signing response changed backend origin.");
   });
