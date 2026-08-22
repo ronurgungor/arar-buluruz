@@ -114,12 +114,15 @@ function photoAwareFetch(options?: { signedUrl?: string; objectPath?: string }):
       expect(headers.get("apikey")).toBe(config.publicKey);
       expect(headers.get("authorization")).toBe(`Bearer ${config.publicKey}`);
       expect(JSON.parse(String(init?.body))).toEqual({ expiresIn: 60 });
-      return new Response(JSON.stringify({
-        signedURL: options?.signedUrl ?? storageRelativeSignedPhotoPath,
-      }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          signedURL: options?.signedUrl ?? storageRelativeSignedPhotoPath,
+        }),
+        {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        },
+      );
     }
 
     throw new Error(`Unexpected fetch URL in test: ${url.toString()}`);
