@@ -5,23 +5,22 @@ _Last updated: 2026-08-22, Europe/Istanbul_
 ## Canonical repository state
 
 - Repository: `ronurgungor/arar-buluruz`; canonical branch: `main`.
-- Canonical `main` entering PR #64: `dd0d22dfd25f34bed20fcce802425fe9e1f63c93` (PR #63 merge).
+- Canonical implementation checkpoint: `a6ada7a654b014ca33cfbfa3fed6e6edc7e08630` (PR #64 merge).
 - PR #57 — trusted real-pilot photo pipeline: **MERGED / CLOSED**.
 - PR #58 — simplified intentionally-public seller-contact contract: **MERGED / CLOSED**.
 - PR #60 — Activation Readiness Pack / gate synchronization: **MERGED / CLOSED**.
 - PR #61 — restore-verification hardening: **MERGED / CLOSED**; Issue #59 is **CLOSED / COMPLETED**.
 - PR #62 — portable logical DB backup/clean restore/application verification: **MERGED / CLOSED**.
 - PR #63 — canonical execution-strategy/current-state synchronization: **MERGED / CLOSED**.
-- PR #64 — photo delivery + DB/Storage portability + pinned self-host migration/rollback readiness: **release candidate under review until merged**.
-- PR #64 technical release-candidate head before this documentation sync: `331a91ec03ee0fc66fded9d68f0a10efbbb53ae4`.
-- That exact technical head passed all four required workflows:
-  - CI / Gate 1 — run `32573921779` — **SUCCESS**;
-  - V0 minimal PWA — run `32573921795` — **SUCCESS**;
-  - Real pilot backend prep — run `32573921802` — **SUCCESS**;
-  - Self-host migration rehearsal — run `32573921809` — **SUCCESS**.
+- PR #64 — photo delivery + DB/Storage portability + pinned self-host migration/rollback readiness: **MERGED / CLOSED**.
+- PR #64 final head: `9ba0203b59df3a193f3287db3bba31e16dd304ec`.
+- That exact final head passed all four required workflows before merge:
+  - CI / Gate 1 — run `32575299632` — **SUCCESS**;
+  - V0 minimal PWA — run `32575299615` — **SUCCESS** on same-SHA rerun after one transient broad-browser failure;
+  - Real pilot backend prep — run `32575299553` — **SUCCESS**;
+  - Self-host migration rehearsal — run `32575299528` — **SUCCESS**.
+- GitHub `main` was fetched after merge and independently confirmed at `a6ada7a654b014ca33cfbfa3fed6e6edc7e08630`; the merge commit is GitHub signature-verified.
 - GitHub `main` is not branch-protected; checks are therefore evidence rather than server-enforced merge requirements. Normal PR/merge discipline remains mandatory.
-
-This document describes PR #64 release-candidate behavior until the PR is merged. After merge, `main` must be fetched and its merge SHA recorded as the canonical checkpoint.
 
 ## Current phase
 
@@ -122,7 +121,7 @@ The migration-canonical contract includes:
 
 ## Database/RLS verification state
 
-PR #64 brings the database/security contract to **125 pgTAP tests** across the existing suites plus public-photo delivery coverage.
+Canonical `main` now carries **125 pgTAP tests** across the existing suites plus public-photo delivery coverage.
 
 CI additionally verifies:
 
@@ -141,7 +140,7 @@ The restore verifier checks actual semantics, not merely object names, including
 
 ## Public signed-photo state
 
-Buyer-visible photo delivery is now wired into the Supabase public listings adapter in the PR #64 release candidate.
+Buyer-visible photo delivery is now wired into the Supabase public listings adapter on canonical `main`.
 
 The contract is deliberately narrow:
 
@@ -153,7 +152,7 @@ The contract is deliberately narrow:
 - no service-role secret is sent to the browser;
 - anonymous bucket listing is tested for **absence of private object disclosure**, rather than incorrectly assuming the Storage list endpoint must return HTTP 403.
 
-The prior `photos: []` caveat is obsolete for the PR #64 release candidate. A zero-photo pilot is still a product choice, but no longer the technical workaround required by the repository.
+The prior `photos: []` caveat is obsolete on canonical `main`. A zero-photo pilot is still a product choice, but no longer the technical workaround required by the repository.
 
 ## Portable DB backup and restore
 
@@ -183,7 +182,7 @@ Clean restore verification proves:
 
 Storage object bytes have now been independently rehearsed rather than inferred from DB restore.
 
-The synthetic PR #64 rehearsal uses S3-compatible Storage transfer via `rclone`, with object/hash/size verification.
+The synthetic migration rehearsal uses S3-compatible Storage transfer via `rclone`, with object/hash/size verification.
 
 Verified fixture:
 
@@ -243,7 +242,7 @@ That provider-specific rehearsal remains open until the dedicated `Arar Buluruz`
 
 ## Security / secrets / network rehearsal evidence
 
-PR #64 adds explicit CI assertions for the synthetic self-host target:
+Canonical `main` includes explicit CI assertions for the synthetic self-host target:
 
 - target DB is bound only to `127.0.0.1:15432`;
 - target API gateway is bound only to `127.0.0.1:18000`;
@@ -281,7 +280,7 @@ The known public V0 remains synthetic/mock and non-collecting unless a separate 
 - no Auth;
 - no payment/advertising/monetization activation.
 
-Merging PR #64 does not authorize Lovable Publish/Update, production deployment or real-data collection.
+The PR #64 merge did **not** authorize Lovable Publish/Update, production deployment or real-data collection.
 
 ## Minimal pilot product scope
 
@@ -358,15 +357,14 @@ Technical release readiness is not legal authorization for real data. Before the
 
 ## Current incomplete items / shortest safe path
 
-After PR #64 technical validation, the narrow remaining path is:
+After PR #64 merge, the narrow remaining path is:
 
 1. keep product scope frozen and real data OFF;
-2. merge PR #64 only after its documentation-sync head also passes all required CI;
-3. manually create the dedicated `Arar Buluruz` Supabase Free organization/project when the account UI/tool allows it, without touching `tarladan`;
-4. run the final **managed hosted Free → pinned self-host** synthetic rehearsal using the already proven DB/Storage/hash/rollback harness;
-5. keep AWS unopened until that checkpoint and the remaining privacy/legal release gate are satisfied;
-6. at the later production gate, re-verify AWS Istanbul availability/cost/credits/residency plus production TLS/network/secrets/backups;
-7. only after explicit real-data authorization begin the 1 → 3 → 5–10 canary.
+2. create the dedicated `Arar Buluruz` Supabase Free organization/project when the account UI or a future safe authenticated tool allows it, without touching `tarladan`;
+3. run the final **managed hosted Free → pinned self-host** synthetic rehearsal using the already proven DB/Storage/hash/rollback harness;
+4. keep AWS unopened until that checkpoint and the remaining privacy/legal release gate are satisfied;
+5. at the later production gate, re-verify AWS Istanbul availability/cost/credits/residency plus production TLS/network/secrets/backups;
+6. only after explicit real-data authorization begin the 1 → 3 → 5–10 canary.
 
 Do **not** add Auth, accounts, payments, chat, ads, seller dashboards, complex analytics, recommendation engines, microservices, Kubernetes or speculative observability to satisfy this path.
 
