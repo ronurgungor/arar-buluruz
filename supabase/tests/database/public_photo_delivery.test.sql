@@ -91,24 +91,25 @@ select is(
     from pg_catalog.pg_policies
     where schemaname = 'storage'
       and tablename = 'objects'
-      and policyname = 'Public can read active listing photo objects'
+      and policyname = 'Public can sign active listing photo objects'
       and cmd = 'SELECT'
       and 'anon' = any(roles)
   ),
   1::bigint,
-  'exactly one anon SELECT policy exists for active listing photo objects'
+  'exactly one anon SELECT policy exists for active listing photo signing'
 );
 select ok(
   (
-    select qual like '%allow_any_operation%'
+    select qual like '%allow_only_operation%'
+      and qual like '%storage.object.sign%'
       and qual like '%is_deliverable_listing_photo_path%'
       and qual like '%listing_photos%'
     from pg_catalog.pg_policies
     where schemaname = 'storage'
       and tablename = 'objects'
-      and policyname = 'Public can read active listing photo objects'
+      and policyname = 'Public can sign active listing photo objects'
   ),
-  'Storage policy is operation-aware and tied to the application lifecycle helper'
+  'Storage policy permits only sign operation and remains tied to lifecycle helper'
 );
 
 insert into public.listings (
