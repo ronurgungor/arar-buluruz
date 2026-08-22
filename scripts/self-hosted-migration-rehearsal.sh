@@ -114,6 +114,7 @@ wait_for_target_api() {
 }
 
 wait_for_target_storage_schema() {
+  local readiness
   for attempt in $(seq 1 60); do
     readiness="$(
       docker exec supabase-db psql -X -At -U postgres -d postgres -c \
@@ -129,6 +130,40 @@ wait_for_target_storage_schema() {
   done
 
   echo "Pinned self-host Storage database schema did not become ready." >&2
+  docker logs --tail 200 supabase-storage >&2 || true
+  return 1
+}
+
+wait_for_target_storage_api() {
+  local api_url="$1"
+  local service_key="$2"
+  local body_file="$work_dir/storage-readiness.json"
+  local container_health
+  local status
+
+  for attempt in $(seq 1 60); do
+    container_health="$(
+      docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' supabase-storage \
+        2>/dev/null || true
+    )"
+    status="$(
+      curl --silent --show-error --output "$body_file" --write-out '%{http_code}' \
+        --header "apikey: $service_key" \
+        --header "Authorization: Bearer $service_key" \
+        "$api_url/storage/v1/bucket" 2>/dev/null || true
+    )"
+
+    if [[ "$container_health" == "healthy" && "$status" =~ ^[0-9]{3}$ \
+      && "$status" -ge 200 && "$status" -lt 300 ]]; then
+      return 0
+    fi
+    sleep 2
+  done
+
+  echo "Pinned self-host Storage API did not become ready; container=$container_health HTTP=${status:-none}." >&2
+  if [[ -f "$body_file" ]]; then
+    cat "$body_file" >&2 || true
+  fi
   docker logs --tail 200 supabase-storage >&2 || true
   return 1
 }
@@ -301,6 +336,7 @@ docker compose -f docker-compose.yml -f "$target_compose_override" up -d \
 target_started=true
 wait_for_target_api "$target_api_url" "$target_service_role_key"
 wait_for_target_storage_schema
+wait_for_target_storage_api "$target_api_url" "$target_service_role_key"
 
 # Exact image and host-exposure assertions are part of the production-readiness
 # review: the synthetic target must not accidentally become a network-accessible service.
@@ -361,6 +397,10 @@ docker exec -i supabase-db psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres \
   cat "$db_backup_dir/data.sql"
 } | docker exec -i supabase-db \
   psql -X --single-transaction -v ON_ERROR_STOP=1 -U postgres -d postgres
+
+# The gateway may briefly mark Storage unhealthy while the database schema changes
+# settle. Require the exact authenticated bucket route to be healthy before writes.
+wait_for_target_storage_api "$target_api_url" "$target_service_role_key"
 
 # Create the destination bucket through Storage itself. This makes target
 # storage.objects metadata authoritative instead of copying provider-internal rows.
