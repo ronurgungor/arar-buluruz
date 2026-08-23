@@ -236,9 +236,12 @@ function FounderPilotOperator() {
                 <option value="phone">Telefon</option>
               </select>
             </div>
-            <label className="block sm:col-span-2">
-              <span className="text-sm font-medium">Satıcı telefonu (E.164)</span>
+            <div className="block sm:col-span-2">
+              <label htmlFor="operator-contact-e164" className="text-sm font-medium">
+                Satıcı telefonu (E.164)
+              </label>
               <input
+                id="operator-contact-e164"
                 required
                 name="contactE164"
                 inputMode="tel"
@@ -250,7 +253,7 @@ function FounderPilotOperator() {
                 Bu alan yalnız founder işlem yüzeyindedir. Yayın öncesinde numara kontrolü ayrıca
                 teyit edilir.
               </span>
-            </label>
+            </div>
             <label className="block sm:col-span-2">
               <span className="text-sm font-medium">Açıklama</span>
               <textarea
