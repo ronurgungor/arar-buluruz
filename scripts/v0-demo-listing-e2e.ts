@@ -204,9 +204,7 @@ try {
     const input = document.querySelector<HTMLInputElement>('input[placeholder="Kısa ve net yaz"]');
     return input?.value === "";
   });
-  await page
-    .getByAltText("Seçilen demo fotoğraf önizlemesi")
-    .waitFor({ state: "detached" });
+  await page.getByAltText("Seçilen demo fotoğraf önizlemesi").waitFor({ state: "detached" });
   assert(
     (await page.getByLabel("Başlık").inputValue()) === "",
     "Back navigation restored demo title state.",
