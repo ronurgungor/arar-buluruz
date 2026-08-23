@@ -1,26 +1,38 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ImagePlus, Plus, X } from "lucide-react";
+import { ChevronDown, ImagePlus, X } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { getDistrictsForCity, locationCities } from "@/data/turkiye-locations";
 import { parseDemoPrice, validateDemoPhoto } from "@/lib/demo-listing";
-import { buildControlledWhatsAppHref } from "@/lib/prototype-contact";
+import { buildPilotIntakeWhatsAppHref, isPilotIntakeConfigured } from "@/lib/pilot-intake";
+import { PILOT_DISTRICT, PILOT_PROVINCE } from "@/lib/pilot-operator-contract";
+import { isPilotReleaseCandidate } from "@/lib/product-phase";
 
 export const Route = createFileRoute("/ilan-ver")({
   head: () => ({
-    meta: [
-      { title: "Demo ilan oluşturma — Arar Buluruz" },
-      {
-        name: "description",
-        content:
-          "V0 test sürümünde ilan oluşturma akışı yalnız demo olarak çalışır; girilen bilgiler kaydedilmez veya yayınlanmaz.",
-      },
-      { property: "og:title", content: "Demo ilan oluşturma — Arar Buluruz" },
-      {
-        property: "og:description",
-        content: "Demo ilan bilgileri kaydedilmez, gönderilmez veya yayınlanmaz.",
-      },
-    ],
+    meta: isPilotReleaseCandidate
+      ? [
+          { title: "İlan Başvurusu — Arar Buluruz" },
+          {
+            name: "description",
+            content:
+              "Çorlu pilotunda ilan başvurusu WhatsApp üzerinden alınır ve kurucu tarafından manuel olarak incelenir.",
+          },
+          { name: "robots", content: "noindex" },
+        ]
+      : [
+          { title: "Demo ilan oluşturma — Arar Buluruz" },
+          {
+            name: "description",
+            content:
+              "V0 test sürümünde ilan oluşturma akışı yalnız demo olarak çalışır; girilen bilgiler kaydedilmez veya yayınlanmaz.",
+          },
+          { property: "og:title", content: "Demo ilan oluşturma — Arar Buluruz" },
+          {
+            property: "og:description",
+            content: "Demo ilan bilgileri kaydedilmez, gönderilmez veya yayınlanmaz.",
+          },
+        ],
   }),
   component: PostListing,
 });
@@ -28,10 +40,9 @@ export const Route = createFileRoute("/ilan-ver")({
 const fieldClass =
   "h-12 w-full rounded-xl border border-border bg-card px-4 text-base outline-none focus:border-primary";
 const selectClass = `${fieldClass} appearance-none pr-10`;
-const gate1TestOperationsEnabled = import.meta.env.VITE_GATE1_TEST_OPERATIONS === "enabled";
 
 function PostListing() {
-  if (gate1TestOperationsEnabled) return <Gate1ApplicationForm />;
+  if (isPilotReleaseCandidate) return <PilotApplicationForm />;
   return <DemoListingForm />;
 }
 
@@ -326,59 +337,63 @@ function DemoListingForm() {
   );
 }
 
-function Gate1ApplicationForm() {
+function PilotApplicationForm() {
   const [sellerDisplayName, setSellerDisplayName] = useState("");
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
-  const [city, setCity] = useState("Tekirdağ");
-  const [district, setDistrict] = useState("Çorlu");
   const [description, setDescription] = useState("");
+  const [error, setError] = useState("");
+  const intakeE164 = import.meta.env.VITE_PILOT_INTAKE_E164 as string | undefined;
+  const intakeConfigured = isPilotIntakeConfigured(intakeE164);
 
   return (
     <div className="min-h-screen">
       <TopBar />
       <main className="mx-auto max-w-md px-4 pb-16">
         <h1 className="mt-6 text-2xl font-extrabold tracking-tight">İlan Başvurusu</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Pilot sürecinde başvurular merkezi WhatsApp hattında incelenir. Bu form veritabanına kayıt
-          yazmaz.
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          Çorlu pilotunda başvurular WhatsApp üzerinden alınır. İlan kurucu tarafından incelenir,
+          güvenli fotoğraf akışından geçirilir ve ancak onaydan sonra yayınlanır.
         </p>
+
+        <div className="mt-4 rounded-xl border border-border bg-accent/40 p-3 text-sm">
+          <p className="font-semibold">Pilot konumu: {PILOT_PROVINCE} / {PILOT_DISTRICT}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Fotoğrafları WhatsApp görüşmesinde paylaşabilirsiniz. Orijinal dosyalar doğrudan public
+            Storage’a alınmaz; kurucu yayın öncesinde sanitize edilmiş WebP kopyasını yükler.
+          </p>
+        </div>
+
+        {error && (
+          <p role="alert" className="mt-4 rounded-xl border border-destructive/40 p-3 text-sm text-destructive">
+            {error}
+          </p>
+        )}
 
         <form
           className="mt-6 space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
+            setError("");
 
             const message = [
-              "Merhaba, Arar Buluruz için ilan başvurusu yapmak istiyorum.",
+              "Merhaba, Arar Buluruz Çorlu pilotu için ilan başvurusu yapmak istiyorum.",
               "",
               `İlanda görünecek ad: ${sellerDisplayName.trim()}`,
               `Başlık: ${title.trim()}`,
               `Fiyat: ${price.trim()} TL`,
-              `Konum: ${city} / ${district.trim()}`,
+              `Konum: ${PILOT_PROVINCE} / ${PILOT_DISTRICT}`,
               `Açıklama: ${description.trim()}`,
             ].join("\n");
 
-            window.location.href = buildControlledWhatsAppHref(message);
+            const href = buildPilotIntakeWhatsAppHref(intakeE164 ?? "", message);
+            if (!href) {
+              setError("İlan başvuru hattı bu ortamda henüz etkin değil.");
+              return;
+            }
+            window.location.href = href;
           }}
         >
-          <div>
-            <span className="text-sm font-medium">Fotoğraflar</span>
-            <div className="mt-1 grid grid-cols-4 gap-2" aria-hidden>
-              {[0, 1, 2, 3].map((index) => (
-                <div
-                  key={index}
-                  className="flex aspect-square items-center justify-center rounded-xl border border-dashed border-border bg-muted/50 text-muted-foreground"
-                >
-                  <Plus className="h-5 w-5" />
-                </div>
-              ))}
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Fotoğraf yükleme ilk pilotta kapalıdır; başvuru mesajına fotoğraf eklemeyin.
-            </p>
-          </div>
-
           <label className="block">
             <span className="text-sm font-medium">İlanda görünecek ad</span>
             <input
@@ -421,33 +436,6 @@ function Gate1ApplicationForm() {
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium">İl</span>
-            <select
-              required
-              value={city}
-              onChange={(event) => setCity(event.target.value)}
-              className={`mt-1 ${fieldClass}`}
-            >
-              {locationCities.slice(1).map((province) => (
-                <option key={province}>{province}</option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block">
-            <span className="text-sm font-medium">İlçe</span>
-            <input
-              required
-              minLength={2}
-              maxLength={64}
-              value={district}
-              onChange={(event) => setDistrict(event.target.value)}
-              placeholder="Çorlu"
-              className={`mt-1 ${fieldClass}`}
-            />
-          </label>
-
-          <label className="block">
             <span className="text-sm font-medium">Açıklama</span>
             <textarea
               required
@@ -463,15 +451,25 @@ function Gate1ApplicationForm() {
 
           <button
             type="submit"
-            className="w-full rounded-full bg-primary py-4 text-base font-bold text-primary-foreground hover:bg-primary/90"
+            disabled={!intakeConfigured}
+            className="w-full rounded-full bg-primary py-4 text-base font-bold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             WhatsApp ile başvur
           </button>
           <p className="text-center text-xs text-muted-foreground">
-            Gönderimden sonra ilan otomatik yayınlanmaz; kurallara uygunluğu manuel olarak
-            incelenir.
+            Başvuru ilanı otomatik yayınlamaz. İletişim kontrolü, fotoğraf işleme ve yayın işlemi
+            kurucu tarafından ayrı ayrı tamamlanır.
           </p>
         </form>
+
+        <div className="mt-6 text-center">
+          <Link
+            to="/ilan-kurallari"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
+          >
+            İlan kurallarını görüntüle
+          </Link>
+        </div>
       </main>
     </div>
   );
