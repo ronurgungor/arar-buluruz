@@ -222,8 +222,10 @@ function FounderPilotOperator() {
                 placeholder="0"
               />
             </label>
-            <label htmlFor="operator-contact-channel" className="block">
-              <span className="text-sm font-medium">İletişim kanalı</span>
+            <div className="block">
+              <label htmlFor="operator-contact-channel" className="text-sm font-medium">
+                İletişim kanalı
+              </label>
               <select
                 id="operator-contact-channel"
                 required
@@ -233,7 +235,7 @@ function FounderPilotOperator() {
                 <option value="whatsapp">WhatsApp</option>
                 <option value="phone">Telefon</option>
               </select>
-            </label>
+            </div>
             <label className="block sm:col-span-2">
               <span className="text-sm font-medium">Satıcı telefonu (E.164)</span>
               <input
