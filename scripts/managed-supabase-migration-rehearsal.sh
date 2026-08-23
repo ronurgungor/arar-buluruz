@@ -253,8 +253,8 @@ fi
 # Apply exactly the GitHub-canonical migration chain to the dedicated managed Free source.
 PGSSLMODE=require supabase db push --db-url "$MANAGED_SUPABASE_DB_URL" --include-all --yes
 
-expected_versions="20260730162000 20260808211500 20260809220000 20260810210000 20260822113000"
-actual_versions="$(managed_scalar "select string_agg(version, ' ' order by version) from supabase_migrations.schema_migrations where version in ('20260730162000','20260808211500','20260809220000','20260810210000','20260822113000');")"
+expected_versions="20260730162000 20260808211500 20260809220000 20260810210000 20260822113000 20260823150000"
+actual_versions="$(managed_scalar "select string_agg(version, ' ' order by version) from supabase_migrations.schema_migrations where version in ('20260730162000','20260808211500','20260809220000','20260810210000','20260822113000','20260823150000');")"
 if [[ "$actual_versions" != "$expected_versions" ]]; then
   echo "Managed migration history does not match canonical chain: $actual_versions" >&2
   exit 1
