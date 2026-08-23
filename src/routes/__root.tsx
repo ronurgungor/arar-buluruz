@@ -12,7 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { getRuntimeRobotsDirective } from "../lib/discovery-contract";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { productPhaseLabel } from "../lib/product-phase";
+import { isPilotReleaseCandidate, productPhaseLabel } from "../lib/product-phase";
 
 const buildSignature = import.meta.env.VITE_ARAR_BUILD_SIGNATURE ?? "unresolved";
 
@@ -92,6 +92,12 @@ function ControlledErrorBoundaryProbe() {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => {
     const robotsDirective = getRuntimeRobotsDirective("home");
+    const title = isPilotReleaseCandidate
+      ? "Arar Buluruz — Pilot sürümü"
+      : "Arar Buluruz — V0 test sürümü";
+    const description = isPilotReleaseCandidate
+      ? "Çorlu pilotu için ilan keşfi ve satıcı iletişim akışının release-candidate sürümü."
+      : "Arama ve ilan keşfi deneyimini doğrulayan Arar Buluruz V0 test sürümü. İlanlar örnektir.";
 
     return {
       meta: [
@@ -105,31 +111,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { name: "apple-mobile-web-app-title", content: "Arar Buluruz" },
         { name: "robots", content: robotsDirective },
         { name: "googlebot", content: robotsDirective },
-        { title: "Arar Buluruz — V0 test sürümü" },
-        {
-          name: "description",
-          content:
-            "Arama ve ilan keşfi deneyimini doğrulayan Arar Buluruz V0 test sürümü. İlanlar örnektir.",
-        },
-        {
-          property: "og:title",
-          content: "Arar Buluruz — V0 test sürümü",
-        },
-        {
-          property: "og:description",
-          content:
-            "Arama ve ilan keşfi deneyimini doğrulayan test sürümü. Gerçek hesap veya ilan işlemi bulunmaz.",
-        },
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
         { property: "og:type", content: "website" },
         { name: "twitter:card", content: "summary_large_image" },
-        {
-          name: "twitter:title",
-          content: "Arar Buluruz — V0 test sürümü",
-        },
-        {
-          name: "twitter:description",
-          content: "Arama ve ilan keşfi deneyimini doğrulayan test sürümü. İlanlar örnektir.",
-        },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
         {
           property: "og:image",
           content:
@@ -191,8 +180,17 @@ function RootComponent() {
         data-testid="v0-notice"
         className="border-b border-border bg-accent/70 px-4 py-2 text-center text-xs font-semibold text-accent-foreground"
       >
-        {productPhaseLabel} · İlanlar örnektir; gerçek hesap, ilan gönderimi veya satıcı işlemi
-        yoktur.
+        {isPilotReleaseCandidate ? (
+          <>
+            {productPhaseLabel} · Bu geliştirme ortamında yalnız sentetik test verisi kullanılır;
+            gerçek veri girişi kapalıdır.
+          </>
+        ) : (
+          <>
+            {productPhaseLabel} · İlanlar örnektir; gerçek hesap, ilan gönderimi veya satıcı işlemi
+            yoktur.
+          </>
+        )}
       </div>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />

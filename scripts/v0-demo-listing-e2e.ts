@@ -200,6 +200,11 @@ try {
   await page.waitForURL(new URL("/", baseUrl).toString());
   await page.goBack({ waitUntil: "domcontentloaded" });
   await page.getByRole("heading", { level: 1, name: "Demo ilan oluşturma" }).waitFor();
+  await page.waitForFunction(() => {
+    const input = document.querySelector<HTMLInputElement>('input[placeholder="Kısa ve net yaz"]');
+    return input?.value === "";
+  });
+  await page.getByAltText("Seçilen demo fotoğraf önizlemesi").waitFor({ state: "detached" });
   assert(
     (await page.getByLabel("Başlık").inputValue()) === "",
     "Back navigation restored demo title state.",

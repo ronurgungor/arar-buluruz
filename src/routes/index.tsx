@@ -1,31 +1,30 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Search } from "lucide-react";
-import { cities } from "@/data/listings";
+import { locationCities } from "@/data/turkiye-locations";
 import { Wordmark } from "@/components/Wordmark";
 import { getRuntimeRobotsDirective } from "@/lib/discovery-contract";
+import { isPilotReleaseCandidate } from "@/lib/product-phase";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Arar Buluruz — V0 test sürümü" },
-      {
-        name: "description",
-        content:
-          "Arama ve ilan keşfi deneyimini doğrulayan Arar Buluruz V0 test sürümü. İlanlar örnektir.",
-      },
-      { name: "robots", content: getRuntimeRobotsDirective("home") },
-      {
-        property: "og:title",
-        content: "Arar Buluruz — V0 test sürümü",
-      },
-      {
-        property: "og:description",
-        content:
-          "Arama ve ilan keşfi deneyimini doğrulayan test sürümü. Gerçek hesap veya ilan işlemi bulunmaz.",
-      },
-    ],
-  }),
+  head: () => {
+    const title = isPilotReleaseCandidate
+      ? "Arar Buluruz — Çorlu pilotu"
+      : "Arar Buluruz — V0 test sürümü";
+    const description = isPilotReleaseCandidate
+      ? "Çorlu pilotunda yayındaki ilanları ara ve satıcıyla doğrudan iletişime geç."
+      : "Arama ve ilan keşfi deneyimini doğrulayan Arar Buluruz V0 test sürümü. İlanlar örnektir.";
+
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { name: "robots", content: getRuntimeRobotsDirective("home") },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+      ],
+    };
+  },
   component: Home,
 });
 
@@ -50,14 +49,16 @@ function Home() {
           to="/ilan-ver"
           className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          İlan Ver (demo)
+          {isPilotReleaseCandidate ? "İlan Başvurusu" : "İlan Ver (demo)"}
         </Link>
-        <Link
-          to="/giris"
-          className="inline-flex min-h-11 items-center rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-        >
-          Giriş
-        </Link>
+        {!isPilotReleaseCandidate && (
+          <Link
+            to="/giris"
+            className="inline-flex min-h-11 items-center rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+          >
+            Giriş
+          </Link>
+        )}
       </div>
 
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center pb-24">
@@ -95,7 +96,7 @@ function Home() {
               aria-label="Konum"
               className="h-12 w-full min-w-0 rounded-full border border-border bg-card px-4 text-sm font-medium outline-none focus:border-primary"
             >
-              {cities.map((c) => (
+              {locationCities.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
@@ -110,27 +111,29 @@ function Home() {
           </div>
         </form>
 
-        <div
-          aria-label="Örnek aramalar"
-          className="mt-5 flex flex-wrap items-center justify-center gap-2"
-        >
-          <span className="text-xs font-medium text-muted-foreground">Örnek:</span>
-          {exampleSearches.map((example) => (
-            <button
-              key={example}
-              type="button"
-              onClick={() =>
-                navigate({
-                  to: "/ara",
-                  search: { q: example, il: city, sirala: "yeni" },
-                })
-              }
-              className="min-h-11 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              {example}
-            </button>
-          ))}
-        </div>
+        {!isPilotReleaseCandidate && (
+          <div
+            aria-label="Örnek aramalar"
+            className="mt-5 flex flex-wrap items-center justify-center gap-2"
+          >
+            <span className="text-xs font-medium text-muted-foreground">Örnek:</span>
+            {exampleSearches.map((example) => (
+              <button
+                key={example}
+                type="button"
+                onClick={() =>
+                  navigate({
+                    to: "/ara",
+                    search: { q: example, il: city, sirala: "yeni" },
+                  })
+                }
+                className="min-h-11 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+              >
+                {example}
+              </button>
+            ))}
+          </div>
+        )}
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Hedefimiz: ilan vermek her zaman ücretsiz.

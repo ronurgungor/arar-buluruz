@@ -137,6 +137,9 @@ jobs:
       - name: Rebuild database from migrations
         run: supabase db reset --local --no-seed
 
+      - name: Seed configured private Storage bucket
+        run: supabase seed buckets --local
+
       - name: Run pgTAP database and RLS tests
         run: supabase test db
 
@@ -259,7 +262,7 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/gate1-browsers
         run: bunx playwright install --with-deps chromium
 
-      - name: Run focused desktop and mobile browser E2E
+      - name: Run buyer and founder pilot browser E2E
         shell: bash
         env:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/gate1-browsers
@@ -277,21 +280,28 @@ jobs:
 
           api_url="$(extract_status_value API_URL)"
           anon_key="$(extract_status_value ANON_KEY)"
+          service_role_key="$(extract_status_value SERVICE_ROLE_KEY)"
 
-          if [[ -z "$api_url" || -z "$anon_key" ]]; then
-            echo "Documented local Supabase API_URL or ANON_KEY was not available."
+          if [[ -z "$api_url" || -z "$anon_key" || -z "$service_role_key" ]]; then
+            echo "Documented local Supabase API_URL/ANON_KEY/SERVICE_ROLE_KEY was not available."
             exit 1
           fi
 
           VITE_LISTINGS_SOURCE=supabase \
           VITE_SUPABASE_URL="$api_url" \
           VITE_SUPABASE_ANON_KEY="$anon_key" \
+          VITE_PILOT_INTAKE_E164="+12025550199" \
             bun run build
 
           VITE_LISTINGS_SOURCE=supabase \
           VITE_SUPABASE_URL="$api_url" \
           VITE_SUPABASE_ANON_KEY="$anon_key" \
-            bun run dev -- --host 127.0.0.1 --port 4173 --strictPort \
+          VITE_PILOT_INTAKE_E164="+12025550199" \
+          VITE_PILOT_OPERATOR_UI=enabled \
+          PILOT_OPERATOR_ENABLED=enabled \
+          PILOT_OPERATOR_SUPABASE_URL="$api_url" \
+          PILOT_OPERATOR_SUPABASE_SERVICE_ROLE_KEY="$service_role_key" \
+            bun --bun vite dev --host 127.0.0.1 --port 4173 --strictPort \
               >"$RUNNER_TEMP/gate1-browser-server.log" 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
@@ -308,8 +318,25 @@ jobs:
           done
 
           BASE_URL="http://127.0.0.1:4173" bun scripts/gate1-browser-e2e.ts
+          BASE_URL="http://127.0.0.1:4173" \
+          BACKEND_ORIGIN="$api_url" \
+            bun scripts/pilot-operator-browser-e2e.ts
 
           find test-results/gate1-browser -maxdepth 1 -type f -name '*.png' -print -exec file {} \;
+
+      - name: Verify privileged key stayed server-side
+        shell: bash
+        run: |
+          status_env="$(supabase status -o env)"
+          service_role_key="$(printf '%s\n' "$status_env" | grep '^SERVICE_ROLE_KEY=' | head -n 1)"
+          service_role_key="${service_role_key#*=}"
+          service_role_key="${service_role_key#\"}"
+          service_role_key="${service_role_key%\"}"
+          test -n "$service_role_key"
+          if grep -R --binary-files=without-match -F "$service_role_key" .output test-results/gate1-browser 2>/dev/null; then
+            echo "Service-role credential leaked into a browser artifact."
+            exit 1
+          fi
 
       - name: Upload Gate 1 browser evidence
         if: always()

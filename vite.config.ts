@@ -6,11 +6,19 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-const buildProfiles = ["public-v0", "ci-disabled", "gate1-ephemeral-ci", "development"] as const;
+const buildProfiles = [
+  "public-v0",
+  "pilot-rc",
+  "ci-disabled",
+  "gate1-ephemeral-ci",
+  "development",
+] as const;
 type BuildProfile = (typeof buildProfiles)[number];
 
 const discoveryProfiles = ["closed", "real-content"] as const;
 type DiscoveryProfile = (typeof discoveryProfiles)[number];
+
+const E164_PATTERN = /^\+[1-9][0-9]{7,14}$/;
 
 function failBuildInvariant(message: string): never {
   throw new Error(`[Arar Buluruz build invariant] ${message}`);
@@ -49,10 +57,37 @@ function resolveDiscoveryProfile(): DiscoveryProfile {
   return configuredProfile as DiscoveryProfile;
 }
 
+function requirePilotIntakeContact(): void {
+  const contact = process.env.VITE_PILOT_INTAKE_E164?.trim();
+  if (!contact || !E164_PATTERN.test(contact)) {
+    failBuildInvariant("Pilot release-candidate runtime requires a valid VITE_PILOT_INTAKE_E164.");
+  }
+}
+
+function requireSupabasePublicConfig(): void {
+  const url = process.env.VITE_SUPABASE_URL?.trim();
+  const publicKey =
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ?? process.env.VITE_SUPABASE_ANON_KEY?.trim();
+  if (!url || !publicKey) {
+    failBuildInvariant("Pilot release-candidate runtime requires public Supabase URL and key.");
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    failBuildInvariant("Pilot release-candidate Supabase URL is invalid.");
+  }
+  const isLocal = parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+  if (parsed.protocol !== "https:" && !(isLocal && parsed.protocol === "http:")) {
+    failBuildInvariant("Pilot release-candidate Supabase URL must use HTTPS outside local CI.");
+  }
+}
+
 const buildProfile = resolveBuildProfile();
 const discoveryProfile = resolveDiscoveryProfile();
 const isViteBuild = process.argv.includes("build");
 const listingsSource = process.env.VITE_LISTINGS_SOURCE;
+const pilotOperatorUiEnabled = process.env.VITE_PILOT_OPERATOR_UI === "enabled";
 
 if (buildProfile === "public-v0") {
   if (!isViteBuild) {
@@ -69,6 +104,12 @@ if (buildProfile === "public-v0") {
   if (process.env.VITE_GATE1_TEST_OPERATIONS === "enabled") {
     failBuildInvariant("Public V0 must not enable Gate 1 test operations.");
   }
+  if (pilotOperatorUiEnabled) {
+    failBuildInvariant("Public V0 must not expose the founder operator UI.");
+  }
+  if (process.env.VITE_PILOT_INTAKE_E164?.trim()) {
+    failBuildInvariant("Public V0 must not embed a pilot intake contact.");
+  }
 
   const errorBoundaryProbeEnabled = process.env.VITE_V0_ERROR_BOUNDARY_TEST === "enabled";
   const trustedBrowserTest =
@@ -82,8 +123,32 @@ if (buildProfile === "public-v0") {
     );
   }
 
+  process.env.VITE_ARAR_PRODUCT_PHASE = "v0";
   process.env.VITE_PUBLIC_V0_RUNTIME = "enabled";
-  process.env.VITE_ARAR_BUILD_SIGNATURE = "public-v0|listings=mock|gate1=off";
+  process.env.VITE_ARAR_BUILD_SIGNATURE = "public-v0|listings=mock|gate1=off|operator=off";
+} else if (buildProfile === "pilot-rc") {
+  if (!isViteBuild) {
+    failBuildInvariant("The pilot-rc profile is a release-candidate build profile.");
+  }
+  if (listingsSource !== "supabase") {
+    failBuildInvariant("The pilot-rc profile requires VITE_LISTINGS_SOURCE=supabase.");
+  }
+  if (discoveryProfile !== "closed") {
+    failBuildInvariant("Synthetic pilot RC keeps search-engine discovery closed until activation.");
+  }
+  if (process.env.VITE_GATE1_TEST_OPERATIONS === "enabled") {
+    failBuildInvariant("The pilot-rc profile must not enable Gate 1 test operations.");
+  }
+  if (pilotOperatorUiEnabled) {
+    failBuildInvariant(
+      "The public pilot-rc artifact must not expose the local founder operator UI.",
+    );
+  }
+  requirePilotIntakeContact();
+  requireSupabasePublicConfig();
+  process.env.VITE_ARAR_PRODUCT_PHASE = "pilot-rc";
+  process.env.VITE_PUBLIC_V0_RUNTIME = "disabled";
+  process.env.VITE_ARAR_BUILD_SIGNATURE = "pilot-rc|listings=supabase|gate1=off|operator=off";
 } else if (buildProfile === "ci-disabled") {
   if (!isViteBuild || process.env.CI !== "true") {
     failBuildInvariant("The ci-disabled profile is restricted to CI builds.");
@@ -94,8 +159,12 @@ if (buildProfile === "public-v0") {
   if (process.env.VITE_GATE1_TEST_OPERATIONS === "enabled") {
     failBuildInvariant("The ci-disabled profile must not enable Gate 1 test operations.");
   }
+  if (pilotOperatorUiEnabled) {
+    failBuildInvariant("The ci-disabled profile must not expose the founder operator UI.");
+  }
+  process.env.VITE_ARAR_PRODUCT_PHASE = "v0";
   process.env.VITE_PUBLIC_V0_RUNTIME = "disabled";
-  process.env.VITE_ARAR_BUILD_SIGNATURE = "ci-disabled|listings=disabled|gate1=off";
+  process.env.VITE_ARAR_BUILD_SIGNATURE = "ci-disabled|listings=disabled|gate1=off|operator=off";
 } else if (buildProfile === "gate1-ephemeral-ci") {
   if (process.env.CI !== "true") {
     failBuildInvariant("The gate1-ephemeral-ci profile is restricted to CI.");
@@ -103,6 +172,8 @@ if (buildProfile === "public-v0") {
   if (listingsSource !== "supabase") {
     failBuildInvariant("The gate1-ephemeral-ci profile requires VITE_LISTINGS_SOURCE=supabase.");
   }
+  requireSupabasePublicConfig();
+  requirePilotIntakeContact();
 
   process.env.VITE_GATE1_TEST_OPERATIONS ??= "enabled";
   if (process.env.VITE_GATE1_TEST_OPERATIONS !== "enabled") {
@@ -110,8 +181,9 @@ if (buildProfile === "public-v0") {
       "The gate1-ephemeral-ci profile requires VITE_GATE1_TEST_OPERATIONS=enabled.",
     );
   }
+  process.env.VITE_ARAR_PRODUCT_PHASE = "pilot-rc";
   process.env.VITE_PUBLIC_V0_RUNTIME = "disabled";
-  process.env.VITE_ARAR_BUILD_SIGNATURE = "gate1-ephemeral-ci|listings=supabase|gate1=on";
+  process.env.VITE_ARAR_BUILD_SIGNATURE = `gate1-ephemeral-ci|listings=supabase|gate1=on|operator=${pilotOperatorUiEnabled ? "on" : "off"}`;
 } else {
   const modeIndex = process.argv.indexOf("--mode");
   const isDevelopmentModeBuild = modeIndex >= 0 && process.argv[modeIndex + 1] === "development";
@@ -119,8 +191,18 @@ if (buildProfile === "public-v0") {
     failBuildInvariant("The development profile requires vite --mode development.");
   }
   process.env.VITE_LISTINGS_SOURCE ??= "mock";
+  if (pilotOperatorUiEnabled) {
+    if (process.env.VITE_LISTINGS_SOURCE !== "supabase") {
+      failBuildInvariant("Local founder operator UI requires VITE_LISTINGS_SOURCE=supabase.");
+    }
+    requireSupabasePublicConfig();
+    requirePilotIntakeContact();
+    process.env.VITE_ARAR_PRODUCT_PHASE = "pilot-rc";
+  } else {
+    process.env.VITE_ARAR_PRODUCT_PHASE = "v0";
+  }
   process.env.VITE_PUBLIC_V0_RUNTIME = "disabled";
-  process.env.VITE_ARAR_BUILD_SIGNATURE = `development|listings=${process.env.VITE_LISTINGS_SOURCE}|gate1=off`;
+  process.env.VITE_ARAR_BUILD_SIGNATURE = `development|listings=${process.env.VITE_LISTINGS_SOURCE}|gate1=off|operator=${pilotOperatorUiEnabled ? "on" : "off"}`;
 }
 
 if (discoveryProfile === "real-content" && process.env.VITE_LISTINGS_SOURCE !== "supabase") {
