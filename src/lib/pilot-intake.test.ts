@@ -3,10 +3,7 @@ import { buildPilotIntakeWhatsAppHref, isPilotIntakeConfigured } from "./pilot-i
 
 describe("pilot intake contact", () => {
   test("builds a WhatsApp target from an explicit E.164 intake number", () => {
-    const href = buildPilotIntakeWhatsAppHref(
-      "+12025550199",
-      "Merhaba, sentetik ilan başvurusu.",
-    );
+    const href = buildPilotIntakeWhatsAppHref("+12025550199", "Merhaba, sentetik ilan başvurusu.");
     expect(href).toBe(
       "https://wa.me/12025550199?text=Merhaba%2C%20sentetik%20ilan%20ba%C5%9Fvurusu.",
     );
