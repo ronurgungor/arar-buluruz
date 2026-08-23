@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as NasilCalisirRouteImport } from './routes/nasil-calisir'
+import { Route as KurucuRouteImport } from './routes/kurucu'
 import { Route as IlanVerRouteImport } from './routes/ilan-ver'
 import { Route as IlanKurallariRouteImport } from './routes/ilan-kurallari'
 import { Route as GuvenliKullanimRouteImport } from './routes/guvenli-kullanim'
@@ -29,6 +30,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const NasilCalisirRoute = NasilCalisirRouteImport.update({
   id: '/nasil-calisir',
   path: '/nasil-calisir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KurucuRoute = KurucuRouteImport.update({
+  id: '/kurucu',
+  path: '/kurucu',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IlanVerRoute = IlanVerRouteImport.update({
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/guvenli-kullanim': typeof GuvenliKullanimRoute
   '/ilan-kurallari': typeof IlanKurallariRoute
   '/ilan-ver': typeof IlanVerRoute
+  '/kurucu': typeof KurucuRoute
   '/nasil-calisir': typeof NasilCalisirRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ilan/$id': typeof IlanIdRoute
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/guvenli-kullanim': typeof GuvenliKullanimRoute
   '/ilan-kurallari': typeof IlanKurallariRoute
   '/ilan-ver': typeof IlanVerRoute
+  '/kurucu': typeof KurucuRoute
   '/nasil-calisir': typeof NasilCalisirRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ilan/$id': typeof IlanIdRoute
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/guvenli-kullanim': typeof GuvenliKullanimRoute
   '/ilan-kurallari': typeof IlanKurallariRoute
   '/ilan-ver': typeof IlanVerRoute
+  '/kurucu': typeof KurucuRoute
   '/nasil-calisir': typeof NasilCalisirRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ilan/$id': typeof IlanIdRoute
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/guvenli-kullanim'
     | '/ilan-kurallari'
     | '/ilan-ver'
+    | '/kurucu'
     | '/nasil-calisir'
     | '/sitemap.xml'
     | '/ilan/$id'
@@ -140,6 +150,7 @@ export interface FileRouteTypes {
     | '/guvenli-kullanim'
     | '/ilan-kurallari'
     | '/ilan-ver'
+    | '/kurucu'
     | '/nasil-calisir'
     | '/sitemap.xml'
     | '/ilan/$id'
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
     | '/guvenli-kullanim'
     | '/ilan-kurallari'
     | '/ilan-ver'
+    | '/kurucu'
     | '/nasil-calisir'
     | '/sitemap.xml'
     | '/ilan/$id'
@@ -167,6 +179,7 @@ export interface RootRouteChildren {
   GuvenliKullanimRoute: typeof GuvenliKullanimRoute
   IlanKurallariRoute: typeof IlanKurallariRoute
   IlanVerRoute: typeof IlanVerRoute
+  KurucuRoute: typeof KurucuRoute
   NasilCalisirRoute: typeof NasilCalisirRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   IlanIdRoute: typeof IlanIdRoute
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/nasil-calisir'
       fullPath: '/nasil-calisir'
       preLoaderRoute: typeof NasilCalisirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kurucu': {
+      id: '/kurucu'
+      path: '/kurucu'
+      fullPath: '/kurucu'
+      preLoaderRoute: typeof KurucuRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ilan-ver': {
@@ -263,6 +283,7 @@ const rootRouteChildren: RootRouteChildren = {
   GuvenliKullanimRoute: GuvenliKullanimRoute,
   IlanKurallariRoute: IlanKurallariRoute,
   IlanVerRoute: IlanVerRoute,
+  KurucuRoute: KurucuRoute,
   NasilCalisirRoute: NasilCalisirRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   IlanIdRoute: IlanIdRoute,
