@@ -357,7 +357,9 @@ function PilotApplicationForm() {
         </p>
 
         <div className="mt-4 rounded-xl border border-border bg-accent/40 p-3 text-sm">
-          <p className="font-semibold">Pilot konumu: {PILOT_PROVINCE} / {PILOT_DISTRICT}</p>
+          <p className="font-semibold">
+            Pilot konumu: {PILOT_PROVINCE} / {PILOT_DISTRICT}
+          </p>
           <p className="mt-1 text-xs text-muted-foreground">
             Fotoğrafları WhatsApp görüşmesinde paylaşabilirsiniz. Orijinal dosyalar doğrudan public
             Storage’a alınmaz; kurucu yayın öncesinde sanitize edilmiş WebP kopyasını yükler.
@@ -365,7 +367,10 @@ function PilotApplicationForm() {
         </div>
 
         {error && (
-          <p role="alert" className="mt-4 rounded-xl border border-destructive/40 p-3 text-sm text-destructive">
+          <p
+            role="alert"
+            className="mt-4 rounded-xl border border-destructive/40 p-3 text-sm text-destructive"
+          >
             {error}
           </p>
         )}
