@@ -43,8 +43,9 @@ Target operating model after later gates pass:
 ### Now
 
 - repository/local-CI development;
-- dedicated founder-owned Supabase Free project may be used only for synthetic/mock development after its separate `Arar Buluruz` organization exists;
-- the existing `tarladan` Supabase organization is out of scope and must remain untouched;
+- isolated founder-owned `Arar Buluruz / arar-buluruz-synthetic-dev` Supabase **Free** project is available for synthetic/mock development and portability evidence only;
+- project ref: `rzosrvenlvhijeckmwyc`, region `eu-central-1` / Frankfurt;
+- the existing `tarladan` Supabase organization/projects are out of scope and remain untouched;
 - production backend OFF;
 - no real personal data/users/listings/photos;
 - AWS OFF;
@@ -53,7 +54,7 @@ Target operating model after later gates pass:
 
 ### Before real data
 
-The repository now has synthetic/local evidence for:
+The repository now has passing synthetic evidence for:
 
 - reproducible PostgreSQL 17 migrations;
 - fail-closed RLS/grants and negative tests;
@@ -64,9 +65,10 @@ The repository now has synthetic/local evidence for:
 - exact self-hosted Supabase release/image pinning;
 - separate self-host Docker target migration/restore;
 - source rollback after destroying the target;
-- loopback-only self-host rehearsal exposure and secret/default checks.
+- loopback-only self-host rehearsal exposure and secret/default checks;
+- **real dedicated managed Supabase Free → exact pinned self-host DB + Storage migration and rollback**.
 
-The remaining provider-specific portability checkpoint is the same rehearsal from a **real dedicated managed Supabase Free project** once `Arar Buluruz / arar-buluruz-synthetic-dev` can be created safely. This must never be substituted with a project inside `tarladan`.
+The final hosted provider-specific portability checkpoint passed in GitHub Actions run `32638398176` on exact `main` SHA `2f86ec41cb2b6dd3f51d2ac3999a0739ffd32469`. Issue #66 is **CLOSED / COMPLETED**.
 
 Separate privacy/legal and actual production network/TLS/backup-residency gates remain required before real data.
 
@@ -91,7 +93,8 @@ Contains the public V0 plus inactive preparation for:
 - lifecycle-gated public signed-photo delivery;
 - logical DB backup/clean restore/application verification;
 - separate Storage object backup/restore;
-- pinned self-host migration/restore and rollback rehearsal.
+- pinned self-host migration/restore and rollback rehearsal;
+- dedicated hosted managed Free → pinned self-host portability proof.
 
 ### Public V0
 
@@ -108,11 +111,13 @@ Repository merges do not automatically authorize a Lovable Publish/Update or ano
 
 ## Photo and Storage readiness
 
-The public Supabase listing adapter now supports buyer-visible photos from the private `listing_photos` bucket through lifecycle-gated, short-lived signed URLs without exposing service-role secrets.
+The public Supabase listing adapter supports buyer-visible photos from the private `listing_photos` bucket through lifecycle-gated, short-lived signed URLs without exposing service-role secrets.
 
-Synthetic migration/restore rehearsal separately verifies both database state and Storage object bytes. The pinned self-host test fixture is restored as exactly one 72-byte WebP object and the application verifies SHA-256:
+Synthetic migration/restore rehearsal separately verifies both database state and Storage object bytes. The canonical fixture is exactly one 72-byte WebP object and the application verifies SHA-256:
 
 `fd89cface8e12174fb1c6e78c0a8b0b26be925820eed38713ff1d921d5f969df`
+
+The same object/hash contract passed both the local self-host rehearsal and the live dedicated managed-Supabase → pinned-self-host rehearsal.
 
 Database restore must still not be presented as equivalent to Storage-object restore; they are deliberately separate backup/verification paths.
 
@@ -127,7 +132,12 @@ Current tested synthetic target is pinned to:
 - PostgREST `postgrest/postgrest:v14.12`;
 - Envoy `envoyproxy/envoy:v1.39.0`.
 
-The local synthetic source → separate pinned target → target verification → target destruction → source rollback sequence has passed CI. This is not yet the final hosted-managed Supabase Free → self-host proof; that remains the dedicated-project checkpoint described above.
+Both portability paths have passed:
+
+- local synthetic source → separate pinned target → target verification → target destruction → source rollback;
+- dedicated hosted Supabase Free synthetic source → the same pinned target → target verification → target destruction → managed-source rollback verification.
+
+The previous provider-specific checkpoint is therefore complete.
 
 ## Technology
 
