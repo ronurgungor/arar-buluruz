@@ -66,9 +66,7 @@ function requirePilotIntakeContact(): void {
 
 function requireSupabasePublicConfig(): void {
   const url = process.env.VITE_SUPABASE_URL?.trim();
-  const publicKey =
-    process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ??
-    process.env.VITE_SUPABASE_ANON_KEY?.trim();
+  const publicKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ?? process.env.VITE_SUPABASE_ANON_KEY?.trim();
   if (!url || !publicKey) {
     failBuildInvariant("Pilot release-candidate runtime requires public Supabase URL and key.");
   }
@@ -141,7 +139,9 @@ if (buildProfile === "public-v0") {
     failBuildInvariant("The pilot-rc profile must not enable Gate 1 test operations.");
   }
   if (pilotOperatorUiEnabled) {
-    failBuildInvariant("The public pilot-rc artifact must not expose the local founder operator UI.");
+    failBuildInvariant(
+      "The public pilot-rc artifact must not expose the local founder operator UI.",
+    );
   }
   requirePilotIntakeContact();
   requireSupabasePublicConfig();
