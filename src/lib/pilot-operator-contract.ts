@@ -48,8 +48,5 @@ export type PilotOperatorFailure = {
 export type PilotOperatorResponse = PilotOperatorSuccess | PilotOperatorFailure;
 
 export function isPilotListingStatus(value: unknown): value is PilotListingStatus {
-  return (
-    typeof value === "string" &&
-    (PILOT_LISTING_STATUSES as readonly string[]).includes(value)
-  );
+  return typeof value === "string" && (PILOT_LISTING_STATUSES as readonly string[]).includes(value);
 }
