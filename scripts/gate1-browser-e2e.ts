@@ -10,7 +10,7 @@ const expectedPublicWhatsAppPath = "/12025550123";
 const expectedIntakeWhatsAppPath = "/12025550199";
 const whatsappUrlPattern = /^https:\/\/wa\.me\//;
 const expectedNotFoundConsoleError =
-  "console: Failed to load resource: the server responded with a status of 404 ()";
+  "console: Failed to load resource: the server responded with a status of 404 (Not Found)";
 const resultsDir = path.resolve("test-results/gate1-browser");
 fs.mkdirSync(resultsDir, { recursive: true });
 
