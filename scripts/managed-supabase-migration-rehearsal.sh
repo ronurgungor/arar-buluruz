@@ -130,7 +130,7 @@ application_fingerprint() {
     select md5(
       coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from public.listings x), '[]') || E'\\n' ||
       coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from private.listing_photos x), '[]') || E'\\n' ||
-      coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from private.listing_external_sales_links x), '[]')
+      coalesce((select jsonb_agg(to_jsonb(x) order by x.listing_id)::text from private.listing_external_sales_links x), '[]')
     );
   "
 }
