@@ -222,9 +222,14 @@ function FounderPilotOperator() {
                 placeholder="0"
               />
             </label>
-            <label className="block">
+            <label htmlFor="operator-contact-channel" className="block">
               <span className="text-sm font-medium">İletişim kanalı</span>
-              <select required name="contactChannel" className={`mt-1 ${fieldClass}`}>
+              <select
+                id="operator-contact-channel"
+                required
+                name="contactChannel"
+                className={`mt-1 ${fieldClass}`}
+              >
                 <option value="whatsapp">WhatsApp</option>
                 <option value="phone">Telefon</option>
               </select>
