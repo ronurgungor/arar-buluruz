@@ -263,11 +263,8 @@ async function runProfile(browser: Browser, profile: BrowserProfile) {
     `${profile.name} listing application did not disclose manual publication.`,
   );
   assert(
-    (
-      await page
-        .getByText("Fotoğraf yükleme ilk pilotta kapalıdır", { exact: false })
-        .count()
-    ) === 0,
+    (await page.getByText("Fotoğraf yükleme ilk pilotta kapalıdır", { exact: false }).count()) ===
+      0,
     `${profile.name} listing application still presents the obsolete zero-photo workaround.`,
   );
 
