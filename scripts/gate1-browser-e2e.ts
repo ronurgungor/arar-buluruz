@@ -7,6 +7,7 @@ const visibleListingId = "00000000-0000-4000-8000-000000000101";
 const draftListingId = "00000000-0000-4000-8000-000000000102";
 const expiredListingId = "00000000-0000-4000-8000-000000000103";
 const expectedPublicWhatsAppPath = "/12025550123";
+const expectedIntakeWhatsAppPath = "/12025550199";
 const whatsappUrlPattern = /^https:\/\/wa\.me\//;
 const expectedNotFoundConsoleError =
   "console: Failed to load resource: the server responded with a status of 404 ()";
@@ -258,8 +259,12 @@ async function runProfile(browser: Browser, profile: BrowserProfile) {
   await page.goto(`${baseUrl}/ilan-ver`, { waitUntil: "networkidle" });
   await page.getByRole("heading", { level: 1, name: "İlan Başvurusu" }).waitFor();
   assert(
-    (await page.getByText("Bu form veritabanına kayıt yazmaz.", { exact: false }).count()) === 1,
-    `${profile.name} listing application did not disclose the no-database-write boundary.`,
+    (await page.getByText("Başvuru ilanı otomatik yayınlamaz.", { exact: false }).count()) === 1,
+    `${profile.name} listing application did not disclose manual publication.`,
+  );
+  assert(
+    (await page.getByText("Fotoğraf yükleme ilk pilotta kapalıdır", { exact: false }).count()) === 0,
+    `${profile.name} listing application still presents the obsolete zero-photo workaround.`,
   );
 
   const sellerName = `${profile.name} E2E Satıcı`;
@@ -272,8 +277,6 @@ async function runProfile(browser: Browser, profile: BrowserProfile) {
   await page.getByLabel("İlanda görünecek ad", { exact: true }).fill(sellerName);
   await page.getByLabel("Başlık", { exact: true }).fill(listingTitle);
   await page.getByLabel("Fiyat (TL)", { exact: true }).fill(listingPrice);
-  await page.getByRole("combobox").selectOption({ label: listingProvince });
-  await page.getByLabel("İlçe", { exact: true }).fill(listingDistrict);
   await page.getByLabel("Açıklama", { exact: true }).fill(listingDescription);
 
   const applicationHref = await captureWhatsAppNavigation(
@@ -281,6 +284,11 @@ async function runProfile(browser: Browser, profile: BrowserProfile) {
     () => page.getByRole("button", { name: "WhatsApp ile başvur" }).click(),
     profile.name,
     "listing application",
+  );
+  const applicationUrl = new URL(applicationHref);
+  assert(
+    applicationUrl.pathname === expectedIntakeWhatsAppPath,
+    `${profile.name} listing application did not use the explicit synthetic pilot intake number.`,
   );
   const applicationMessage = readWhatsAppMessage(
     applicationHref,
