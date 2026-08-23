@@ -98,8 +98,7 @@ page.on("request", (request) => {
     (url.pathname === "/rest/v1/listings" && request.method() !== "GET") ||
     url.pathname.endsWith("/rpc/register_sanitized_listing_photo") ||
     url.pathname.endsWith("/rpc/get_listing_photo_inventory") ||
-    (url.pathname.startsWith("/storage/v1/object/listing_photos") &&
-      request.method() !== "GET");
+    (url.pathname.startsWith("/storage/v1/object/listing_photos") && request.method() !== "GET");
   if (sensitive) sensitiveBrowserMutations.push(`${request.method()} ${url.pathname}`);
 });
 
@@ -135,16 +134,30 @@ try {
 
   const card = page.locator("li").filter({ hasText: title });
   await card.waitFor();
-  assert((await card.getByText("İncelemede", { exact: true }).count()) === 1, "Created listing is not pending.");
-  assert((await card.getByText(/1 fotoğraf/).count()) === 1, "Created listing does not have exactly one photo metadata row.");
+  assert(
+    (await card.getByText("İncelemede", { exact: true }).count()) === 1,
+    "Created listing is not pending.",
+  );
+  assert(
+    (await card.getByText(/1 fotoğraf/).count()) === 1,
+    "Created listing does not have exactly one photo metadata row.",
+  );
   const testId = await card.getAttribute("data-testid");
-  assert(testId?.startsWith("operator-listing-"), "Operator listing card did not expose its synthetic test identity.");
+  assert(
+    testId?.startsWith("operator-listing-"),
+    "Operator listing card did not expose its synthetic test identity.",
+  );
   const listingId = testId.slice("operator-listing-".length);
 
   await page.screenshot({ path: path.join(resultsDir, "operator-pending.png"), fullPage: true });
 
-  const pendingResponse = await page.goto(`${baseUrl}/ilan/${listingId}`, { waitUntil: "networkidle" });
-  assert(pendingResponse?.status() === 404, "Pending operator listing became publicly readable before publication.");
+  const pendingResponse = await page.goto(`${baseUrl}/ilan/${listingId}`, {
+    waitUntil: "networkidle",
+  });
+  assert(
+    pendingResponse?.status() === 404,
+    "Pending operator listing became publicly readable before publication.",
+  );
   runtimeErrors.splice(0, runtimeErrors.length);
 
   await page.goto(`${baseUrl}/kurucu`, { waitUntil: "networkidle" });
@@ -153,10 +166,17 @@ try {
   const pendingCard = page.locator("li").filter({ hasText: title });
   await pendingCard.getByRole("button", { name: "Yayınla" }).click();
   await page.getByText("İlan yayınlandı.", { exact: true }).waitFor();
-  await page.locator("li").filter({ hasText: title }).getByText("Yayında", { exact: true }).waitFor();
+  await page
+    .locator("li")
+    .filter({ hasText: title })
+    .getByText("Yayında", { exact: true })
+    .waitFor();
 
   await page.goto(`${baseUrl}/ara?q=operator`, { waitUntil: "networkidle" });
-  await page.getByRole("link", { name: new RegExp(title) }).first().waitFor();
+  await page
+    .getByRole("link", { name: new RegExp(title) })
+    .first()
+    .waitFor();
   const collectionPhoto = page.getByAltText(title).first();
   await collectionPhoto.waitFor();
   const collectionSrc = await collectionPhoto.getAttribute("src");
@@ -188,7 +208,10 @@ try {
     contactHref === `https://wa.me/${contactE164.slice(1)}`,
     `Published seller contact did not match lifecycle-approved E.164 value: ${contactHref}`,
   );
-  await page.screenshot({ path: path.join(resultsDir, "operator-published-detail.png"), fullPage: true });
+  await page.screenshot({
+    path: path.join(resultsDir, "operator-published-detail.png"),
+    fullPage: true,
+  });
 
   await page.goto(`${baseUrl}/kurucu`, { waitUntil: "networkidle" });
   await page
@@ -198,7 +221,9 @@ try {
     .click();
   await page.getByText("İlan yayından kaldırıldı.", { exact: true }).waitFor();
 
-  const unpublishedResponse = await page.goto(`${baseUrl}/ilan/${listingId}`, { waitUntil: "networkidle" });
+  const unpublishedResponse = await page.goto(`${baseUrl}/ilan/${listingId}`, {
+    waitUntil: "networkidle",
+  });
   assert(unpublishedResponse?.status() === 404, "Unpublished listing remained publicly readable.");
   assert(
     (await page.getByRole("link", { name: "WhatsApp’tan yaz" }).count()) === 0,
@@ -230,7 +255,10 @@ try {
     sensitiveBrowserMutations.length === 0,
     `Browser directly performed privileged backend mutations: ${sensitiveBrowserMutations.join(" | ")}`,
   );
-  assert(runtimeErrors.length === 0, `Operator browser runtime errors: ${runtimeErrors.join(" | ")}`);
+  assert(
+    runtimeErrors.length === 0,
+    `Operator browser runtime errors: ${runtimeErrors.join(" | ")}`,
+  );
   console.log("Pilot operator app-UI create/photo/publish/unpublish/delete E2E passed.");
 } finally {
   await context.close();
