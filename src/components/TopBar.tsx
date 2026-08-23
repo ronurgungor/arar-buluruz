@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Wordmark } from "@/components/Wordmark";
+import { isPilotReleaseCandidate } from "@/lib/product-phase";
 
 export function TopBar() {
   return (
@@ -17,14 +18,16 @@ export function TopBar() {
             to="/ilan-ver"
             className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            İlan Ver
+            {isPilotReleaseCandidate ? "İlan Başvurusu" : "İlan Ver"}
           </Link>
-          <Link
-            to="/giris"
-            className="inline-flex min-h-11 items-center rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-          >
-            Giriş
-          </Link>
+          {!isPilotReleaseCandidate && (
+            <Link
+              to="/giris"
+              className="inline-flex min-h-11 items-center rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+            >
+              Giriş
+            </Link>
+          )}
         </nav>
       </div>
     </header>
