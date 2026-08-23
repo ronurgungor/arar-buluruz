@@ -378,9 +378,7 @@ function FounderPilotOperator() {
                     {(listing.status === "pending" || listing.status === "unpublished") && (
                       <button
                         type="button"
-                        disabled={
-                          busyId !== null || !contactConfirmed || !publicationConfirmed
-                        }
+                        disabled={busyId !== null || !contactConfirmed || !publicationConfirmed}
                         onClick={() => void runListingAction("publish", listing.id)}
                         className="min-h-11 rounded-full bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-40"
                       >
