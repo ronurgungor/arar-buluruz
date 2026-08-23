@@ -1,7 +1,4 @@
-import {
-  LISTING_PHOTO_MAX_BYTES,
-  buildListingPhotoObjectPath,
-} from "./listing-photo";
+import { LISTING_PHOTO_MAX_BYTES, buildListingPhotoObjectPath } from "./listing-photo";
 import {
   ingestTrustedListingPhoto,
   type TrustedListingPhotoIngestionStore,
@@ -15,12 +12,8 @@ import {
   type PilotOperatorResponse,
 } from "./pilot-operator-contract";
 
-const TARLADAN_PROJECT_REFS = new Set([
-  "jlbsoraqnlricbyagxdk",
-  "gwgrwwvaiizfsqaacnhf",
-]);
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const TARLADAN_PROJECT_REFS = new Set(["jlbsoraqnlricbyagxdk", "gwgrwwvaiizfsqaacnhf"]);
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const E164_PATTERN = /^\+[1-9][0-9]{7,14}$/;
 const PRICE_PATTERN = /^\d{1,10}(?:[.,]\d{1,2})?$/;
 const MAX_PILOT_PHOTOS = 8;
@@ -112,10 +105,7 @@ function assertLocalSameOriginRequest(request: Request): void {
 
   const connectingIp = request.headers.get("cf-connecting-ip");
   if (connectingIp && !isLoopbackAddress(connectingIp)) {
-    throw new PilotOperatorError(
-      "LOCAL_ONLY",
-      "Kurucu işlem yüzeyi dış ağ istemcisi kabul etmez.",
-    );
+    throw new PilotOperatorError("LOCAL_ONLY", "Kurucu işlem yüzeyi dış ağ istemcisi kabul etmez.");
   }
 
   const origin = request.headers.get("origin");
@@ -133,10 +123,7 @@ function assertLocalSameOriginRequest(request: Request): void {
     throw new PilotOperatorError("LOCAL_ONLY", "Geçersiz kurucu işlem origin bilgisi.");
   }
   if (originUrl.origin !== requestUrl.origin) {
-    throw new PilotOperatorError(
-      "LOCAL_ONLY",
-      "Kurucu işlemleri cross-origin isteği kabul etmez.",
-    );
+    throw new PilotOperatorError("LOCAL_ONLY", "Kurucu işlemleri cross-origin isteği kabul etmez.");
   }
 
   const fetchSite = request.headers.get("sec-fetch-site");
@@ -166,7 +153,10 @@ function readBackendConfig(): BackendConfig {
   try {
     url = new URL(rawUrl);
   } catch {
-    throw new PilotOperatorError("BACKEND_UNAVAILABLE", "Kurucu backend URL yapılandırması geçersiz.");
+    throw new PilotOperatorError(
+      "BACKEND_UNAVAILABLE",
+      "Kurucu backend URL yapılandırması geçersiz.",
+    );
   }
 
   const isLocalBackend = isLoopbackHost(url.hostname);
@@ -255,7 +245,10 @@ function requiredE164(form: FormData): string {
 function requiredPrice(form: FormData): number {
   const raw = requiredString(form, "price", { min: 1, max: 14 });
   if (!PRICE_PATTERN.test(raw)) {
-    throw new PilotOperatorError("INVALID_REQUEST", "Fiyat en fazla iki ondalık basamak içermelidir.");
+    throw new PilotOperatorError(
+      "INVALID_REQUEST",
+      "Fiyat en fazla iki ondalık basamak içermelidir.",
+    );
   }
   const parsed = Number(raw.replace(",", "."));
   if (!Number.isFinite(parsed) || parsed < 0 || parsed > 9_999_999_999.99) {
@@ -284,7 +277,10 @@ function requiredPhoto(form: FormData): File {
   return value;
 }
 
-async function fetchListing(config: BackendConfig, listingId: string): Promise<BackendListingRow | null> {
+async function fetchListing(
+  config: BackendConfig,
+  listingId: string,
+): Promise<BackendListingRow | null> {
   const url = new URL(`${config.baseUrl}/rest/v1/listings`);
   url.searchParams.set("id", `eq.${listingId}`);
   url.searchParams.set(
@@ -411,18 +407,15 @@ function createIngestionStore(config: BackendConfig): TrustedListingPhotoIngesti
   return {
     async uploadSanitizedObject(input) {
       await requireOk(
-        await fetch(
-          `${storageBase}/object/listing_photos/${encodeObjectPath(input.objectPath)}`,
-          {
-            method: "POST",
-            headers: {
-              ...serviceHeaders(config, input.mimeType),
-              "cache-control": "max-age=60",
-              "x-upsert": "false",
-            },
-            body: input.bytes,
+        await fetch(`${storageBase}/object/listing_photos/${encodeObjectPath(input.objectPath)}`, {
+          method: "POST",
+          headers: {
+            ...serviceHeaders(config, input.mimeType),
+            "cache-control": "max-age=60",
+            "x-upsert": "false",
           },
-        ),
+          body: input.bytes,
+        }),
         "operator sanitized photo upload",
       );
     },
@@ -457,10 +450,7 @@ function createIngestionStore(config: BackendConfig): TrustedListingPhotoIngesti
   };
 }
 
-async function createPendingListing(
-  config: BackendConfig,
-  form: FormData,
-): Promise<string> {
+async function createPendingListing(config: BackendConfig, form: FormData): Promise<string> {
   const sellerDisplayName = requiredString(form, "sellerDisplayName", { min: 2, max: 80 });
   const title = requiredString(form, "title", { min: 3, max: 120 });
   const description = requiredString(form, "description", { min: 10, max: 5000 });
@@ -606,7 +596,10 @@ async function unpublishListing(config: BackendConfig, form: FormData): Promise<
   const listingId = requiredUuid(form);
   const listing = await fetchListing(config, listingId);
   if (!listing || listing.status !== "published") {
-    throw new PilotOperatorError("INVALID_STATE", "Yalnız yayınlanmış ilan yayından kaldırılabilir.");
+    throw new PilotOperatorError(
+      "INVALID_STATE",
+      "Yalnız yayınlanmış ilan yayından kaldırılabilir.",
+    );
   }
   await patchListing(
     config,
@@ -644,10 +637,9 @@ async function deleteStoredPhotos(
   );
 
   for (const path of paths) {
-    const probe = await fetch(
-      `${storageBase}/object/listing_photos/${encodeObjectPath(path)}`,
-      { headers: serviceHeaders(config, "application/octet-stream") },
-    );
+    const probe = await fetch(`${storageBase}/object/listing_photos/${encodeObjectPath(path)}`, {
+      headers: serviceHeaders(config, "application/octet-stream"),
+    });
     if (probe.ok) {
       throw new Error(`Storage deletion verification failed for ${path}.`);
     }
@@ -683,7 +675,9 @@ async function hardDeleteListing(config: BackendConfig, form: FormData): Promise
   }
   const remainingInventory = await fetchPhotoInventory(config, listingId);
   if (remainingInventory.length !== 0) {
-    throw new Error("Hard listing deletion verification found private photo metadata after delete.");
+    throw new Error(
+      "Hard listing deletion verification found private photo metadata after delete.",
+    );
   }
 
   return listingId;
