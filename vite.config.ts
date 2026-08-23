@@ -66,7 +66,8 @@ function requirePilotIntakeContact(): void {
 
 function requireSupabasePublicConfig(): void {
   const url = process.env.VITE_SUPABASE_URL?.trim();
-  const publicKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ?? process.env.VITE_SUPABASE_ANON_KEY?.trim();
+  const publicKey =
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ?? process.env.VITE_SUPABASE_ANON_KEY?.trim();
   if (!url || !publicKey) {
     failBuildInvariant("Pilot release-candidate runtime requires public Supabase URL and key.");
   }
