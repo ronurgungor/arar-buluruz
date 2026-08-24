@@ -308,6 +308,7 @@ try {
       operatorPostResponse.status() === 404,
       `public pilot-rc POST /kurucu returned ${operatorPostResponse.status()}.`,
     );
+    runtimeErrors.length = 0;
 
     await page.goto(`${baseUrl}/ilan-ver`, { waitUntil: "networkidle" });
     await page.getByRole("heading", { level: 1, name: "İlan Başvurusu" }).waitFor();
@@ -383,6 +384,10 @@ try {
     await page.goto(`${baseUrl}/ara?q=hosted-rc-empty-74a1`, { waitUntil: "networkidle" });
     await page.getByText("Sonuç bulunamadı", { exact: true }).first().waitFor();
     await assertNoHorizontalOverflow(page, "empty state desktop");
+    assert(
+      runtimeErrors.length === 0,
+      `pilot-rc positive desktop runtime errors: ${runtimeErrors.join(" | ")}`,
+    );
 
     await page.goto(baseUrl, { waitUntil: "networkidle" });
     await page.route(`${backendOrigin}/**`, (route) => route.abort("failed"));
@@ -393,11 +398,7 @@ try {
       .getByText("İlanlar şu anda güvenli biçimde yüklenemiyor.", { exact: false })
       .waitFor();
     await page.unroute(`${backendOrigin}/**`);
-
-    assert(
-      runtimeErrors.length === 0,
-      `pilot-rc desktop runtime errors: ${runtimeErrors.join(" | ")}`,
-    );
+    runtimeErrors.length = 0;
     await desktop.close();
 
     const mobile = await browser.newContext({
@@ -453,7 +454,10 @@ try {
     try {
       await offlinePage.goto(baseUrl, { waitUntil: "networkidle" });
       const initialSnapshot = await ensureServiceWorkerControl(offlinePage);
-      assert(initialSnapshot.secureContext, "pilot-rc offline proof did not run in a secure context.");
+      assert(
+        initialSnapshot.secureContext,
+        "pilot-rc offline proof did not run in a secure context.",
+      );
       assert(
         initialSnapshot.registrations.length === 1,
         `pilot-rc offline proof saw unexpected service worker registrations: ${JSON.stringify(initialSnapshot.registrations)}.`,
