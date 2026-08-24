@@ -153,6 +153,14 @@ try {
       operatorResponse?.status() === 404,
       `public pilot-rc /kurucu returned ${operatorResponse?.status()}.`,
     );
+    const operatorPostResponse = await desktop.request.post(`${baseUrl}/kurucu`, {
+      form: { action: "list" },
+      failOnStatusCode: false,
+    });
+    assert(
+      operatorPostResponse.status() === 404,
+      `public pilot-rc POST /kurucu returned ${operatorPostResponse.status()}.`,
+    );
 
     await page.goto(`${baseUrl}/ilan-ver`, { waitUntil: "networkidle" });
     await page.getByRole("heading", { level: 1, name: "İlan Başvurusu" }).waitFor();
@@ -225,7 +233,7 @@ try {
     await desktop.setOffline(true);
     await page.goto(`${baseUrl}/ara?q=offline-proof`, { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { level: 1, name: "Bağlantı yok" }).waitFor();
-    await page.getByText("Dinamik ilanlar çevrimdışı saklanmaz.", { exact: false }).waitFor();
+    await page.getByText("dinamik ilanları çevrimdışı saklamaz", { exact: false }).waitFor();
     assert(
       (await page.getByText(baselineTitle, { exact: true }).count()) === 0,
       "Offline fallback exposed stale dynamic listing data.",
