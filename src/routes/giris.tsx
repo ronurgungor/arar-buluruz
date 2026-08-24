@@ -1,18 +1,22 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { TopBar } from "@/components/TopBar";
+import { isPilotReleaseCandidate } from "@/lib/product-phase";
 
 export const Route = createFileRoute("/giris")({
+  beforeLoad: () => {
+    if (isPilotReleaseCandidate) throw notFound();
+  },
   head: () => ({
     meta: [
-      { title: "Giriş demosu — Arar Buluruz" },
+      { title: "Giriş — Arar Buluruz" },
       {
         name: "description",
-        content: "V0 test sürümünde gerçek kullanıcı hesabı ve giriş işlemi bulunmaz.",
+        content: "Bu sürümde kullanıcı hesabı veya giriş işlemi bulunmaz.",
       },
-      { property: "og:title", content: "Giriş demosu — Arar Buluruz" },
+      { property: "og:title", content: "Giriş — Arar Buluruz" },
       {
         property: "og:description",
-        content: "V0 test sürümünde hesap açma veya giriş işlemi yapılmaz.",
+        content: "Bu sürümde hesap açma veya giriş işlemi yapılmaz.",
       },
     ],
   }),
