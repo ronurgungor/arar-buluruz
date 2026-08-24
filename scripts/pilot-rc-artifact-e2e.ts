@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { chromium, type BrowserContext, type Page } from "playwright";
@@ -10,12 +11,54 @@ const serverEntry = path.resolve(".output/server/index.mjs");
 if (!(await Bun.file(serverEntry).exists())) {
   throw new Error("pilot-rc production artifact is missing.");
 }
+const manifestPath = path.resolve(".output/public/manifest.webmanifest");
+if (!(await Bun.file(manifestPath).exists())) {
+  throw new Error("pilot-rc finalized manifest is missing.");
+}
+const diskManifestBytes = Buffer.from(await Bun.file(manifestPath).arrayBuffer());
+const diskManifestText = diskManifestBytes.toString("utf8");
+const diskManifest = JSON.parse(diskManifestText) as Record<string, unknown>;
+const diskManifestSha256 = createHash("sha256").update(diskManifestBytes).digest("hex");
+console.log(
+  `pilot-rc disk manifest JSON.parse passed: ${diskManifestBytes.byteLength} bytes, sha256=${diskManifestSha256}.`,
+);
+
 const resultsDir = path.resolve("test-results/hosted-rc");
 fs.mkdirSync(resultsDir, { recursive: true });
 
 function assert(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
+
+function assertManifestFields(manifest: Record<string, unknown>, label: string) {
+  for (const [field, expected] of Object.entries({
+    id: "/",
+    name: "Arar Buluruz",
+    short_name: "Arar Buluruz",
+    lang: "tr",
+    start_url: "/",
+    scope: "/",
+    display: "standalone",
+  })) {
+    assert(manifest[field] === expected, `${label} field ${field} drifted from ${JSON.stringify(expected)}.`);
+  }
+}
+
+function assertManifestResidueAbsent(manifestText: string, label: string) {
+  const normalized = manifestText.toLocaleLowerCase("tr-TR");
+  for (const forbidden of [
+    "v0 test sürümü",
+    "pilot release candidate",
+    "yalnız sentetik test verisi",
+    "gerçek veri girişi kapalıdır",
+    "geliştirme ortamında",
+  ]) {
+    assert(!normalized.includes(forbidden), `${label} exposed internal/test text: ${forbidden}`);
+  }
+}
+
+assertManifestFields(diskManifest, "Disk manifest");
+assertManifestResidueAbsent(diskManifestText, "Disk manifest");
 
 async function waitForServerReady() {
   for (let attempt = 1; attempt <= 60; attempt += 1) {
@@ -66,23 +109,31 @@ async function ensureServiceWorkerControl(page: Page) {
 
 async function assertManifestAndInstallability(context: BrowserContext, page: Page) {
   const manifestResponse = await context.request.get(`${baseUrl}/manifest.webmanifest`);
-  assert(manifestResponse.ok(), `Manifest HTTP ${manifestResponse.status()}.`);
-  const manifest = (await manifestResponse.json()) as Record<string, unknown>;
-  assert(manifest.id === "/", "Manifest id is not canonical.");
-  assert(manifest.start_url === "/", "Manifest start_url is not canonical.");
-  assert(manifest.scope === "/", "Manifest scope is not canonical.");
-  assert(manifest.display === "standalone", "Manifest display is not standalone.");
+  const servedManifestBytes = Buffer.from(await manifestResponse.body());
+  const servedManifestText = servedManifestBytes.toString("utf8");
+  const servedManifestSha256 = createHash("sha256").update(servedManifestBytes).digest("hex");
+  const contentType = manifestResponse.headers()["content-type"] ?? "[missing]";
+  const byteIdentical = servedManifestBytes.equals(diskManifestBytes);
+  const preview = JSON.stringify(servedManifestText.slice(0, 240));
 
-  const manifestText = JSON.stringify(manifest).toLocaleLowerCase("tr-TR");
-  for (const forbidden of [
-    "v0 test sürümü",
-    "pilot release candidate",
-    "yalnız sentetik test verisi",
-    "gerçek veri girişi kapalıdır",
-    "geliştirme ortamında",
-  ]) {
-    assert(!manifestText.includes(forbidden), `Manifest exposed internal/test text: ${forbidden}`);
-  }
+  console.log(
+    `pilot-rc served manifest diagnostic: status=${manifestResponse.status()} content-type=${JSON.stringify(contentType)} bytes=${servedManifestBytes.byteLength} sha256=${servedManifestSha256} disk-byte-identical=${byteIdentical} preview=${preview}`,
+  );
+
+  assert(manifestResponse.ok(), `Manifest HTTP ${manifestResponse.status()}.`);
+  assert(
+    contentType.toLocaleLowerCase("en-US").includes("json"),
+    `Manifest content-type is not JSON-compatible: ${contentType}.`,
+  );
+
+  // Keep the production HTTP JSON contract explicit. Raw-byte diagnostics above must not replace it.
+  const manifest = (await manifestResponse.json()) as Record<string, unknown>;
+  assertManifestFields(manifest, "Served manifest");
+  assertManifestResidueAbsent(servedManifestText, "Served manifest");
+  assert(
+    byteIdentical,
+    `Served manifest differs from finalized disk artifact: disk=${diskManifestSha256} served=${servedManifestSha256}.`,
+  );
 
   const session = await context.newCDPSession(page);
   const result = (await session.send("Page.getInstallabilityErrors")) as {
