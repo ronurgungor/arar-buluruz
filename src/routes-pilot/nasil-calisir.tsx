@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PublisherInfoPage } from "@/components/PublisherInfoPage";
+import { PilotPublisherInfoPage } from "@/build-profiles/pilot/PilotPublisherInfoPage";
 
 export const Route = createFileRoute("/nasil-calisir")({
   head: () => ({
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/nasil-calisir")({
 
 function HowItWorks() {
   return (
-    <PublisherInfoPage
+    <PilotPublisherInfoPage
       title="Nasıl Çalışır"
       intro="Arar Buluruz, aradığın ilanı sade bir arama ve konum akışıyla bulmayı amaçlayan ücretsiz bir ilan keşif hizmetidir."
       sections={[
@@ -43,7 +43,7 @@ function HowItWorks() {
         {
           title: "4. Kurucu moderasyonu",
           paragraphs: [
-            "Pilot sürecinde ilan başvuruları kurucu tarafından manuel incelenir. Kurallara uymayan veya sonradan sorunlu olduğu anlaşılan ilanlar yayınlanmayabilir ya da yayından kaldırılabilir.",
+            "İlan başvuruları kurucu tarafından manuel incelenir. Kurallara uymayan veya sonradan sorunlu olduğu anlaşılan ilanlar yayınlanmayabilir ya da yayından kaldırılabilir.",
           ],
         },
       ]}
