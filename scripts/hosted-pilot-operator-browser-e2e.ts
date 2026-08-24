@@ -374,6 +374,16 @@ try {
     fullPage: true,
   });
 
+  assert(
+    runtimeErrors.length === 0,
+    `Hosted operator browser runtime errors before intentional outage: ${runtimeErrors.join(" | ")}`,
+  );
+  try {
+    process.kill(shimPid, 0);
+  } catch {
+    throw new Error("Hosted localhost transport shim exited before the intentional outage proof.");
+  }
+  runtimeErrors.splice(0, runtimeErrors.length);
   process.kill(shimPid, "SIGTERM");
   await page.getByRole("button", { name: "Yenile" }).click();
   await page.getByRole("alert").waitFor();
@@ -383,6 +393,16 @@ try {
     })
     .waitFor();
 
+  const unexpectedOutageErrors = runtimeErrors.filter(
+    (entry) =>
+      !entry.startsWith(
+        "console: Failed to load resource: the server responded with a status of 500",
+      ),
+  );
+  assert(
+    unexpectedOutageErrors.length === 0,
+    `Unexpected hosted operator runtime errors during intentional backend outage: ${unexpectedOutageErrors.join(" | ")}`,
+  );
   assert(
     shimBrowserRequests.length === 0,
     `Browser reached the localhost privileged shim: ${shimBrowserRequests.join(" | ")}`,
@@ -390,10 +410,6 @@ try {
   assert(
     sensitiveBrowserMutations.length === 0,
     `Browser performed privileged hosted mutations: ${sensitiveBrowserMutations.join(" | ")}`,
-  );
-  assert(
-    runtimeErrors.length === 0,
-    `Hosted operator browser runtime errors: ${runtimeErrors.join(" | ")}`,
   );
   console.log(
     "Hosted founder create/photo/publish/public/contact/unpublish/delete + reject/delete browser journey passed.",
