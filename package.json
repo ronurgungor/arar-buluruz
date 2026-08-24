@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && bash scripts/pilot-artifact-residue-diagnostic.sh",
+    "build": "vite build && bun scripts/finalize-build-profile-assets.ts",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
