@@ -4,7 +4,7 @@ import {
   type ListingDetailResult,
   type ListingsCollectionResult,
   type PublicSupabaseConfig,
-} from "@/lib/public-listings";
+} from "@/lib/public-listings-supabase";
 
 function readPilotSupabaseConfig(): PublicSupabaseConfig | null {
   const url = import.meta.env.VITE_SUPABASE_URL?.trim();
