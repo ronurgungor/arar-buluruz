@@ -1,15 +1,21 @@
 import { createHash } from "node:crypto";
-import { copyFile, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 if (process.env.ARAR_BUILD_PROFILE !== "pilot-rc") process.exit(0);
 
 const source = path.resolve("src/build-profiles/pilot/manifest.webmanifest");
 const destination = path.resolve(".output/public/manifest.webmanifest");
+const [sourceBytes, manifestBytes] = await Promise.all([readFile(source), readFile(destination)]);
 
-await copyFile(source, destination);
+if (!manifestBytes.equals(sourceBytes)) {
+  const sourceSha256 = createHash("sha256").update(sourceBytes).digest("hex");
+  const outputSha256 = createHash("sha256").update(manifestBytes).digest("hex");
+  throw new Error(
+    `Pilot PWA manifest output differs from the build-profile source: source=${sourceSha256} output=${outputSha256}.`,
+  );
+}
 
-const manifestBytes = await readFile(destination);
 const manifestText = manifestBytes.toString("utf8");
 const manifest = JSON.parse(manifestText) as Record<string, unknown>;
 
@@ -41,5 +47,5 @@ for (const forbidden of [
 
 const sha256 = createHash("sha256").update(manifestBytes).digest("hex");
 console.log(
-  `pilot-rc finalized manifest JSON.parse passed: ${manifestBytes.byteLength} bytes, sha256=${sha256}.`,
+  `pilot-rc finalized manifest JSON.parse/source-byte identity passed: ${manifestBytes.byteLength} bytes, sha256=${sha256}.`,
 );
