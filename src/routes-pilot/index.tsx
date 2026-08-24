@@ -8,10 +8,16 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Arar Buluruz — Çorlu pilotu" },
-      { name: "description", content: "Çorlu pilotunda yayındaki ilanları ara ve satıcıyla doğrudan iletişime geç." },
+      {
+        name: "description",
+        content: "Çorlu pilotunda yayındaki ilanları ara ve satıcıyla doğrudan iletişime geç.",
+      },
       { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
       { property: "og:title", content: "Arar Buluruz — Çorlu pilotu" },
-      { property: "og:description", content: "Çorlu pilotunda yayındaki ilanları ara ve satıcıyla doğrudan iletişime geç." },
+      {
+        property: "og:description",
+        content: "Çorlu pilotunda yayındaki ilanları ara ve satıcıyla doğrudan iletişime geç.",
+      },
     ],
   }),
   component: Home,
@@ -41,8 +47,12 @@ function Home() {
       </div>
 
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center pb-24">
-        <h1 className="text-center"><Wordmark size="lg" /></h1>
-        <p className="mt-3 text-center text-base text-muted-foreground">Ne arıyorsan yaz, gerisini biz bulalım.</p>
+        <h1 className="text-center">
+          <Wordmark size="lg" />
+        </h1>
+        <p className="mt-3 text-center text-base text-muted-foreground">
+          Ne arıyorsan yaz, gerisini biz bulalım.
+        </p>
 
         <form
           className="mt-8 space-y-3"
@@ -52,7 +62,10 @@ function Home() {
           }}
         >
           <div className="relative">
-            <Search aria-hidden className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Search
+              aria-hidden
+              className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+            />
             <input
               value={q}
               onChange={(event) => setQ(event.target.value)}
@@ -68,18 +81,34 @@ function Home() {
               aria-label="Konum"
               className="h-12 w-full min-w-0 rounded-full border border-border bg-card px-4 text-sm font-medium outline-none focus:border-primary"
             >
-              {locationCities.map((item) => <option key={item} value={item}>{item}</option>)}
+              {locationCities.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
             </select>
-            <button type="submit" className="h-12 shrink-0 rounded-full bg-primary px-8 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90">
+            <button
+              type="submit"
+              className="h-12 shrink-0 rounded-full bg-primary px-8 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
               Ara
             </button>
           </div>
         </form>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">Hedefimiz: ilan vermek her zaman ücretsiz.</p>
-        <nav aria-label="Arar Buluruz bilgi ve kuralları" className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Hedefimiz: ilan vermek her zaman ücretsiz.
+        </p>
+        <nav
+          aria-label="Arar Buluruz bilgi ve kuralları"
+          className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
+        >
           {infoLinks.map((item) => (
-            <Link key={item.to} to={item.to} className="inline-flex min-h-11 min-w-11 items-center justify-center underline underline-offset-4 hover:text-foreground">
+            <Link
+              key={item.to}
+              to={item.to}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center underline underline-offset-4 hover:text-foreground"
+            >
               {item.label}
             </Link>
           ))}

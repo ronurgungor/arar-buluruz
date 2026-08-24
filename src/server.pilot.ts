@@ -60,7 +60,9 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const handler = await getServerEntry();
-      return withRobotsHeader(await normalizeCatastrophicSsrResponse(await handler.fetch(request, env, ctx)));
+      return withRobotsHeader(
+        await normalizeCatastrophicSsrResponse(await handler.fetch(request, env, ctx)),
+      );
     } catch (error) {
       console.error(error);
       return withRobotsHeader(createStaticErrorResponse());
