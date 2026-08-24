@@ -267,9 +267,35 @@ try {
       photoSrc?.includes("/storage/v1/object/sign/listing_photos/"),
       "pilot-rc detail did not use signed private Storage.",
     );
+    const signedPhotoResponse = await desktop.request.get(new URL(photoSrc, baseUrl).toString());
+    const signedPhotoBytes = Buffer.from(await signedPhotoResponse.body());
+    const signedPhotoContentType = signedPhotoResponse.headers()["content-type"] ?? "[missing]";
+    const signedPhotoSha256 = createHash("sha256").update(signedPhotoBytes).digest("hex");
+    console.log(
+      `pilot-rc signed photo diagnostic: status=${signedPhotoResponse.status()} content-type=${JSON.stringify(signedPhotoContentType)} bytes=${signedPhotoBytes.byteLength} sha256=${signedPhotoSha256}.`,
+    );
     assert(
-      await signedPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth > 0),
-      "pilot-rc signed photo did not decode.",
+      signedPhotoResponse.ok() && signedPhotoContentType.toLocaleLowerCase("en-US").startsWith("image/"),
+      `pilot-rc signed photo HTTP contract failed: status=${signedPhotoResponse.status()} content-type=${signedPhotoContentType}.`,
+    );
+    const decodedPhoto = await signedPhoto.evaluate(async (image) => {
+      const htmlImage = image as HTMLImageElement;
+      if (!htmlImage.complete || htmlImage.naturalWidth === 0) {
+        try {
+          await htmlImage.decode();
+        } catch {
+          // Preserve the final naturalWidth assertion with diagnostics below.
+        }
+      }
+      return {
+        complete: htmlImage.complete,
+        naturalWidth: htmlImage.naturalWidth,
+        naturalHeight: htmlImage.naturalHeight,
+      };
+    });
+    assert(
+      decodedPhoto.naturalWidth > 0,
+      `pilot-rc signed photo did not decode: ${JSON.stringify(decodedPhoto)}.`,
     );
     const contact = page.getByRole("link", { name: "WhatsApp’tan yaz" });
     assert(
