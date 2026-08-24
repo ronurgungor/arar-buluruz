@@ -515,6 +515,11 @@ try {
         offlineNavigationResponse.ok(),
         `pilot-rc service worker offline fallback returned HTTP ${offlineNavigationResponse.status()}.`,
       );
+      const offlineResponseText = await offlineNavigationResponse.text();
+      assert(
+        offlineResponseText === beforeOutageSnapshot.offlineFallback?.text,
+        "pilot-rc service worker navigation response differed from the precached /offline.html response.",
+      );
 
       const afterNavigationSnapshot = await readServiceWorkerSnapshot(offlinePage);
       console.log(
@@ -525,10 +530,6 @@ try {
       await offlinePage
         .getByText("dinamik ilanları çevrimdışı saklamaz", { exact: false })
         .waitFor();
-      assert(
-        afterNavigationSnapshot.offlineFallback?.text === (await offlinePage.locator("html").innerHTML()).replace(/^<head>[\s\S]*?<\/head>/, ""),
-        "pilot-rc offline fallback response drifted from the cached fail-closed document.",
-      );
       assert(
         (await offlinePage.getByText(baselineTitle, { exact: true }).count()) === 0,
         "Offline fallback exposed stale dynamic listing data.",
