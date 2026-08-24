@@ -4,9 +4,6 @@
 //     nitro (build-only using cloudflare as a default target), VITE_* env injection, @ path alias,
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
-import { cpSync, copyFileSync, mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 const buildProfiles = [
@@ -84,16 +81,6 @@ function requireSupabasePublicConfig(): void {
   if (parsed.protocol !== "https:" && !(isLocal && parsed.protocol === "http:")) {
     failBuildInvariant("Pilot release-candidate Supabase URL must use HTTPS outside local CI.");
   }
-}
-
-function preparePilotPublicDir(): string {
-  const stagedPublicDir = mkdtempSync(path.join(tmpdir(), "arar-buluruz-pilot-public-"));
-  cpSync(path.resolve("public"), stagedPublicDir, { recursive: true });
-  copyFileSync(
-    path.resolve("src/build-profiles/pilot/manifest.webmanifest"),
-    path.join(stagedPublicDir, "manifest.webmanifest"),
-  );
-  return stagedPublicDir;
 }
 
 const buildProfile = resolveBuildProfile();
@@ -225,10 +212,8 @@ if (discoveryProfile === "real-content" && process.env.VITE_LISTINGS_SOURCE !== 
 process.env.VITE_DISCOVERY_PROFILE = discoveryProfile;
 
 const isPilotRcBuild = buildProfile === "pilot-rc";
-const pilotPublicDir = isPilotRcBuild ? preparePilotPublicDir() : undefined;
 
 export default defineConfig({
-  ...(pilotPublicDir ? { vite: { publicDir: pilotPublicDir } } : {}),
   tanstackStart: {
     server: { entry: isPilotRcBuild ? "server.pilot" : "server" },
     ...(isPilotRcBuild
