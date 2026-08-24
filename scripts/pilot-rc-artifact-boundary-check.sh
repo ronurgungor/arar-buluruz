@@ -39,12 +39,22 @@ for public_marker in \
   'V0 test sürümü' \
   'İlanlar örnektir' \
   'Demo ilan oluşturma' \
-  'Giriş demosu'; do
+  'Giriş demosu' \
+  'Pilot release candidate' \
+  'yalnız sentetik test verisi' \
+  'gerçek veri girişi kapalıdır' \
+  'Bu geliştirme ortamında'; do
   if grep -R --binary-files=without-match -F "$public_marker" .output/public >/dev/null 2>&1; then
     echo "pilot-rc public artifact contains test/demo/privileged residue: $public_marker" >&2
     exit 1
   fi
 done
+
+if find .output/public/assets -maxdepth 1 -type f -name 'ilan-*.jpg' -print -quit | grep -q .; then
+  echo "pilot-rc public artifact contains V0 mock listing image assets." >&2
+  find .output/public/assets -maxdepth 1 -type f -name 'ilan-*.jpg' -print >&2
+  exit 1
+fi
 
 for secret_name in \
   MANAGED_SUPABASE_DB_URL \
@@ -57,4 +67,4 @@ for secret_name in \
   fi
 done
 
-echo "pilot-rc artifact boundary passed: no CI shim, test/demo public residue, privileged marker, or supplied secret leakage."
+echo "pilot-rc artifact boundary passed: no CI shim, V0/mock/test presentation residue, privileged marker, or supplied secret leakage."
