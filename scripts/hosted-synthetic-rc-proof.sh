@@ -75,6 +75,53 @@ if [[ "$(managed_scalar "select count(*) from auth.users;")" != "0" ]]; then
   echo "Hosted managed project contains Auth users." >&2
   exit 1
 fi
+
+# One-time recovery for a prior interrupted Issue #72 hosted proof. This block is intentionally
+# strict: it only removes exact synthetic founder rows created by this harness, and the final
+# exact-head proof removes this recovery block so baseline validation remains contamination-sensitive.
+residual_unexpected_count="$(managed_scalar "
+  select count(*)
+  from public.listings
+  where id <> '${fixture_listing_id}'::uuid
+    and not (
+      seller_display_name = 'Hosted RC Sentetik Satıcı'
+      and title in ('Hosted RC yayın yaşam döngüsü ilanı', 'Hosted RC red yaşam döngüsü ilanı')
+      and contact_e164 in ('+12025550155', '+12025550156')
+    );
+")"
+if [[ "$residual_unexpected_count" != "0" ]]; then
+  echo "Hosted managed project contains non-recoverable unexpected listing rows before RC proof." >&2
+  exit 1
+fi
+residual_ids="$(managed_scalar "
+  select id::text
+  from public.listings
+  where id <> '${fixture_listing_id}'::uuid
+    and seller_display_name = 'Hosted RC Sentetik Satıcı'
+    and title in ('Hosted RC yayın yaşam döngüsü ilanı', 'Hosted RC red yaşam döngüsü ilanı')
+    and contact_e164 in ('+12025550155', '+12025550156')
+  order by id;
+")"
+if [[ -n "$residual_ids" ]]; then
+  configure_source_rclone
+  echo "Recovering exact synthetic residue from the previously interrupted hosted RC proof." >&2
+  while IFS= read -r residual_id; do
+    [[ -n "$residual_id" ]] || continue
+    rclone delete "source:listing_photos/listings/${residual_id}" --rmdirs
+    if rclone lsf "source:listing_photos/listings/${residual_id}" --files-only 2>/dev/null | grep -q .; then
+      echo "Residual hosted RC Storage objects remain for ${residual_id}." >&2
+      exit 1
+    fi
+  done <<< "$residual_ids"
+  managed_psql -c "
+    delete from public.listings
+    where id <> '${fixture_listing_id}'::uuid
+      and seller_display_name = 'Hosted RC Sentetik Satıcı'
+      and title in ('Hosted RC yayın yaşam döngüsü ilanı', 'Hosted RC red yaşam döngüsü ilanı')
+      and contact_e164 in ('+12025550155', '+12025550156');
+  " >/dev/null
+fi
+
 if [[ "$(managed_scalar "select count(*) from public.listings where id <> '${fixture_listing_id}'::uuid;")" != "0" ]]; then
   echo "Hosted managed project contains unexpected listing rows before RC proof." >&2
   exit 1
