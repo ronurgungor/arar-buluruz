@@ -79,6 +79,21 @@ async function waitForServerReady() {
   throw new Error("pilot-rc production server did not become ready.");
 }
 
+async function waitForServerDown() {
+  for (let attempt = 1; attempt <= 30; attempt += 1) {
+    try {
+      await fetch(baseUrl, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(300),
+      });
+    } catch {
+      return;
+    }
+    await Bun.sleep(100);
+  }
+  throw new Error("pilot-rc production server remained reachable after termination.");
+}
+
 async function terminate(child: ReturnType<typeof Bun.spawn>) {
   if (child.exitCode !== null) return;
   child.kill();
@@ -97,17 +112,80 @@ async function assertNoHorizontalOverflow(page: Page, label: string) {
   );
 }
 
+type ServiceWorkerSnapshot = {
+  secureContext: boolean;
+  navigatorOnline: boolean;
+  registrations: Array<{
+    scope: string;
+    installing: { scriptURL: string; state: string } | null;
+    waiting: { scriptURL: string; state: string } | null;
+    active: { scriptURL: string; state: string } | null;
+  }>;
+  controller: { scriptURL: string; state: string } | null;
+  cacheNames: string[];
+  offlineFallback: { status: number; url: string; text: string } | null;
+};
+
+async function readServiceWorkerSnapshot(page: Page): Promise<ServiceWorkerSnapshot> {
+  return page.evaluate(async () => {
+    const describeWorker = (worker: ServiceWorker | null) =>
+      worker ? { scriptURL: worker.scriptURL, state: worker.state } : null;
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    const cacheNames = await caches.keys();
+    const fallback = await caches.match("/offline.html");
+    return {
+      secureContext: window.isSecureContext,
+      navigatorOnline: navigator.onLine,
+      registrations: registrations.map((registration) => ({
+        scope: registration.scope,
+        installing: describeWorker(registration.installing),
+        waiting: describeWorker(registration.waiting),
+        active: describeWorker(registration.active),
+      })),
+      controller: describeWorker(navigator.serviceWorker.controller),
+      cacheNames,
+      offlineFallback: fallback
+        ? {
+            status: fallback.status,
+            url: fallback.url,
+            text: await fallback.clone().text(),
+          }
+        : null,
+    };
+  });
+}
+
+function hasControllingWorker(snapshot: ServiceWorkerSnapshot) {
+  return (
+    snapshot.registrations.some((registration) => registration.active?.state === "activated") &&
+    snapshot.controller?.state === "activated"
+  );
+}
+
 async function ensureServiceWorkerControl(page: Page) {
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
-  for (let attempt = 1; attempt <= 20; attempt += 1) {
-    const controlled = await page.evaluate(() => navigator.serviceWorker.controller !== null);
-    if (controlled) return;
-    await page.reload({ waitUntil: "domcontentloaded" });
+
+  let reloads = 0;
+  for (let attempt = 1; attempt <= 30; attempt += 1) {
+    const snapshot = await readServiceWorkerSnapshot(page);
+    if (hasControllingWorker(snapshot)) {
+      console.log(
+        `pilot-rc service worker control diagnostic: reloads=${reloads} state=${JSON.stringify(snapshot)}.`,
+      );
+      return snapshot;
+    }
+
+    if (attempt % 5 === 0) {
+      await page.reload({ waitUntil: "domcontentloaded" });
+      reloads += 1;
+    }
     await page.waitForTimeout(300);
   }
-  throw new Error("pilot-rc service worker did not control the page.");
+
+  const snapshot = await readServiceWorkerSnapshot(page);
+  throw new Error(`pilot-rc service worker did not control the page: ${JSON.stringify(snapshot)}.`);
 }
 
 async function assertManifestAndInstallability(context: BrowserContext, page: Page) {
@@ -316,18 +394,6 @@ try {
       .waitFor();
     await page.unroute(`${backendOrigin}/**`);
 
-    await page.goto(baseUrl, { waitUntil: "networkidle" });
-    await ensureServiceWorkerControl(page);
-    await desktop.setOffline(true);
-    await page.goto(`${baseUrl}/ara?q=offline-proof`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { level: 1, name: "Bağlantı yok" }).waitFor();
-    await page.getByText("dinamik ilanları çevrimdışı saklamaz", { exact: false }).waitFor();
-    assert(
-      (await page.getByText(baselineTitle, { exact: true }).count()) === 0,
-      "Offline fallback exposed stale dynamic listing data.",
-    );
-    await desktop.setOffline(false);
-
     assert(
       runtimeErrors.length === 0,
       `pilot-rc desktop runtime errors: ${runtimeErrors.join(" | ")}`,
@@ -353,6 +419,138 @@ try {
       fullPage: true,
     });
     await mobile.close();
+
+    const offlineContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      isMobile: true,
+      hasTouch: true,
+      serviceWorkers: "allow",
+    });
+    const offlinePage = await offlineContext.newPage();
+    offlinePage.setDefaultTimeout(20_000);
+    offlinePage.setDefaultNavigationTimeout(20_000);
+    const offlineConsoleErrors: string[] = [];
+    const offlinePageErrors: string[] = [];
+    const offlineRequestFailures: string[] = [];
+    const offlineDocumentResponses: string[] = [];
+    offlinePage.on("console", (message) => {
+      if (message.type() === "error") offlineConsoleErrors.push(message.text());
+    });
+    offlinePage.on("pageerror", (error) => offlinePageErrors.push(error.message));
+    offlinePage.on("requestfailed", (request) => {
+      offlineRequestFailures.push(
+        `${request.method()} ${request.url()} ${request.failure()?.errorText ?? "[unknown]"}`,
+      );
+    });
+    offlinePage.on("response", (response) => {
+      if (response.request().resourceType() === "document") {
+        offlineDocumentResponses.push(
+          `${response.status()} ${response.url()} fromServiceWorker=${response.fromServiceWorker()}`,
+        );
+      }
+    });
+
+    try {
+      await offlinePage.goto(baseUrl, { waitUntil: "networkidle" });
+      const initialSnapshot = await ensureServiceWorkerControl(offlinePage);
+      assert(initialSnapshot.secureContext, "pilot-rc offline proof did not run in a secure context.");
+      assert(
+        initialSnapshot.registrations.length === 1,
+        `pilot-rc offline proof saw unexpected service worker registrations: ${JSON.stringify(initialSnapshot.registrations)}.`,
+      );
+      assert(
+        initialSnapshot.offlineFallback?.status === 200 &&
+          initialSnapshot.offlineFallback.text.includes("<h1>Bağlantı yok</h1>"),
+        `pilot-rc service worker cache did not contain the fail-closed offline fallback: ${JSON.stringify(initialSnapshot.offlineFallback)}.`,
+      );
+
+      await offlineContext.setOffline(true);
+      let emulatedOfflineProbeError: string | null = null;
+      let emulatedOfflineProbeResponse: Awaited<ReturnType<Page["goto"]>> = null;
+      try {
+        emulatedOfflineProbeResponse = await offlinePage.goto(
+          `${baseUrl}/ara?q=offline-emulation-probe`,
+          { waitUntil: "domcontentloaded" },
+        );
+      } catch (error) {
+        emulatedOfflineProbeError = error instanceof Error ? error.message : String(error);
+      }
+      const emulatedOfflineHeadingCount = await offlinePage
+        .getByRole("heading", { level: 1, name: "Bağlantı yok" })
+        .count();
+      const emulatedOfflineSnapshot = await readServiceWorkerSnapshot(offlinePage);
+      console.log(
+        `pilot-rc browser-offline emulation diagnostic: response=${emulatedOfflineProbeResponse ? `${emulatedOfflineProbeResponse.status()} ${emulatedOfflineProbeResponse.url()} fromServiceWorker=${emulatedOfflineProbeResponse.fromServiceWorker()}` : "[none]"} error=${JSON.stringify(emulatedOfflineProbeError)} pageUrl=${offlinePage.url()} offlineHeadingCount=${emulatedOfflineHeadingCount} state=${JSON.stringify(emulatedOfflineSnapshot)} documentResponses=${JSON.stringify(offlineDocumentResponses)} requestFailures=${JSON.stringify(offlineRequestFailures)}.`,
+      );
+
+      await offlineContext.setOffline(false);
+      await offlinePage.goto(baseUrl, { waitUntil: "networkidle" });
+      const beforeOutageSnapshot = await ensureServiceWorkerControl(offlinePage);
+      assert(
+        hasControllingWorker(beforeOutageSnapshot),
+        `pilot-rc lost service worker control before the real offline navigation: ${JSON.stringify(beforeOutageSnapshot)}.`,
+      );
+      assert(
+        beforeOutageSnapshot.offlineFallback?.text.includes("<h1>Bağlantı yok</h1>") === true,
+        "pilot-rc offline fallback disappeared from Cache Storage before the outage.",
+      );
+
+      offlineConsoleErrors.length = 0;
+      offlinePageErrors.length = 0;
+      offlineRequestFailures.length = 0;
+      offlineDocumentResponses.length = 0;
+      await offlineContext.setOffline(true);
+      await terminate(server);
+      await waitForServerDown();
+
+      let offlineNavigationError: string | null = null;
+      let offlineNavigationResponse: Awaited<ReturnType<Page["goto"]>> = null;
+      try {
+        offlineNavigationResponse = await offlinePage.goto(`${baseUrl}/ara?q=offline-proof`, {
+          waitUntil: "domcontentloaded",
+        });
+      } catch (error) {
+        offlineNavigationError = error instanceof Error ? error.message : String(error);
+      }
+
+      const afterNavigationSnapshot = await readServiceWorkerSnapshot(offlinePage);
+      console.log(
+        `pilot-rc real offline navigation diagnostic: response=${offlineNavigationResponse ? `${offlineNavigationResponse.status()} ${offlineNavigationResponse.url()} fromServiceWorker=${offlineNavigationResponse.fromServiceWorker()}` : "[none]"} error=${JSON.stringify(offlineNavigationError)} pageUrl=${offlinePage.url()} state=${JSON.stringify(afterNavigationSnapshot)} documentResponses=${JSON.stringify(offlineDocumentResponses)} requestFailures=${JSON.stringify(offlineRequestFailures)} consoleErrors=${JSON.stringify(offlineConsoleErrors)} pageErrors=${JSON.stringify(offlinePageErrors)}.`,
+      );
+
+      assert(
+        offlineNavigationError === null && offlineNavigationResponse !== null,
+        `pilot-rc real offline navigation failed before the service worker fallback could respond: ${offlineNavigationError}.`,
+      );
+      assert(
+        offlineNavigationResponse.fromServiceWorker(),
+        `pilot-rc offline navigation was not fulfilled by the controlling service worker: ${offlineNavigationResponse.url()}.`,
+      );
+      assert(
+        offlineNavigationResponse.ok(),
+        `pilot-rc service worker offline fallback returned HTTP ${offlineNavigationResponse.status()}.`,
+      );
+      await offlinePage.getByRole("heading", { level: 1, name: "Bağlantı yok" }).waitFor();
+      await offlinePage
+        .getByText("dinamik ilanları çevrimdışı saklamaz", { exact: false })
+        .waitFor();
+      assert(
+        (await offlinePage.getByText(baselineTitle, { exact: true }).count()) === 0,
+        "Offline fallback exposed stale dynamic listing data.",
+      );
+      assert(
+        offlineConsoleErrors.length === 0 && offlinePageErrors.length === 0,
+        `pilot-rc offline fallback emitted runtime errors: console=${offlineConsoleErrors.join(" | ")} page=${offlinePageErrors.join(" | ")}`,
+      );
+      await assertNoHorizontalOverflow(offlinePage, "offline fallback mobile");
+      await offlinePage.screenshot({
+        path: path.join(resultsDir, "pilot-rc-mobile-offline.png"),
+        fullPage: true,
+      });
+    } finally {
+      await offlineContext.setOffline(false).catch(() => undefined);
+      await offlineContext.close();
+    }
 
     console.log(
       "pilot-rc production artifact desktop/mobile/PWA/offline/navigation/fail-closed proof passed.",
