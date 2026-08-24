@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PublisherInfoPage } from "@/components/PublisherInfoPage";
+import { PilotPublisherInfoPage } from "@/build-profiles/pilot/PilotPublisherInfoPage";
 
 export const Route = createFileRoute("/guvenli-kullanim")({
   head: () => ({
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/guvenli-kullanim")({
 
 function SafeUse() {
   return (
-    <PublisherInfoPage
+    <PilotPublisherInfoPage
       title="Güvenli Kullanım"
       intro="İlan platformlarında en önemli güvenlik adımı, ödeme veya teslim kararından önce ilanı ve karşı tarafı bağımsız olarak doğrulamaktır."
       sections={[
