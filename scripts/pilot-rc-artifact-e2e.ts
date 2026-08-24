@@ -40,7 +40,10 @@ function assertManifestFields(manifest: Record<string, unknown>, label: string) 
     scope: "/",
     display: "standalone",
   })) {
-    assert(manifest[field] === expected, `${label} field ${field} drifted from ${JSON.stringify(expected)}.`);
+    assert(
+      manifest[field] === expected,
+      `${label} field ${field} drifted from ${JSON.stringify(expected)}.`,
+    );
   }
 }
 
