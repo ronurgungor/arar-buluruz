@@ -275,7 +275,8 @@ try {
       `pilot-rc signed photo diagnostic: status=${signedPhotoResponse.status()} content-type=${JSON.stringify(signedPhotoContentType)} bytes=${signedPhotoBytes.byteLength} sha256=${signedPhotoSha256}.`,
     );
     assert(
-      signedPhotoResponse.ok() && signedPhotoContentType.toLocaleLowerCase("en-US").startsWith("image/"),
+      signedPhotoResponse.ok() &&
+        signedPhotoContentType.toLocaleLowerCase("en-US").startsWith("image/"),
       `pilot-rc signed photo HTTP contract failed: status=${signedPhotoResponse.status()} content-type=${signedPhotoContentType}.`,
     );
     const decodedPhoto = await signedPhoto.evaluate(async (image) => {
