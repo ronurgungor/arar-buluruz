@@ -102,8 +102,31 @@ async function fillCreateForm(page: Page, title: string, seller: string, contact
 
 async function createPending(page: Page, title: string, seller: string, contactE164: string) {
   await fillCreateForm(page, title, seller, contactE164);
+  const serverResponsePromise = page
+    .waitForResponse(
+      (response) =>
+        response.request().method() === "POST" && response.url().startsWith(`${baseUrl}/`),
+      { timeout: 20_000 },
+    )
+    .catch(() => null);
   await page.getByRole("button", { name: "Pending ilan ve fotoğrafı kaydet" }).click();
-  await page.getByText("Pending ilan ve güvenli fotoğraf kaydedildi.", { exact: true }).waitFor();
+
+  const success = page.getByText("Pending ilan ve güvenli fotoğraf kaydedildi.", { exact: true });
+  const failure = page.getByRole("alert");
+  const outcome = await Promise.race([
+    success.waitFor().then(() => "success" as const),
+    failure.waitFor().then(() => "failure" as const),
+  ]);
+  if (outcome === "failure") {
+    const response = await serverResponsePromise;
+    const safeAlert = (await failure.textContent())?.trim() || "[empty alert]";
+    const responseStatus = response?.status() ?? "no POST response captured";
+    const responsePath = response ? new URL(response.url()).pathname : "unknown";
+    throw new Error(
+      `Hosted create failed closed: alert=${JSON.stringify(safeAlert)} POST=${responseStatus} ${responsePath}`,
+    );
+  }
+
   const card = page.locator("li").filter({ hasText: title });
   await card.waitFor();
   await card.getByText("İncelemede", { exact: true }).waitFor();
