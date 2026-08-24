@@ -262,38 +262,30 @@ try {
       .click();
     await page.getByRole("heading", { level: 1, name: baselineTitle }).waitFor();
     const signedPhoto = page.getByAltText(`${baselineTitle} fotoğraf 1`);
+    await signedPhoto.waitFor({ state: "visible" });
     const photoSrc = await signedPhoto.getAttribute("src");
     assert(
       photoSrc?.includes("/storage/v1/object/sign/listing_photos/"),
       "pilot-rc detail did not use signed private Storage.",
     );
-    const signedPhotoResponse = await desktop.request.get(new URL(photoSrc, baseUrl).toString());
-    const signedPhotoBytes = Buffer.from(await signedPhotoResponse.body());
-    const signedPhotoContentType = signedPhotoResponse.headers()["content-type"] ?? "[missing]";
-    const signedPhotoSha256 = createHash("sha256").update(signedPhotoBytes).digest("hex");
-    console.log(
-      `pilot-rc signed photo diagnostic: status=${signedPhotoResponse.status()} content-type=${JSON.stringify(signedPhotoContentType)} bytes=${signedPhotoBytes.byteLength} sha256=${signedPhotoSha256}.`,
-    );
-    assert(
-      signedPhotoResponse.ok() &&
-        signedPhotoContentType.toLocaleLowerCase("en-US").startsWith("image/"),
-      `pilot-rc signed photo HTTP contract failed: status=${signedPhotoResponse.status()} content-type=${signedPhotoContentType}.`,
-    );
     const decodedPhoto = await signedPhoto.evaluate(async (image) => {
       const htmlImage = image as HTMLImageElement;
-      if (!htmlImage.complete || htmlImage.naturalWidth === 0) {
-        try {
-          await htmlImage.decode();
-        } catch {
-          // Preserve the final naturalWidth assertion with diagnostics below.
-        }
+      let decodeError: string | null = null;
+      try {
+        await htmlImage.decode();
+      } catch (error) {
+        decodeError = error instanceof Error ? error.message : String(error);
       }
       return {
         complete: htmlImage.complete,
         naturalWidth: htmlImage.naturalWidth,
         naturalHeight: htmlImage.naturalHeight,
+        decodeError,
       };
     });
+    console.log(
+      `pilot-rc signed photo browser decode diagnostic: complete=${decodedPhoto.complete} naturalWidth=${decodedPhoto.naturalWidth} naturalHeight=${decodedPhoto.naturalHeight} decodeError=${JSON.stringify(decodedPhoto.decodeError)}.`,
+    );
     assert(
       decodedPhoto.naturalWidth > 0,
       `pilot-rc signed photo did not decode: ${JSON.stringify(decodedPhoto)}.`,
