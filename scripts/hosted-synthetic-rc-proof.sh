@@ -108,6 +108,33 @@ cleanup() {
 }
 trap cleanup EXIT
 
+print_redacted_hosted_logs() {
+  python3 - "$app_log" "$shim_log" <<'PY'
+import os
+import sys
+from pathlib import Path
+
+secrets = [
+    os.environ.get("MANAGED_SUPABASE_DB_URL", ""),
+    os.environ.get("MANAGED_SUPABASE_ANON_KEY", ""),
+    os.environ.get("MANAGED_SUPABASE_S3_ACCESS_KEY_ID", ""),
+    os.environ.get("MANAGED_SUPABASE_S3_SECRET_ACCESS_KEY", ""),
+    os.environ.get("HOSTED_RC_DIAGNOSTIC_SHIM_TOKEN", ""),
+]
+for filename in sys.argv[1:]:
+    path = Path(filename)
+    print(f"--- redacted {path.name} (tail) ---", file=sys.stderr)
+    if not path.exists():
+        print("[log missing]", file=sys.stderr)
+        continue
+    text = path.read_text(encoding="utf-8", errors="replace")
+    for secret in secrets:
+        if secret:
+            text = text.replace(secret, "[REDACTED]")
+    print(text[-16000:], file=sys.stderr)
+PY
+}
+
 configure_source_rclone
 mkdir -p "$baseline_storage"
 rclone copy "source:listing_photos" "$baseline_storage" --checkers 4 --transfers 2
@@ -119,6 +146,7 @@ rclone size "source:listing_photos" --json > "$work_dir/storage-before-size.json
 
 shim_token="$(openssl rand -hex 32)"
 if [[ -n "${GITHUB_ACTIONS:-}" ]]; then printf '::add-mask::%s\n' "$shim_token"; fi
+export HOSTED_RC_DIAGNOSTIC_SHIM_TOKEN="$shim_token"
 
 HOSTED_RC_PROJECT_REF="$MANAGED_SUPABASE_PROJECT_REF" \
 HOSTED_RC_DB_URL="$MANAGED_SUPABASE_DB_URL" \
@@ -157,11 +185,15 @@ for attempt in $(seq 1 60); do
   if [[ "$attempt" == "60" ]]; then cat "$app_log" >&2; exit 1; fi
 done
 
-BASE_URL="$app_origin" \
-BACKEND_ORIGIN="$managed_api_url" \
-SHIM_ORIGIN="$shim_origin" \
-SHIM_PID="$shim_pid" \
-  bun scripts/hosted-pilot-operator-browser-e2e.ts
+if ! BASE_URL="$app_origin" \
+  BACKEND_ORIGIN="$managed_api_url" \
+  SHIM_ORIGIN="$shim_origin" \
+  SHIM_PID="$shim_pid" \
+    bun scripts/hosted-pilot-operator-browser-e2e.ts; then
+  echo "Hosted founder browser proof failed; printing redacted app/shim diagnostics." >&2
+  print_redacted_hosted_logs
+  exit 1
+fi
 
 # The browser proof intentionally terminates the test-only shim to prove the founder UI fails closed.
 shim_pid=""
@@ -221,7 +253,7 @@ PY
 rm -rf .output
 (
   unset MANAGED_SUPABASE_DB_URL MANAGED_SUPABASE_S3_ACCESS_KEY_ID MANAGED_SUPABASE_S3_SECRET_ACCESS_KEY
-  unset HOSTED_RC_SHIM_TOKEN PILOT_OPERATOR_SUPABASE_SERVICE_ROLE_KEY PILOT_OPERATOR_ENABLED VITE_PILOT_OPERATOR_UI
+  unset HOSTED_RC_SHIM_TOKEN HOSTED_RC_DIAGNOSTIC_SHIM_TOKEN PILOT_OPERATOR_SUPABASE_SERVICE_ROLE_KEY PILOT_OPERATOR_ENABLED VITE_PILOT_OPERATOR_UI
   ARAR_BUILD_PROFILE=pilot-rc \
   VITE_LISTINGS_SOURCE=supabase \
   VITE_SUPABASE_URL="$managed_api_url" \
