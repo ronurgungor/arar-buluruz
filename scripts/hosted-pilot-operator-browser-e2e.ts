@@ -141,8 +141,12 @@ async function createPending(page: Page, title: string, seller: string, contactE
         ? (await failure.textContent())?.trim() || "[empty alert]"
         : "[no success or failure UI before timeout]";
     const buttonText =
-      (await page.getByRole("button", { name: /Kaydediliyor|Pending ilan/ }).textContent().catch(() => null))
-        ?.trim() ?? "[button unavailable]";
+      (
+        await page
+          .getByRole("button", { name: /Kaydediliyor|Pending ilan/ })
+          .textContent()
+          .catch(() => null)
+      )?.trim() ?? "[button unavailable]";
     await page.screenshot({
       path: path.join(resultsDir, "hosted-create-failure.png"),
       fullPage: true,
