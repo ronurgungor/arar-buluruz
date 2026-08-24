@@ -73,6 +73,17 @@ async function assertManifestAndInstallability(context: BrowserContext, page: Pa
   assert(manifest.scope === "/", "Manifest scope is not canonical.");
   assert(manifest.display === "standalone", "Manifest display is not standalone.");
 
+  const manifestText = JSON.stringify(manifest).toLocaleLowerCase("tr-TR");
+  for (const forbidden of [
+    "v0 test sürümü",
+    "pilot release candidate",
+    "yalnız sentetik test verisi",
+    "gerçek veri girişi kapalıdır",
+    "geliştirme ortamında",
+  ]) {
+    assert(!manifestText.includes(forbidden), `Manifest exposed internal/test text: ${forbidden}`);
+  }
+
   const session = await context.newCDPSession(page);
   const result = (await session.send("Page.getInstallabilityErrors")) as {
     installabilityErrors?: unknown[];
@@ -91,6 +102,10 @@ async function assertNoResidue(page: Page, label: string) {
     "demo ilan",
     "giriş demosu",
     "mock ilan",
+    "pilot release candidate",
+    "yalnız sentetik test verisi",
+    "gerçek veri girişi kapalıdır",
+    "bu geliştirme ortamında",
     "developer",
     "debug",
   ]) {
