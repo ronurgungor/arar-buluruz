@@ -140,12 +140,15 @@ async function createPending(page: Page, title: string, seller: string, contactE
       outcome === "failure"
         ? (await failure.textContent())?.trim() || "[empty alert]"
         : "[no success or failure UI before timeout]";
+    const buttonText =
+      (await page.getByRole("button", { name: /Kaydediliyor|Pending ilan/ }).textContent().catch(() => null))
+        ?.trim() ?? "[button unavailable]";
     await page.screenshot({
       path: path.join(resultsDir, "hosted-create-failure.png"),
       fullPage: true,
     });
     throw new Error(
-      `Hosted create ${outcome}: elapsed=${elapsedMs}ms alert=${JSON.stringify(safeAlert)} POST=${responseStatus} ${responsePath}`,
+      `Hosted create ${outcome}: elapsed=${elapsedMs}ms alert=${JSON.stringify(safeAlert)} button=${JSON.stringify(buttonText)} POST=${responseStatus} ${responsePath}`,
     );
   }
 
@@ -205,7 +208,8 @@ const contactE164 = "+12025550155";
 
 try {
   await page.goto(`${baseUrl}/kurucu`, { waitUntil: "domcontentloaded" });
-  await page.getByText("İlan envanteri yükleniyor…", { exact: true }).waitFor();
+  const loadingStatus = page.getByText("İlan envanteri yükleniyor…", { exact: true });
+  await loadingStatus.waitFor();
   await page.getByRole("heading", { level: 1, name: "Kurucu pilot işlemleri" }).waitFor();
   await page.getByRole("heading", { level: 2, name: "Yeni pending ilan" }).waitFor();
   assert(
@@ -213,6 +217,16 @@ try {
     "Operator header exposed login.",
   );
   await assertNoHorizontalOverflow(page, "/kurucu");
+
+  // Prove the loading state first, then serialize mutations behind a completed inventory read.
+  // The previous hosted harness submitted during the deliberately delayed initial inventory request,
+  // creating an artificial concurrent founder mutation/read race that does not exist in the local
+  // networkidle proof. The lifecycle itself must start only after the founder inventory is settled.
+  await loadingStatus.waitFor({ state: "hidden" });
+  assert(
+    (await page.getByRole("alert").count()) === 0,
+    "Initial hosted founder inventory failed before lifecycle proof.",
+  );
 
   const createButton = page.getByRole("button", { name: "Pending ilan ve fotoğrafı kaydet" });
   await createButton.click();
