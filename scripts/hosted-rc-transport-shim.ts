@@ -18,7 +18,15 @@ const shimToken = process.env.HOSTED_RC_SHIM_TOKEN?.trim();
 const port = Number(process.env.HOSTED_RC_SHIM_PORT ?? "54329");
 const listDelayMs = Number(process.env.HOSTED_RC_LIST_DELAY_MS ?? "0");
 
-if (!projectRef || !dbUrl || !s3Endpoint || !s3Region || !s3AccessKey || !s3SecretKey || !shimToken) {
+if (
+  !projectRef ||
+  !dbUrl ||
+  !s3Endpoint ||
+  !s3Region ||
+  !s3AccessKey ||
+  !s3SecretKey ||
+  !shimToken
+) {
   throw new Error("Hosted RC shim configuration is incomplete.");
 }
 if (projectRef !== APPROVED_PROJECT_REF || FORBIDDEN_PROJECT_REFS.has(projectRef)) {
@@ -34,7 +42,7 @@ if (!Number.isFinite(listDelayMs) || listDelayMs < 0 || listDelayMs > 5_000) {
 const parsedDbUrl = new URL(dbUrl);
 const dbHost = parsedDbUrl.hostname.toLowerCase();
 const dbUser = decodeURIComponent(parsedDbUrl.username);
-if (!['postgres:', 'postgresql:'].includes(parsedDbUrl.protocol)) {
+if (!["postgres:", "postgresql:"].includes(parsedDbUrl.protocol)) {
   throw new Error("Hosted RC DB URL must use PostgreSQL.");
 }
 if (dbHost === `db.${projectRef}.supabase.co`) {
@@ -115,7 +123,9 @@ function sourceRcloneEnv(): Record<string, string | undefined> {
   };
 }
 
-async function runRclone(args: string[]): Promise<{ code: number; stdout: Uint8Array; stderr: string }> {
+async function runRclone(
+  args: string[],
+): Promise<{ code: number; stdout: Uint8Array; stderr: string }> {
   const child = Bun.spawn(["rclone", ...args], {
     env: sourceRcloneEnv(),
     stdout: "pipe",
@@ -234,7 +244,10 @@ async function patchListing(request: Request, url: URL): Promise<Response> {
     if (type === "status" && !["published", "unpublished", "rejected"].includes(value)) {
       throw new Error("Unexpected listing status transition.");
     }
-    if (key === "contact_verification_method" && !["whatsapp_same_number", "manual_callback"].includes(value)) {
+    if (
+      key === "contact_verification_method" &&
+      !["whatsapp_same_number", "manual_callback"].includes(value)
+    ) {
       throw new Error("Unexpected contact verification method.");
     }
     if (type === "timestamp" && Number.isNaN(Date.parse(value))) {
@@ -301,7 +314,9 @@ async function photoInventory(request: Request): Promise<Response> {
 
 async function uploadObject(request: Request, objectPath: string): Promise<Response> {
   requireObjectPath(objectPath);
-  if (request.headers.get("x-upsert") !== "false") throw new Error("Hosted RC upload must be immutable.");
+  if (request.headers.get("x-upsert") !== "false") {
+    throw new Error("Hosted RC upload must be immutable.");
+  }
   if (!request.headers.get("content-type")?.startsWith("image/webp")) {
     throw new Error("Hosted RC upload must be image/webp.");
   }
@@ -312,7 +327,12 @@ async function uploadObject(request: Request, objectPath: string): Promise<Respo
   const tempFile = path.join(os.tmpdir(), `arar-hosted-rc-${crypto.randomUUID()}.webp`);
   try {
     fs.writeFileSync(tempFile, bytes);
-    const result = await runRclone(["copyto", tempFile, `source:listing_photos/${objectPath}`, "--immutable"]);
+    const result = await runRclone([
+      "copyto",
+      tempFile,
+      `source:listing_photos/${objectPath}`,
+      "--immutable",
+    ]);
     if (result.code !== 0) throw new Error(`S3 upload failed: ${result.stderr.slice(0, 500)}`);
   } finally {
     fs.rmSync(tempFile, { force: true });
@@ -363,10 +383,16 @@ const server = Bun.serve({
         if (request.method === "PATCH") return await patchListing(request, url);
         if (request.method === "DELETE") return await deleteListing(url);
       }
-      if (request.method === "POST" && url.pathname === "/rest/v1/rpc/register_sanitized_listing_photo") {
+      if (
+        request.method === "POST" &&
+        url.pathname === "/rest/v1/rpc/register_sanitized_listing_photo"
+      ) {
         return await registerPhoto(request);
       }
-      if (request.method === "POST" && url.pathname === "/rest/v1/rpc/get_listing_photo_inventory") {
+      if (
+        request.method === "POST" &&
+        url.pathname === "/rest/v1/rpc/get_listing_photo_inventory"
+      ) {
         return await photoInventory(request);
       }
 
@@ -382,10 +408,15 @@ const server = Bun.serve({
 
       return json({ message: "Not found" }, 404);
     } catch (error) {
-      console.error("Hosted RC localhost transport shim failure:", error instanceof Error ? error.message : error);
+      console.error(
+        "Hosted RC localhost transport shim failure:",
+        error instanceof Error ? error.message : error,
+      );
       return json({ message: "Hosted RC transport failed closed." }, 500);
     }
   },
 });
 
-console.log(`Hosted RC localhost transport shim ready on ${server.hostname}:${server.port} for ${APPROVED_PROJECT_REF}.`);
+console.log(
+  `Hosted RC localhost transport shim ready on ${server.hostname}:${server.port} for ${APPROVED_PROJECT_REF}.`,
+);
