@@ -207,7 +207,6 @@ async function assertManifestAndInstallability(context: BrowserContext, page: Pa
     `Manifest content-type is not JSON-compatible: ${contentType}.`,
   );
 
-  // Keep the production HTTP JSON contract explicit. Raw-byte diagnostics above must not replace it.
   const manifest = (await manifestResponse.json()) as Record<string, unknown>;
   assertManifestFields(manifest, "Served manifest");
   assertManifestResidueAbsent(servedManifestText, "Served manifest");
@@ -468,27 +467,6 @@ try {
         `pilot-rc service worker cache did not contain the fail-closed offline fallback: ${JSON.stringify(initialSnapshot.offlineFallback)}.`,
       );
 
-      await offlineContext.setOffline(true);
-      let emulatedOfflineProbeError: string | null = null;
-      let emulatedOfflineProbeResponse: Awaited<ReturnType<Page["goto"]>> = null;
-      try {
-        emulatedOfflineProbeResponse = await offlinePage.goto(
-          `${baseUrl}/ara?q=offline-emulation-probe`,
-          { waitUntil: "domcontentloaded" },
-        );
-      } catch (error) {
-        emulatedOfflineProbeError = error instanceof Error ? error.message : String(error);
-      }
-      const emulatedOfflineHeadingCount = await offlinePage
-        .getByRole("heading", { level: 1, name: "Bağlantı yok" })
-        .count();
-      const emulatedOfflineSnapshot = await readServiceWorkerSnapshot(offlinePage);
-      console.log(
-        `pilot-rc browser-offline emulation diagnostic: response=${emulatedOfflineProbeResponse ? `${emulatedOfflineProbeResponse.status()} ${emulatedOfflineProbeResponse.url()} fromServiceWorker=${emulatedOfflineProbeResponse.fromServiceWorker()}` : "[none]"} error=${JSON.stringify(emulatedOfflineProbeError)} pageUrl=${offlinePage.url()} offlineHeadingCount=${emulatedOfflineHeadingCount} state=${JSON.stringify(emulatedOfflineSnapshot)} documentResponses=${JSON.stringify(offlineDocumentResponses)} requestFailures=${JSON.stringify(offlineRequestFailures)}.`,
-      );
-
-      await offlineContext.setOffline(false);
-      await offlinePage.goto(baseUrl, { waitUntil: "networkidle" });
       const beforeOutageSnapshot = await ensureServiceWorkerControl(offlinePage);
       assert(
         hasControllingWorker(beforeOutageSnapshot),
@@ -507,24 +485,27 @@ try {
       await terminate(server);
       await waitForServerDown();
 
+      const offlineUrl = `${baseUrl}/ara?q=offline-proof`;
       let offlineNavigationError: string | null = null;
-      let offlineNavigationResponse: Awaited<ReturnType<Page["goto"]>> = null;
+      let offlineNavigationResponse: Awaited<ReturnType<Page["waitForNavigation"]>> = null;
       try {
-        offlineNavigationResponse = await offlinePage.goto(`${baseUrl}/ara?q=offline-proof`, {
-          waitUntil: "domcontentloaded",
-        });
+        const navigationPromise = offlinePage.waitForNavigation({ waitUntil: "domcontentloaded" });
+        await offlinePage.evaluate((url) => {
+          window.location.assign(url);
+        }, offlineUrl);
+        offlineNavigationResponse = await navigationPromise;
+        await offlinePage.waitForLoadState("domcontentloaded");
       } catch (error) {
         offlineNavigationError = error instanceof Error ? error.message : String(error);
       }
 
-      const afterNavigationSnapshot = await readServiceWorkerSnapshot(offlinePage);
-      console.log(
-        `pilot-rc real offline navigation diagnostic: response=${offlineNavigationResponse ? `${offlineNavigationResponse.status()} ${offlineNavigationResponse.url()} fromServiceWorker=${offlineNavigationResponse.fromServiceWorker()}` : "[none]"} error=${JSON.stringify(offlineNavigationError)} pageUrl=${offlinePage.url()} state=${JSON.stringify(afterNavigationSnapshot)} documentResponses=${JSON.stringify(offlineDocumentResponses)} requestFailures=${JSON.stringify(offlineRequestFailures)} consoleErrors=${JSON.stringify(offlineConsoleErrors)} pageErrors=${JSON.stringify(offlinePageErrors)}.`,
-      );
-
       assert(
         offlineNavigationError === null && offlineNavigationResponse !== null,
         `pilot-rc real offline navigation failed before the service worker fallback could respond: ${offlineNavigationError}.`,
+      );
+      assert(
+        offlinePage.url() === offlineUrl,
+        `pilot-rc offline navigation landed on an unexpected URL: ${offlinePage.url()}.`,
       );
       assert(
         offlineNavigationResponse.fromServiceWorker(),
@@ -534,10 +515,20 @@ try {
         offlineNavigationResponse.ok(),
         `pilot-rc service worker offline fallback returned HTTP ${offlineNavigationResponse.status()}.`,
       );
+
+      const afterNavigationSnapshot = await readServiceWorkerSnapshot(offlinePage);
+      console.log(
+        `pilot-rc real offline navigation diagnostic: response=${offlineNavigationResponse.status()} ${offlineNavigationResponse.url()} fromServiceWorker=${offlineNavigationResponse.fromServiceWorker()} error=${JSON.stringify(offlineNavigationError)} pageUrl=${offlinePage.url()} state=${JSON.stringify(afterNavigationSnapshot)} documentResponses=${JSON.stringify(offlineDocumentResponses)} requestFailures=${JSON.stringify(offlineRequestFailures)} consoleErrors=${JSON.stringify(offlineConsoleErrors)} pageErrors=${JSON.stringify(offlinePageErrors)}.`,
+      );
+
       await offlinePage.getByRole("heading", { level: 1, name: "Bağlantı yok" }).waitFor();
       await offlinePage
         .getByText("dinamik ilanları çevrimdışı saklamaz", { exact: false })
         .waitFor();
+      assert(
+        afterNavigationSnapshot.offlineFallback?.text === (await offlinePage.locator("html").innerHTML()).replace(/^<head>[\s\S]*?<\/head>/, ""),
+        "pilot-rc offline fallback response drifted from the cached fail-closed document.",
+      );
       assert(
         (await offlinePage.getByText(baselineTitle, { exact: true }).count()) === 0,
         "Offline fallback exposed stale dynamic listing data.",
