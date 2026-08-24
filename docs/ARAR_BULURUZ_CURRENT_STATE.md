@@ -1,30 +1,22 @@
 # Arar Buluruz — Current State
 
-_Last updated: 2026-08-23, Europe/Istanbul_
+_Last updated: 2026-08-24, Europe/Istanbul_
 
 ## Canonical repository state
 
 - Repository: `ronurgungor/arar-buluruz`; canonical branch: `main`.
-- Canonical implementation checkpoint before this documentation-only synchronization: `2f86ec41cb2b6dd3f51d2ac3999a0739ffd32469` (PR #70 merge).
-- PR #57 — trusted real-pilot photo pipeline: **MERGED / CLOSED**.
-- PR #58 — simplified intentionally-public seller-contact contract: **MERGED / CLOSED**.
-- PR #60 — Activation Readiness Pack / gate synchronization: **MERGED / CLOSED**.
-- PR #61 — restore-verification hardening: **MERGED / CLOSED**; Issue #59 is **CLOSED / COMPLETED**.
-- PR #62 — portable logical DB backup/clean restore/application verification: **MERGED / CLOSED**.
-- PR #63 — canonical execution-strategy/current-state synchronization: **MERGED / CLOSED**.
-- PR #64 — photo delivery + DB/Storage portability + pinned self-host migration/rollback readiness: **MERGED / CLOSED**.
-- PR #67 — dedicated managed Supabase migration-rehearsal harness: **MERGED / CLOSED**.
-- PR #68 — reverted unintended Lovable inspection commits without changing the PR #67 implementation tree: **MERGED / CLOSED**.
-- PR #69 — corrected deterministic application-fingerprint ordering for `private.listing_external_sales_links`: **MERGED / CLOSED**.
-- PR #70 — made hosted role backup portable without introducing out-of-scope Realtime/Auth services: **MERGED / CLOSED**.
+- PR #74 — **Prove hosted synthetic pilot release candidate**: **MERGED / CLOSED**.
+- PR #74 verified exact head: `e63ac55a99dcb62fb7e3d55c0ed077aa7213eb20`.
+- PR #74 merge commit: `7242a87559a5091c24b0779219506d3b55ff4c91`.
 - Issue #66 — dedicated managed Supabase Free → pinned self-host migration rehearsal: **CLOSED / COMPLETED**.
-- GitHub `main` is not branch-protected; checks are evidence rather than server-enforced merge requirements. Normal PR/merge discipline remains mandatory.
+- Issue #72 — pre-AWS pilot release-candidate execution: technical acceptance evidence is complete; this document records that final verified state for closure.
+- GitHub `main` is not branch-protected; successful checks are evidence rather than server-enforced merge requirements. Exact-head verification and normal PR/merge discipline remain mandatory.
 
 ## Current phase
 
-**Development execution / pre-production release-readiness preparation.**
+**Pre-AWS pilot release-candidate technical execution is complete. Production activation remains closed.**
 
-The provider-specific hosted-managed portability checkpoint is now complete. The next real-pilot blockers are the separate privacy/legal/operational gate and, later, actual production infrastructure verification.
+Issue #66 proved provider portability. Issue #72 subsequently proved the application-level hosted synthetic pilot release candidate against the dedicated Arar Buluruz development environment without activating AWS, production or real data.
 
 The current strategy authority remains `docs/EXECUTION_STRATEGY_2026-08-21.md` except where this newer current-state file records subsequently completed evidence.
 
@@ -38,13 +30,14 @@ Hard boundaries remain unchanged:
 - AWS OFF;
 - paid infrastructure OFF;
 - dedicated Supabase development environment remains Free only;
-- no Auth/account/payment/chat/advertising/monetization scope expansion.
+- no Auth/account/payment/chat/advertising/monetization scope expansion;
+- existing `tarladan` resources remain untouched and out of scope.
 
 **REAL DATA COLLECTION remains CLOSED.**
 
 ## Dedicated hosted Supabase state
 
-The approved isolated hosted-development environment now exists:
+The approved isolated hosted-development environment is:
 
 - organization: `Arar Buluruz`;
 - project: `arar-buluruz-synthetic-dev`;
@@ -53,239 +46,180 @@ The approved isolated hosted-development environment now exists:
 - plan: Supabase Free;
 - data: synthetic/mock only.
 
-The existing `tarladan` Supabase organization/projects remain explicitly out of scope. The managed-rehearsal workflow hard-rejects both known Tarladan project refs before performing any live mutation.
+The hosted proof hard-rejects both known Tarladan project refs before any live mutation. The dedicated project is not production and its successful use does not authorize real data or production activation.
 
-The dedicated project is not production. Its successful use does not authorize real data or production activation.
+## Issue #66 portability state
 
-## Issue #66 live managed migration evidence
+The managed Supabase Free → pinned self-host DB + Storage migration and rollback rehearsal is complete.
 
-The final hosted managed Free → pinned self-host rehearsal passed on 2026-08-23.
+Verified portability includes:
 
-Exact evidence:
+- canonical migrations and application schema/data;
+- private Storage object backup/restore;
+- RLS/grants and restore verification;
+- signed private-photo delivery;
+- application-level verification on source and target;
+- source/target DB fingerprint equality;
+- source/target Storage equality;
+- rollback to the preserved managed source;
+- exact photo byte/hash verification;
+- final synthetic-only cleanup guard.
 
-- workflow: `Managed Supabase migration rehearsal`;
-- run: `32638398176` / run #8 — **SUCCESS**;
-- exact source commit: `2f86ec41cb2b6dd3f51d2ac3999a0739ffd32469`;
-- static boundary job: `97191503317` — **SUCCESS**;
-- live managed rehearsal job: `97191522632` — **SUCCESS**;
-- managed project ref: `rzosrvenlvhijeckmwyc`;
-- S3 region: `eu-central-1`.
+The tested target remains pinned to `self-hosted/v0.8.0` / upstream commit `241bb11c0627f2981746d37033f57dbfa81d29b0`, PostgreSQL 17, Storage API `v1.60.4`, PostgREST `v14.12` and Envoy `v1.39.0`.
 
-The live harness proved all of the following in one successful run:
+Portability is therefore **PASS** and is not an open Issue #72 blocker.
 
-1. synthetic-only fail-closed source preconditions;
-2. exact canonical migration history on managed Supabase;
-3. private `listing_photos` bucket contract;
-4. deterministic sanitized photo materialization;
-5. service-role database grants used without introducing a browser/server service-role secret;
-6. pending listing/photo invisibility and failed anonymous signing before publication;
-7. managed-source RLS/grant/restore-verifier success;
-8. real public application adapter + signed private-Storage verification after publication;
-9. portable logical DB backup and checksum verification;
-10. independent Storage object backup;
-11. exact pinned self-host target startup and service/image/network assertions;
-12. DB + Storage restore into that target;
-13. target restore-verifier and application/signed-photo verification;
-14. source/target application DB fingerprint equality;
-15. source/target Storage equality;
-16. candidate target destruction;
-17. managed-source application/hash/fingerprint verification after rollback;
-18. final synthetic-only guard with no Auth users, no unexpected listing rows and no unexpected Storage objects.
+## Issue #72 recovery-free exact-head evidence
 
-Final workflow message:
+Final recovery-free exact head:
 
-`Managed Supabase Free → pinned self-host DB + Storage migration and source rollback rehearsal passed.`
+`e63ac55a99dcb62fb7e3d55c0ed077aa7213eb20`
 
-Issue #66 is therefore complete.
+All required workflows on that same head completed **SUCCESS**:
 
-## Architecture
+- CI — run `32758521813`;
+- V0 minimal PWA — run `32758521843`;
+- Self-host migration rehearsal — run `32758521808`;
+- Real pilot backend prep — run `32758522016`;
+  - hosted exact-head RC job `97531617395` — **SUCCESS**;
+  - local synthetic migration/RLS/Storage/operational validation job `97531617660` — **SUCCESS**.
 
-Application stack:
+The hosted exact-head proof established the following application lifecycle in the dedicated synthetic project:
 
-- React 19;
-- TanStack Start / Router / Query;
-- TypeScript;
-- Tailwind CSS;
-- Bun `1.3.14` with canonical `bun.lock`;
-- Vite/Nitro;
-- PostgreSQL/Supabase-compatible backend contracts.
+1. founder create;
+2. server-side image sanitization;
+3. private Storage upload and private photo metadata registration;
+4. pending state;
+5. publish;
+6. public collection and detail through the real Supabase adapter;
+7. signed private-photo delivery in the buyer UI;
+8. lifecycle-controlled seller contact;
+9. unpublish;
+10. hard delete;
+11. separate pending → reject → hard-delete path.
 
-Public listing access deliberately does not depend on `@supabase/supabase-js`. `src/lib/public-listings.ts` uses a small REST/fetch adapter and supports:
+The browser proof explicitly reported:
 
-- `mock`;
-- `supabase`;
-- `disabled`.
+`Hosted founder create/photo/publish/public/contact/unpublish/delete + reject/delete browser journey passed.`
 
-Fail-closed runtime behavior remains:
+## Final DB / Storage cleanup consistency
 
-- mock may be used for development;
-- an unconfigured production build does not silently connect to a backend;
-- Supabase source requires explicit URL/public key configuration;
-- non-local Supabase URLs require HTTPS;
-- server/service-role secrets are not exposed to the public listing adapter.
+The hosted RC proof returned the dedicated environment to its canonical fixture state after the founder journeys.
+
+Verified final conditions include:
+
+- Auth users = `0`;
+- no listing rows beyond the canonical fixture;
+- no orphan private photo metadata;
+- no orphan Storage object;
+- application DB fingerprint before/after equality;
+- Storage before/after object and byte consistency;
+- canonical Storage state exactly `1 object / 72 bytes`.
+
+The workflow reported:
+
+`Hosted RC Storage before/after consistency verified: 1 object(s), 72 byte(s).`
+
+No recovery script or recovery workflow hook is present in the final recovery-free exact head.
+
+## Pilot release-candidate artifact proof
+
+The real `pilot-rc` production artifact was built and browser-tested, rather than treating a source fixture or directly opened fallback file as release evidence.
+
+Verified artifact/browser behavior includes:
+
+- desktop and mobile flows;
+- Chromium PWA/installability checks;
+- service-worker registration and active control;
+- manifest disk/HTTP byte identity;
+- back-navigation/search-state preservation;
+- honest loading, validation, empty and backend-outage fail-closed states;
+- public `/giris` unavailable in pilot-RC;
+- public `/kurucu` GET/POST unavailable in pilot-RC;
+- accountless pilot intake/privacy behavior;
+- real Supabase public listing collection/detail;
+- signed private-photo browser decode;
+- seller-contact contract;
+- fail-closed offline navigation.
+
+Final pilot manifest evidence:
+
+- bytes: `784`;
+- SHA-256: `80c19fb20d9512fe6454cb12ed699b4badd91083b67d8c94d1d45b18eca2a562`;
+- served bytes were identical to the finalized disk artifact.
+
+The signed private photo decoded successfully in Chromium (`complete=true`, non-zero natural dimensions, no decode error).
+
+### Real offline navigation evidence
+
+The offline proof verified an installed and controlling service worker before navigation:
+
+- secure context: true;
+- one service-worker registration for the application scope;
+- `installing = null`;
+- `waiting = null`;
+- active `/sw.js` state: `activated`;
+- `navigator.serviceWorker.controller`: `/sw.js`, state `activated`;
+- `/offline.html` present in Cache Storage with HTTP 200.
+
+The production server was then made unavailable and the browser performed a real offline navigation to:
+
+`/ara?q=offline-proof`
+
+The navigation result was:
+
+- HTTP `200`;
+- `fromServiceWorker = true`;
+- `navigator.onLine = false`;
+- visible heading: `Bağlantı yok`;
+- no stale dynamic listing data;
+- request failures: none;
+- console errors: none;
+- page errors: none.
+
+The workflow reported:
+
+`pilot-rc production artifact desktop/mobile/PWA/offline/navigation/fail-closed proof passed.`
+
+## Artifact and privilege boundary
+
+The final hosted proof keeps privileged transport and credentials outside the public artifact/browser boundary.
+
+Verified constraints include:
+
+- workflow-only transport shim bound to localhost and dedicated Arar Buluruz synthetic project only;
+- known Tarladan project refs hard-rejected;
+- privileged DB/S3 credentials not supplied to browser runtime;
+- public pilot artifact contains no privileged endpoint/credential material;
+- no CI shim marker/port in runtime source;
+- no V0/mock/test presentation residue in pilot-RC;
+- no service-role credential or supplied secret leakage;
+- repository remained clean after proof (`git diff --check` and `git diff --exit-code`).
+
+The final boundary scanner reported:
+
+`pilot-rc artifact boundary passed: no CI shim, V0/mock/test presentation residue, privileged marker, or supplied secret leakage.`
 
 ## Supabase repository state
 
-`supabase/config.toml` remains fail-closed in Git:
+`supabase/config.toml` remains fail-closed in Git. Auth and Storage are enabled only in controlled test/rehearsal paths; production activation is not implied.
 
-- PostgreSQL major `17`;
-- Auth disabled by default;
-- Storage disabled by default;
-- Studio disabled;
-- Realtime/Edge/Analytics disabled;
-- private `listing_photos` bucket contract exists for explicitly enabled controlled test/rehearsal paths.
-
-Current migration chain:
+Current canonical migration chain is exactly six migrations:
 
 1. `20260730162000_create_listings.sql`
 2. `20260808211500_prepare_real_corlu_pilot_backend.sql`
 3. `20260809220000_prepare_trusted_photo_pipeline.sql`
 4. `20260810210000_prepare_public_seller_contact_contract.sql`
 5. `20260822113000_enable_public_signed_photo_delivery.sql`
+6. `20260823150000_add_operator_photo_inventory.sql`
 
-The canonical migration contract includes:
-
-- founder-controlled listing lifecycle;
-- initial Çorlu pilot location constraints;
-- fail-closed anonymous RLS;
-- no anonymous/public writes;
-- exactly one intentionally public active seller contact;
-- internal contact verification/publication audit fields;
-- fail-closed contact-change trigger behavior;
-- private trusted-photo object/metadata contract;
-- lifecycle-gated public signed-photo delivery;
-- no public bucket and no anonymous direct private-object read path.
-
-## Database/RLS verification state
-
-Canonical implementation carries **125 pgTAP tests** across the existing suites plus public-photo delivery coverage.
-
-CI and rehearsal additionally verify:
-
-- clean migration replay and migration history;
-- role/RLS negative probes;
-- restore-time lifecycle/security semantics;
-- REST/RLS integration;
-- desktop/mobile Chromium E2E;
-- private Storage behavior;
-- public signed-photo behavior;
-- logical backup/clean restore;
-- application-level post-restore reads.
-
-The restore verifier checks actual semantics, not merely object names, including RLS, grants, contact lifecycle predicates, the fail-closed contact-change trigger and restored photo-delivery policy requirements.
-
-## Public signed-photo state
-
-Buyer-visible photo delivery is wired into the Supabase public listings adapter.
-
-The contract remains deliberately narrow:
-
-- source objects remain in private `listing_photos` Storage;
-- anonymous direct object reads are not the delivery mechanism;
-- only lifecycle-eligible published listing photos can obtain signed delivery;
-- the adapter accepts only expected same-Supabase-origin Storage signed URLs;
-- signed URLs are short-lived; canonical default is **60 seconds** and the security contract caps accepted TTL at five minutes;
-- no service-role secret is sent to the browser;
-- anonymous bucket listing is tested for absence of private object disclosure.
-
-A zero-photo pilot is a product choice, not a technical workaround requirement.
-
-## Portable DB backup and restore
-
-Database and Storage portability are intentionally separate.
-
-The managed application DB backup now contains:
-
-- checksum-protected hosted source-role inventory evidence (`source-roles.sql`);
-- a portable runtime-role contract (`roles.sql`) that verifies the target-provisioned `anon`, `authenticated`, `service_role` and `authenticator` roles without replaying hosted provider-internal role mutations;
-- application-owned `public,private` schema;
-- application data from `public,private` only;
-- the application-owned cross-schema Storage policy as `storage-policy.sql`;
-- SHA-256 checksum manifest.
-
-Supabase-managed `auth`/`storage` table rows are not copied as generic application data. Hosted provider-internal role attributes such as Realtime-specific roles are retained as evidence but are not treated as application-portable state.
-
-The live run checksum-verified every DB backup artifact before restore.
-
-## Storage object backup/migration/restore
-
-Storage object bytes are backed up and verified separately through S3-compatible `rclone` transfer.
-
-Canonical deterministic fixture:
-
-- listing ID: `93000000-0000-4000-8000-000000000001`;
-- photo ID: `94000000-0000-4000-8000-000000000001`;
-- object: `listings/93000000-0000-4000-8000-000000000001/94000000-0000-4000-8000-000000000001.webp`;
-- object count: `1`;
-- byte size: `72`;
-- SHA-256: `fd89cface8e12174fb1c6e78c0a8b0b26be925820eed38713ff1d921d5f969df`.
-
-Live run #8 proved:
-
-- managed-source application/signed-photo verification with the expected SHA-256;
-- local backup exactly `1 object / 72 bytes`;
-- target restore `0 differences found` / `1 matching files`;
-- target Storage exactly `1 object / 72 bytes`;
-- target application/signed-photo verification with the same SHA-256;
-- managed source after target destruction again `0 differences found` / `1 matching files` and exactly `1 object / 72 bytes`;
-- the same SHA-256 again after rollback.
-
-Therefore DB portability and Storage-object portability are separate, explicit, successful tests from both local and real hosted-managed source paths.
-
-## Pinned self-host compatibility state
-
-The tested target remains pinned to:
-
-- self-host release: `self-hosted/v0.8.0`;
-- upstream commit: `241bb11c0627f2981746d37033f57dbfa81d29b0`;
-- PostgreSQL: `supabase/postgres:17.6.1.136`;
-- Storage API: `supabase/storage-api:v1.60.4`;
-- PostgREST: `postgrest/postgrest:v14.12`;
-- API gateway: `envoyproxy/envoy:v1.39.0`;
-- upstream compose/config/key-generator files hash-pinned in `ops/self-hosted/upstream.lock`.
-
-Both portability paths have now passed:
-
-- local Supabase CLI synthetic source → pinned self-host target → target destruction → source rollback;
-- dedicated hosted managed Supabase Free synthetic source → the same pinned self-host target → target destruction → managed-source rollback verification.
-
-The provider-specific portability evidence boundary that previously remained open is now closed.
-
-## Security / secrets / network rehearsal evidence
-
-The synthetic self-host target remains intentionally narrow:
-
-- target DB bound only to `127.0.0.1:15432`;
-- target API gateway bound only to `127.0.0.1:18000`;
-- Auth, Realtime, Edge Functions and Supavisor are not started for the target path;
-- Studio/meta are only present where required by the pinned upstream gateway dependency and are not separately host-published;
-- ephemeral self-host secrets are generated for the rehearsal and masked in Actions;
-- known insecure upstream example secrets cause failure;
-- repository secret-pattern scan runs before rehearsal;
-- managed credentials are held in GitHub Actions secrets and masked;
-- `SUPABASE_ACCESS_TOKEN` and linked project state are forbidden in this workflow;
-- managed source uses `PGSSLMODE=require`;
-- `PGSSLMODE=disable` is restricted to the loopback-only ephemeral self-host target.
-
-These are release-readiness checks, not a claim that future AWS production networking/TLS is already configured.
-
-Actual production infrastructure will still require deployment-day verification of at least:
-
-- TLS termination/certificates;
-- firewall/VPC/security-group exposure;
-- admin/Studio/meta exposure policy;
-- credential rotation/storage;
-- backup destination and residency;
-- operational logging/monitoring minimums;
-- restore from the actual production backup path.
-
-Those checks cannot be truthfully completed while AWS/prod remain OFF.
+Canonical database/RLS test suites, REST integration, browser E2E, private Storage, signed-photo, backup/restore and application-level verification all pass in the final required workflows.
 
 ## Public runtime vs repository
 
-Repository preparation and the already-published public V0 remain separate states.
+Repository readiness and the already-published public V0 remain separate states.
 
-The known public V0 remains synthetic/mock and non-collecting unless a separate deployment gate changes it:
+The known public V0 remains synthetic/mock and non-collecting unless a separate publication/deployment gate changes it:
 
 - no authorized real production backend connection;
 - no real personal data;
@@ -293,7 +227,7 @@ The known public V0 remains synthetic/mock and non-collecting unless a separate 
 - no Auth;
 - no payment/advertising/monetization activation.
 
-Repository merges and the managed synthetic rehearsal do **not** authorize Lovable Publish/Update, production deployment or real-data collection.
+PR #74 and Issue #72 completion do **not** authorize Lovable Publish/Update, AWS provisioning, production deployment or real-data collection.
 
 ## Minimal pilot product scope
 
@@ -307,73 +241,38 @@ After all later activation gates pass, the controlled rollout remains:
 
 Operating model remains founder-operated, with no seller Auth/accounts/dashboard, no public self-service writes, no chat, no payment custody/commission and no advertising/paid listings/subscriptions during validation.
 
-## Seller-contact state
+## Remaining activation gates
 
-The intentionally public seller-contact contract remains unchanged:
+The technical pre-AWS release-candidate proof is complete, but it is not legal or operational authorization for real data.
 
-- one authoritative `contact_e164`;
-- one `contact_channel` (`whatsapp` or `phone`) when publishable;
-- active published contact anonymously readable with the listing;
-- internal readiness/audit fields not anonymously readable;
-- contact identity/value changes fail closed by removing publication readiness.
+Before the first real listing, the separate privacy/legal/operational and production-activation gates must still resolve and verify, as applicable:
 
-No real phone number is authorized in the current phase.
-
-## Infrastructure sequence
-
-### Development now
-
-- repository/local CI;
-- isolated `Arar Buluruz / arar-buluruz-synthetic-dev` Supabase Free project for synthetic/mock development and portability evidence only;
-- existing `tarladan` resources remain out of scope;
-- AWS OFF;
-- paid infrastructure OFF;
-- production OFF;
-- real data OFF.
-
-### Pre-AWS technical state
-
-The dedicated managed Supabase Free → pinned self-host provider portability checkpoint is **complete** through Issue #66 and run `32638398176`.
-
-There is no remaining need to create or modify infrastructure merely to repeat that proof. AWS must remain unopened until a later explicit activation decision.
-
-### Real pilot later
-
-The current future production candidate remains minimal self-hosted Supabase on AWS Istanbul Local Zone `eu-central-1-ist-1a`, with EC2/EBS/Docker and eligible credits only after release readiness and a separate activation decision.
-
-AWS account/provisioning decisions, pricing/credit eligibility, Istanbul Local Zone availability, EBS snapshot residency/configuration and production network design remain intentionally deferred and must be re-checked at the actual production gate. AWS is still **OFF**.
-
-## Privacy/legal real-data gate
-
-Technical portability readiness is not legal authorization for real data. Before the first real listing, the separate privacy/legal/operational gate must still resolve and verify at least:
-
-- KVKK transparency/aydınlatma;
-- controller identity/contact channel;
+- KVKK transparency/aydınlatma and controller contact;
 - collection/storage/public-disclosure legal basis;
-- retention/deletion and backup-deletion propagation;
-- data-subject request procedure;
+- retention/deletion and data-subject request procedures;
 - wrong-person/incorrect-phone rapid takedown;
-- recipient/data-flow mapping;
-- content/category moderation rules;
+- recipient/data-flow mapping and moderation rules;
 - actual production provider/data-residency configuration;
 - production TLS/network/admin hardening;
 - production secrets/least privilege;
 - minimum operational logs;
 - unpublish/kill switch;
-- actual production backup + successful restore.
+- actual production backup and successful restore.
 
-## Current incomplete items / shortest safe path
+AWS account/provisioning, pricing/credit eligibility, Istanbul availability/residency and production network design remain intentionally deferred until an explicit production activation decision. **AWS remains OFF.**
 
-After Issue #66 completion, the narrow remaining path is:
+## Shortest safe path from this checkpoint
+
+After Issues #66 and #72 technical completion:
 
 1. keep product scope frozen and real data OFF;
-2. keep the dedicated Supabase Free environment synthetic-only and `tarladan` untouched;
+2. keep the dedicated Supabase Free environment synthetic-only and Tarladan untouched;
 3. complete the separate privacy/legal/operational real-data gate;
-4. do not open AWS merely for further rehearsal — wait for an explicit production activation decision;
-5. at that later production gate, re-verify Istanbul availability/cost/credits/residency plus production TLS/network/secrets/backups and perform an actual production backup/restore verification;
+4. do not open AWS merely to repeat already-passed release-candidate/portability proofs;
+5. at a later explicit production gate, verify actual infrastructure, residency, TLS/network/secrets/backups and perform the required production backup/restore check;
 6. only after explicit real-data authorization begin the **1 → 3 → 5–10** Çorlu canary.
 
-Do **not** add Auth, accounts, payments, chat, ads, seller dashboards, complex analytics, recommendation engines, microservices, Kubernetes or speculative observability to satisfy this path.
+Do **not** add Auth, accounts, payments, chat, ads, seller dashboards, complex analytics, recommendation engines, microservices, Kubernetes or speculative observability merely to satisfy this path.
 
 ## Historical-document rule
 
