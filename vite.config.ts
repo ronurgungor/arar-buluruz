@@ -211,10 +211,19 @@ if (discoveryProfile === "real-content" && process.env.VITE_LISTINGS_SOURCE !== 
 
 process.env.VITE_DISCOVERY_PROFILE = discoveryProfile;
 
+const isPilotRcBuild = buildProfile === "pilot-rc";
+
 export default defineConfig({
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
-    server: { entry: "server" },
+    server: { entry: isPilotRcBuild ? "server.pilot" : "server" },
+    ...(isPilotRcBuild
+      ? {
+          router: {
+            entry: "router.pilot.tsx",
+            routesDirectory: "routes-pilot",
+            generatedRouteTree: "routeTree.pilot.gen.ts",
+          },
+        }
+      : {}),
   },
 });

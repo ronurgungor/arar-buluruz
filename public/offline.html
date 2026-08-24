@@ -13,11 +13,7 @@
         background: #f8f4ea;
         color: #3a332e;
       }
-
-      * {
-        box-sizing: border-box;
-      }
-
+      * { box-sizing: border-box; }
       body {
         min-height: 100vh;
         margin: 0;
@@ -25,7 +21,6 @@
         place-items: center;
         padding: 24px;
       }
-
       main {
         width: min(100%, 440px);
         border: 1px solid #ded8ce;
@@ -35,7 +30,6 @@
         box-shadow: 0 18px 60px rgb(58 51 46 / 10%);
         text-align: center;
       }
-
       .icon {
         width: 72px;
         height: 72px;
@@ -48,19 +42,8 @@
         font-size: 34px;
         font-weight: 800;
       }
-
-      h1 {
-        margin: 0;
-        font-size: 28px;
-        letter-spacing: -0.03em;
-      }
-
-      p {
-        margin: 12px 0 0;
-        color: #6e665f;
-        line-height: 1.6;
-      }
-
+      h1 { margin: 0; font-size: 28px; letter-spacing: -0.03em; }
+      p { margin: 12px 0 0; color: #6e665f; line-height: 1.6; }
       .notice {
         margin-top: 18px;
         border-radius: 14px;
@@ -68,7 +51,6 @@
         padding: 12px 14px;
         font-size: 14px;
       }
-
       button {
         margin-top: 22px;
         min-height: 48px;
@@ -87,9 +69,9 @@
     <main>
       <div class="icon" aria-hidden="true">⌕</div>
       <h1>Bağlantı yok</h1>
-      <p>İnternet bağlantısı geri geldiğinde arama ve örnek ilanları yeniden açabilirsin.</p>
+      <p>İnternet bağlantısı geri geldiğinde ilanları yeniden görüntüleyebilirsin.</p>
       <p class="notice">
-        Bu V0 test sürümü dinamik ilanları çevrimdışı saklamaz. Eski veya eksik ilan göstermemek için yalnız bu güvenli hata ekranı kullanılmaktadır.
+        Uygulama dinamik ilanları çevrimdışı saklamaz. Eski veya eksik ilan göstermemek için bağlantı yokken yalnız bu güvenli ekran gösterilir.
       </p>
       <button type="button" onclick="window.location.reload()">Tekrar dene</button>
     </main>
