@@ -7,6 +7,8 @@ const FORBIDDEN_PROJECT_REFS = new Set(["jlbsoraqnlricbyagxdk", "gwgrwwvaiizfsqa
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const OBJECT_PATH_PATTERN = /^listings\/([0-9a-f-]{36})\/([0-9a-f-]{36})\.webp$/i;
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+const DELETE_VERIFY_ATTEMPTS = 20;
+const DELETE_VERIFY_DELAY_MS = 500;
 
 const projectRef = process.env.HOSTED_RC_PROJECT_REF?.trim();
 const dbUrl = process.env.HOSTED_RC_DB_URL?.trim();
@@ -137,6 +139,25 @@ async function runRclone(
     child.exited,
   ]);
   return { code, stdout: new Uint8Array(stdoutBuffer), stderr };
+}
+
+async function objectExists(objectPath: string): Promise<boolean> {
+  const separatorIndex = objectPath.lastIndexOf("/");
+  if (separatorIndex <= 0 || separatorIndex === objectPath.length - 1) {
+    throw new Error("Hosted RC object path could not be split for verification.");
+  }
+  const parent = objectPath.slice(0, separatorIndex);
+  const basename = objectPath.slice(separatorIndex + 1);
+  const result = await runRclone(["lsf", `source:listing_photos/${parent}`, "--files-only"]);
+  if (result.code !== 0) {
+    throw new Error(`S3 object verification failed: ${result.stderr.slice(0, 500)}`);
+  }
+  const names = new TextDecoder()
+    .decode(result.stdout)
+    .split(/\r?\n/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return names.includes(basename);
 }
 
 function requireUuid(value: string | null, context: string): string {
@@ -351,14 +372,29 @@ async function deleteObjects(request: Request): Promise<Response> {
     const objectPath = requireObjectPath(prefix);
     const result = await runRclone(["deletefile", `source:listing_photos/${objectPath}`]);
     if (result.code !== 0) throw new Error(`S3 delete failed: ${result.stderr.slice(0, 500)}`);
+
+    let deleted = false;
+    for (let attempt = 0; attempt < DELETE_VERIFY_ATTEMPTS; attempt += 1) {
+      if (!(await objectExists(objectPath))) {
+        deleted = true;
+        break;
+      }
+      await Bun.sleep(DELETE_VERIFY_DELAY_MS);
+    }
+    if (!deleted) {
+      throw new Error(`S3 delete verification timed out for ${objectPath}.`);
+    }
   }
   return json({ message: "Successfully deleted" });
 }
 
 async function readObject(objectPath: string): Promise<Response> {
   requireObjectPath(objectPath);
+  if (!(await objectExists(objectPath))) return json({ message: "Not found" }, 404);
   const result = await runRclone(["cat", `source:listing_photos/${objectPath}`]);
-  if (result.code !== 0) return json({ message: "Not found" }, 404);
+  if (result.code !== 0) {
+    throw new Error(`S3 read failed after existence verification: ${result.stderr.slice(0, 500)}`);
+  }
   return new Response(result.stdout, {
     status: 200,
     headers: { "content-type": "image/webp", "cache-control": "no-store" },
