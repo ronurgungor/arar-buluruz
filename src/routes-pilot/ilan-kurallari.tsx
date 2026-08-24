@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PublisherInfoPage } from "@/components/PublisherInfoPage";
+import { PilotPublisherInfoPage } from "@/build-profiles/pilot/PilotPublisherInfoPage";
 
 export const Route = createFileRoute("/ilan-kurallari")({
   head: () => ({
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/ilan-kurallari")({
 
 function ListingRules() {
   return (
-    <PublisherInfoPage
+    <PilotPublisherInfoPage
       title="İlan Kuralları"
       intro="Amaç, gerçek, anlaşılır ve güvenli biçimde incelenebilir ilanlar yayımlamaktır. Kurallar hem ilan verenleri hem ilan arayanları korumak için uygulanır."
       sections={[
