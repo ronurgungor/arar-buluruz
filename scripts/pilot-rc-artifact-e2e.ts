@@ -7,7 +7,9 @@ const backendOrigin = process.env.BACKEND_ORIGIN;
 if (!backendOrigin) throw new Error("BACKEND_ORIGIN is required for pilot-RC artifact proof.");
 
 const serverEntry = path.resolve(".output/server/index.mjs");
-if (!(await Bun.file(serverEntry).exists())) throw new Error("pilot-rc production artifact is missing.");
+if (!(await Bun.file(serverEntry).exists())) {
+  throw new Error("pilot-rc production artifact is missing.");
+}
 const resultsDir = path.resolve("test-results/hosted-rc");
 fs.mkdirSync(resultsDir, { recursive: true });
 
@@ -18,7 +20,10 @@ function assert(condition: boolean, message: string): asserts condition {
 async function waitForServerReady() {
   for (let attempt = 1; attempt <= 60; attempt += 1) {
     try {
-      const response = await fetch(baseUrl, { cache: "no-store", signal: AbortSignal.timeout(1000) });
+      const response = await fetch(baseUrl, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(1000),
+      });
       if (response.ok) return;
     } catch {
       // production server is still starting
@@ -40,7 +45,10 @@ async function assertNoHorizontalOverflow(page: Page, label: string) {
     viewport: window.innerWidth,
     document: document.documentElement.scrollWidth,
   }));
-  assert(dimensions.document <= dimensions.viewport, `${label} horizontally overflowed: ${JSON.stringify(dimensions)}`);
+  assert(
+    dimensions.document <= dimensions.viewport,
+    `${label} horizontally overflowed: ${JSON.stringify(dimensions)}`,
+  );
 }
 
 async function ensureServiceWorkerControl(page: Page) {
@@ -88,7 +96,10 @@ async function assertNoResidue(page: Page, label: string) {
   ]) {
     assert(!body.includes(forbidden), `${label} exposed pilot-inappropriate text: ${forbidden}`);
   }
-  assert((await page.getByRole("link", { name: "Giriş" }).count()) === 0, `${label} exposed a login CTA.`);
+  assert(
+    (await page.getByRole("link", { name: "Giriş" }).count()) === 0,
+    `${label} exposed a login CTA.`,
+  );
 }
 
 const server = Bun.spawn(["bun", serverEntry], {
@@ -128,17 +139,28 @@ try {
     await assertNoHorizontalOverflow(page, "home desktop");
     await ensureServiceWorkerControl(page);
     await assertManifestAndInstallability(desktop, page);
-    await page.screenshot({ path: path.join(resultsDir, "pilot-rc-desktop-home.png"), fullPage: true });
+    await page.screenshot({
+      path: path.join(resultsDir, "pilot-rc-desktop-home.png"),
+      fullPage: true,
+    });
 
     const loginResponse = await page.goto(`${baseUrl}/giris`, { waitUntil: "domcontentloaded" });
     assert(loginResponse?.status() === 404, `pilot-rc /giris returned ${loginResponse?.status()}.`);
-    const operatorResponse = await page.goto(`${baseUrl}/kurucu`, { waitUntil: "domcontentloaded" });
-    assert(operatorResponse?.status() === 404, `public pilot-rc /kurucu returned ${operatorResponse?.status()}.`);
+    const operatorResponse = await page.goto(`${baseUrl}/kurucu`, {
+      waitUntil: "domcontentloaded",
+    });
+    assert(
+      operatorResponse?.status() === 404,
+      `public pilot-rc /kurucu returned ${operatorResponse?.status()}.`,
+    );
 
     await page.goto(`${baseUrl}/ilan-ver`, { waitUntil: "networkidle" });
     await page.getByRole("heading", { level: 1, name: "İlan Başvurusu" }).waitFor();
     await assertNoResidue(page, "pilot intake");
-    assert((await page.locator('input[type="password"], input[type="email"]').count()) === 0, "Pilot intake exposed account fields.");
+    assert(
+      (await page.locator('input[type="password"], input[type="email"]').count()) === 0,
+      "Pilot intake exposed account fields.",
+    );
 
     await page.goto(`${baseUrl}/gizlilik`, { waitUntil: "networkidle" });
     await page.getByRole("heading", { level: 1, name: "Gizlilik" }).waitFor();
@@ -149,18 +171,39 @@ try {
     const baselineTitle = "Sentetik migration fotoğraf ilanı";
     await page.getByText(baselineTitle, { exact: true }).waitFor();
     await assertNoResidue(page, "collection");
-    const detailHref = await page.getByRole("link", { name: new RegExp(baselineTitle) }).first().getAttribute("href");
-    assert(detailHref?.startsWith("/ilan/"), "Hosted baseline listing did not expose a detail route.");
-    await page.getByRole("link", { name: new RegExp(baselineTitle) }).first().click();
+    const detailHref = await page
+      .getByRole("link", { name: new RegExp(baselineTitle) })
+      .first()
+      .getAttribute("href");
+    assert(
+      detailHref?.startsWith("/ilan/"),
+      "Hosted baseline listing did not expose a detail route.",
+    );
+    await page
+      .getByRole("link", { name: new RegExp(baselineTitle) })
+      .first()
+      .click();
     await page.getByRole("heading", { level: 1, name: baselineTitle }).waitFor();
     const signedPhoto = page.getByAltText(`${baselineTitle} fotoğraf 1`);
     const photoSrc = await signedPhoto.getAttribute("src");
-    assert(photoSrc?.includes("/storage/v1/object/sign/listing_photos/"), "pilot-rc detail did not use signed private Storage.");
-    assert(await signedPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth > 0), "pilot-rc signed photo did not decode.");
+    assert(
+      photoSrc?.includes("/storage/v1/object/sign/listing_photos/"),
+      "pilot-rc detail did not use signed private Storage.",
+    );
+    assert(
+      await signedPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth > 0),
+      "pilot-rc signed photo did not decode.",
+    );
     const contact = page.getByRole("link", { name: "WhatsApp’tan yaz" });
-    assert((await contact.getAttribute("href")) === "https://wa.me/12025550141", "Hosted baseline seller contact drifted.");
+    assert(
+      (await contact.getAttribute("href")) === "https://wa.me/12025550141",
+      "Hosted baseline seller contact drifted.",
+    );
     await page.goBack({ waitUntil: "networkidle" });
-    assert(new URL(page.url()).searchParams.get("q") === "Sentetik migration", "Back navigation did not preserve search state.");
+    assert(
+      new URL(page.url()).searchParams.get("q") === "Sentetik migration",
+      "Back navigation did not preserve search state.",
+    );
     await page.getByText(baselineTitle, { exact: true }).waitFor();
 
     await page.goto(`${baseUrl}/ara?q=hosted-rc-empty-74a1`, { waitUntil: "networkidle" });
@@ -172,7 +215,9 @@ try {
     await page.getByLabel("Ne arıyorsun?", { exact: true }).fill("outage-proof");
     await page.getByRole("button", { name: "Ara" }).click();
     await page.getByText("İlanlar henüz gösterilemiyor.", { exact: true }).waitFor();
-    await page.getByText("İlanlar şu anda güvenli biçimde yüklenemiyor.", { exact: false }).waitFor();
+    await page
+      .getByText("İlanlar şu anda güvenli biçimde yüklenemiyor.", { exact: false })
+      .waitFor();
     await page.unroute(`${backendOrigin}/**`);
 
     await page.goto(baseUrl, { waitUntil: "networkidle" });
@@ -181,10 +226,16 @@ try {
     await page.goto(`${baseUrl}/ara?q=offline-proof`, { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { level: 1, name: "Bağlantı yok" }).waitFor();
     await page.getByText("Dinamik ilanlar çevrimdışı saklanmaz.", { exact: false }).waitFor();
-    assert((await page.getByText(baselineTitle, { exact: true }).count()) === 0, "Offline fallback exposed stale dynamic listing data.");
+    assert(
+      (await page.getByText(baselineTitle, { exact: true }).count()) === 0,
+      "Offline fallback exposed stale dynamic listing data.",
+    );
     await desktop.setOffline(false);
 
-    assert(runtimeErrors.length === 0, `pilot-rc desktop runtime errors: ${runtimeErrors.join(" | ")}`);
+    assert(
+      runtimeErrors.length === 0,
+      `pilot-rc desktop runtime errors: ${runtimeErrors.join(" | ")}`,
+    );
     await desktop.close();
 
     const mobile = await browser.newContext({
@@ -201,10 +252,15 @@ try {
     await mobilePage.getByRole("button", { name: "Ara" }).click();
     await mobilePage.getByText(baselineTitle, { exact: true }).waitFor();
     await assertNoHorizontalOverflow(mobilePage, "mobile collection");
-    await mobilePage.screenshot({ path: path.join(resultsDir, "pilot-rc-mobile-search.png"), fullPage: true });
+    await mobilePage.screenshot({
+      path: path.join(resultsDir, "pilot-rc-mobile-search.png"),
+      fullPage: true,
+    });
     await mobile.close();
 
-    console.log("pilot-rc production artifact desktop/mobile/PWA/offline/navigation/fail-closed proof passed.");
+    console.log(
+      "pilot-rc production artifact desktop/mobile/PWA/offline/navigation/fail-closed proof passed.",
+    );
   } finally {
     await browser.close();
   }
