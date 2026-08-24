@@ -9,7 +9,8 @@ export const Route = createFileRoute("/gizlilik")({
           { title: "Gizlilik — Arar Buluruz" },
           {
             name: "description",
-            content: "Arar Buluruz ilan, iletişim ve teknik erişim verisi sınırlarının kısa açıklaması.",
+            content:
+              "Arar Buluruz ilan, iletişim ve teknik erişim verisi sınırlarının kısa açıklaması.",
           },
         ]
       : [
@@ -83,8 +84,8 @@ function PilotPrivacyPage() {
         <section>
           <h2 className="font-semibold">İletişim ve değişiklikler</h2>
           <p className="mt-2 text-muted-foreground">
-            Veri akışı veya ürün kapsamı değişirse bu açıklama da güncel çalışma biçimini
-            yansıtacak şekilde güncellenir.
+            Veri akışı veya ürün kapsamı değişirse bu açıklama da güncel çalışma biçimini yansıtacak
+            şekilde güncellenir.
           </p>
         </section>
       </div>
@@ -104,11 +105,11 @@ function V0PrivacyPage() {
         <section>
           <h2 className="font-semibold">Bu sürümde toplanmayan veriler</h2>
           <p className="mt-2 text-muted-foreground">
-            Demo ilan oluşturma ekranına yazdığınız başlık, fiyat, konum ve açıklama ile
-            seçtiğiniz yerel fotoğraf yalnız tarayıcıda geçici olarak kullanılır; uygulama bu
-            içeriği sunucuya göndermez, kaydetmez veya yayınlamaz. Gerçek hesap açılmaz. Telefon,
-            e-posta veya iletişim formu verisi alınmaz. Reklam ve analytics kullanılmaz. Zorunlu
-            olmayan çerez veya tracker bulunmaz; bu nedenle çerez onay bandı gösterilmez.
+            Demo ilan oluşturma ekranına yazdığınız başlık, fiyat, konum ve açıklama ile seçtiğiniz
+            yerel fotoğraf yalnız tarayıcıda geçici olarak kullanılır; uygulama bu içeriği sunucuya
+            göndermez, kaydetmez veya yayınlamaz. Gerçek hesap açılmaz. Telefon, e-posta veya
+            iletişim formu verisi alınmaz. Reklam ve analytics kullanılmaz. Zorunlu olmayan çerez
+            veya tracker bulunmaz; bu nedenle çerez onay bandı gösterilmez.
           </p>
         </section>
 
