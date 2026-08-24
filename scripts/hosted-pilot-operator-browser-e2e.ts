@@ -328,17 +328,12 @@ try {
   runtimeErrors.splice(0, runtimeErrors.length);
 
   await page.goto(`${baseUrl}/kurucu`, { waitUntil: "networkidle" });
+  const firstCard = page.getByTestId(`operator-listing-${first.listingId}`);
   page.once("dialog", (dialog) => void dialog.accept());
-  await page
-    .locator("li")
-    .filter({ hasText: publishTitle })
-    .getByRole("button", { name: "Sil" })
-    .click();
+  await firstCard.getByRole("button", { name: "Sil" }).click();
   await page.getByText("İlan ve ilişkili Storage objeleri silindi.", { exact: true }).waitFor();
-  assert(
-    (await page.locator("li").filter({ hasText: publishTitle }).count()) === 0,
-    "Deleted published listing remained in operator inventory.",
-  );
+  await firstCard.waitFor({ state: "detached" });
+  assert((await firstCard.count()) === 0, "Deleted published listing remained in operator inventory.");
 
   const second = await createPending(page, rejectTitle, seller, "+12025550156");
   await second.card.getByRole("button", { name: "Reddet" }).click();
@@ -355,17 +350,12 @@ try {
   runtimeErrors.splice(0, runtimeErrors.length);
 
   await page.goto(`${baseUrl}/kurucu`, { waitUntil: "networkidle" });
+  const secondCard = page.getByTestId(`operator-listing-${second.listingId}`);
   page.once("dialog", (dialog) => void dialog.accept());
-  await page
-    .locator("li")
-    .filter({ hasText: rejectTitle })
-    .getByRole("button", { name: "Sil" })
-    .click();
+  await secondCard.getByRole("button", { name: "Sil" }).click();
   await page.getByText("İlan ve ilişkili Storage objeleri silindi.", { exact: true }).waitFor();
-  assert(
-    (await page.locator("li").filter({ hasText: rejectTitle }).count()) === 0,
-    "Deleted rejected listing remained in operator inventory.",
-  );
+  await secondCard.waitFor({ state: "detached" });
+  assert((await secondCard.count()) === 0, "Deleted rejected listing remained in operator inventory.");
 
   await page.goto(`${baseUrl}/ara?q=hosted-rc-no-such-listing-7f4c`, { waitUntil: "networkidle" });
   await page.getByText("Sonuç bulunamadı", { exact: true }).first().waitFor();
