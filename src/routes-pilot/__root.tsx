@@ -85,17 +85,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-title", content: "Arar Buluruz" },
       { name: "robots", content: CLOSED_ROBOTS },
       { name: "googlebot", content: CLOSED_ROBOTS },
-      { title: "Arar Buluruz — Pilot sürümü" },
+      { title: "Arar Buluruz — Çorlu" },
       {
         name: "description",
-        content:
-          "Çorlu pilotu için ilan keşfi ve satıcı iletişim akışının release-candidate sürümü.",
+        content: "Çorlu'da yayımdaki ilanları ara ve satıcılarla doğrudan iletişime geç.",
       },
-      { property: "og:title", content: "Arar Buluruz — Pilot sürümü" },
+      { property: "og:title", content: "Arar Buluruz — Çorlu" },
       {
         property: "og:description",
-        content:
-          "Çorlu pilotu için ilan keşfi ve satıcı iletişim akışının release-candidate sürümü.",
+        content: "Çorlu'da yayımdaki ilanları ara ve satıcılarla doğrudan iletişime geç.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -137,13 +135,6 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div
-        role="note"
-        className="border-b border-border bg-accent/70 px-4 py-2 text-center text-xs font-semibold text-accent-foreground"
-      >
-        Pilot release candidate · Bu geliştirme ortamında yalnız sentetik test verisi kullanılır;
-        gerçek veri girişi kapalıdır.
-      </div>
       <Outlet />
     </QueryClientProvider>
   );
