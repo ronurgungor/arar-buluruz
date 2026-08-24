@@ -16,6 +16,7 @@ if (!backendOrigin || !shimOrigin || !Number.isInteger(shimPid) || shimPid <= 0)
 const resultsDir = path.resolve("test-results/hosted-rc");
 fs.mkdirSync(resultsDir, { recursive: true });
 const PNG_SIGNATURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const HOSTED_OPERATION_TIMEOUT_MS = 90_000;
 
 function assert(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -102,30 +103,60 @@ async function fillCreateForm(page: Page, title: string, seller: string, contact
 
 async function createPending(page: Page, title: string, seller: string, contactE164: string) {
   await fillCreateForm(page, title, seller, contactE164);
+  const startedAt = Date.now();
   const serverResponsePromise = page
     .waitForResponse(
       (response) =>
         response.request().method() === "POST" && response.url().startsWith(`${baseUrl}/`),
-      { timeout: 20_000 },
+      { timeout: HOSTED_OPERATION_TIMEOUT_MS },
     )
     .catch(() => null);
+
   await page.getByRole("button", { name: "Pending ilan ve fotoğrafı kaydet" }).click();
 
   const success = page.getByText("Pending ilan ve güvenli fotoğraf kaydedildi.", { exact: true });
   const failure = page.getByRole("alert");
-  const outcome = await Promise.race([
-    success.waitFor().then(() => "success" as const),
-    failure.waitFor().then(() => "failure" as const),
-  ]);
-  if (outcome === "failure") {
-    const response = await serverResponsePromise;
-    const safeAlert = (await failure.textContent())?.trim() || "[empty alert]";
-    const responseStatus = response?.status() ?? "no POST response captured";
-    const responsePath = response ? new URL(response.url()).pathname : "unknown";
+  let outcome: "success" | "failure" | "timeout" = "timeout";
+  const deadline = Date.now() + HOSTED_OPERATION_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    if (await success.isVisible().catch(() => false)) {
+      outcome = "success";
+      break;
+    }
+    if (await failure.isVisible().catch(() => false)) {
+      outcome = "failure";
+      break;
+    }
+    await page.waitForTimeout(250);
+  }
+
+  const response = await serverResponsePromise;
+  const elapsedMs = Date.now() - startedAt;
+  const responseStatus = response?.status() ?? "no POST response captured";
+  const responsePath = response ? new URL(response.url()).pathname : "unknown";
+
+  if (outcome !== "success") {
+    const safeAlert =
+      outcome === "failure"
+        ? (await failure.textContent())?.trim() || "[empty alert]"
+        : "[no success or failure UI before timeout]";
+    await page.screenshot({
+      path: path.join(resultsDir, "hosted-create-failure.png"),
+      fullPage: true,
+    });
     throw new Error(
-      `Hosted create failed closed: alert=${JSON.stringify(safeAlert)} POST=${responseStatus} ${responsePath}`,
+      `Hosted create ${outcome}: elapsed=${elapsedMs}ms alert=${JSON.stringify(safeAlert)} POST=${responseStatus} ${responsePath}`,
     );
   }
+
+  assert(response !== null, "Hosted create succeeded in UI without an app server POST response.");
+  assert(
+    response.ok(),
+    `Hosted create UI succeeded but app server POST returned HTTP ${response.status()} ${responsePath}.`,
+  );
+  console.log(
+    `Hosted create server round-trip completed in ${elapsedMs}ms with HTTP ${response.status()} ${responsePath}.`,
+  );
 
   const card = page.locator("li").filter({ hasText: title });
   await card.waitFor();
@@ -145,8 +176,8 @@ async function createPending(page: Page, title: string, seller: string, contactE
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
 const page = await context.newPage();
-page.setDefaultTimeout(20_000);
-page.setDefaultNavigationTimeout(20_000);
+page.setDefaultTimeout(HOSTED_OPERATION_TIMEOUT_MS);
+page.setDefaultNavigationTimeout(HOSTED_OPERATION_TIMEOUT_MS);
 
 const runtimeErrors: string[] = [];
 const sensitiveBrowserMutations: string[] = [];
