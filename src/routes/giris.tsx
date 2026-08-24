@@ -1,7 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { TopBar } from "@/components/TopBar";
 
-const publicPilotRcRuntime = import.meta.env.VITE_ARAR_BUILD_SIGNATURE === "pilot-rc|listings=supabase|gate1=off|operator=off";
+const publicPilotRcRuntime =
+  import.meta.env.VITE_ARAR_BUILD_SIGNATURE === "pilot-rc|listings=supabase|gate1=off|operator=off";
 
 export const Route = createFileRoute("/giris")({
   beforeLoad: () => {
