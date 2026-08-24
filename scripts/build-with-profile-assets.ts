@@ -17,7 +17,9 @@ async function run(command: string[]) {
   return await child.exited;
 }
 
-let buildExitCode = 1;
+let buildFailure: unknown = null;
+let restoreFailure: unknown = null;
+
 try {
   if (isPilotRc) {
     originalManifest = Buffer.from(await readFile(publicManifestPath));
@@ -27,19 +29,40 @@ try {
     console.log("pilot-rc build selected the pilot manifest before Vite/Nitro asset discovery.");
   }
 
-  buildExitCode = await run([process.execPath, "--bun", "vite", "build"]);
-} finally {
-  if (originalManifest) {
+  const buildExitCode = await run(["bunx", "vite", "build"]);
+  if (buildExitCode !== 0) {
+    buildFailure = new Error(`Vite build exited with code ${buildExitCode}.`);
+  }
+} catch (error) {
+  buildFailure = error;
+}
+
+if (originalManifest) {
+  try {
     await writeFile(publicManifestPath, originalManifest);
     const restoredManifest = Buffer.from(await readFile(publicManifestPath));
     if (!restoredManifest.equals(originalManifest)) {
-      throw new Error("Pilot build could not restore public/manifest.webmanifest byte-for-byte.");
+      restoreFailure = new Error(
+        "Pilot build could not restore public/manifest.webmanifest byte-for-byte.",
+      );
+    } else {
+      console.log("pilot-rc build restored the repository public manifest byte-for-byte.");
     }
-    console.log("pilot-rc build restored the repository public manifest byte-for-byte.");
+  } catch (error) {
+    restoreFailure = error;
   }
 }
 
-if (buildExitCode !== 0) process.exit(buildExitCode);
+if (buildFailure && restoreFailure) {
+  throw new AggregateError(
+    [buildFailure, restoreFailure],
+    "Vite build failed and the pilot public manifest restore also failed.",
+  );
+}
+if (buildFailure) throw buildFailure;
+if (restoreFailure) throw restoreFailure;
 
 const finalizeExitCode = await run([process.execPath, "scripts/finalize-build-profile-assets.ts"]);
-if (finalizeExitCode !== 0) process.exit(finalizeExitCode);
+if (finalizeExitCode !== 0) {
+  throw new Error(`Build-profile asset verification exited with code ${finalizeExitCode}.`);
+}
