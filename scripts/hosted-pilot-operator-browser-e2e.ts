@@ -333,7 +333,10 @@ try {
   await firstCard.getByRole("button", { name: "Sil" }).click();
   await page.getByText("İlan ve ilişkili Storage objeleri silindi.", { exact: true }).waitFor();
   await firstCard.waitFor({ state: "detached" });
-  assert((await firstCard.count()) === 0, "Deleted published listing remained in operator inventory.");
+  assert(
+    (await firstCard.count()) === 0,
+    "Deleted published listing remained in operator inventory.",
+  );
 
   const second = await createPending(page, rejectTitle, seller, "+12025550156");
   await second.card.getByRole("button", { name: "Reddet" }).click();
@@ -355,7 +358,10 @@ try {
   await secondCard.getByRole("button", { name: "Sil" }).click();
   await page.getByText("İlan ve ilişkili Storage objeleri silindi.", { exact: true }).waitFor();
   await secondCard.waitFor({ state: "detached" });
-  assert((await secondCard.count()) === 0, "Deleted rejected listing remained in operator inventory.");
+  assert(
+    (await secondCard.count()) === 0,
+    "Deleted rejected listing remained in operator inventory.",
+  );
 
   await page.goto(`${baseUrl}/ara?q=hosted-rc-no-such-listing-7f4c`, { waitUntil: "networkidle" });
   await page.getByText("Sonuç bulunamadı", { exact: true }).first().waitFor();
