@@ -157,7 +157,7 @@ jobs:
         run: supabase stop --no-backup
 
   issue72-hosted-rc-proof:
-    name: Issue #72 exact-head hosted synthetic RC proof
+    name: "Issue #72 exact-head hosted synthetic RC proof"
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.number == 74 &&
@@ -173,7 +173,6 @@ jobs:
       MANAGED_SUPABASE_PROJECT_REF: rzosrvenlvhijeckmwyc
       MANAGED_SUPABASE_S3_ENDPOINT: https://rzosrvenlvhijeckmwyc.storage.supabase.co/storage/v1/s3
       MANAGED_SUPABASE_S3_REGION: eu-central-1
-      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/hosted-rc-browsers
 
     steps:
       - name: Check out exact PR head
@@ -240,11 +239,14 @@ jobs:
           rclone version
 
       - name: Install Chromium
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/hosted-rc-browsers
         run: bunx playwright install --with-deps chromium
 
       - name: Run dedicated hosted managed baseline and RC proof
         shell: bash
         env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/hosted-rc-browsers
           MANAGED_SUPABASE_DB_URL: ${{ secrets.ARAR_SUPABASE_DB_URL }}
           MANAGED_SUPABASE_ANON_KEY: ${{ secrets.ARAR_SUPABASE_PUBLIC_KEY }}
           MANAGED_SUPABASE_S3_ACCESS_KEY_ID: ${{ secrets.ARAR_SUPABASE_S3_ACCESS_KEY_ID }}
