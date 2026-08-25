@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test:unit": "bun test src/lib/public-listings.test.ts src/lib/public-listings-contact.test.ts src/lib/public-seller-contact.test.ts src/lib/external-sales-link.test.ts src/lib/demo-listing.test.ts src/lib/listing-photo.test.ts src/lib/listing-photo-trusted.test.ts src/lib/prototype-contact.test.ts src/lib/pilot-intake.test.ts src/lib/product-phase.test.ts src/lib/discovery-contract.test.ts src/data/turkiye-locations.test.ts",
+    "test:unit": "bun test src/lib/public-listings.test.ts src/lib/public-listings-contact.test.ts src/lib/public-seller-contact.test.ts src/lib/external-sales-link.test.ts src/lib/demo-listing.test.ts src/lib/listing-photo.test.ts src/lib/listing-photo-trusted.test.ts src/lib/prototype-contact.test.ts src/lib/pilot-intake.test.ts src/lib/product-phase.test.ts src/lib/discovery-contract.test.ts src/lib/place-provider-traffic-log.test.ts src/data/turkiye-locations.test.ts",
     "format": "prettier --write ."
   },
   "dependencies": {
@@ -59,31 +59,30 @@
     "react-resizable-panels": "^4.6.5",
     "recharts": "^2.15.4",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^3.5.0",
+    "tailwind-merge": "^3.4.1",
     "tailwindcss": "^4.2.1",
     "tw-animate-css": "^1.3.4",
-    "vaul": "^1.1.2",
+    "vaul": "^1.2.0",
     "vite-tsconfig-paths": "^6.0.2",
-    "zod": "^3.24.2"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@eslint/js": "^9.32.0",
+    "@eslint/js": "^9.35.0",
     "@lovable.dev/vite-tanstack-config": "^2.7.7",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^5.2.0",
-    "eslint": "^9.32.0",
-    "eslint-config-prettier": "^10.1.1",
-    "eslint-plugin-prettier": "^5.2.6",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
-    "nitro": "3.0.260603-beta",
+    "nitro": "3.0.0-beta.12",
     "playwright": "1.55.0",
-    "prettier": "^3.7.3",
+    "prettier": "^3.6.2",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.56.1",
-    "vite": "^8.0.16"
+    "typescript-eslint": "^8.39.1",
+    "vite": "^8.0.0-beta.5"
   }
 }
