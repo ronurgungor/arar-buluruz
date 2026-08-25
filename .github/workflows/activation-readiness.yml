@@ -64,7 +64,7 @@ jobs:
           VITE_LISTINGS_SOURCE: supabase
           VITE_SUPABASE_URL: https://synthetic.invalid
           VITE_SUPABASE_ANON_KEY: synthetic-public-key
-          VITE_PILOT_INTAKE_E164: +12025550199
+          VITE_PILOT_INTAKE_E164: "+12025550199"
         run: bun run build
 
       - name: Verify public pilot artifact activation boundary
