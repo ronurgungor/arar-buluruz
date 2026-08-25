@@ -1,15 +1,22 @@
 # First Real Listing Activation Readiness
 
 Issue: #75  
-Phase boundary: **synthetic implementation only**.
+Phase boundary: **synthetic implementation and design only**.
 
 AWS OFF. Production OFF. Real data/users OFF. Paid infrastructure OFF. Tarladan untouched.
 
-This document is the canonical implementation plan for the first-real-listing activation gate. It does not authorize business registration, BTK notification, AWS provisioning, production activation, payment, or personal-data collection.
+This document is the canonical activation plan. It does not authorize business registration, BTK notification, AWS provisioning, production activation, paid timestamp procurement or personal-data collection.
+
+## Current gate state
+
+- **Gate A — activation-facing synthetic implementation: CONDITIONAL PASS.**
+- Gate A exact evidence head: `28f5423369dd1e76489adc5f42c46c9f9b3c83f3`.
+- **Gate B — 5651 production traffic-evidence design: synthetic contract under exact-head validation.**
+- First real listing remains **NO-GO**.
 
 ## Resolved / non-blocking legal positions
 
-- **ETBİS:** not required for the current listing-discovery + phone-only off-platform contract model. Re-open if ordering, checkout, payment, reservation, commission, or platform contract formation is added.
+- **ETBİS:** not required for the current listing-discovery + phone-only off-platform contract model. Re-open if ordering, checkout, payment, reservation, commission or platform contract formation is added.
 - **VERBİS:** current scale/activity is treated as exempt; substantive KVKK duties still apply.
 - **KEP:** not a current activation prerequisite for the present model.
 - **Public seller phone:** use the KVKK 5/2-d intentional-publication (alenileştirme) model with strict purpose limitation. Publication acknowledgement is separate from aydınlatma.
@@ -39,62 +46,53 @@ Do **not** submit during synthetic development.
 Before the first real listing:
 
 1. Business/operator legal identity is finalized.
-2. `/iletisim` contains the real operator identification/contact information.
-3. Confirm domain/service identifiers and the legal operator that will make the notification.
-4. Open the official BTK Yer Sağlayıcılığı Bildirim Arayüzü and prepare the requested current information.
-5. Submit only after the operator/business identity exists and before real hosting activity is activated.
-6. Save the notification evidence/confirmation in the private compliance record; do not commit sensitive identity documents to Git.
-7. Any later change to operator/domain/contact information is reviewed for notification/update requirements.
+2. The public **yerleşim yeri/address** blocker is independently resolved.
+3. `/iletisim` contains the real operator identification/contact/address information.
+4. Confirm domain/service identifiers and the legal operator that will make the notification.
+5. Open the official BTK Yer Sağlayıcılığı Bildirim Arayüzü and prepare the requested current information.
+6. Submit only after the operator/business identity exists and before real hosting activity is activated.
+7. Save the notification evidence/confirmation in the private compliance record; do not commit sensitive identity documents to Git.
+8. Any later change to operator/domain/contact information is reviewed for notification/update requirements.
 
 Official interface: https://yersaglayici.btk.gov.tr/
 
 ### Public identification/contact
 
-The pilot route graph must expose `/iletisim`, directly reachable from the homepage/footer. Synthetic builds may render safe “activation pending” placeholders. Any build explicitly marked for real-data activation must fail before build if required real identity/contact values are absent.
+The pilot route graph exposes `/iletisim`, directly reachable from public navigation. Synthetic builds may render safe activation-pending placeholders. Any build explicitly marked for real-data activation must fail before build if required real identity/contact values are absent.
 
 Required activation values:
 
 - operator real-person / legal-operator name;
-- address;
+- public address/yerleşim yeri after the separate blocker is resolved;
 - electronic contact;
 - phone;
 - tax / trade-registry identifiers when applicable/available.
 
-### 5651 traffic logging architecture
+Do not invent virtual-office equivalence.
 
-Treat traffic logs as a **separate legal-retention class**, not as listing/contact/photo data.
+### 5651 Gate B — production traffic evidence
 
-Minimum record only:
+The detailed authoritative design is maintained in:
 
-- trusted client/source IP from the production ingress boundary;
-- UTC timestamp;
-- HTTP method;
-- pathname **without query string**;
-- service/host identifier;
-- response status/result;
-- optional duration/bytes if operationally required.
+`docs/5651_TRAFFIC_LOGGING_GATE_B.md`
 
-Never log:
+Canonical rules:
 
-- request/response bodies;
-- passwords;
-- authorization/cookie headers;
-- API keys, signed URLs or tokens;
-- seller phone numbers;
-- listing descriptions/photos;
-- query strings containing user/search/personal content.
+- exactly one authoritative producer at the trusted outer public HTTP/TLS reverse-proxy layer;
+- canonical source IP comes from the producer socket peer, not arbitrary forwarding headers;
+- exact minimum schema includes request timestamp, source/destination IP and ports, method, pathname, status, service/protocol, and reliable duration/end/byte fields;
+- no subscriber ID because Stage 1–3 has no Auth;
+- explicit allow-list logging — no request body, seller contact/name, listing text/photo/EXIF, Authorization/cookies/tokens/secrets or arbitrary query strings;
+- UTC daily closed NDJSON rotation;
+- SHA-256 over exact closed bytes;
+- plain hash/system clock/mtime are not treated as qualified timestamp evidence;
+- activation-time qualified timestamp contract prefers RFC 3161 SHA-256 message-imprint timestamping from a then-current 5070-authorized Turkish ESHS;
+- timestamp provider failure is asynchronous: keep the immutable closed log/hash and queue only the hash/request metadata while the public application continues;
+- traffic evidence retention is at least 365 days and separate from live listing/contact/photo data and the ≤14-day backup lifecycle;
+- production store must be encrypted, least privilege, public-deny and Türkiye-resident;
+- canonical traffic logs must not be exported to Frankfurt/global observability services without a separate approved necessity/privacy/transfer analysis.
 
-Storage/operations requirements:
-
-- retention target: **at least 1 year**;
-- encrypted storage at rest;
-- least-privilege access restricted to the operator/compliance need;
-- integrity protection and evidence of log rotation/retention;
-- accurate UTC time source;
-- deletion policy for listings must explicitly preserve legally-required traffic logs while deleting live listing/contact/photo data;
-- production ingress must establish the authoritative client IP; application code must not blindly trust arbitrary client-supplied forwarding headers.
-
-The repository contains a pure traffic-log normalization contract and tests. Production persistence/ingress binding remains an infrastructure activation gate because AWS is still OFF.
+Production ingress/storage/ESHS binding remains deferred because AWS, production and paid services are OFF.
 
 ### Notice / takedown
 
@@ -149,27 +147,27 @@ Synthetic `pilot-rc` builds remain possible with safe placeholder public operato
 
 An explicit real-data activation build (`ARAR_REAL_DATA_ACTIVATION=enabled`) must fail closed unless all required real operator public-information environment values are provided. The activation flag does not itself authorize deployment or real-data collection.
 
-## Remaining blockers after synthetic implementation
+## Remaining real-activation blockers
 
-The following are intentionally deferred because they require real operator/infrastructure activation:
+The following are intentionally deferred:
 
-1. establish the real-person commercial-enterprise/business identity;
-2. populate real `/iletisim` and aydınlatma identity/contact fields;
-3. make the actual BTK place-provider notification;
-4. authorize and provision the approved production environment;
-5. bind authoritative ingress/IP logging to encrypted ≥1-year traffic-log storage and verify integrity/retention/access controls;
-6. verify production TLS/network/admin/secrets;
-7. verify production backup/restore and deletion propagation;
-8. execute the real Stage-1 pre-publication moderation checklist.
+1. independently resolve the public **yerleşim yeri/address** requirement;
+2. establish the real-person commercial-enterprise/business identity;
+3. populate real `/iletisim` and aydınlatma identity/contact/address fields;
+4. make the actual BTK place-provider notification;
+5. authorize and provision the approved Türkiye production environment;
+6. bind the authoritative outer reverse proxy to encrypted ≥365-day Türkiye-resident traffic evidence and prove spoofing/access/immutability/retention controls;
+7. procure a then-current 5070-authorized Turkish ESHS timestamp service and verify real RFC 3161-compatible timestamping against synthetic closed-log bytes;
+8. verify production TLS/network/admin/secrets;
+9. verify production backup/restore and deletion propagation;
+10. execute the real Stage-1 pre-publication moderation checklist.
 
 Only after these steps may FIRST REAL LISTING move from readiness to GO.
 
-## Official source anchors
+## Official/standards anchors
 
 - 5651 place-provider notification interface: https://yersaglayici.btk.gov.tr/
-- BTK place-provider navigation/list: https://www.btk.gov.tr/yer-saglayici-listesi
-- 5651 Art. 5 traffic retention principle (1–2 year statutory envelope; accuracy/integrity/confidentiality): https://www5.tbmm.gov.tr/tutanaklar/TUTANAK/TBMM/d24/c070/tbmm24070053ss0524.pdf
-- 5651 place-provider no-general-monitoring / notice-and-takedown principle reflected in Art. 5: https://normkararlarbilgibankasi.anayasa.gov.tr/Dosyalar/Kararlar/KararPDF/2015-112-nrm.pdf
-- Current resolved ETBİS phone-only/off-platform model source: https://ticaret.gov.tr/ic-ticaret/sikca-sorulan-sorular/elektronik-ticaret
-- KVKK aydınlatma / separate consent principle: https://www.kvkk.gov.tr/Icerik/8710/veri-sorumlulari-tarafindan-acik-riza-ve-aydinlatma-metinlerinin-ayri-ayri-duzenlenmesi-gerektigi-hakkinda-kisisel-verileri-koruma-kurulunun-18-02-2026-tarihli-ve-2026-347-sayili-ilke-kararina-iliskin-kamuoyu-duyurusu
-- KVKK alenileştirme guidance: https://www.kvkk.gov.tr/Icerik/6843/-ALENILESTIRME-HAKKINDA-KAMUOYU-DUYURUSU
+- BTK authorized ESHS list: https://www.btk.gov.tr/elektronik-sertifika-hizmet-saglayicilari
+- BTK e-signature/time-stamp FAQ: https://www.btk.gov.tr/e-imza-ile-ilgili-sikca-sorulan-sorular
+- RFC 3161: Internet X.509 Public Key Infrastructure Time-Stamp Protocol.
+- 5651 Article 5: statutory place-provider traffic-retention envelope and accuracy/integrity/confidentiality duty.
