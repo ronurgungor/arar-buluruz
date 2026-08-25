@@ -1,6 +1,9 @@
 name: Temporary activation formatter
 
 on:
+  push:
+    branches:
+      - agent/first-real-listing-readiness
   workflow_dispatch:
 
 permissions:
