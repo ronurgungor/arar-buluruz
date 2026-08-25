@@ -12,7 +12,9 @@ import {
   type QualifiedTimestampVerifier,
 } from "./place-provider-traffic-log";
 
-function sampleRecord(overrides: Partial<Parameters<typeof createPlaceProviderTrafficLogRecord>[0]> = {}) {
+function sampleRecord(
+  overrides: Partial<Parameters<typeof createPlaceProviderTrafficLogRecord>[0]> = {},
+) {
   return createPlaceProviderTrafficLogRecord({
     socketPeerIp: "203.0.113.7",
     socketPeerPort: 51_234,
@@ -114,10 +116,7 @@ describe("5651 Gate B traffic evidence contract", () => {
   });
 
   test("SHA-256 validation detects any modification of a closed daily log", () => {
-    const closed = closeDailyTrafficLog(
-      [sampleRecord()],
-      new Date("2026-08-26T00:00:00.000Z"),
-    );
+    const closed = closeDailyTrafficLog([sampleRecord()], new Date("2026-08-26T00:00:00.000Z"));
     expect(verifyClosedDailyTrafficLog(closed, closed.bytes)).toBe(true);
 
     const modified = new Uint8Array(closed.bytes);
@@ -126,14 +125,8 @@ describe("5651 Gate B traffic evidence contract", () => {
   });
 
   test("defines an RFC 3161 SHA-256 qualified timestamp request contract", () => {
-    const closed = closeDailyTrafficLog(
-      [sampleRecord()],
-      new Date("2026-08-26T00:00:00.000Z"),
-    );
-    const request = buildQualifiedTimestampRequest(
-      closed,
-      "00112233445566778899aabbccddeeff",
-    );
+    const closed = closeDailyTrafficLog([sampleRecord()], new Date("2026-08-26T00:00:00.000Z"));
+    const request = buildQualifiedTimestampRequest(closed, "00112233445566778899aabbccddeeff");
 
     expect(request).toEqual({
       protocol: "RFC3161",
@@ -145,10 +138,7 @@ describe("5651 Gate B traffic evidence contract", () => {
   });
 
   test("requires verified imprint, nonce, signature, chain and 5070-authorized provider", async () => {
-    const closed = closeDailyTrafficLog(
-      [sampleRecord()],
-      new Date("2026-08-26T00:00:00.000Z"),
-    );
+    const closed = closeDailyTrafficLog([sampleRecord()], new Date("2026-08-26T00:00:00.000Z"));
     const client: QualifiedTimestampClient = {
       requestTimestamp: async () => new Uint8Array([1, 2, 3]),
     };
@@ -194,10 +184,7 @@ describe("5651 Gate B traffic evidence contract", () => {
   });
 
   test("queues only the closed hash when the external timestamp provider is unavailable", async () => {
-    const closed = closeDailyTrafficLog(
-      [sampleRecord()],
-      new Date("2026-08-26T00:00:00.000Z"),
-    );
+    const closed = closeDailyTrafficLog([sampleRecord()], new Date("2026-08-26T00:00:00.000Z"));
     const unavailableClient: QualifiedTimestampClient = {
       requestTimestamp: async () => {
         throw new Error("synthetic provider outage");
