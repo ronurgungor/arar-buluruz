@@ -43,9 +43,12 @@ for public_marker in \
   'Pilot release candidate' \
   'yalnız sentetik test verisi' \
   'gerçek veri girişi kapalıdır' \
-  'Bu geliştirme ortamında'; do
+  'Bu geliştirme ortamında' \
+  'https://wa.me/' \
+  'WhatsApp’tan yaz' \
+  'WhatsApp ile başvur'; do
   if grep -R --binary-files=without-match -F "$public_marker" .output/public >/dev/null 2>&1; then
-    echo "pilot-rc public artifact contains test/demo/privileged residue: $public_marker" >&2
+    echo "pilot-rc public artifact contains test/demo/privileged/disabled-channel residue: $public_marker" >&2
     exit 1
   fi
 done
@@ -67,4 +70,4 @@ for secret_name in \
   fi
 done
 
-echo "pilot-rc artifact boundary passed: no CI shim, V0/mock/test presentation residue, privileged marker, or supplied secret leakage."
+echo "pilot-rc artifact boundary passed: no CI shim, V0/mock/test presentation residue, disabled WhatsApp CTA, privileged marker, or supplied secret leakage."
