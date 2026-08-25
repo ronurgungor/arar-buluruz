@@ -7,7 +7,7 @@ export const Route = createFileRoute("/ilan-kurallari")({
       { title: "İlan Kuralları — Arar Buluruz" },
       {
         name: "description",
-        content: "Arar Buluruz'da gerçek ilan yayını için temel doğruluk ve güvenlik kuralları.",
+        content: "Arar Buluruz Çorlu Stage 1–3 özel satıcı ve ilan kuralları.",
       },
       { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
     ],
@@ -19,40 +19,50 @@ function ListingRules() {
   return (
     <PilotPublisherInfoPage
       title="İlan Kuralları"
-      intro="Amaç, gerçek, anlaşılır ve güvenli biçimde incelenebilir ilanlar yayımlamaktır. Kurallar hem ilan verenleri hem ilan arayanları korumak için uygulanır."
+      intro="Stage 1–3 pilotu bilinçli olarak çok dardır: yalnız özel kişilerin ara sıra kendi kullanılmış kişisel veya ev eşyalarını ilan etmesi desteklenir."
       sections={[
+        {
+          title: "Satıcı ve ürün kapsamı",
+          bullets: [
+            "Satıcı özel kişi olarak hareket etmeli ve ara sıra ilan vermelidir.",
+            "İlan yalnız satıcının kendi kullanılmış kişisel veya ev eşyası için verilebilir.",
+            "Profesyonel/işletme satıcıları, düzenli satış yapanlar ve ticari stok bu aşamada desteklenmez.",
+            "Yeniden satış amacıyla alınmış veya üretilmiş yeni ürünler desteklenmez.",
+            "Kapsamdan emin olunmayan ilan yayınlanmaz; önce incelenir.",
+          ],
+        },
         {
           title: "İlan doğru ve yeterli bilgi vermeli",
           bullets: [
-            "Başlık ve açıklama satılan veya kiralanan şeyi doğru anlatmalı.",
-            "Fiyat ve konum yanıltıcı olmamalı; önemli kusurlar veya şartlar saklanmamalı.",
-            "Yalnız satmaya, kiralamaya veya sunmaya yetkili olduğun içerik için ilan vermelisin.",
-            "Fotoğraf ve metin başkasının fikrî mülkiyet hakkını ihlal etmemeli.",
-            "İlan metnine gereksiz hassas kişisel veri, parola, doğrulama kodu veya ödeme bilgisi yazılmamalı.",
+            "Başlık ve açıklama ürünü doğru anlatmalı; fiyat ve konum yanıltıcı olmamalıdır.",
+            "Yalnız sahip olduğunuz veya satmaya/yayımlamaya yetkili olduğunuz ürün, fotoğraf ve metni paylaşın.",
+            "Önemli kusurları veya satış şartlarını saklamayın.",
+            "Çocuk, tanınabilir üçüncü kişi, başkasına ait telefon/adres, plaka, kimlik/belge, ödeme bilgisi veya özel nitelikli kişisel veri paylaşmayın.",
+            "Yayınlanacak telefon satıcıya ait olmalı ve yalnız ilanla ilgili iletişim amacıyla kamuya açılmalıdır.",
           ],
         },
         {
           title: "Yayımlanmayacak içerikler",
           bullets: [
-            "Yasa dışı ürün veya hizmetler, sahte/taklit ürünler ve hak ihlali oluşturan içerikler.",
-            "Cinsel açıdan açık içerik, tehlikeli veya aşağılayıcı/nefret içeriği ve dolandırıcılık ya da aldatıcı iddialar.",
+            "Yasa dışı ürün/hizmetler, sahte/taklit ürünler ve hak ihlali oluşturan içerikler.",
             "Silahlar, patlayıcılar ve benzeri yüksek riskli ürünler.",
-            "Tütün ve nikotin ürünleri, keyif verici/uyuşturucu maddeler ve alkol.",
-            "Kumar ürün veya hizmetleri ile reçeteli veya kısıtlı ilaçlar.",
-            "Kullanıcıların veya platformun güvenliğini ciddi biçimde riske atan diğer içerikler.",
+            "Alkol, tütün/nikotin, keyif verici veya uyuşturucu maddeler.",
+            "Reçeteli/kısıtlı ilaçlar, kumar ürün veya hizmetleri, finansal ürün veya yatırım teklifleri.",
+            "Cinsel açıdan açık/adult içerik ve ilk pilot kapsamı dışında kalan düzenlemeye tabi veya belirsiz kategoriler.",
+            "Stage 1–3 için profesyonel satıcı, yeni-for-resale veya düzenli ticari satış ilanları.",
           ],
         },
         {
           title: "İnceleme ve yayından kaldırma",
           paragraphs: [
-            "İlanlar yayımlanmadan önce veya yayımlandıktan sonra kurallara uygunluk açısından incelenebilir. Yasa dışı, yasak, yanıltıcı, aldatıcı veya yüksek riskli içerikler reddedilebilir.",
-            "Kurallara aykırı olduğu veya sonradan sorun oluşturduğu anlaşılan ilanlar yayından kaldırılabilir. Arar Buluruz, kullanıcıların ve platformun güvenliğini korumak için gerektiğinde daha sıkı yayın kuralları uygulayabilir.",
+            "Kurucu her ilanı yayın öncesinde satıcı kapsamı, metin, fotoğraf, telefon ve güvenlik kuralları bakımından manuel inceler. Fotoğrafın teknik olarak temizlenmesi insan incelemesinin yerine geçmez.",
+            "Yanlış telefon, size ait kişisel veri, çocuk/özel nitelikli veri veya açık hukuka aykırılık bildirimi gibi yüksek riskli durumlarda ilan önce yayından kaldırılır, sonra incelenir.",
           ],
         },
         {
-          title: "Haricî satış bağlantıları",
+          title: "Ödeme ve haricî satış",
           paragraphs: [
-            "İleride bir satıcı kendi satış bağlantısını paylaşırsa bağlantı satıcıya ait olmalı, ilanla ilgili olmalı ve kullanıcıyı yanıltmamalıdır. Arar Buluruz herhangi bir üçüncü taraf satış hizmetiyle ortaklık, ödeme garantisi veya alıcı koruması iddiasında bulunmaz.",
+            "Arar Buluruz Stage 1–3 pilotunda ödeme almaz, sipariş/rezervasyon oluşturmaz, komisyon tahsil etmez ve haricî satış linki yayınlamaz. Satış koşulları satıcı ve alıcı arasında doğrudan belirlenir.",
           ],
         },
       ]}
