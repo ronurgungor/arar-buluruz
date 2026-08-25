@@ -73,14 +73,21 @@ function TakedownPage() {
             )}
           </div>
           {!info.phoneHref && !info.emailHref && (
-            <p role="status" className="mt-4 rounded-xl border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+            <p
+              role="status"
+              className="mt-4 rounded-xl border border-border bg-muted/30 p-3 text-sm text-muted-foreground"
+            >
               Gerçek kaldırma iletişim kanalları aktivasyon öncesinde yayımlanacaktır.
             </p>
           )}
         </section>
 
         <div className="mt-6 flex flex-wrap gap-4 text-sm">
-          <Link to="/ilan/$id" params={{ id }} className="font-medium text-primary underline underline-offset-4">
+          <Link
+            to="/ilan/$id"
+            params={{ id }}
+            className="font-medium text-primary underline underline-offset-4"
+          >
             İlana dön
           </Link>
           <Link to="/iletisim" className="font-medium text-primary underline underline-offset-4">

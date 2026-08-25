@@ -92,8 +92,8 @@ function PilotApplicationPage() {
         <section className="mt-4 rounded-2xl border border-border bg-accent/40 p-5">
           <h2 className="font-bold">Telefonla başvur</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Pilot konumu: {PILOT_PROVINCE} / {PILOT_DISTRICT}. WhatsApp, mesaj formu ve dosya yükleme
-            bu aşamada kapalıdır.
+            Pilot konumu: {PILOT_PROVINCE} / {PILOT_DISTRICT}. WhatsApp, mesaj formu ve dosya
+            yükleme bu aşamada kapalıdır.
           </p>
           {intakeHref ? (
             <a

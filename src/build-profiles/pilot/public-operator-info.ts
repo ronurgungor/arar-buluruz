@@ -23,10 +23,7 @@ export const pilotPublicOperatorInfo = {
     email,
     "Aktivasyon öncesi elektronik iletişim adresi yayımlanacaktır.",
   ),
-  phoneDisplay: valueOrPlaceholder(
-    phoneE164,
-    "Aktivasyon öncesi telefon bilgisi yayımlanacaktır.",
-  ),
+  phoneDisplay: valueOrPlaceholder(phoneE164, "Aktivasyon öncesi telefon bilgisi yayımlanacaktır."),
   phoneHref: E164_PATTERN.test(phoneE164) ? `tel:${phoneE164}` : null,
   emailHref: EMAIL_PATTERN.test(email) ? `mailto:${email}` : null,
   taxRegistry: valueOrPlaceholder(

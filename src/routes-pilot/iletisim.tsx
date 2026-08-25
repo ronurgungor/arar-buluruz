@@ -79,12 +79,18 @@ function ContactPage() {
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             {info.phoneHref && (
-              <a href={info.phoneHref} className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-sm font-bold text-primary-foreground">
+              <a
+                href={info.phoneHref}
+                className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-sm font-bold text-primary-foreground"
+              >
                 Telefonla bildir
               </a>
             )}
             {info.emailHref && (
-              <a href={info.emailHref} className="inline-flex min-h-11 items-center rounded-full border border-primary px-4 text-sm font-bold text-primary">
+              <a
+                href={info.emailHref}
+                className="inline-flex min-h-11 items-center rounded-full border border-primary px-4 text-sm font-bold text-primary"
+              >
                 E-posta ile bildir
               </a>
             )}

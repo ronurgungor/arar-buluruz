@@ -282,7 +282,10 @@ function requiredPhoto(form: FormData): File {
   return value;
 }
 
-async function fetchListing(config: BackendConfig, listingId: string): Promise<BackendListingRow | null> {
+async function fetchListing(
+  config: BackendConfig,
+  listingId: string,
+): Promise<BackendListingRow | null> {
   const url = new URL(`${config.baseUrl}/rest/v1/listings`);
   url.searchParams.set("id", `eq.${listingId}`);
   url.searchParams.set(
@@ -298,7 +301,10 @@ async function fetchListing(config: BackendConfig, listingId: string): Promise<B
   return rows[0] ?? null;
 }
 
-async function fetchPhotoInventory(config: BackendConfig, listingId: string): Promise<PhotoInventoryRow[]> {
+async function fetchPhotoInventory(
+  config: BackendConfig,
+  listingId: string,
+): Promise<PhotoInventoryRow[]> {
   const response = await requireOk(
     await fetch(`${config.baseUrl}/rest/v1/rpc/get_listing_photo_inventory`, {
       method: "POST",
@@ -615,7 +621,10 @@ async function rejectListing(config: BackendConfig, form: FormData): Promise<str
   return listingId;
 }
 
-async function deleteStoredPhotos(config: BackendConfig, inventory: PhotoInventoryRow[]): Promise<void> {
+async function deleteStoredPhotos(
+  config: BackendConfig,
+  inventory: PhotoInventoryRow[],
+): Promise<void> {
   if (inventory.length === 0) return;
   const paths = inventory.map((row) => row.object_path);
   const storageBase = `${config.baseUrl}/storage/v1`;
@@ -661,7 +670,9 @@ async function hardDeleteListing(config: BackendConfig, form: FormData): Promise
   }
   const remainingInventory = await fetchPhotoInventory(config, listingId);
   if (remainingInventory.length !== 0) {
-    throw new Error("Hard listing deletion verification found private photo metadata after delete.");
+    throw new Error(
+      "Hard listing deletion verification found private photo metadata after delete.",
+    );
   }
   return listingId;
 }

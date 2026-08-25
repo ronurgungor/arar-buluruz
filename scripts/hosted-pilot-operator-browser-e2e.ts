@@ -8,7 +8,9 @@ const backendOrigin = process.env.BACKEND_ORIGIN;
 const shimOrigin = process.env.SHIM_ORIGIN;
 const shimPid = Number(process.env.SHIM_PID ?? "0");
 if (!backendOrigin || !shimOrigin || !Number.isInteger(shimPid) || shimPid <= 0) {
-  throw new Error("BACKEND_ORIGIN, SHIM_ORIGIN and SHIM_PID are required for hosted operator proof.");
+  throw new Error(
+    "BACKEND_ORIGIN, SHIM_ORIGIN and SHIM_PID are required for hosted operator proof.",
+  );
 }
 
 const resultsDir = path.resolve("test-results/hosted-rc");
@@ -106,7 +108,8 @@ async function createPending(page: Page, title: string, seller: string, contactE
   const startedAt = Date.now();
   const serverResponsePromise = page
     .waitForResponse(
-      (response) => response.request().method() === "POST" && response.url().startsWith(`${baseUrl}/`),
+      (response) =>
+        response.request().method() === "POST" && response.url().startsWith(`${baseUrl}/`),
       { timeout: HOSTED_OPERATION_TIMEOUT_MS },
     )
     .catch(() => null);
@@ -131,20 +134,39 @@ async function createPending(page: Page, title: string, seller: string, contactE
   const response = await serverResponsePromise;
   const elapsedMs = Date.now() - startedAt;
   if (outcome !== "success") {
-    const safeAlert = outcome === "failure" ? (await failure.textContent())?.trim() || "[empty alert]" : "[timeout]";
-    await page.screenshot({ path: path.join(resultsDir, "hosted-create-failure.png"), fullPage: true });
-    throw new Error(`Hosted create ${outcome}: elapsed=${elapsedMs}ms alert=${JSON.stringify(safeAlert)} status=${response?.status() ?? "none"}`);
+    const safeAlert =
+      outcome === "failure"
+        ? (await failure.textContent())?.trim() || "[empty alert]"
+        : "[timeout]";
+    await page.screenshot({
+      path: path.join(resultsDir, "hosted-create-failure.png"),
+      fullPage: true,
+    });
+    throw new Error(
+      `Hosted create ${outcome}: elapsed=${elapsedMs}ms alert=${JSON.stringify(safeAlert)} status=${response?.status() ?? "none"}`,
+    );
   }
-  assert(response !== null && response.ok(), "Hosted create did not complete through a successful app server POST.");
-  console.log(`Hosted create server round-trip completed in ${elapsedMs}ms with HTTP ${response.status()}.`);
+  assert(
+    response !== null && response.ok(),
+    "Hosted create did not complete through a successful app server POST.",
+  );
+  console.log(
+    `Hosted create server round-trip completed in ${elapsedMs}ms with HTTP ${response.status()}.`,
+  );
 
   const card = page.locator("li").filter({ hasText: title });
   await card.waitFor();
   await card.getByText("İncelemede", { exact: true }).waitFor();
-  assert((await card.getByText(/1 fotoğraf/).count()) === 1, "Pending listing did not have one photo.");
+  assert(
+    (await card.getByText(/1 fotoğraf/).count()) === 1,
+    "Pending listing did not have one photo.",
+  );
   await card.getByText(/phone · \+1202555/).waitFor();
   const testId = await card.getAttribute("data-testid");
-  assert(testId?.startsWith("operator-listing-"), "Pending listing identity was not exposed to CI.");
+  assert(
+    testId?.startsWith("operator-listing-"),
+    "Pending listing identity was not exposed to CI.",
+  );
   return { card, listingId: testId.slice("operator-listing-".length) };
 }
 
@@ -184,7 +206,10 @@ try {
   await loadingStatus.waitFor();
   await page.getByRole("heading", { level: 1, name: "Kurucu pilot işlemleri" }).waitFor();
   await page.getByRole("heading", { level: 2, name: "Yeni pending ilan" }).waitFor();
-  assert((await page.getByRole("link", { name: "Giriş" }).count()) === 0, "Operator header exposed login.");
+  assert(
+    (await page.getByRole("link", { name: "Giriş" }).count()) === 0,
+    "Operator header exposed login.",
+  );
   await assertNoHorizontalOverflow(page, "/kurucu");
   await loadingStatus.waitFor({ state: "hidden" });
   assert((await page.getByRole("alert").count()) === 0, "Initial hosted founder inventory failed.");
@@ -192,52 +217,104 @@ try {
   const createButton = page.getByRole("button", { name: "Pending ilan ve fotoğrafı kaydet" });
   await createButton.click();
   assert(
-    (await page.getByLabel("İlanda görünecek ad", { exact: true }).evaluate((element) => (element as HTMLInputElement).validity.valueMissing)) === true,
+    (await page
+      .getByLabel("İlanda görünecek ad", { exact: true })
+      .evaluate((element) => (element as HTMLInputElement).validity.valueMissing)) === true,
     "Required create fields did not fail closed under browser validation.",
   );
 
   const first = await createPending(page, publishTitle, seller, contactE164);
   const publishButton = first.card.getByRole("button", { name: "Yayınla" });
   assert(await publishButton.isDisabled(), "Publish was enabled before founder confirmations.");
-  await page.screenshot({ path: path.join(resultsDir, "hosted-operator-pending.png"), fullPage: true });
+  await page.screenshot({
+    path: path.join(resultsDir, "hosted-operator-pending.png"),
+    fullPage: true,
+  });
 
-  const pendingResponse = await page.goto(`${baseUrl}/ilan/${first.listingId}`, { waitUntil: "networkidle" });
+  const pendingResponse = await page.goto(`${baseUrl}/ilan/${first.listingId}`, {
+    waitUntil: "networkidle",
+  });
   assert(pendingResponse?.status() === 404, "Pending hosted listing was publicly readable.");
   runtimeErrors.splice(0, runtimeErrors.length);
 
   await page.goto(`${baseUrl}/kurucu`, { waitUntil: "networkidle" });
   await page.getByLabel("Telefon kontrolü tamamlandı", { exact: true }).check();
-  await page.getByText(/Numaram ilanla ilgili iletişim için kamuya açık yayımlansın/).locator("..").getByRole("checkbox").check();
-  await page.locator("li").filter({ hasText: publishTitle }).getByRole("button", { name: "Yayınla" }).click();
+  await page
+    .getByText(/Numaram ilanla ilgili iletişim için kamuya açık yayımlansın/)
+    .locator("..")
+    .getByRole("checkbox")
+    .check();
+  await page
+    .locator("li")
+    .filter({ hasText: publishTitle })
+    .getByRole("button", { name: "Yayınla" })
+    .click();
   await page.getByText("İlan yayınlandı.", { exact: true }).waitFor();
-  await page.locator("li").filter({ hasText: publishTitle }).getByText("Yayında", { exact: true }).waitFor();
+  await page
+    .locator("li")
+    .filter({ hasText: publishTitle })
+    .getByText("Yayında", { exact: true })
+    .waitFor();
 
   await page.goto(`${baseUrl}/ara?q=Hosted+RC+yay%C4%B1n`, { waitUntil: "networkidle" });
-  await page.getByRole("link", { name: new RegExp(publishTitle) }).first().waitFor();
+  await page
+    .getByRole("link", { name: new RegExp(publishTitle) })
+    .first()
+    .waitFor();
   const collectionPhoto = page.getByAltText(publishTitle).first();
   const collectionSrc = await collectionPhoto.getAttribute("src");
-  assert(collectionSrc?.includes("/storage/v1/object/sign/listing_photos/"), "Collection did not use a signed private photo.");
-  assert(await collectionPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth > 0), "Collection signed photo did not decode.");
+  assert(
+    collectionSrc?.includes("/storage/v1/object/sign/listing_photos/"),
+    "Collection did not use a signed private photo.",
+  );
+  assert(
+    await collectionPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth > 0),
+    "Collection signed photo did not decode.",
+  );
 
   await page.goto(`${baseUrl}/ilan/${first.listingId}`, { waitUntil: "networkidle" });
   await page.getByRole("heading", { level: 1, name: publishTitle }).waitFor();
   const detailPhoto = page.getByAltText(`${publishTitle} fotoğraf 1`);
   const detailSrc = await detailPhoto.getAttribute("src");
-  assert(detailSrc?.includes("/storage/v1/object/sign/listing_photos/"), "Detail did not use a signed private photo.");
-  assert(await detailPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth > 0), "Detail signed photo did not decode.");
+  assert(
+    detailSrc?.includes("/storage/v1/object/sign/listing_photos/"),
+    "Detail did not use a signed private photo.",
+  );
+  assert(
+    await detailPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth > 0),
+    "Detail signed photo did not decode.",
+  );
   const contact = page.getByRole("link", { name: "Satıcıyı ara" });
-  assert((await contact.getAttribute("href")) === `tel:${contactE164}`, "Published seller phone was not lifecycle-approved.");
-  assert((await page.locator('a[href*="wa.me"]').count()) === 0, "Published detail exposed a WhatsApp CTA.");
+  assert(
+    (await contact.getAttribute("href")) === `tel:${contactE164}`,
+    "Published seller phone was not lifecycle-approved.",
+  );
+  assert(
+    (await page.locator('a[href*="wa.me"]').count()) === 0,
+    "Published detail exposed a WhatsApp CTA.",
+  );
   await page.getByText("yalnız bu ilan hakkında iletişim", { exact: false }).waitFor();
   await page.getByRole("link", { name: /Yanlış telefon/ }).waitFor();
-  await page.screenshot({ path: path.join(resultsDir, "hosted-published-detail.png"), fullPage: true });
+  await page.screenshot({
+    path: path.join(resultsDir, "hosted-published-detail.png"),
+    fullPage: true,
+  });
 
   await page.goto(`${baseUrl}/kurucu`, { waitUntil: "networkidle" });
-  await page.locator("li").filter({ hasText: publishTitle }).getByRole("button", { name: "Yayından kaldır" }).click();
+  await page
+    .locator("li")
+    .filter({ hasText: publishTitle })
+    .getByRole("button", { name: "Yayından kaldır" })
+    .click();
   await page.getByText("İlan yayından kaldırıldı.", { exact: true }).waitFor();
-  const unpublishedResponse = await page.goto(`${baseUrl}/ilan/${first.listingId}`, { waitUntil: "networkidle" });
+  const unpublishedResponse = await page.goto(`${baseUrl}/ilan/${first.listingId}`, {
+    waitUntil: "networkidle",
+  });
   assert(unpublishedResponse?.status() === 404, "Unpublished hosted listing remained public.");
-  assert((await page.getByRole("link", { name: "Satıcıyı ara" }).count()) === 0, "Unpublished listing leaked seller phone.");
+  assert(
+    (await page.getByRole("link", { name: "Satıcıyı ara" }).count()) === 0,
+    "Unpublished listing leaked seller phone.",
+  );
   runtimeErrors.splice(0, runtimeErrors.length);
 
   await page.goto(`${baseUrl}/kurucu`, { waitUntil: "networkidle" });
@@ -246,13 +323,22 @@ try {
   await firstCard.getByRole("button", { name: "Sil" }).click();
   await page.getByText("İlan ve ilişkili Storage objeleri silindi.", { exact: true }).waitFor();
   await firstCard.waitFor({ state: "detached" });
-  assert((await firstCard.count()) === 0, "Deleted published listing remained in operator inventory.");
+  assert(
+    (await firstCard.count()) === 0,
+    "Deleted published listing remained in operator inventory.",
+  );
 
   const second = await createPending(page, rejectTitle, seller, "+12025550156");
   await second.card.getByRole("button", { name: "Reddet" }).click();
   await page.getByText("İlan reddedildi.", { exact: true }).waitFor();
-  await page.locator("li").filter({ hasText: rejectTitle }).getByText("Reddedildi", { exact: true }).waitFor();
-  const rejectedResponse = await page.goto(`${baseUrl}/ilan/${second.listingId}`, { waitUntil: "networkidle" });
+  await page
+    .locator("li")
+    .filter({ hasText: rejectTitle })
+    .getByText("Reddedildi", { exact: true })
+    .waitFor();
+  const rejectedResponse = await page.goto(`${baseUrl}/ilan/${second.listingId}`, {
+    waitUntil: "networkidle",
+  });
   assert(rejectedResponse?.status() === 404, "Rejected hosted listing became public.");
   runtimeErrors.splice(0, runtimeErrors.length);
 
@@ -262,7 +348,10 @@ try {
   await secondCard.getByRole("button", { name: "Sil" }).click();
   await page.getByText("İlan ve ilişkili Storage objeleri silindi.", { exact: true }).waitFor();
   await secondCard.waitFor({ state: "detached" });
-  assert((await secondCard.count()) === 0, "Deleted rejected listing remained in operator inventory.");
+  assert(
+    (await secondCard.count()) === 0,
+    "Deleted rejected listing remained in operator inventory.",
+  );
 
   await page.goto(`${baseUrl}/ara?q=hosted-rc-no-such-listing-7f4c`, { waitUntil: "networkidle" });
   await page.getByText("Sonuç bulunamadı", { exact: true }).first().waitFor();
@@ -270,9 +359,15 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/kurucu`, { waitUntil: "networkidle" });
   await assertNoHorizontalOverflow(page, "/kurucu mobile");
-  await page.screenshot({ path: path.join(resultsDir, "hosted-operator-mobile.png"), fullPage: true });
+  await page.screenshot({
+    path: path.join(resultsDir, "hosted-operator-mobile.png"),
+    fullPage: true,
+  });
 
-  assert(runtimeErrors.length === 0, `Hosted operator browser runtime errors before intentional outage: ${runtimeErrors.join(" | ")}`);
+  assert(
+    runtimeErrors.length === 0,
+    `Hosted operator browser runtime errors before intentional outage: ${runtimeErrors.join(" | ")}`,
+  );
   try {
     process.kill(shimPid, 0);
   } catch {
@@ -283,16 +378,32 @@ try {
   await page.getByRole("button", { name: "Yenile" }).click();
   await page.getByRole("alert").waitFor();
   await page
-    .getByText("Kurucu işlemi güvenli biçimde tamamlanamadı. İşlem uygulanmış kabul edilmedi.", { exact: true })
+    .getByText("Kurucu işlemi güvenli biçimde tamamlanamadı. İşlem uygulanmış kabul edilmedi.", {
+      exact: true,
+    })
     .waitFor();
 
   const unexpectedOutageErrors = runtimeErrors.filter(
-    (entry) => !entry.startsWith("console: Failed to load resource: the server responded with a status of 500"),
+    (entry) =>
+      !entry.startsWith(
+        "console: Failed to load resource: the server responded with a status of 500",
+      ),
   );
-  assert(unexpectedOutageErrors.length === 0, `Unexpected hosted operator runtime errors during intentional backend outage: ${unexpectedOutageErrors.join(" | ")}`);
-  assert(shimBrowserRequests.length === 0, `Browser reached the localhost privileged shim: ${shimBrowserRequests.join(" | ")}`);
-  assert(sensitiveBrowserMutations.length === 0, `Browser performed privileged hosted mutations: ${sensitiveBrowserMutations.join(" | ")}`);
-  console.log("Hosted founder phone-only create/photo/publish/public/contact/unpublish/delete + reject/delete browser journey passed.");
+  assert(
+    unexpectedOutageErrors.length === 0,
+    `Unexpected hosted operator runtime errors during intentional backend outage: ${unexpectedOutageErrors.join(" | ")}`,
+  );
+  assert(
+    shimBrowserRequests.length === 0,
+    `Browser reached the localhost privileged shim: ${shimBrowserRequests.join(" | ")}`,
+  );
+  assert(
+    sensitiveBrowserMutations.length === 0,
+    `Browser performed privileged hosted mutations: ${sensitiveBrowserMutations.join(" | ")}`,
+  );
+  console.log(
+    "Hosted founder phone-only create/photo/publish/public/contact/unpublish/delete + reject/delete browser journey passed.",
+  );
 } finally {
   await context.close();
   await browser.close();

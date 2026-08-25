@@ -69,7 +69,9 @@ export function createPlaceProviderTrafficLogRecord(
 ): PlaceProviderTrafficLogRecord {
   const clientIp = input.trustedClientIp.trim();
   if (!SAFE_IP_PATTERN.test(clientIp)) {
-    throw new Error("Traffic log requires an IP supplied by the trusted production ingress boundary.");
+    throw new Error(
+      "Traffic log requires an IP supplied by the trusted production ingress boundary.",
+    );
   }
 
   const service = input.service.trim().toLowerCase();

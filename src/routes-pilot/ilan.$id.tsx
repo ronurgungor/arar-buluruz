@@ -72,7 +72,10 @@ function ListingDetail() {
           >
             <ChevronLeft className="h-4 w-4" aria-hidden /> Sonuçlara dön
           </button>
-          <div role="status" className="mt-8 rounded-2xl border border-border bg-card p-6 text-center">
+          <div
+            role="status"
+            className="mt-8 rounded-2xl border border-border bg-card p-6 text-center"
+          >
             <h1 className="text-lg font-bold text-foreground">İlan şu anda gösterilemiyor.</h1>
             <p className="mt-2 text-sm text-muted-foreground">{result.message}</p>
           </div>
@@ -118,9 +121,13 @@ function ListingDetail() {
           </div>
         )}
 
-        <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-foreground">{listing.title}</h1>
+        <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-foreground">
+          {listing.title}
+        </h1>
         <p className="mt-1 text-3xl font-black text-primary">{formatPrice(listing.price)}</p>
-        <p className="mt-2 text-sm text-muted-foreground">{listing.city} / {listing.district}</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {listing.city} / {listing.district}
+        </p>
         <p className="mt-1 text-sm font-semibold text-foreground">{listing.seller}</p>
         <p className="mt-4 leading-relaxed text-foreground">{listing.description}</p>
 

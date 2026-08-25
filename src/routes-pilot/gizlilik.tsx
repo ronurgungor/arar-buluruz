@@ -33,11 +33,18 @@ function PrivacyPage() {
         <div className="mt-8 space-y-7 text-sm leading-6">
           <section>
             <h2 className="font-semibold">Veri sorumlusu ve iletişim</h2>
-            <p className="mt-2 text-muted-foreground">Veri sorumlusu / işletmeci: {info.legalName}</p>
+            <p className="mt-2 text-muted-foreground">
+              Veri sorumlusu / işletmeci: {info.legalName}
+            </p>
             <p className="mt-1 text-muted-foreground">Adres: {info.address}</p>
-            <p className="mt-1 text-muted-foreground">Elektronik iletişim: {info.electronicContact}</p>
+            <p className="mt-1 text-muted-foreground">
+              Elektronik iletişim: {info.electronicContact}
+            </p>
             <p className="mt-1 text-muted-foreground">Telefon: {info.phoneDisplay}</p>
-            <Link to="/iletisim" className="mt-2 inline-flex font-semibold text-primary underline underline-offset-4">
+            <Link
+              to="/iletisim"
+              className="mt-2 inline-flex font-semibold text-primary underline underline-offset-4"
+            >
               İletişim ve kaldırma bilgileri
             </Link>
           </section>
@@ -59,7 +66,9 @@ function PrivacyPage() {
           <section>
             <h2 className="font-semibold">Amaçlar ve hukuki sebepler</h2>
             <ul className="mt-2 list-disc space-y-2 pl-5 text-muted-foreground">
-              <li>İlan başvurusu/hizmet talebinin yürütülmesi: gerekli olduğu ölçüde KVKK 5/2-c.</li>
+              <li>
+                İlan başvurusu/hizmet talebinin yürütülmesi: gerekli olduğu ölçüde KVKK 5/2-c.
+              </li>
               <li>
                 Satıcı telefonunun ilanda kamuya açık yayımlanması: satıcının ilan amacıyla bilinçli
                 alenileştirmesi kapsamında KVKK 5/2-d ve yalnız aynı amaçla kullanım.
@@ -78,8 +87,8 @@ function PrivacyPage() {
             <h2 className="font-semibold">Kamuya açık telefon</h2>
             <p className="mt-2 text-muted-foreground">
               Yayındaki satıcı telefonu ilan aktif olduğu sürece herkes tarafından görülebilir.
-              Numara yalnız ilgili ilan hakkında iletişim amacıyla paylaşılır; reklam, pazarlama veya
-              ilgisiz amaçlarla kullanılmamalıdır. Stage 1–3 pilotunda WhatsApp iletişim kanalı
+              Numara yalnız ilgili ilan hakkında iletişim amacıyla paylaşılır; reklam, pazarlama
+              veya ilgisiz amaçlarla kullanılmamalıdır. Stage 1–3 pilotunda WhatsApp iletişim kanalı
               kullanılmaz.
             </p>
           </section>
@@ -96,10 +105,11 @@ function PrivacyPage() {
           <section>
             <h2 className="font-semibold">Kimlerle paylaşılır?</h2>
             <p className="mt-2 text-muted-foreground">
-              Aktif ilanın başlık, açıklama, fiyat, konum, satıcı görünen adı, onaylı fotoğrafları ve
-              bilerek yayımlanan telefon numarası site ziyaretçilerine açıklanır. Diğer veriler yalnız
-              hizmetin güvenli işletimi için yetkili altyapı sağlayıcıları ve kanunen yetkili makamlarla
-              gerekli olduğu ölçüde paylaşılır. Stage 1–3 ilan/veri toplama akışı WhatsApp’a aktarılmaz.
+              Aktif ilanın başlık, açıklama, fiyat, konum, satıcı görünen adı, onaylı fotoğrafları
+              ve bilerek yayımlanan telefon numarası site ziyaretçilerine açıklanır. Diğer veriler
+              yalnız hizmetin güvenli işletimi için yetkili altyapı sağlayıcıları ve kanunen yetkili
+              makamlarla gerekli olduğu ölçüde paylaşılır. Stage 1–3 ilan/veri toplama akışı
+              WhatsApp’a aktarılmaz.
             </p>
           </section>
 
@@ -107,10 +117,10 @@ function PrivacyPage() {
             <h2 className="font-semibold">Saklama ve silme</h2>
             <p className="mt-2 text-muted-foreground">
               İlan, telefon ve fotoğraf gibi canlı içerikler amaç sona erdiğinde pilot saklama/silme
-              planına göre kaldırılır. 5651 kapsamındaki asgari trafik kayıtları ise ilan içeriğinden
-              ayrı bir kanuni kayıt sınıfıdır ve en az bir yıllık hedefle korunur; canlı ilan silme
-              işlemi bu trafik kayıtlarını otomatik olarak silmez. Trafik kayıtlarında istek gövdesi,
-              parola, token, telefon veya ilan içeriği tutulmaz.
+              planına göre kaldırılır. 5651 kapsamındaki asgari trafik kayıtları ise ilan
+              içeriğinden ayrı bir kanuni kayıt sınıfıdır ve en az bir yıllık hedefle korunur; canlı
+              ilan silme işlemi bu trafik kayıtlarını otomatik olarak silmez. Trafik kayıtlarında
+              istek gövdesi, parola, token, telefon veya ilan içeriği tutulmaz.
             </p>
           </section>
 
@@ -122,7 +132,10 @@ function PrivacyPage() {
               iletebilirsiniz. Yüksek riskli gizlilik bildirimlerinde ilan önce yayından kaldırılır,
               sonra incelenir.
             </p>
-            <Link to="/iletisim" className="mt-2 inline-flex font-semibold text-primary underline underline-offset-4">
+            <Link
+              to="/iletisim"
+              className="mt-2 inline-flex font-semibold text-primary underline underline-offset-4"
+            >
               Başvuru / kaldırma kanalını aç
             </Link>
           </section>

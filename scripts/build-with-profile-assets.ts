@@ -24,7 +24,9 @@ function requireActivationValue(name: string, minimumLength = 3): string {
 function verifyRealActivationIdentity(): void {
   if (!realDataActivationEnabled) return;
   if (!isPilotRc) {
-    throw new Error("ARAR_REAL_DATA_ACTIVATION=enabled is allowed only for the pilot-rc build profile.");
+    throw new Error(
+      "ARAR_REAL_DATA_ACTIVATION=enabled is allowed only for the pilot-rc build profile.",
+    );
   }
 
   requireActivationValue("VITE_OPERATOR_LEGAL_NAME", 4);
