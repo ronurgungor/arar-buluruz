@@ -28,6 +28,7 @@ const infoLinks = [
   { to: "/ilan-kurallari", label: "İlan Kuralları" },
   { to: "/guvenli-kullanim", label: "Güvenli Kullanım" },
   { to: "/gizlilik", label: "Gizlilik" },
+  { to: "/iletisim", label: "İletişim" },
 ] as const;
 
 function Home() {
@@ -100,7 +101,7 @@ function Home() {
           Hedefimiz: ilan vermek her zaman ücretsiz.
         </p>
         <nav
-          aria-label="Arar Buluruz bilgi ve kuralları"
+          aria-label="Arar Buluruz bilgi, kurallar ve iletişim"
           className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
         >
           {infoLinks.map((item) => (
