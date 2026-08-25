@@ -1,0 +1,91 @@
+name: Activation readiness
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: activation-readiness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-activation:
+    name: Synthetic privacy, 5651 and activation boundary
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.14
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify 5651 traffic-log minimization contract
+        run: bun test src/lib/place-provider-traffic-log.test.ts
+
+      - name: Verify real-data activation build fails closed without real operator identity
+        shell: bash
+        run: |
+          set +e
+          output="$(
+            ARAR_BUILD_PROFILE=pilot-rc \
+            ARAR_REAL_DATA_ACTIVATION=enabled \
+            VITE_LISTINGS_SOURCE=supabase \
+            VITE_SUPABASE_URL=https://synthetic.invalid \
+            VITE_SUPABASE_ANON_KEY=synthetic-public-key \
+            VITE_PILOT_INTAKE_E164=+12025550199 \
+              bun run build 2>&1
+          )"
+          status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [[ "$status" -eq 0 ]]; then
+            echo "Real-data activation build unexpectedly succeeded without operator identity."
+            exit 1
+          fi
+          grep -F 'Real-data activation build requires VITE_OPERATOR_LEGAL_NAME.' <<<"$output"
+
+      - name: Verify synthetic pilot build does not require real identity
+        env:
+          ARAR_BUILD_PROFILE: pilot-rc
+          VITE_LISTINGS_SOURCE: supabase
+          VITE_SUPABASE_URL: https://synthetic.invalid
+          VITE_SUPABASE_ANON_KEY: synthetic-public-key
+          VITE_PILOT_INTAKE_E164: +12025550199
+        run: bun run build
+
+      - name: Verify public pilot artifact activation boundary
+        shell: bash
+        run: |
+          bash scripts/pilot-rc-artifact-boundary-check.sh
+          test ! -e src/routes-pilot/giris.tsx
+          test ! -e src/routes-pilot/kurucu.tsx
+          grep -F 'to="/iletisim"' src/routes-pilot/index.tsx
+          grep -F 'Stage 1–3' src/routes-pilot/ilan-ver.tsx
+          grep -F 'Bu telefon numarası bana aittir' src/routes-pilot/ilan-ver.tsx
+          grep -F 'KVKK 5/2-d' src/routes-pilot/gizlilik.tsx
+          grep -F 'en az bir yıllık hedef' src/routes-pilot/gizlilik.tsx
+          grep -F 'Satıcıyı ara' src/routes-pilot/ilan.\$id.tsx
+          if grep -R -F 'https://wa.me/' src/routes-pilot src/build-profiles/pilot .output/public; then
+            echo "WhatsApp CTA leaked into activation-facing pilot graph/artifact."
+            exit 1
+          fi
+
+      - name: Verify repository remains synthetic-only
+        shell: bash
+        run: |
+          test ! -e supabase/.temp/project-ref
+          git diff --exit-code
