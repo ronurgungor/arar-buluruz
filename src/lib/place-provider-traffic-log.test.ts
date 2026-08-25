@@ -92,15 +92,21 @@ describe("5651 Gate B traffic evidence contract", () => {
 
   test("rotates one immutable closed NDJSON evidence file per UTC date", () => {
     expect(PLACE_PROVIDER_DAILY_ROTATION_TIMEZONE).toBe("UTC");
-    const first = sampleRecord({ timestamp: new Date("2026-08-25T23:59:59.000Z") });
-    const second = sampleRecord({ timestamp: new Date("2026-08-26T00:00:01.000Z") });
+    const first = sampleRecord({
+      timestamp: new Date("2026-08-25T23:59:59.000Z"),
+      endedAt: undefined,
+    });
+    const second = sampleRecord({
+      timestamp: new Date("2026-08-26T00:00:01.000Z"),
+      endedAt: undefined,
+    });
 
     const closed = closeDailyTrafficLog([first], new Date("2026-08-26T00:00:00.000Z"));
     expect(closed.fileName).toBe("traffic-2026-08-25.ndjson");
     expect(closed.recordCount).toBe(1);
     expect(closed.byteLength).toBeGreaterThan(0);
     expect(closed.sha256Hex).toMatch(/^[0-9a-f]{64}$/);
-    expect(new TextDecoder().decode(closed.bytes)).toEndWith("\n");
+    expect(new TextDecoder().decode(closed.bytes).endsWith("\n")).toBe(true);
 
     expect(() =>
       closeDailyTrafficLog([first, second], new Date("2026-08-26T00:00:02.000Z")),
@@ -171,7 +177,7 @@ describe("5651 Gate B traffic evidence contract", () => {
         signatureValid: true,
         certificateChainValid: true,
         providerAuthorizedUnder5070: true,
-        messageImprintHex: request.messageImprintHex.replace(/^./, "f"),
+        messageImprintHex: "0".repeat(64),
         nonceHex: request.nonceHex,
         generatedAt: "2026-08-26T00:00:01.000Z",
       }),
