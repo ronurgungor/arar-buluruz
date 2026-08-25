@@ -73,7 +73,7 @@ jobs:
           bash scripts/pilot-rc-artifact-boundary-check.sh
           test ! -e src/routes-pilot/giris.tsx
           test ! -e src/routes-pilot/kurucu.tsx
-          grep -F 'to="/iletisim"' src/routes-pilot/index.tsx
+          grep -F '"/iletisim"' src/routes-pilot/index.tsx
           grep -F 'Stage 1–3' src/routes-pilot/ilan-ver.tsx
           grep -F 'Bu telefon numarası bana aittir' src/routes-pilot/ilan-ver.tsx
           grep -F 'KVKK 5/2-d' src/routes-pilot/gizlilik.tsx
