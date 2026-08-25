@@ -1,13 +1,11 @@
-import { createFileRoute, notFound, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate, useRouter } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
 import { loadPilotListingDetail } from "@/build-profiles/pilot/public-listings";
 import { ALL_CITIES, ALL_DISTRICTS } from "@/lib/listing-search";
 import { hasListingResultsHistory } from "@/lib/listing-return";
-import {
-  buildPublicSellerContactHref,
-  getPublicSellerContactLabel,
-} from "@/lib/public-seller-contact";
+
+const E164_PATTERN = /^\+[1-9][0-9]{7,14}$/;
 
 const formatPrice = (value: number) =>
   new Intl.NumberFormat("tr-TR", {
@@ -74,10 +72,7 @@ function ListingDetail() {
           >
             <ChevronLeft className="h-4 w-4" aria-hidden /> Sonuçlara dön
           </button>
-          <div
-            role="status"
-            className="mt-8 rounded-2xl border border-border bg-card p-6 text-center"
-          >
+          <div role="status" className="mt-8 rounded-2xl border border-border bg-card p-6 text-center">
             <h1 className="text-lg font-bold text-foreground">İlan şu anda gösterilemiyor.</h1>
             <p className="mt-2 text-sm text-muted-foreground">{result.message}</p>
           </div>
@@ -86,17 +81,15 @@ function ListingDetail() {
     );
   }
 
-  const publicContactHref = listing.publicContact
-    ? buildPublicSellerContactHref(listing.publicContact)
-    : null;
-  const publicContactLabel = listing.publicContact
-    ? getPublicSellerContactLabel(listing.publicContact)
-    : null;
+  const phoneE164 =
+    listing.publicContact?.channel === "phone" && E164_PATTERN.test(listing.publicContact.e164)
+      ? listing.publicContact.e164
+      : null;
 
   return (
     <div className="min-h-screen">
       <PilotTopBar />
-      <main className="mx-auto max-w-2xl px-4 pb-[calc(8rem+env(safe-area-inset-bottom))]">
+      <main className="mx-auto max-w-2xl px-4 pb-[calc(10rem+env(safe-area-inset-bottom))]">
         <button
           type="button"
           data-testid="results-back"
@@ -105,6 +98,7 @@ function ListingDetail() {
         >
           <ChevronLeft className="h-4 w-4" aria-hidden /> Sonuçlara dön
         </button>
+
         {listing.photos.length > 0 ? (
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {listing.photos.map((photo, index) => (
@@ -123,15 +117,33 @@ function ListingDetail() {
             Bu pilot ilanında fotoğraf bulunmuyor.
           </div>
         )}
-        <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-foreground">
-          {listing.title}
-        </h1>
+
+        <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-foreground">{listing.title}</h1>
         <p className="mt-1 text-3xl font-black text-primary">{formatPrice(listing.price)}</p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {listing.city} / {listing.district}
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">{listing.city} / {listing.district}</p>
         <p className="mt-1 text-sm font-semibold text-foreground">{listing.seller}</p>
         <p className="mt-4 leading-relaxed text-foreground">{listing.description}</p>
+
+        <section className="mt-6 rounded-2xl border border-border bg-card p-4 text-sm">
+          <h2 className="font-bold">İletişim kullanım sınırı</h2>
+          <p className="mt-2 leading-relaxed text-muted-foreground">
+            Bu iletişim bilgisi yalnız bu ilan hakkında iletişim için paylaşılmıştır; reklam,
+            pazarlama veya ilgisiz amaçlarla kullanmayın.
+          </p>
+        </section>
+
+        <div className="mt-5 flex flex-wrap gap-4 text-sm">
+          <Link
+            to="/sikayet/$id"
+            params={{ id: listing.id }}
+            className="font-semibold text-primary underline underline-offset-4"
+          >
+            Yanlış telefon / kişisel veri / ilan bildir
+          </Link>
+          <Link to="/iletisim" className="font-semibold text-primary underline underline-offset-4">
+            İletişim ve kaldırma
+          </Link>
+        </div>
       </main>
 
       <div
@@ -139,27 +151,22 @@ function ListingDetail() {
         className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
       >
         <div className="mx-auto max-w-2xl px-4 py-3">
-          {listing.publicContact && publicContactHref && publicContactLabel ? (
+          {phoneE164 ? (
             <>
               <p className="mb-2 text-center text-xs text-muted-foreground">
-                {listing.publicContact.channel === "whatsapp"
-                  ? "WhatsApp’a yönlendirileceksiniz; görüşme Arar Buluruz dışında gerçekleşir."
-                  : "Arama cihazınızın telefon uygulaması üzerinden gerçekleşir."}
+                Arama cihazınızın telefon uygulaması üzerinden gerçekleşir. WhatsApp Stage 1–3
+                pilotunda kapalıdır.
               </p>
               <a
-                href={publicContactHref}
-                target={listing.publicContact.channel === "whatsapp" ? "_blank" : undefined}
-                rel={
-                  listing.publicContact.channel === "whatsapp" ? "noopener noreferrer" : undefined
-                }
+                href={`tel:${phoneE164}`}
                 className="flex h-12 min-h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
               >
-                {publicContactLabel}
+                Satıcıyı ara
               </a>
             </>
           ) : (
             <p className="rounded-xl border border-border bg-card p-3 text-center text-sm text-muted-foreground">
-              Bu ilanda yayınlanmış satıcı iletişim bilgisi bulunmuyor.
+              Bu ilanda Stage 1–3 için uygun yayınlanmış telefon bilgisi bulunmuyor.
             </p>
           )}
         </div>
