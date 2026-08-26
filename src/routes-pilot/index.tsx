@@ -1,25 +1,29 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Search } from "lucide-react";
+import { robotsContent } from "@/build-profiles/pilot/public-discovery";
 import { Wordmark } from "@/components/Wordmark";
 import { locationCities } from "@/data/turkiye-locations";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Arar Buluruz — Çorlu pilotu" },
-      {
-        name: "description",
-        content: "Çorlu pilotunda yayındaki ilanları ara ve satıcıyla doğrudan iletişime geç.",
-      },
-      { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
-      { property: "og:title", content: "Arar Buluruz — Çorlu pilotu" },
-      {
-        property: "og:description",
-        content: "Çorlu pilotunda yayındaki ilanları ara ve satıcıyla doğrudan iletişime geç.",
-      },
-    ],
-  }),
+  head: () => {
+    const robots = robotsContent(true);
+    return {
+      meta: [
+        { title: "Arar Buluruz — Çorlu" },
+        {
+          name: "description",
+          content: "Çorlu'da yayındaki ilanları ara ve satıcıyla doğrudan iletişime geç.",
+        },
+        ...(robots ? [{ name: "robots", content: robots }] : []),
+        { property: "og:title", content: "Arar Buluruz — Çorlu" },
+        {
+          property: "og:description",
+          content: "Çorlu'da yayındaki ilanları ara ve satıcıyla doğrudan iletişime geç.",
+        },
+      ],
+    };
+  },
   component: Home,
 });
 
