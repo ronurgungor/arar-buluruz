@@ -9,7 +9,7 @@ export const Route = createFileRoute("/ilan-ver")({
       {
         name: "description",
         content:
-          "Çorlu pilotunda ilan başvurusu telefonla alınır ve kurucu tarafından manuel olarak incelenir.",
+          "Çorlu'da ilan başvurusu telefonla alınır ve kurucu tarafından manuel olarak incelenir.",
       },
       { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
     ],
@@ -29,9 +29,8 @@ function PilotApplicationPage() {
       <main className="mx-auto max-w-2xl px-4 pb-16">
         <h1 className="mt-6 text-2xl font-extrabold tracking-tight">İlan Başvurusu</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Stage 1–3 Çorlu pilotunda bu sayfa ad, telefon, ilan metni veya fotoğraf toplamaz. Başvuru
-          yalnız telefonla kurucuya yapılır; kurucu uygun ilanı mevcut güvenli operator akışında
-          pending olarak oluşturur.
+          Bu sayfa ad, telefon, ilan metni veya fotoğraf toplamaz. Başvuru yalnız telefonla kurucuya
+          yapılır; kurucu uygun ilanı inceleyip yayın öncesinde bekleyen ilan olarak oluşturur.
         </p>
 
         <section className="mt-5 rounded-2xl border border-border bg-card p-5">
@@ -92,8 +91,8 @@ function PilotApplicationPage() {
         <section className="mt-4 rounded-2xl border border-border bg-accent/40 p-5">
           <h2 className="font-bold">Telefonla başvur</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Pilot konumu: {PILOT_PROVINCE} / {PILOT_DISTRICT}. WhatsApp, mesaj formu ve dosya
-            yükleme bu aşamada kapalıdır.
+            Konum: {PILOT_PROVINCE} / {PILOT_DISTRICT}. Başvuru telefonla alınır; bu sayfada mesaj
+            formu veya dosya yükleme alanı bulunmaz.
           </p>
           {intakeHref ? (
             <a
@@ -107,7 +106,7 @@ function PilotApplicationPage() {
               role="status"
               className="mt-4 rounded-xl border border-border bg-background p-3 text-sm text-muted-foreground"
             >
-              İlan başvuru telefonu bu sentetik ortamda etkin değil.
+              İlan başvuru telefonu bu ortamda etkin değil.
             </p>
           )}
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
