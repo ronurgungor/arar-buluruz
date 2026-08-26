@@ -2,9 +2,47 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const isPilotRc = process.env.ARAR_BUILD_PROFILE === "pilot-rc";
+const realDataActivationEnabled = process.env.ARAR_REAL_DATA_ACTIVATION === "enabled";
 const publicManifestPath = path.resolve("public/manifest.webmanifest");
 const pilotManifestPath = path.resolve("src/build-profiles/pilot/manifest.webmanifest");
+const E164_PATTERN = /^\+[1-9][0-9]{7,14}$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 let originalManifest: Buffer | null = null;
+
+function requireActivationValue(name: string, minimumLength = 3): string {
+  const value = process.env[name]?.trim() ?? "";
+  if (value.length < minimumLength) {
+    throw new Error(`Real-data activation build requires ${name}.`);
+  }
+  const normalized = value.toLowerCase();
+  if (normalized.includes("placeholder") || normalized.includes("aktivasyon öncesi")) {
+    throw new Error(`Real-data activation build rejects placeholder value in ${name}.`);
+  }
+  return value;
+}
+
+function verifyRealActivationIdentity(): void {
+  if (!realDataActivationEnabled) return;
+  if (!isPilotRc) {
+    throw new Error(
+      "ARAR_REAL_DATA_ACTIVATION=enabled is allowed only for the pilot-rc build profile.",
+    );
+  }
+
+  requireActivationValue("VITE_OPERATOR_LEGAL_NAME", 4);
+  const email = requireActivationValue("VITE_OPERATOR_EMAIL", 6);
+  const phone = requireActivationValue("VITE_OPERATOR_PHONE_E164", 8);
+
+  if (!EMAIL_PATTERN.test(email)) {
+    throw new Error("Real-data activation build requires a valid VITE_OPERATOR_EMAIL.");
+  }
+  if (!E164_PATTERN.test(phone)) {
+    throw new Error("Real-data activation build requires a valid VITE_OPERATOR_PHONE_E164.");
+  }
+}
+
+process.env.VITE_REAL_DATA_ACTIVATION = realDataActivationEnabled ? "enabled" : "disabled";
+verifyRealActivationIdentity();
 
 async function run(command: string[]) {
   const child = Bun.spawn(command, {

@@ -8,13 +8,11 @@ const backendOrigin = process.env.BACKEND_ORIGIN;
 if (!backendOrigin) throw new Error("BACKEND_ORIGIN is required for pilot-RC artifact proof.");
 
 const serverEntry = path.resolve(".output/server/index.mjs");
-if (!(await Bun.file(serverEntry).exists())) {
+if (!(await Bun.file(serverEntry).exists()))
   throw new Error("pilot-rc production artifact is missing.");
-}
 const manifestPath = path.resolve(".output/public/manifest.webmanifest");
-if (!(await Bun.file(manifestPath).exists())) {
+if (!(await Bun.file(manifestPath).exists()))
   throw new Error("pilot-rc finalized manifest is missing.");
-}
 const diskManifestBytes = Buffer.from(await Bun.file(manifestPath).arrayBuffer());
 const diskManifestText = diskManifestBytes.toString("utf8");
 const diskManifest = JSON.parse(diskManifestText) as Record<string, unknown>;
@@ -82,10 +80,7 @@ async function waitForServerReady() {
 async function waitForServerDown() {
   for (let attempt = 1; attempt <= 30; attempt += 1) {
     try {
-      await fetch(baseUrl, {
-        cache: "no-store",
-        signal: AbortSignal.timeout(300),
-      });
+      await fetch(baseUrl, { cache: "no-store", signal: AbortSignal.timeout(300) });
     } catch {
       return;
     }
@@ -145,11 +140,7 @@ async function readServiceWorkerSnapshot(page: Page): Promise<ServiceWorkerSnaps
       controller: describeWorker(navigator.serviceWorker.controller),
       cacheNames,
       offlineFallback: fallback
-        ? {
-            status: fallback.status,
-            url: fallback.url,
-            text: await fallback.clone().text(),
-          }
+        ? { status: fallback.status, url: fallback.url, text: await fallback.clone().text() }
         : null,
     };
   });
@@ -166,7 +157,6 @@ async function ensureServiceWorkerControl(page: Page) {
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
-
   let reloads = 0;
   for (let attempt = 1; attempt <= 30; attempt += 1) {
     const snapshot = await readServiceWorkerSnapshot(page);
@@ -176,14 +166,12 @@ async function ensureServiceWorkerControl(page: Page) {
       );
       return snapshot;
     }
-
     if (attempt % 5 === 0) {
       await page.reload({ waitUntil: "domcontentloaded" });
       reloads += 1;
     }
     await page.waitForTimeout(300);
   }
-
   const snapshot = await readServiceWorkerSnapshot(page);
   throw new Error(`pilot-rc service worker did not control the page: ${JSON.stringify(snapshot)}.`);
 }
@@ -195,18 +183,14 @@ async function assertManifestAndInstallability(context: BrowserContext, page: Pa
   const servedManifestSha256 = createHash("sha256").update(servedManifestBytes).digest("hex");
   const contentType = manifestResponse.headers()["content-type"] ?? "[missing]";
   const byteIdentical = servedManifestBytes.equals(diskManifestBytes);
-  const preview = JSON.stringify(servedManifestText.slice(0, 240));
-
   console.log(
-    `pilot-rc served manifest diagnostic: status=${manifestResponse.status()} content-type=${JSON.stringify(contentType)} bytes=${servedManifestBytes.byteLength} sha256=${servedManifestSha256} disk-byte-identical=${byteIdentical} preview=${preview}`,
+    `pilot-rc served manifest diagnostic: status=${manifestResponse.status()} content-type=${JSON.stringify(contentType)} bytes=${servedManifestBytes.byteLength} sha256=${servedManifestSha256} disk-byte-identical=${byteIdentical}`,
   );
-
   assert(manifestResponse.ok(), `Manifest HTTP ${manifestResponse.status()}.`);
   assert(
     contentType.toLocaleLowerCase("en-US").includes("json"),
     `Manifest content-type is not JSON-compatible: ${contentType}.`,
   );
-
   const manifest = (await manifestResponse.json()) as Record<string, unknown>;
   assertManifestFields(manifest, "Served manifest");
   assertManifestResidueAbsent(servedManifestText, "Served manifest");
@@ -214,7 +198,6 @@ async function assertManifestAndInstallability(context: BrowserContext, page: Pa
     byteIdentical,
     `Served manifest differs from finalized disk artifact: disk=${diskManifestSha256} served=${servedManifestSha256}.`,
   );
-
   const session = await context.newCDPSession(page);
   const result = (await session.send("Page.getInstallabilityErrors")) as {
     installabilityErrors?: unknown[];
@@ -245,6 +228,10 @@ async function assertNoResidue(page: Page, label: string) {
   assert(
     (await page.getByRole("link", { name: "Giriş" }).count()) === 0,
     `${label} exposed a login CTA.`,
+  );
+  assert(
+    (await page.locator('a[href*="wa.me"]').count()) === 0,
+    `${label} exposed a WhatsApp CTA.`,
   );
 }
 
@@ -281,6 +268,7 @@ try {
     await page.goto(baseUrl, { waitUntil: "networkidle" });
     await page.getByText("Ne arıyorsan yaz, gerisini biz bulalım.", { exact: true }).waitFor();
     await page.getByRole("link", { name: "İlan Başvurusu" }).waitFor();
+    await page.getByRole("link", { name: "İletişim" }).waitFor();
     await assertNoResidue(page, "home");
     await assertNoHorizontalOverflow(page, "home desktop");
     await ensureServiceWorkerControl(page);
@@ -311,15 +299,35 @@ try {
 
     await page.goto(`${baseUrl}/ilan-ver`, { waitUntil: "networkidle" });
     await page.getByRole("heading", { level: 1, name: "İlan Başvurusu" }).waitFor();
-    await assertNoResidue(page, "pilot intake");
+    await page
+      .getByText("bu sayfa ad, telefon, ilan metni veya fotoğraf toplamaz", { exact: false })
+      .waitFor();
+    await page.getByText("özel kişi olarak, ara sıra ilan veren", { exact: false }).waitFor();
+    await page.getByText("Bu telefon numarası bana aittir", { exact: false }).waitFor();
+    await page.getByText("Çocuk, tanınabilir üçüncü kişi", { exact: false }).waitFor();
     assert(
-      (await page.locator('input[type="password"], input[type="email"]').count()) === 0,
-      "Pilot intake exposed account fields.",
+      (await page.locator("form").count()) === 0,
+      "Pilot intake unexpectedly exposed a data-submission form.",
     );
+    assert(
+      (await page.locator('input, textarea, input[type="file"]').count()) === 0,
+      "Pilot intake unexpectedly collected browser input.",
+    );
+    await assertNoResidue(page, "pilot intake");
+
+    await page.goto(`${baseUrl}/iletisim`, { waitUntil: "networkidle" });
+    await page.getByRole("heading", { level: 1, name: "İletişim ve Kaldırma" }).waitFor();
+    await page.getByText("İşletmeci", { exact: true }).waitFor();
+    await page
+      .getByText("Yanlış telefon, size ait veri veya acil kaldırma", { exact: true })
+      .waitFor();
+    await assertNoResidue(page, "contact");
 
     await page.goto(`${baseUrl}/gizlilik`, { waitUntil: "networkidle" });
-    await page.getByRole("heading", { level: 1, name: "Gizlilik" }).waitFor();
-    await page.getByText("hesap açmadan ilan keşfi", { exact: false }).waitFor();
+    await page.getByRole("heading", { level: 1, name: "Gizlilik ve Aydınlatma" }).waitFor();
+    await page.getByText("Aydınlatma bir “kabul”", { exact: false }).waitFor();
+    await page.getByText("KVKK 5/2-d", { exact: false }).waitFor();
+    await page.getByText("en az bir yıllık hedef", { exact: false }).waitFor();
     await assertNoResidue(page, "privacy");
 
     await page.goto(`${baseUrl}/ara?q=Sentetik+migration`, { waitUntil: "networkidle" });
@@ -368,11 +376,31 @@ try {
       decodedPhoto.naturalWidth > 0,
       `pilot-rc signed photo did not decode: ${JSON.stringify(decodedPhoto)}.`,
     );
-    const contact = page.getByRole("link", { name: "WhatsApp’tan yaz" });
+    await page.getByText("yalnız bu ilan hakkında iletişim", { exact: false }).waitFor();
+    await page.getByRole("link", { name: /Yanlış telefon/ }).waitFor();
     assert(
-      (await contact.getAttribute("href")) === "https://wa.me/12025550141",
-      "Hosted baseline seller contact drifted.",
+      (await page.locator('a[href*="wa.me"]').count()) === 0,
+      "Pilot detail exposed a WhatsApp seller CTA.",
     );
+
+    const reportHref = await page
+      .getByRole("link", { name: /Yanlış telefon/ })
+      .getAttribute("href");
+    assert(reportHref?.startsWith("/sikayet/"), "Pilot detail did not expose the takedown route.");
+    await page.getByRole("link", { name: /Yanlış telefon/ }).click();
+    await page.getByRole("heading", { level: 1, name: "İlan Bildirimi ve Kaldırma" }).waitFor();
+    await page.getByText("önce yayından kaldırılır", { exact: false }).waitFor();
+    assert(
+      (await page.locator("form").count()) === 0,
+      "Pilot takedown route unexpectedly collected report content in-browser.",
+    );
+    await assertNoResidue(page, "takedown");
+
+    await page.goto(`${baseUrl}/ara?q=Sentetik+migration`, { waitUntil: "networkidle" });
+    await page
+      .getByRole("link", { name: new RegExp(baselineTitle) })
+      .first()
+      .click();
     await page.goBack({ waitUntil: "networkidle" });
     assert(
       new URL(page.url()).searchParams.get("q") === "Sentetik migration",
@@ -408,6 +436,7 @@ try {
     mobilePage.setDefaultTimeout(20_000);
     await mobilePage.goto(baseUrl, { waitUntil: "networkidle" });
     await mobilePage.getByRole("link", { name: "İlan Başvurusu" }).waitFor();
+    await mobilePage.getByRole("link", { name: "İletişim" }).waitFor();
     await assertNoResidue(mobilePage, "mobile home");
     await assertNoHorizontalOverflow(mobilePage, "mobile home");
     await mobilePage.getByLabel("Ne arıyorsun?", { exact: true }).fill("Sentetik migration");
@@ -437,17 +466,16 @@ try {
       if (message.type() === "error") offlineConsoleErrors.push(message.text());
     });
     offlinePage.on("pageerror", (error) => offlinePageErrors.push(error.message));
-    offlinePage.on("requestfailed", (request) => {
+    offlinePage.on("requestfailed", (request) =>
       offlineRequestFailures.push(
         `${request.method()} ${request.url()} ${request.failure()?.errorText ?? "[unknown]"}`,
-      );
-    });
+      ),
+    );
     offlinePage.on("response", (response) => {
-      if (response.request().resourceType() === "document") {
+      if (response.request().resourceType() === "document")
         offlineDocumentResponses.push(
           `${response.status()} ${response.url()} fromServiceWorker=${response.fromServiceWorker()}`,
         );
-      }
     });
 
     try {
@@ -466,7 +494,6 @@ try {
           initialSnapshot.offlineFallback.text.includes("<h1>Bağlantı yok</h1>"),
         `pilot-rc service worker cache did not contain the fail-closed offline fallback: ${JSON.stringify(initialSnapshot.offlineFallback)}.`,
       );
-
       const beforeOutageSnapshot = await ensureServiceWorkerControl(offlinePage);
       assert(
         hasControllingWorker(beforeOutageSnapshot),
@@ -520,12 +547,10 @@ try {
         offlineResponseText === beforeOutageSnapshot.offlineFallback?.text,
         "pilot-rc service worker navigation response differed from the precached /offline.html response.",
       );
-
       const afterNavigationSnapshot = await readServiceWorkerSnapshot(offlinePage);
       console.log(
         `pilot-rc real offline navigation diagnostic: response=${offlineNavigationResponse.status()} ${offlineNavigationResponse.url()} fromServiceWorker=${offlineNavigationResponse.fromServiceWorker()} error=${JSON.stringify(offlineNavigationError)} pageUrl=${offlinePage.url()} state=${JSON.stringify(afterNavigationSnapshot)} documentResponses=${JSON.stringify(offlineDocumentResponses)} requestFailures=${JSON.stringify(offlineRequestFailures)} consoleErrors=${JSON.stringify(offlineConsoleErrors)} pageErrors=${JSON.stringify(offlinePageErrors)}.`,
       );
-
       await offlinePage.getByRole("heading", { level: 1, name: "Bağlantı yok" }).waitFor();
       await offlinePage
         .getByText("dinamik ilanları çevrimdışı saklamaz", { exact: false })
@@ -549,7 +574,7 @@ try {
     }
 
     console.log(
-      "pilot-rc production artifact desktop/mobile/PWA/offline/navigation/fail-closed proof passed.",
+      "pilot-rc activation-facing desktop/mobile/PWA/offline/navigation/fail-closed proof passed.",
     );
   } finally {
     await browser.close();

@@ -86,10 +86,12 @@ async function assertNoHorizontalOverflow(page: Page, route: string) {
 }
 
 async function fillCreateForm(page: Page, title: string, seller: string, contactE164: string) {
+  await page.locator('input[name="privacyNoticeDelivered"]').check();
+  await page.locator('input[name="privateSellerDeclaration"]').check();
+  await page.locator('input[name="contentRightsDeclaration"]').check();
   await page.getByLabel("İlanda görünecek ad", { exact: true }).fill(seller);
   await page.getByLabel("Başlık", { exact: true }).fill(title);
   await page.getByLabel("Fiyat (TL)", { exact: true }).fill("9876.50");
-  await page.getByLabel("İletişim kanalı", { exact: true }).selectOption("whatsapp");
   await page.getByLabel("Satıcı telefonu (E.164)", { exact: true }).fill(contactE164);
   await page
     .getByLabel("Açıklama", { exact: true })
@@ -113,7 +115,6 @@ async function createPending(page: Page, title: string, seller: string, contactE
     .catch(() => null);
 
   await page.getByRole("button", { name: "Pending ilan ve fotoğrafı kaydet" }).click();
-
   const success = page.getByText("Pending ilan ve güvenli fotoğraf kaydedildi.", { exact: true });
   const failure = page.getByRole("alert");
   let outcome: "success" | "failure" | "timeout" = "timeout";
@@ -132,37 +133,25 @@ async function createPending(page: Page, title: string, seller: string, contactE
 
   const response = await serverResponsePromise;
   const elapsedMs = Date.now() - startedAt;
-  const responseStatus = response?.status() ?? "no POST response captured";
-  const responsePath = response ? new URL(response.url()).pathname : "unknown";
-
   if (outcome !== "success") {
     const safeAlert =
       outcome === "failure"
         ? (await failure.textContent())?.trim() || "[empty alert]"
-        : "[no success or failure UI before timeout]";
-    const buttonText =
-      (
-        await page
-          .getByRole("button", { name: /Kaydediliyor|Pending ilan/ })
-          .textContent()
-          .catch(() => null)
-      )?.trim() ?? "[button unavailable]";
+        : "[timeout]";
     await page.screenshot({
       path: path.join(resultsDir, "hosted-create-failure.png"),
       fullPage: true,
     });
     throw new Error(
-      `Hosted create ${outcome}: elapsed=${elapsedMs}ms alert=${JSON.stringify(safeAlert)} button=${JSON.stringify(buttonText)} POST=${responseStatus} ${responsePath}`,
+      `Hosted create ${outcome}: elapsed=${elapsedMs}ms alert=${JSON.stringify(safeAlert)} status=${response?.status() ?? "none"}`,
     );
   }
-
-  assert(response !== null, "Hosted create succeeded in UI without an app server POST response.");
   assert(
-    response.ok(),
-    `Hosted create UI succeeded but app server POST returned HTTP ${response.status()} ${responsePath}.`,
+    response !== null && response.ok(),
+    "Hosted create did not complete through a successful app server POST.",
   );
   console.log(
-    `Hosted create server round-trip completed in ${elapsedMs}ms with HTTP ${response.status()} ${responsePath}.`,
+    `Hosted create server round-trip completed in ${elapsedMs}ms with HTTP ${response.status()}.`,
   );
 
   const card = page.locator("li").filter({ hasText: title });
@@ -172,6 +161,7 @@ async function createPending(page: Page, title: string, seller: string, contactE
     (await card.getByText(/1 fotoğraf/).count()) === 1,
     "Pending listing did not have one photo.",
   );
+  await card.getByText(/phone · \+1202555/).waitFor();
   const testId = await card.getAttribute("data-testid");
   assert(
     testId?.startsWith("operator-listing-"),
@@ -221,16 +211,8 @@ try {
     "Operator header exposed login.",
   );
   await assertNoHorizontalOverflow(page, "/kurucu");
-
-  // Prove the loading state first, then serialize mutations behind a completed inventory read.
-  // The previous hosted harness submitted during the deliberately delayed initial inventory request,
-  // creating an artificial concurrent founder mutation/read race that does not exist in the local
-  // networkidle proof. The lifecycle itself must start only after the founder inventory is settled.
   await loadingStatus.waitFor({ state: "hidden" });
-  assert(
-    (await page.getByRole("alert").count()) === 0,
-    "Initial hosted founder inventory failed before lifecycle proof.",
-  );
+  assert((await page.getByRole("alert").count()) === 0, "Initial hosted founder inventory failed.");
 
   const createButton = page.getByRole("button", { name: "Pending ilan ve fotoğrafı kaydet" });
   await createButton.click();
@@ -256,8 +238,12 @@ try {
   runtimeErrors.splice(0, runtimeErrors.length);
 
   await page.goto(`${baseUrl}/kurucu`, { waitUntil: "networkidle" });
-  await page.getByLabel("İletişim kontrolü tamamlandı", { exact: true }).check();
-  await page.getByLabel("Yayın talimatı teyit edildi", { exact: true }).check();
+  await page.getByLabel("Telefon kontrolü tamamlandı", { exact: true }).check();
+  await page
+    .getByText(/Numaram ilanla ilgili iletişim için kamuya açık yayımlansın/)
+    .locator("..")
+    .getByRole("checkbox")
+    .check();
   await page
     .locator("li")
     .filter({ hasText: publishTitle })
@@ -298,13 +284,17 @@ try {
     await detailPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth > 0),
     "Detail signed photo did not decode.",
   );
-  const contactHref = await page
-    .getByRole("link", { name: "WhatsApp’tan yaz" })
-    .getAttribute("href");
+  const contact = page.getByRole("link", { name: "Satıcıyı ara" });
   assert(
-    contactHref === `https://wa.me/${contactE164.slice(1)}`,
-    "Published seller contact was not lifecycle-approved.",
+    (await contact.getAttribute("href")) === `tel:${contactE164}`,
+    "Published seller phone was not lifecycle-approved.",
   );
+  assert(
+    (await page.locator('a[href*="wa.me"]').count()) === 0,
+    "Published detail exposed a WhatsApp CTA.",
+  );
+  await page.getByText("yalnız bu ilan hakkında iletişim", { exact: false }).waitFor();
+  await page.getByRole("link", { name: /Yanlış telefon/ }).waitFor();
   await page.screenshot({
     path: path.join(resultsDir, "hosted-published-detail.png"),
     fullPage: true,
@@ -322,8 +312,8 @@ try {
   });
   assert(unpublishedResponse?.status() === 404, "Unpublished hosted listing remained public.");
   assert(
-    (await page.getByRole("link", { name: "WhatsApp’tan yaz" }).count()) === 0,
-    "Unpublished listing leaked seller contact.",
+    (await page.getByRole("link", { name: "Satıcıyı ara" }).count()) === 0,
+    "Unpublished listing leaked seller phone.",
   );
   runtimeErrors.splice(0, runtimeErrors.length);
 
@@ -412,7 +402,7 @@ try {
     `Browser performed privileged hosted mutations: ${sensitiveBrowserMutations.join(" | ")}`,
   );
   console.log(
-    "Hosted founder create/photo/publish/public/contact/unpublish/delete + reject/delete browser journey passed.",
+    "Hosted founder phone-only create/photo/publish/public/contact/unpublish/delete + reject/delete browser journey passed.",
   );
 } finally {
   await context.close();

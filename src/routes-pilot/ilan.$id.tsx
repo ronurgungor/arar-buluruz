@@ -1,13 +1,12 @@
-import { createFileRoute, notFound, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate, useRouter } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
+import { CLOSED_ROBOTS, robotsContent } from "@/build-profiles/pilot/public-discovery";
 import { loadPilotListingDetail } from "@/build-profiles/pilot/public-listings";
 import { ALL_CITIES, ALL_DISTRICTS } from "@/lib/listing-search";
 import { hasListingResultsHistory } from "@/lib/listing-return";
-import {
-  buildPublicSellerContactHref,
-  getPublicSellerContactLabel,
-} from "@/lib/public-seller-contact";
+
+const E164_PATTERN = /^\+[1-9][0-9]{7,14}$/;
 
 const formatPrice = (value: number) =>
   new Intl.NumberFormat("tr-TR", {
@@ -27,16 +26,17 @@ export const Route = createFileRoute("/ilan/$id")({
       return {
         meta: [
           { title: "İlan bulunamadı — Arar Buluruz" },
-          { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
+          { name: "robots", content: CLOSED_ROBOTS },
         ],
       };
     const { listing } = loaderData;
     const description = `${listing.title} — ${formatPrice(listing.price)} · ${listing.city}/${listing.district}`;
+    const robots = robotsContent(true);
     return {
       meta: [
         { title: `${listing.title} — Arar Buluruz` },
         { name: "description", content: description },
-        { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
+        ...(robots ? [{ name: "robots", content: robots }] : []),
       ],
     };
   },
@@ -80,23 +80,29 @@ function ListingDetail() {
           >
             <h1 className="text-lg font-bold text-foreground">İlan şu anda gösterilemiyor.</h1>
             <p className="mt-2 text-sm text-muted-foreground">{result.message}</p>
+            <button
+              type="button"
+              onClick={() => router.invalidate()}
+              className="mt-4 h-11 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+            >
+              Tekrar dene
+            </button>
           </div>
         </main>
       </div>
     );
   }
 
-  const publicContactHref = listing.publicContact
-    ? buildPublicSellerContactHref(listing.publicContact)
-    : null;
-  const publicContactLabel = listing.publicContact
-    ? getPublicSellerContactLabel(listing.publicContact)
-    : null;
+  const phoneE164 =
+    listing.publicContact?.channel === "phone" && E164_PATTERN.test(listing.publicContact.e164)
+      ? listing.publicContact.e164
+      : null;
+  const [heroPhoto, ...additionalPhotos] = listing.photos;
 
   return (
     <div className="min-h-screen">
       <PilotTopBar />
-      <main className="mx-auto max-w-2xl px-4 pb-[calc(8rem+env(safe-area-inset-bottom))]">
+      <main className="mx-auto max-w-2xl px-4 pb-[calc(10rem+env(safe-area-inset-bottom))]">
         <button
           type="button"
           data-testid="results-back"
@@ -105,24 +111,38 @@ function ListingDetail() {
         >
           <ChevronLeft className="h-4 w-4" aria-hidden /> Sonuçlara dön
         </button>
-        {listing.photos.length > 0 ? (
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            {listing.photos.map((photo, index) => (
-              <img
-                key={photo}
-                src={photo}
-                alt={`${listing.title} fotoğraf ${index + 1}`}
-                width={800}
-                height={600}
-                className="aspect-[4/3] w-full rounded-2xl object-cover"
-              />
-            ))}
+
+        {heroPhoto ? (
+          <div className="mt-2">
+            <img
+              src={heroPhoto}
+              alt={`${listing.title} fotoğraf 1`}
+              width={800}
+              height={600}
+              className="aspect-[4/3] w-full rounded-2xl object-cover"
+            />
+            {additionalPhotos.length > 0 && (
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {additionalPhotos.map((photo, index) => (
+                  <img
+                    key={photo}
+                    src={photo}
+                    alt={`${listing.title} fotoğraf ${index + 2}`}
+                    width={800}
+                    height={600}
+                    loading="lazy"
+                    className="aspect-[4/3] w-full rounded-xl object-cover"
+                  />
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <div className="mt-2 flex aspect-[4/3] w-full items-center justify-center rounded-2xl bg-muted text-sm text-muted-foreground">
-            Bu pilot ilanında fotoğraf bulunmuyor.
+            Bu ilanda fotoğraf bulunmuyor.
           </div>
         )}
+
         <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-foreground">
           {listing.title}
         </h1>
@@ -132,6 +152,27 @@ function ListingDetail() {
         </p>
         <p className="mt-1 text-sm font-semibold text-foreground">{listing.seller}</p>
         <p className="mt-4 leading-relaxed text-foreground">{listing.description}</p>
+
+        <section className="mt-6 rounded-2xl border border-border bg-card p-4 text-sm">
+          <h2 className="font-bold">İletişim kullanım sınırı</h2>
+          <p className="mt-2 leading-relaxed text-muted-foreground">
+            Bu iletişim bilgisi yalnız bu ilan hakkında iletişim için paylaşılmıştır; reklam,
+            pazarlama veya ilgisiz amaçlarla kullanmayın.
+          </p>
+        </section>
+
+        <div className="mt-5 flex flex-wrap gap-4 text-sm">
+          <Link
+            to="/sikayet/$id"
+            params={{ id: listing.id }}
+            className="font-semibold text-primary underline underline-offset-4"
+          >
+            Yanlış telefon / kişisel veri / ilan bildir
+          </Link>
+          <Link to="/iletisim" className="font-semibold text-primary underline underline-offset-4">
+            İletişim ve kaldırma
+          </Link>
+        </div>
       </main>
 
       <div
@@ -139,27 +180,21 @@ function ListingDetail() {
         className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
       >
         <div className="mx-auto max-w-2xl px-4 py-3">
-          {listing.publicContact && publicContactHref && publicContactLabel ? (
+          {phoneE164 ? (
             <>
               <p className="mb-2 text-center text-xs text-muted-foreground">
-                {listing.publicContact.channel === "whatsapp"
-                  ? "WhatsApp’a yönlendirileceksiniz; görüşme Arar Buluruz dışında gerçekleşir."
-                  : "Arama cihazınızın telefon uygulaması üzerinden gerçekleşir."}
+                Arama cihazınızın telefon uygulaması üzerinden gerçekleşir.
               </p>
               <a
-                href={publicContactHref}
-                target={listing.publicContact.channel === "whatsapp" ? "_blank" : undefined}
-                rel={
-                  listing.publicContact.channel === "whatsapp" ? "noopener noreferrer" : undefined
-                }
+                href={`tel:${phoneE164}`}
                 className="flex h-12 min-h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
               >
-                {publicContactLabel}
+                Satıcıyı ara
               </a>
             </>
           ) : (
             <p className="rounded-xl border border-border bg-card p-3 text-center text-sm text-muted-foreground">
-              Bu ilanda yayınlanmış satıcı iletişim bilgisi bulunmuyor.
+              Bu ilanda yayınlanmış telefon bilgisi bulunmuyor.
             </p>
           )}
         </div>

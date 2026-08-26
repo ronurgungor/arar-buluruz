@@ -1,8 +1,12 @@
 import "./lib/error-capture";
+import {
+  CLOSED_ROBOTS,
+  createPilotSitemapXml,
+  publicValidationIndexingEnabled,
+} from "./build-profiles/pilot/public-discovery";
+import { loadPilotListingsCollection } from "./build-profiles/pilot/public-listings";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
-
-const CLOSED_ROBOTS = "noindex, nofollow, noarchive, nosnippet";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -19,9 +23,15 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-function withRobotsHeader(response: Response): Response {
+function withRobotsHeader(request: Request, response: Response): Response {
   const headers = new Headers(response.headers);
-  if ((headers.get("content-type") ?? "").includes("text/html")) {
+  const htmlResponse = (headers.get("content-type") ?? "").includes("text/html");
+  const pathname = new URL(request.url).pathname;
+  const routeMustStayClosed = pathname === "/ara";
+  if (
+    htmlResponse &&
+    (!publicValidationIndexingEnabled || routeMustStayClosed || response.status >= 400)
+  ) {
     headers.set("X-Robots-Tag", CLOSED_ROBOTS);
   }
   return new Response(response.body, {
@@ -56,16 +66,46 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   return createStaticErrorResponse();
 }
 
+async function handleSitemap(request: Request): Promise<Response> {
+  if (!publicValidationIndexingEnabled) {
+    return new Response("Not found", {
+      status: 404,
+      headers: { "Cache-Control": "no-store", "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+
+  const listingData = await loadPilotListingsCollection();
+  if (listingData.state !== "ready") {
+    return new Response("Sitemap is temporarily unavailable", {
+      status: 503,
+      headers: { "Cache-Control": "no-store", "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+
+  return new Response(createPilotSitemapXml(new URL(request.url).origin, listingData.listings), {
+    status: 200,
+    headers: {
+      "Cache-Control": "public, max-age=300",
+      "Content-Type": "application/xml; charset=utf-8",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      if (new URL(request.url).pathname === "/sitemap.xml") {
+        return await handleSitemap(request);
+      }
       const handler = await getServerEntry();
       return withRobotsHeader(
+        request,
         await normalizeCatastrophicSsrResponse(await handler.fetch(request, env, ctx)),
       );
     } catch (error) {
       console.error(error);
-      return withRobotsHeader(createStaticErrorResponse());
+      return withRobotsHeader(request, createStaticErrorResponse());
     }
   },
 };

@@ -8,10 +8,13 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import {
+  CLOSED_ROBOTS,
+  publicValidationIndexingEnabled,
+} from "@/build-profiles/pilot/public-discovery";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
-const CLOSED_ROBOTS = "noindex, nofollow, noarchive, nosnippet";
 const buildSignature = import.meta.env.VITE_ARAR_BUILD_SIGNATURE ?? "unresolved";
 
 function NotFoundComponent() {
@@ -83,8 +86,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "apple-mobile-web-app-title", content: "Arar Buluruz" },
-      { name: "robots", content: CLOSED_ROBOTS },
-      { name: "googlebot", content: CLOSED_ROBOTS },
+      ...(!publicValidationIndexingEnabled
+        ? [
+            { name: "robots", content: CLOSED_ROBOTS },
+            { name: "googlebot", content: CLOSED_ROBOTS },
+          ]
+        : []),
       { title: "Arar Buluruz — Çorlu" },
       {
         name: "description",

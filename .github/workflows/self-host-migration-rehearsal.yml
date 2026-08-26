@@ -77,15 +77,38 @@ jobs:
             exit 1
           fi
 
-      - name: Enable Auth and Storage only in the ephemeral source copy
+      - name: Enable Auth and Storage only in the isolated ephemeral source copy
         shell: bash
         run: |
+          echo "Canonical source-port occupancy before CI isolation:"
+          ss -ltnp | grep -E ':(54320|54321|54322)\b' || true
+          docker ps --format 'table {{.Names}}\t{{.Ports}}' || true
+
           python3 - <<'PY'
+          import socket
           from pathlib import Path
+
+          def reserve_free_port(excluded):
+              while True:
+                  with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                      sock.bind(("127.0.0.1", 0))
+                      port = sock.getsockname()[1]
+                  if port not in excluded:
+                      excluded.add(port)
+                      return port
+
+          selected = set()
+          api_port = reserve_free_port(selected)
+          db_port = reserve_free_port(selected)
+          shadow_port = reserve_free_port(selected)
 
           path = Path("supabase/config.toml")
           config = path.read_text(encoding="utf-8")
           replacements = {
+              "[api]\nenabled = true\nport = 54321": f"[api]\nenabled = true\nport = {api_port}",
+              "[db]\nport = 54322\nshadow_port = 54320": (
+                  f"[db]\nport = {db_port}\nshadow_port = {shadow_port}"
+              ),
               "[auth]\nenabled = false": "[auth]\nenabled = true",
               "[storage]\nenabled = false": "[storage]\nenabled = true",
           }
@@ -94,6 +117,10 @@ jobs:
                   raise SystemExit(f"Expected fail-closed repository setting not found: {old!r}")
               config = config.replace(old, new, 1)
           path.write_text(config, encoding="utf-8")
+          print(
+              "Ephemeral Supabase source ports: "
+              f"api={api_port} db={db_port} shadow={shadow_port}"
+          )
           PY
 
           git diff --check -- supabase/config.toml

@@ -51,7 +51,6 @@ async function callOperator(formData: FormData): Promise<PilotOperatorResponse> 
       message: "Kurucu işlem servisine ulaşılamadı.",
     };
   }
-
   try {
     return (await response.json()) as PilotOperatorResponse;
   } catch {
@@ -124,7 +123,6 @@ function FounderPilotOperator() {
       if (contactConfirmed) form.set("contactControlConfirmed", "confirmed");
       if (publicationConfirmed) form.set("publicationInstructionConfirmed", "confirmed");
     }
-
     const result = await callOperator(form);
     if (result.ok) {
       setMessage(result.message);
@@ -160,8 +158,9 @@ function FounderPilotOperator() {
         <div className="mt-6 rounded-2xl border border-border bg-card p-5">
           <h1 className="text-2xl font-extrabold tracking-tight">Kurucu pilot işlemleri</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Bu yüzey yalnız yerel ve güvenilir founder oturumunda çalışır. Tarayıcıya service-role
-            anahtarı verilmez. İlanlar önce incelemeye alınır; yayın ayrı bir işlemdir.
+            Bu yüzey yalnız yerel ve güvenilir founder oturumunda çalışır. Stage 1–3 yalnız özel,
+            ara sıra satış yapan kişilerin kendi kullanılmış kişisel/ev eşyaları içindir. WhatsApp,
+            profesyonel/işletme satıcısı ve yeniden satış için yeni ürün akışı kapalıdır.
           </p>
           <p className="mt-2 text-sm font-medium text-foreground">
             Pilot konumu: {PILOT_PROVINCE} / {PILOT_DISTRICT}
@@ -189,6 +188,52 @@ function FounderPilotOperator() {
             onSubmit={submitCreate}
           >
             <input type="hidden" name="action" value="create" />
+            <input type="hidden" name="contactChannel" value="phone" />
+
+            <div className="sm:col-span-2 rounded-xl border border-border bg-accent/30 p-3 text-sm">
+              <p className="font-semibold">Oluşturma öncesi zorunlu operasyonel teyitler</p>
+              <div className="mt-3 space-y-3">
+                <label className="flex items-start gap-2">
+                  <input
+                    required
+                    type="checkbox"
+                    name="privacyNoticeDelivered"
+                    value="confirmed"
+                    className="mt-1"
+                  />
+                  <span>
+                    Kişisel veri alınmadan önce Gizlilik ve Aydınlatma metni satıcıya iletildi.
+                  </span>
+                </label>
+                <label className="flex items-start gap-2">
+                  <input
+                    required
+                    type="checkbox"
+                    name="privateSellerDeclaration"
+                    value="confirmed"
+                    className="mt-1"
+                  />
+                  <span>
+                    Satıcı özel kişi olarak ara sıra hareket ediyor; ürün kendi kullanılmış
+                    kişisel/ev eşyasıdır.
+                  </span>
+                </label>
+                <label className="flex items-start gap-2">
+                  <input
+                    required
+                    type="checkbox"
+                    name="contentRightsDeclaration"
+                    value="confirmed"
+                    className="mt-1"
+                  />
+                  <span>
+                    Fotoğraf/metin kullanım yetkisi kontrol edildi; çocuk, üçüncü kişi veya özel
+                    nitelikli veri bulunmuyor.
+                  </span>
+                </label>
+              </div>
+            </div>
+
             <label className="block sm:col-span-2">
               <span className="text-sm font-medium">İlanda görünecek ad</span>
               <input
@@ -197,7 +242,7 @@ function FounderPilotOperator() {
                 minLength={2}
                 maxLength={80}
                 className={`mt-1 ${fieldClass}`}
-                placeholder="Ad veya işletme adı"
+                placeholder="Ad"
               />
             </label>
             <label className="block sm:col-span-2">
@@ -223,18 +268,10 @@ function FounderPilotOperator() {
               />
             </label>
             <div className="block">
-              <label htmlFor="operator-contact-channel" className="text-sm font-medium">
-                İletişim kanalı
-              </label>
-              <select
-                id="operator-contact-channel"
-                required
-                name="contactChannel"
-                className={`mt-1 ${fieldClass}`}
-              >
-                <option value="whatsapp">WhatsApp</option>
-                <option value="phone">Telefon</option>
-              </select>
+              <span className="text-sm font-medium">İletişim kanalı</span>
+              <div className="mt-1 flex h-12 items-center rounded-xl border border-border bg-muted/40 px-4 text-sm font-semibold">
+                Telefon
+              </div>
             </div>
             <div className="block sm:col-span-2">
               <label htmlFor="operator-contact-e164" className="text-sm font-medium">
@@ -250,8 +287,8 @@ function FounderPilotOperator() {
                 placeholder="+905xxxxxxxxx"
               />
               <span className="mt-1 block text-xs text-muted-foreground">
-                Bu alan yalnız founder işlem yüzeyindedir. Yayın öncesinde numara kontrolü ayrıca
-                teyit edilir.
+                Numara yalnız ilanla ilgili iletişim için kamuya açılır. Yayın öncesi kontrol ve
+                ayrı yayın talimatı zorunludur.
               </span>
             </div>
             <label className="block sm:col-span-2">
@@ -284,10 +321,6 @@ function FounderPilotOperator() {
                   onChange={(event) => setPhotoName(event.currentTarget.files?.[0]?.name ?? "")}
                 />
               </span>
-              <span className="mt-1 block text-xs text-muted-foreground">
-                Seçilen ham dosya server tarafında decode/re-encode edilerek WebP’ye dönüştürülür;
-                yalnız sanitize edilmiş çıktı private Storage’a yazılır.
-              </span>
             </label>
             <button
               type="submit"
@@ -310,8 +343,7 @@ function FounderPilotOperator() {
               }}
               className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border px-4 text-sm font-semibold"
             >
-              <RefreshCw aria-hidden className="h-4 w-4" />
-              Yenile
+              <RefreshCw aria-hidden className="h-4 w-4" /> Yenile
             </button>
           </div>
 
@@ -324,7 +356,7 @@ function FounderPilotOperator() {
                   onChange={(event) => setContactConfirmed(event.target.checked)}
                   className="mt-1"
                 />
-                <span>İletişim kontrolü tamamlandı</span>
+                <span>Telefon kontrolü tamamlandı</span>
               </label>
               <label className="flex items-start gap-2 text-sm sm:col-span-1">
                 <input
@@ -333,7 +365,10 @@ function FounderPilotOperator() {
                   onChange={(event) => setPublicationConfirmed(event.target.checked)}
                   className="mt-1"
                 />
-                <span>Yayın talimatı teyit edildi</span>
+                <span>
+                  “Numaram ilanla ilgili iletişim için kamuya açık yayımlansın” talimatı teyit
+                  edildi
+                </span>
               </label>
               <label className="block text-sm sm:col-span-1">
                 <span className="font-medium">Yayın süresi (gün)</span>
@@ -383,7 +418,6 @@ function FounderPilotOperator() {
                       {statusLabel(listing.status)}
                     </span>
                   </div>
-
                   <div className="mt-4 flex flex-wrap gap-2">
                     {(listing.status === "pending" || listing.status === "unpublished") && (
                       <button
@@ -430,8 +464,7 @@ function FounderPilotOperator() {
                         }}
                         className="inline-flex min-h-11 items-center gap-2 rounded-full border border-destructive/40 px-4 text-sm font-semibold text-destructive disabled:opacity-40"
                       >
-                        <Trash2 aria-hidden className="h-4 w-4" />
-                        Sil
+                        <Trash2 aria-hidden className="h-4 w-4" /> Sil
                       </button>
                     )}
                   </div>

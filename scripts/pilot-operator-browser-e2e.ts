@@ -9,7 +9,6 @@ if (!backendOrigin) throw new Error("BACKEND_ORIGIN is required for operator bro
 
 const resultsDir = path.resolve("test-results/gate1-browser");
 fs.mkdirSync(resultsDir, { recursive: true });
-
 const PNG_SIGNATURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 function assert(condition: boolean, message: string): asserts condition {
@@ -36,9 +35,7 @@ function crc32(bytes: Uint8Array): number {
   let crc = 0xffffffff;
   for (const byte of bytes) {
     crc ^= byte;
-    for (let bit = 0; bit < 8; bit += 1) {
-      crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
-    }
+    for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
   }
   return (crc ^ 0xffffffff) >>> 0;
 }
@@ -56,12 +53,10 @@ function makeSyntheticPng(): Uint8Array {
   view.setUint32(4, 2, false);
   ihdr[8] = 8;
   ihdr[9] = 6;
-
   const scanlines = concatBytes(
     new Uint8Array([0, 0x12, 0x34, 0x56, 0xff, 0x78, 0x9a, 0xbc, 0xff]),
     new Uint8Array([0, 0x33, 0x55, 0x77, 0xff, 0xaa, 0xbb, 0xcc, 0xff]),
   );
-
   return concatBytes(
     PNG_SIGNATURE,
     pngChunk("IHDR", ihdr),
@@ -86,7 +81,6 @@ const context = await browser.newContext({ viewport: { width: 1280, height: 900 
 const page = await context.newPage();
 const runtimeErrors: string[] = [];
 const sensitiveBrowserMutations: string[] = [];
-
 page.on("pageerror", (error) => runtimeErrors.push(`pageerror: ${error.message}`));
 page.on("console", (message) => {
   if (message.type() === "error") runtimeErrors.push(`console: ${message.text()}`);
@@ -111,14 +105,16 @@ try {
   await page.getByRole("heading", { level: 1, name: "Kurucu pilot işlemleri" }).waitFor();
   assert(
     (await page.getByRole("link", { name: "Giriş" }).count()) === 0,
-    "Pilot release-candidate header still exposes an auth-shaped login CTA.",
+    "Operator header exposed a login CTA.",
   );
   await assertNoHorizontalOverflow(page, "/kurucu");
 
+  await page.locator('input[name="privacyNoticeDelivered"]').check();
+  await page.locator('input[name="privateSellerDeclaration"]').check();
+  await page.locator('input[name="contentRightsDeclaration"]').check();
   await page.getByLabel("İlanda görünecek ad", { exact: true }).fill(seller);
   await page.getByLabel("Başlık", { exact: true }).fill(title);
   await page.getByLabel("Fiyat (TL)", { exact: true }).fill("9876.50");
-  await page.getByLabel("İletişim kanalı", { exact: true }).selectOption("whatsapp");
   await page.getByLabel("Satıcı telefonu (E.164)", { exact: true }).fill(contactE164);
   await page
     .getByLabel("Açıklama", { exact: true })
@@ -131,7 +127,6 @@ try {
 
   await page.getByRole("button", { name: "Pending ilan ve fotoğrafı kaydet" }).click();
   await page.getByText("Pending ilan ve güvenli fotoğraf kaydedildi.", { exact: true }).waitFor();
-
   const card = page.locator("li").filter({ hasText: title });
   await card.waitFor();
   assert(
@@ -140,37 +135,36 @@ try {
   );
   assert(
     (await card.getByText(/1 fotoğraf/).count()) === 1,
-    "Created listing does not have exactly one photo metadata row.",
+    "Created listing does not have one photo.",
   );
+  await card.getByText(/phone · \+1202555/).waitFor();
   const testId = await card.getAttribute("data-testid");
   assert(
     testId?.startsWith("operator-listing-"),
-    "Operator listing card did not expose its synthetic test identity.",
+    "Operator listing card did not expose its synthetic identity.",
   );
   const listingId = testId.slice("operator-listing-".length);
-
   await page.screenshot({ path: path.join(resultsDir, "operator-pending.png"), fullPage: true });
 
   const pendingResponse = await page.goto(`${baseUrl}/ilan/${listingId}`, {
     waitUntil: "networkidle",
   });
-  assert(
-    pendingResponse?.status() === 404,
-    "Pending operator listing became publicly readable before publication.",
-  );
+  assert(pendingResponse?.status() === 404, "Pending operator listing became publicly readable.");
   runtimeErrors.splice(0, runtimeErrors.length);
 
   await page.goto(`${baseUrl}/kurucu`, { waitUntil: "networkidle" });
-  await page.getByLabel("İletişim kontrolü tamamlandı", { exact: true }).check();
-  await page.getByLabel("Yayın talimatı teyit edildi", { exact: true }).check();
-  const pendingCard = page.locator("li").filter({ hasText: title });
-  await pendingCard.getByRole("button", { name: "Yayınla" }).click();
-  await page.getByText("İlan yayınlandı.", { exact: true }).waitFor();
+  await page.getByLabel("Telefon kontrolü tamamlandı", { exact: true }).check();
+  await page
+    .getByText(/Numaram ilanla ilgili iletişim için kamuya açık yayımlansın/)
+    .locator("..")
+    .getByRole("checkbox")
+    .check();
   await page
     .locator("li")
     .filter({ hasText: title })
-    .getByText("Yayında", { exact: true })
-    .waitFor();
+    .getByRole("button", { name: "Yayınla" })
+    .click();
+  await page.getByText("İlan yayınlandı.", { exact: true }).waitFor();
 
   await page.goto(`${baseUrl}/ara?q=operator`, { waitUntil: "networkidle" });
   await page
@@ -178,35 +172,36 @@ try {
     .first()
     .waitFor();
   const collectionPhoto = page.getByAltText(title).first();
-  await collectionPhoto.waitFor();
   const collectionSrc = await collectionPhoto.getAttribute("src");
   assert(
     collectionSrc?.includes("/storage/v1/object/sign/listing_photos/"),
-    `Collection did not render a signed private photo URL: ${collectionSrc}`,
+    `Collection did not render signed private photo: ${collectionSrc}`,
   );
   assert(
     await collectionPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth > 0),
-    "Collection signed photo did not decode in the browser.",
+    "Collection signed photo did not decode.",
   );
 
   await page.goto(`${baseUrl}/ilan/${listingId}`, { waitUntil: "networkidle" });
   await page.getByRole("heading", { level: 1, name: title }).waitFor();
   const detailPhoto = page.getByAltText(`${title} fotoğraf 1`);
-  await detailPhoto.waitFor();
   const detailSrc = await detailPhoto.getAttribute("src");
   assert(
     detailSrc?.includes("/storage/v1/object/sign/listing_photos/"),
-    `Detail did not render a signed private photo URL: ${detailSrc}`,
+    `Detail did not render signed private photo: ${detailSrc}`,
   );
   assert(
     await detailPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth > 0),
-    "Detail signed photo did not decode in the browser.",
+    "Detail signed photo did not decode.",
   );
-  const contactLink = page.getByRole("link", { name: "WhatsApp’tan yaz" });
-  const contactHref = await contactLink.getAttribute("href");
+  const contactLink = page.getByRole("link", { name: "Satıcıyı ara" });
   assert(
-    contactHref === `https://wa.me/${contactE164.slice(1)}`,
-    `Published seller contact did not match lifecycle-approved E.164 value: ${contactHref}`,
+    (await contactLink.getAttribute("href")) === `tel:${contactE164}`,
+    "Published seller phone drifted.",
+  );
+  assert(
+    (await page.locator('a[href*="wa.me"]').count()) === 0,
+    "Published listing exposed a WhatsApp CTA.",
   );
   await page.screenshot({
     path: path.join(resultsDir, "operator-published-detail.png"),
@@ -220,15 +215,10 @@ try {
     .getByRole("button", { name: "Yayından kaldır" })
     .click();
   await page.getByText("İlan yayından kaldırıldı.", { exact: true }).waitFor();
-
   const unpublishedResponse = await page.goto(`${baseUrl}/ilan/${listingId}`, {
     waitUntil: "networkidle",
   });
   assert(unpublishedResponse?.status() === 404, "Unpublished listing remained publicly readable.");
-  assert(
-    (await page.getByRole("link", { name: "WhatsApp’tan yaz" }).count()) === 0,
-    "Unpublished listing leaked seller contact.",
-  );
   runtimeErrors.splice(0, runtimeErrors.length);
 
   await page.goto(`${baseUrl}/kurucu`, { waitUntil: "networkidle" });
@@ -259,7 +249,7 @@ try {
     runtimeErrors.length === 0,
     `Operator browser runtime errors: ${runtimeErrors.join(" | ")}`,
   );
-  console.log("Pilot operator app-UI create/photo/publish/unpublish/delete E2E passed.");
+  console.log("Pilot operator phone-only app-UI create/photo/publish/unpublish/delete E2E passed.");
 } finally {
   await context.close();
   await browser.close();

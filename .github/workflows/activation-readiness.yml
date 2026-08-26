@@ -1,0 +1,319 @@
+name: Activation readiness
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: activation-readiness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-activation:
+    name: Synthetic privacy, 5651 and activation boundary
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.14
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify activation and 5651 contracts
+        run: |
+          bun test src/lib/place-provider-traffic-log.test.ts
+          bun test src/build-profiles/pilot/public-discovery.test.ts
+
+      - name: Verify real-data activation build fails closed without operator identity
+        shell: bash
+        run: |
+          set +e
+          output="$(
+            ARAR_BUILD_PROFILE=pilot-rc \
+            ARAR_REAL_DATA_ACTIVATION=enabled \
+            VITE_LISTINGS_SOURCE=supabase \
+            VITE_SUPABASE_URL=https://synthetic.invalid \
+            VITE_SUPABASE_ANON_KEY=synthetic-public-key \
+            VITE_PILOT_INTAKE_E164=+12025550199 \
+              bun run build 2>&1
+          )"
+          status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [[ "$status" -eq 0 ]]; then
+            echo "Real-data activation build unexpectedly succeeded without operator identity."
+            exit 1
+          fi
+          grep -F 'Real-data activation build requires VITE_OPERATOR_LEGAL_NAME.' <<<"$output"
+
+      - name: Verify synthetic pilot build remains closed and does not require real identity
+        env:
+          ARAR_BUILD_PROFILE: pilot-rc
+          VITE_LISTINGS_SOURCE: supabase
+          VITE_SUPABASE_URL: https://synthetic.invalid
+          VITE_SUPABASE_ANON_KEY: synthetic-public-key
+          VITE_PILOT_INTAKE_E164: "+12025550199"
+        run: bun run build
+
+      - name: Verify synthetic production artifact discovery remains closed
+        shell: bash
+        run: |
+          HOST=127.0.0.1 PORT=4174 NITRO_HOST=127.0.0.1 NITRO_PORT=4174 \
+            bun .output/server/index.mjs >/tmp/synthetic-pilot-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          ready=false
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4174/ >/tmp/synthetic-home.html; then
+              ready=true
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              cat /tmp/synthetic-pilot-server.log
+              exit 1
+            fi
+            sleep 1
+          done
+          if [[ "$ready" != "true" ]]; then
+            cat /tmp/synthetic-pilot-server.log
+            exit 1
+          fi
+
+          curl -fsS -D /tmp/synthetic-home.headers http://127.0.0.1:4174/ -o /tmp/synthetic-home.html
+          grep -Eqi '^x-robots-tag:.*noindex' /tmp/synthetic-home.headers
+          grep -Eqi '<meta[^>]+name="robots"[^>]+noindex' /tmp/synthetic-home.html
+          sitemap_status="$(curl -sS -o /tmp/synthetic-sitemap.txt -w '%{http_code}' http://127.0.0.1:4174/sitemap.xml)"
+          test "$sitemap_status" = "404"
+
+          kill "$server_pid"
+          wait "$server_pid" 2>/dev/null || true
+          trap - EXIT
+
+      - name: Verify public pilot artifact activation boundary
+        shell: bash
+        run: |
+          bash scripts/pilot-rc-artifact-boundary-check.sh
+          test ! -e src/routes-pilot/giris.tsx
+          test ! -e src/routes-pilot/kurucu.tsx
+          grep -F '"/iletisim"' src/routes-pilot/index.tsx
+          grep -F 'Yalnız özel kişi olarak, ara sıra ilan veren satıcılar.' src/routes-pilot/ilan-ver.tsx
+          grep -F 'Bu telefon numarası bana aittir' src/routes-pilot/ilan-ver.tsx
+          grep -F 'KVKK 5/2-d' src/routes-pilot/gizlilik.tsx
+          grep -F 'en az bir yıllık hedef' src/routes-pilot/gizlilik.tsx
+          grep -F 'Satıcıyı ara' src/routes-pilot/ilan.\$id.tsx
+          if grep -R -F 'https://wa.me/' src/routes-pilot src/build-profiles/pilot .output/public; then
+            echo "WhatsApp CTA leaked into activation-facing pilot graph/artifact."
+            exit 1
+          fi
+
+      - name: Verify explicit public validation discovery without address or tax prerequisite
+        shell: bash
+        env:
+          ARAR_BUILD_PROFILE: pilot-rc
+          ARAR_REAL_DATA_ACTIVATION: enabled
+          VITE_LISTINGS_SOURCE: supabase
+          VITE_SUPABASE_URL: http://127.0.0.1:54329
+          VITE_SUPABASE_ANON_KEY: synthetic-public-key
+          VITE_PILOT_INTAKE_E164: "+12025550199"
+          VITE_OPERATOR_LEGAL_NAME: Arar Buluruz Bireysel İşletmecisi
+          VITE_OPERATOR_EMAIL: iletisim@example.invalid
+          VITE_OPERATOR_PHONE_E164: "+12025550199"
+        run: |
+          test -z "${VITE_OPERATOR_ADDRESS:-}"
+          test -z "${VITE_OPERATOR_TAX_REGISTRY:-}"
+          bun run build
+
+          cat > /tmp/public-discovery-backend.py <<'PY'
+          import json
+          from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+          from urllib.parse import parse_qs, urlparse
+
+          PUBLISHED_ID = "94000000-0000-4000-8000-000000000001"
+          ROW = {
+              "id": PUBLISHED_ID,
+              "title": "Sentetik public discovery ilanı",
+              "description": "Sentetik public discovery doğrulaması için yeterli açıklama.",
+              "price_amount": 1500,
+              "province": "Tekirdağ",
+              "district": "Çorlu",
+              "seller_display_name": "Sentetik Satıcı",
+              "search_keywords": ["sentetik", "discovery"],
+              "created_at": "2026-08-26T08:00:00.000Z",
+              "published_at": "2026-08-26T08:05:00.000Z",
+          }
+
+          class Handler(BaseHTTPRequestHandler):
+              def send_json(self, payload, status=200):
+                  body = json.dumps(payload).encode("utf-8")
+                  self.send_response(status)
+                  self.send_header("Content-Type", "application/json")
+                  self.send_header("Content-Length", str(len(body)))
+                  self.end_headers()
+                  self.wfile.write(body)
+
+              def do_GET(self):
+                  parsed = urlparse(self.path)
+                  if parsed.path != "/rest/v1/listings":
+                      self.send_json({"error": "not found"}, 404)
+                      return
+
+                  query = parse_qs(parsed.query)
+                  requested_id = query.get("id", [None])[0]
+                  if requested_id and requested_id != f"eq.{PUBLISHED_ID}":
+                      self.send_json([])
+                      return
+
+                  row = dict(ROW)
+                  select = query.get("select", [""])[0]
+                  if "contact_channel" in select:
+                      row["contact_channel"] = "phone"
+                      row["contact_e164"] = "+12025550141"
+                  self.send_json([row])
+
+              def do_POST(self):
+                  if self.path == "/rest/v1/rpc/get_public_listing_photos":
+                      length = int(self.headers.get("Content-Length", "0"))
+                      if length:
+                          self.rfile.read(length)
+                      self.send_json([])
+                      return
+                  self.send_json({"error": "not found"}, 404)
+
+              def log_message(self, format, *args):
+                  return
+
+          ThreadingHTTPServer(("127.0.0.1", 54329), Handler).serve_forever()
+          PY
+
+          python3 /tmp/public-discovery-backend.py >/tmp/public-discovery-backend.log 2>&1 &
+          backend_pid=$!
+          HOST=127.0.0.1 PORT=4174 NITRO_HOST=127.0.0.1 NITRO_PORT=4174 \
+            bun .output/server/index.mjs >/tmp/public-validation-server.log 2>&1 &
+          server_pid=$!
+          cleanup() {
+            kill "$server_pid" "$backend_pid" 2>/dev/null || true
+            wait "$server_pid" "$backend_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          ready=false
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4174/ >/tmp/public-validation-home.html; then
+              ready=true
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              cat /tmp/public-validation-server.log
+              exit 1
+            fi
+            sleep 1
+          done
+          if [[ "$ready" != "true" ]]; then
+            cat /tmp/public-validation-server.log
+            exit 1
+          fi
+
+          published_id="94000000-0000-4000-8000-000000000001"
+          unpublished_id="94000000-0000-4000-8000-000000000002"
+
+          curl -fsS -D /tmp/public-validation-home.headers http://127.0.0.1:4174/ -o /tmp/public-validation-home.html
+          if grep -Eqi '^x-robots-tag:.*noindex' /tmp/public-validation-home.headers; then
+            echo "Explicit public validation home remained closed by X-Robots-Tag."
+            exit 1
+          fi
+          if grep -Eqi '<meta[^>]+name="robots"[^>]+noindex' /tmp/public-validation-home.html; then
+            echo "Explicit public validation home remained closed by robots meta."
+            exit 1
+          fi
+
+          curl -fsSL -D /tmp/public-validation-search.headers \
+            'http://127.0.0.1:4174/ara?q=corlu' -o /tmp/public-validation-search.html
+          if ! grep -Eqi '^x-robots-tag:.*noindex' /tmp/public-validation-search.headers; then
+            echo "Public validation search response was not closed by X-Robots-Tag noindex."
+            cat /tmp/public-validation-search.headers
+            exit 1
+          fi
+
+          curl -fsS -D /tmp/public-validation-detail.headers \
+            "http://127.0.0.1:4174/ilan/$published_id" -o /tmp/public-validation-detail.html
+          if grep -Eqi '^x-robots-tag:.*noindex' /tmp/public-validation-detail.headers; then
+            echo "Published public-validation detail remained closed by X-Robots-Tag."
+            exit 1
+          fi
+          if grep -Eqi '<meta[^>]+name="robots"[^>]+noindex' /tmp/public-validation-detail.html; then
+            echo "Published public-validation detail remained closed by robots meta."
+            exit 1
+          fi
+
+          unpublished_status="$(
+            curl -sS -D /tmp/public-validation-unpublished.headers \
+              -o /tmp/public-validation-unpublished.html -w '%{http_code}' \
+              "http://127.0.0.1:4174/ilan/$unpublished_id"
+          )"
+          if [[ "$unpublished_status" != "404" ]]; then
+            echo "Unpublished/private listing returned HTTP $unpublished_status instead of 404."
+            cat /tmp/public-validation-unpublished.headers
+            exit 1
+          fi
+          if ! grep -Eqi '^x-robots-tag:.*noindex' /tmp/public-validation-unpublished.headers; then
+            echo "Unpublished/private listing 404 lacked X-Robots-Tag noindex."
+            cat /tmp/public-validation-unpublished.headers
+            exit 1
+          fi
+
+          sitemap_status="$(curl -sS -o /tmp/public-validation-sitemap.xml -w '%{http_code}' http://127.0.0.1:4174/sitemap.xml)"
+          if [[ "$sitemap_status" != "200" ]]; then
+            echo "Public-validation sitemap returned HTTP $sitemap_status instead of 200."
+            cat /tmp/public-validation-sitemap.xml
+            exit 1
+          fi
+          sitemap_url_count="$(grep -c '<url>' /tmp/public-validation-sitemap.xml)"
+          if [[ "$sitemap_url_count" != "2" ]]; then
+            echo "Public-validation sitemap contained $sitemap_url_count URL entries instead of 2."
+            cat /tmp/public-validation-sitemap.xml
+            exit 1
+          fi
+          if ! grep -F '<loc>http://127.0.0.1:4174/</loc>' /tmp/public-validation-sitemap.xml; then
+            echo "Public-validation sitemap omitted the home URL."
+            cat /tmp/public-validation-sitemap.xml
+            exit 1
+          fi
+          if ! grep -F "$published_id" /tmp/public-validation-sitemap.xml; then
+            echo "Public-validation sitemap omitted the published listing."
+            cat /tmp/public-validation-sitemap.xml
+            exit 1
+          fi
+          if grep -F "$unpublished_id" /tmp/public-validation-sitemap.xml; then
+            echo "Unpublished/private listing leaked into sitemap."
+            exit 1
+          fi
+          if grep -F '/ara' /tmp/public-validation-sitemap.xml; then
+            echo "Search/filter URL leaked into sitemap."
+            exit 1
+          fi
+
+          echo "Public discovery HTTP proof passed: home + published detail indexable; search and unpublished content closed; sitemap published-only."
+          cleanup
+          trap - EXIT
+
+      - name: Verify repository remains synthetic-only
+        shell: bash
+        run: |
+          test ! -e supabase/.temp/project-ref
+          git diff --check
+          git diff --exit-code

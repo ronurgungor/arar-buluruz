@@ -34,10 +34,9 @@ function HowItWorks() {
           ],
         },
         {
-          title: "3. İletişim ve ödeme ayrı aşamalardır",
+          title: "3. Satıcıyla doğrudan iletişim kur",
           paragraphs: [
-            "İletişim bilgisi yayınlanmışsa satıcı iletişim yöntemi ilanda açıkça gösterilir. Arar Buluruz ödeme tutmaz, emanet/escrow hizmeti vermez ve alıcı koruması garantisi sunmaz.",
-            "Bir satıcı ileride kendi haricî satış bağlantısını paylaşırsa işlem o bağımsız hizmette gerçekleşir. Bu, Arar Buluruz ile o hizmet arasında ortaklık veya güvenlik garantisi olduğu anlamına gelmez.",
+            "Yayınlanmış satıcı telefonu ilan detayında gösterilir. Arar Buluruz ödeme tutmaz, sipariş veya rezervasyon oluşturmaz, emanet/escrow hizmeti vermez ve alıcı koruması garantisi sunmaz. Görüşme ve satış koşulları alıcı ile satıcı arasında doğrudan belirlenir.",
           ],
         },
         {

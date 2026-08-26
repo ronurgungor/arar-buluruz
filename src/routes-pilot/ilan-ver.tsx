@@ -1,7 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
-import { buildPilotIntakeWhatsAppHref, isPilotIntakeConfigured } from "@/lib/pilot-intake";
 import { PILOT_DISTRICT, PILOT_PROVINCE } from "@/lib/pilot-operator-contract";
 
 export const Route = createFileRoute("/ilan-ver")({
@@ -11,146 +9,119 @@ export const Route = createFileRoute("/ilan-ver")({
       {
         name: "description",
         content:
-          "Çorlu pilotunda ilan başvurusu WhatsApp üzerinden alınır ve kurucu tarafından manuel olarak incelenir.",
+          "Çorlu'da ilan başvurusu telefonla alınır ve kurucu tarafından manuel olarak incelenir.",
       },
       { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
     ],
   }),
-  component: PilotApplicationForm,
+  component: PilotApplicationPage,
 });
 
-const fieldClass =
-  "h-12 w-full rounded-xl border border-border bg-card px-4 text-base outline-none focus:border-primary";
+const E164_PATTERN = /^\+[1-9][0-9]{7,14}$/;
 
-function PilotApplicationForm() {
-  const [sellerDisplayName, setSellerDisplayName] = useState("");
-  const [title, setTitle] = useState("");
-  const [price, setPrice] = useState("");
-  const [description, setDescription] = useState("");
-  const [error, setError] = useState("");
-  const intakeE164 = import.meta.env.VITE_PILOT_INTAKE_E164 as string | undefined;
-  const intakeConfigured = isPilotIntakeConfigured(intakeE164);
+function PilotApplicationPage() {
+  const intakeE164 = (import.meta.env.VITE_PILOT_INTAKE_E164 as string | undefined)?.trim() ?? "";
+  const intakeHref = E164_PATTERN.test(intakeE164) ? `tel:${intakeE164}` : null;
 
   return (
     <div className="min-h-screen">
       <PilotTopBar />
-      <main className="mx-auto max-w-md px-4 pb-16">
+      <main className="mx-auto max-w-2xl px-4 pb-16">
         <h1 className="mt-6 text-2xl font-extrabold tracking-tight">İlan Başvurusu</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Çorlu pilotunda başvurular WhatsApp üzerinden alınır. İlan kurucu tarafından incelenir,
-          güvenli fotoğraf akışından geçirilir ve ancak onaydan sonra yayınlanır.
+          Bu sayfa ad, telefon, ilan metni veya fotoğraf toplamaz. Başvuru yalnız telefonla kurucuya
+          yapılır; kurucu uygun ilanı inceleyip yayın öncesinde bekleyen ilan olarak oluşturur.
         </p>
-        <div className="mt-4 rounded-xl border border-border bg-accent/40 p-3 text-sm">
-          <p className="font-semibold">
-            Pilot konumu: {PILOT_PROVINCE} / {PILOT_DISTRICT}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Fotoğrafları WhatsApp görüşmesinde paylaşabilirsiniz. Orijinal dosyalar doğrudan public
-            Storage’a alınmaz; kurucu yayın öncesinde sanitize edilmiş WebP kopyasını yükler.
-          </p>
-        </div>
 
-        {error && (
-          <p
-            role="alert"
-            className="mt-4 rounded-xl border border-destructive/40 p-3 text-sm text-destructive"
+        <section className="mt-5 rounded-2xl border border-border bg-card p-5">
+          <h2 className="font-bold">Kişisel veri paylaşmadan önce</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            Telefon görüşmesinde kişisel veri veya ilan içeriği paylaşmadan önce Gizlilik ve
+            Aydınlatma metnini okuyun. Aydınlatma bir onay kutusu değildir; veri işlemeye başlamadan
+            önce bilgi vermek içindir.
+          </p>
+          <Link
+            to="/gizlilik"
+            className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-4"
           >
-            {error}
-          </p>
-        )}
+            Gizlilik ve Aydınlatma metnini aç
+          </Link>
+        </section>
 
-        <form
-          className="mt-6 space-y-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            setError("");
-            const message = [
-              "Merhaba, Arar Buluruz Çorlu pilotu için ilan başvurusu yapmak istiyorum.",
-              "",
-              `İlanda görünecek ad: ${sellerDisplayName.trim()}`,
-              `Başlık: ${title.trim()}`,
-              `Fiyat: ${price.trim()} TL`,
-              `Konum: ${PILOT_PROVINCE} / ${PILOT_DISTRICT}`,
-              `Açıklama: ${description.trim()}`,
-            ].join("\n");
-            const href = buildPilotIntakeWhatsAppHref(intakeE164 ?? "", message);
-            if (!href) {
-              setError("İlan başvuru hattı bu ortamda henüz etkin değil.");
-              return;
-            }
-            window.location.href = href;
-          }}
-        >
-          <label className="block">
-            <span className="text-sm font-medium">İlanda görünecek ad</span>
-            <input
-              required
-              minLength={2}
-              maxLength={80}
-              value={sellerDisplayName}
-              onChange={(event) => setSellerDisplayName(event.target.value)}
-              placeholder="Ad veya işletme adı"
-              className={`mt-1 ${fieldClass}`}
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm font-medium">Başlık</span>
-            <input
-              required
-              minLength={3}
-              maxLength={120}
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Kısa ve net yaz"
-              className={`mt-1 ${fieldClass}`}
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm font-medium">Fiyat (TL)</span>
-            <input
-              required
-              type="number"
-              min="0"
-              step="0.01"
-              inputMode="decimal"
-              value={price}
-              onChange={(event) => setPrice(event.target.value)}
-              placeholder="0"
-              className={`mt-1 ${fieldClass}`}
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm font-medium">Açıklama</span>
-            <textarea
-              required
-              minLength={10}
-              maxLength={5000}
-              rows={5}
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Ürünün durumu, teslim şekli ve önemli ayrıntılar"
-              className="mt-1 w-full rounded-xl border border-border bg-card p-4 text-base outline-none focus:border-primary"
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={!intakeConfigured}
-            className="w-full rounded-full bg-primary py-4 text-base font-bold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            WhatsApp ile başvur
-          </button>
-          <p className="text-center text-xs text-muted-foreground">
-            Başvuru ilanı otomatik yayınlamaz. İletişim kontrolü, fotoğraf işleme ve yayın işlemi
-            kurucu tarafından ayrı ayrı tamamlanır.
+        <section className="mt-4 rounded-2xl border border-border bg-card p-5">
+          <h2 className="font-bold">Bu aşamada kimler ilan verebilir?</h2>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted-foreground">
+            <li>Yalnız özel kişi olarak, ara sıra ilan veren satıcılar.</li>
+            <li>Yalnız size ait, kullanılmış kişisel veya ev eşyaları.</li>
+            <li>Profesyonel/işletme satıcıları ve yeniden satış için yeni ürünler desteklenmez.</li>
+          </ul>
+          <p className="mt-3 text-sm font-medium text-foreground">
+            Kurucu, ilanı oluşturmadan önce satıcının özel/ara sıra hareket ettiğini ve ürünün kendi
+            kullanılmış kişisel/ev eşyası olduğunu ayrıca teyit eder.
           </p>
-        </form>
+        </section>
 
-        <div className="mt-6 text-center">
+        <section className="mt-4 rounded-2xl border border-border bg-card p-5">
+          <h2 className="font-bold">Telefon ve içerik kuralları</h2>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted-foreground">
+            <li>
+              Yalnız size ait telefonu verin. İlan aktifken bu numara herkes tarafından görülebilir
+              ve yalnız ilanla ilgili iletişim amacıyla kullanılmalıdır.
+            </li>
+            <li>
+              Yayın öncesinde ayrı olarak şu beyan teyit edilir: “Bu telefon numarası bana aittir ve
+              ilan aktifken ilanla ilgili iletişim amacıyla kamuya açık yayımlanmasını istiyorum.”
+            </li>
+            <li>
+              Yalnız size ait veya yayımlamaya yetkili olduğunuz fotoğraf ve metinleri paylaşın.
+            </li>
+            <li>
+              Çocuk, tanınabilir üçüncü kişi, başkasına ait telefon/adres, plaka, kimlik/belge,
+              ödeme bilgisi veya özel nitelikli kişisel veri göndermeyin.
+            </li>
+          </ul>
           <Link
             to="/ilan-kurallari"
-            className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
+            className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-4"
           >
             İlan kurallarını görüntüle
+          </Link>
+        </section>
+
+        <section className="mt-4 rounded-2xl border border-border bg-accent/40 p-5">
+          <h2 className="font-bold">Telefonla başvur</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            Konum: {PILOT_PROVINCE} / {PILOT_DISTRICT}. Başvuru telefonla alınır; bu sayfada mesaj
+            formu veya dosya yükleme alanı bulunmaz.
+          </p>
+          {intakeHref ? (
+            <a
+              href={intakeHref}
+              className="mt-4 flex min-h-12 items-center justify-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+            >
+              Kurucuyu ara
+            </a>
+          ) : (
+            <p
+              role="status"
+              className="mt-4 rounded-xl border border-border bg-background p-3 text-sm text-muted-foreground"
+            >
+              İlan başvuru telefonu bu ortamda etkin değil.
+            </p>
+          )}
+          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+            Arar Buluruz bu sayfada veri toplamaz. Kurucu, uygun ilanı yayınlamadan önce telefon
+            kontrolü, yayın talimatı, içerik/fotoğraf incelemesi ve gerekli operasyonel teyitleri
+            ayrı ayrı tamamlar.
+          </p>
+        </section>
+
+        <div className="mt-6 flex flex-wrap gap-4 text-sm">
+          <Link to="/iletisim" className="font-medium text-primary underline underline-offset-4">
+            İletişim ve kaldırma
+          </Link>
+          <Link to="/" className="font-medium text-primary underline underline-offset-4">
+            Ana sayfaya dön
           </Link>
         </div>
       </main>

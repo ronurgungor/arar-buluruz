@@ -7,7 +7,6 @@ import {
   PILOT_DISTRICT,
   PILOT_PROVINCE,
   isPilotListingStatus,
-  type PilotContactChannel,
   type PilotOperatorListing,
   type PilotOperatorResponse,
 } from "./pilot-operator-contract";
@@ -176,10 +175,7 @@ function readBackendConfig(): BackendConfig {
     }
   }
 
-  return {
-    baseUrl: url.toString().replace(/\/+$/, ""),
-    serviceRoleKey,
-  };
+  return { baseUrl: url.toString().replace(/\/+$/, ""), serviceRoleKey };
 }
 
 function serviceHeaders(config: BackendConfig, contentType = "application/json"): HeadersInit {
@@ -218,6 +214,12 @@ function requiredString(
   return trimmed;
 }
 
+function requiredConfirmation(form: FormData, key: string, message: string): void {
+  if (form.get(key) !== "confirmed") {
+    throw new PilotOperatorError("INVALID_REQUEST", message);
+  }
+}
+
 function requiredUuid(form: FormData, key = "listingId"): string {
   const value = requiredString(form, key, { min: 36, max: 36 }).toLowerCase();
   if (!UUID_PATTERN.test(value)) {
@@ -226,10 +228,13 @@ function requiredUuid(form: FormData, key = "listingId"): string {
   return value;
 }
 
-function requiredContactChannel(form: FormData): PilotContactChannel {
-  const value = requiredString(form, "contactChannel", { min: 4, max: 8 });
-  if (value !== "whatsapp" && value !== "phone") {
-    throw new PilotOperatorError("INVALID_REQUEST", "İletişim kanalı geçersiz.");
+function requiredPhoneOnlyContactChannel(form: FormData): "phone" {
+  const value = requiredString(form, "contactChannel", { min: 5, max: 5 });
+  if (value !== "phone") {
+    throw new PilotOperatorError(
+      "INVALID_REQUEST",
+      "Stage 1–3 pilotunda yalnız telefon iletişim kanalı desteklenir.",
+    );
   }
   return value;
 }
@@ -288,11 +293,8 @@ async function fetchListing(
     "id,title,seller_display_name,status,contact_channel,contact_e164,created_at,published_at,expires_at,unpublished_at",
   );
   url.searchParams.set("limit", "1");
-
   const response = await requireOk(
-    await fetch(url, {
-      headers: { ...serviceHeaders(config), Accept: "application/json" },
-    }),
+    await fetch(url, { headers: { ...serviceHeaders(config), Accept: "application/json" } }),
     "operator listing lookup",
   );
   const rows = (await response.json()) as BackendListingRow[];
@@ -315,7 +317,6 @@ async function fetchPhotoInventory(
   if (!Array.isArray(rows) || rows.length > MAX_PILOT_PHOTOS) {
     throw new Error("Operator photo inventory returned an unexpected row count.");
   }
-
   const expectedPrefix = `listings/${listingId.toLowerCase()}/`;
   for (const row of rows) {
     if (
@@ -341,18 +342,14 @@ async function listOperatorListings(config: BackendConfig): Promise<PilotOperato
   );
   url.searchParams.set("order", "created_at.desc,id.desc");
   url.searchParams.set("limit", "20");
-
   const response = await requireOk(
-    await fetch(url, {
-      headers: { ...serviceHeaders(config), Accept: "application/json" },
-    }),
+    await fetch(url, { headers: { ...serviceHeaders(config), Accept: "application/json" } }),
     "operator listings read",
   );
   const rows = (await response.json()) as BackendListingRow[];
   if (!Array.isArray(rows) || rows.length > 20) {
     throw new Error("Operator listing inventory returned an unexpected row count.");
   }
-
   return await Promise.all(
     rows.map(async (row) => {
       if (!UUID_PATTERN.test(row.id) || !isPilotListingStatus(row.status)) {
@@ -389,10 +386,7 @@ async function deleteListingRow(config: BackendConfig, listingId: string): Promi
   const response = await requireOk(
     await fetch(url, {
       method: "DELETE",
-      headers: {
-        ...serviceHeaders(config),
-        Prefer: "return=representation",
-      },
+      headers: { ...serviceHeaders(config), Prefer: "return=representation" },
     }),
     "operator listing delete",
   );
@@ -419,7 +413,6 @@ function createIngestionStore(config: BackendConfig): TrustedListingPhotoIngesti
         "operator sanitized photo upload",
       );
     },
-
     async insertPhotoMetadata(metadata) {
       await requireOk(
         await fetch(`${config.baseUrl}/rest/v1/rpc/register_sanitized_listing_photo`, {
@@ -436,7 +429,6 @@ function createIngestionStore(config: BackendConfig): TrustedListingPhotoIngesti
         "operator sanitized photo metadata registration",
       );
     },
-
     async deleteObject(objectPath) {
       await requireOk(
         await fetch(`${storageBase}/object/listing_photos`, {
@@ -451,11 +443,27 @@ function createIngestionStore(config: BackendConfig): TrustedListingPhotoIngesti
 }
 
 async function createPendingListing(config: BackendConfig, form: FormData): Promise<string> {
+  requiredConfirmation(
+    form,
+    "privacyNoticeDelivered",
+    "İlan verisi alınmadan önce aydınlatmanın verildiği teyit edilmelidir.",
+  );
+  requiredConfirmation(
+    form,
+    "privateSellerDeclaration",
+    "Stage 1–3 için özel/ara sıra satıcı ve kendi kullanılmış eşyası beyanı zorunludur.",
+  );
+  requiredConfirmation(
+    form,
+    "contentRightsDeclaration",
+    "Fotoğraf/içerik yetkisi ve üçüncü kişi/çocuk/hassas veri kontrolü teyit edilmelidir.",
+  );
+
   const sellerDisplayName = requiredString(form, "sellerDisplayName", { min: 2, max: 80 });
   const title = requiredString(form, "title", { min: 3, max: 120 });
   const description = requiredString(form, "description", { min: 10, max: 5000 });
   const price = requiredPrice(form);
-  const contactChannel = requiredContactChannel(form);
+  const contactChannel = requiredPhoneOnlyContactChannel(form);
   const contactE164 = requiredE164(form);
   const photo = requiredPhoto(form);
   const listingId = crypto.randomUUID();
@@ -464,10 +472,7 @@ async function createPendingListing(config: BackendConfig, form: FormData): Prom
   const insertResponse = await requireOk(
     await fetch(`${config.baseUrl}/rest/v1/listings`, {
       method: "POST",
-      headers: {
-        ...serviceHeaders(config),
-        Prefer: "return=representation",
-      },
+      headers: { ...serviceHeaders(config), Prefer: "return=representation" },
       body: JSON.stringify({
         id: listingId,
         title,
@@ -512,7 +517,6 @@ async function createPendingListing(config: BackendConfig, form: FormData): Prom
     }
     throw cause;
   }
-
   return listingId;
 }
 
@@ -527,10 +531,7 @@ async function patchListing(
   const response = await requireOk(
     await fetch(url, {
       method: "PATCH",
-      headers: {
-        ...serviceHeaders(config),
-        Prefer: "return=representation",
-      },
+      headers: { ...serviceHeaders(config), Prefer: "return=representation" },
       body: JSON.stringify(patch),
     }),
     context,
@@ -550,7 +551,7 @@ async function publishListing(config: BackendConfig, form: FormData): Promise<st
   ) {
     throw new PilotOperatorError(
       "INVALID_REQUEST",
-      "Yayın için iletişim kontrolü ve yayın talimatı ayrı ayrı teyit edilmelidir.",
+      "Yayın için telefon kontrolü ve kamuya açık yayın talimatı ayrı ayrı teyit edilmelidir.",
     );
   }
 
@@ -561,8 +562,11 @@ async function publishListing(config: BackendConfig, form: FormData): Promise<st
       "Yalnız pending veya unpublished ilan yayınlanabilir.",
     );
   }
-  if (!listing.contact_channel || !listing.contact_e164) {
-    throw new PilotOperatorError("INVALID_STATE", "Yayın için iletişim bilgisi eksik.");
+  if (listing.contact_channel !== "phone" || !listing.contact_e164) {
+    throw new PilotOperatorError(
+      "INVALID_STATE",
+      "Stage 1–3 yayını yalnız doğrulanacak telefon iletişim kanalıyla yapılabilir.",
+    );
   }
 
   const inventory = await fetchPhotoInventory(config, listingId);
@@ -572,15 +576,12 @@ async function publishListing(config: BackendConfig, form: FormData): Promise<st
 
   const now = new Date();
   const expiresAt = new Date(now.getTime() + expiryDays * 24 * 60 * 60 * 1000);
-  const verificationMethod =
-    listing.contact_channel === "whatsapp" ? "whatsapp_same_number" : "manual_callback";
-
   await patchListing(
     config,
     listingId,
     {
       contact_verified_at: now.toISOString(),
-      contact_verification_method: verificationMethod,
+      contact_verification_method: "manual_callback",
       publication_instruction_at: now.toISOString(),
       status: "published",
       published_at: now.toISOString(),
@@ -635,23 +636,18 @@ async function deleteStoredPhotos(
     }),
     "operator Storage object deletion",
   );
-
   for (const path of paths) {
     const probe = await fetch(`${storageBase}/object/listing_photos/${encodeObjectPath(path)}`, {
       headers: serviceHeaders(config, "application/octet-stream"),
     });
-    if (probe.ok) {
-      throw new Error(`Storage deletion verification failed for ${path}.`);
-    }
+    if (probe.ok) throw new Error(`Storage deletion verification failed for ${path}.`);
   }
 }
 
 async function hardDeleteListing(config: BackendConfig, form: FormData): Promise<string> {
   const listingId = requiredUuid(form);
   let listing = await fetchListing(config, listingId);
-  if (!listing) {
-    throw new PilotOperatorError("INVALID_STATE", "Silinecek ilan bulunamadı.");
-  }
+  if (!listing) throw new PilotOperatorError("INVALID_STATE", "Silinecek ilan bulunamadı.");
 
   if (listing.status === "published") {
     await patchListing(
@@ -669,7 +665,6 @@ async function hardDeleteListing(config: BackendConfig, form: FormData): Promise
   const inventory = await fetchPhotoInventory(config, listingId);
   await deleteStoredPhotos(config, inventory);
   await deleteListingRow(config, listingId);
-
   if (await fetchListing(config, listingId)) {
     throw new Error("Hard listing deletion verification found the listing row after delete.");
   }
@@ -679,7 +674,6 @@ async function hardDeleteListing(config: BackendConfig, form: FormData): Promise
       "Hard listing deletion verification found private photo metadata after delete.",
     );
   }
-
   return listingId;
 }
 
@@ -688,7 +682,6 @@ async function runAction(config: BackendConfig, form: FormData): Promise<PilotOp
   if (typeof action !== "string") {
     throw new PilotOperatorError("INVALID_REQUEST", "Kurucu işlem türü eksik.");
   }
-
   if (action === "list") {
     return {
       ok: true,
@@ -716,7 +709,6 @@ async function runAction(config: BackendConfig, form: FormData): Promise<PilotOp
     const listingId = await hardDeleteListing(config, form);
     return { ok: true, message: "İlan ve ilişkili Storage objeleri silindi.", listingId };
   }
-
   throw new PilotOperatorError("INVALID_REQUEST", "Bilinmeyen kurucu işlem türü.");
 }
 
@@ -731,7 +723,6 @@ export async function handlePilotOperatorRequest(request: Request): Promise<Resp
       const status = error.code === "NOT_ENABLED" ? 404 : error.code === "LOCAL_ONLY" ? 403 : 400;
       return jsonResponse({ ok: false, code: error.code, message: error.message }, status);
     }
-
     console.error("Pilot operator server failure", error);
     return jsonResponse(
       {
