@@ -69,10 +69,8 @@ jobs:
       - name: Unit contracts
         run: bun run test:unit
 
-      - name: TypeScript check
-        run: |
-          bunx tsc --noEmit --pretty false
-          bunx tsc --project tsconfig.pilot.json --noEmit --pretty false
+      - name: Repository TypeScript check
+        run: bunx tsc --noEmit --pretty false
 
       - name: Lint focused Phase A code
         run: >-
@@ -103,6 +101,9 @@ jobs:
           VITE_SUPABASE_URL: https://synthetic.invalid
           VITE_SUPABASE_ANON_KEY: synthetic-public-key
         run: bun run build
+
+      - name: Pilot TypeScript check after route generation
+        run: bunx tsc --project tsconfig.pilot.json --noEmit --pretty false
 
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
