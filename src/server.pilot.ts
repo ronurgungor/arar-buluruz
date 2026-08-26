@@ -23,10 +23,15 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-function withRobotsHeader(response: Response): Response {
+function withRobotsHeader(request: Request, response: Response): Response {
   const headers = new Headers(response.headers);
   const htmlResponse = (headers.get("content-type") ?? "").includes("text/html");
-  if (htmlResponse && (!publicValidationIndexingEnabled || response.status >= 400)) {
+  const pathname = new URL(request.url).pathname;
+  const routeMustStayClosed = pathname === "/ara";
+  if (
+    htmlResponse &&
+    (!publicValidationIndexingEnabled || routeMustStayClosed || response.status >= 400)
+  ) {
     headers.set("X-Robots-Tag", CLOSED_ROBOTS);
   }
   return new Response(response.body, {
@@ -95,11 +100,12 @@ export default {
       }
       const handler = await getServerEntry();
       return withRobotsHeader(
+        request,
         await normalizeCatastrophicSsrResponse(await handler.fetch(request, env, ctx)),
       );
     } catch (error) {
       console.error(error);
-      return withRobotsHeader(createStaticErrorResponse());
+      return withRobotsHeader(request, createStaticErrorResponse());
     }
   },
 };
