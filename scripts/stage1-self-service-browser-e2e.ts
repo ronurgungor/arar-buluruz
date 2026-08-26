@@ -213,9 +213,12 @@ async function submitListing(
     mimeType: "image/png",
     buffer: Buffer.from(makeSyntheticPng(input.photoSeed)),
   });
+  await page.getByAltText("Seçilen fotoğraf 1", { exact: true }).waitFor();
   await page.getByRole("button", { name: /Devam/ }).click();
 
-  await page.getByLabel("Kategori", { exact: true }).selectOption("home");
+  const category = page.getByLabel("Kategori", { exact: true });
+  await category.waitFor();
+  await category.selectOption("home");
   await page.getByLabel("Başlık", { exact: true }).fill(input.title);
   await page.getByLabel("Durum", { exact: true }).selectOption("good");
   await page.getByLabel("Fiyat (TL)", { exact: true }).fill("1250");
