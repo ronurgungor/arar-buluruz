@@ -35,10 +35,12 @@ function ContactPage() {
             <dt className="font-semibold">İşletmeci</dt>
             <dd className="mt-1 text-muted-foreground">{info.legalName}</dd>
           </div>
-          <div>
-            <dt className="font-semibold">Adres</dt>
-            <dd className="mt-1 whitespace-pre-line text-muted-foreground">{info.address}</dd>
-          </div>
+          {info.address && (
+            <div>
+              <dt className="font-semibold">Adres</dt>
+              <dd className="mt-1 whitespace-pre-line text-muted-foreground">{info.address}</dd>
+            </div>
+          )}
           <div>
             <dt className="font-semibold">Elektronik iletişim</dt>
             <dd className="mt-1 text-muted-foreground">
@@ -63,10 +65,12 @@ function ContactPage() {
               )}
             </dd>
           </div>
-          <div>
-            <dt className="font-semibold">Vergi / ticaret sicili</dt>
-            <dd className="mt-1 text-muted-foreground">{info.taxRegistry}</dd>
-          </div>
+          {info.taxRegistry && (
+            <div>
+              <dt className="font-semibold">Vergi / ticaret sicili</dt>
+              <dd className="mt-1 text-muted-foreground">{info.taxRegistry}</dd>
+            </div>
+          )}
         </dl>
 
         <section className="mt-8 rounded-2xl border border-border bg-accent/30 p-5">
