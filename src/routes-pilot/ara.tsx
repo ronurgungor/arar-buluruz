@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, Search as SearchIcon } from "lucide-react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
@@ -47,6 +47,7 @@ function SearchPage() {
   const { q, il, ilce, sirala } = Route.useSearch();
   const listingData = Route.useLoaderData();
   const navigate = useNavigate();
+  const router = useRouter();
   const [term, setTerm] = useState(q ?? "");
   const { city: activeCity, district: activeDistrict } = clampListingLocation({
     city: il,
@@ -175,6 +176,13 @@ function SearchPage() {
           >
             <p className="font-semibold text-foreground">İlanlar henüz gösterilemiyor.</p>
             <p className="mt-1 text-sm text-muted-foreground">{listingData.message}</p>
+            <button
+              type="button"
+              onClick={() => router.invalidate()}
+              className="mt-4 h-11 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+            >
+              Tekrar dene
+            </button>
           </div>
         ) : (
           <>
