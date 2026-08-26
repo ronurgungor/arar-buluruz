@@ -36,7 +36,7 @@ function PrivacyPage() {
             <p className="mt-2 text-muted-foreground">
               Veri sorumlusu / işletmeci: {info.legalName}
             </p>
-            <p className="mt-1 text-muted-foreground">Adres: {info.address}</p>
+            {info.address && <p className="mt-1 text-muted-foreground">Adres: {info.address}</p>}
             <p className="mt-1 text-muted-foreground">
               Elektronik iletişim: {info.electronicContact}
             </p>
@@ -52,9 +52,10 @@ function PrivacyPage() {
           <section>
             <h2 className="font-semibold">Hangi veriler işlenebilir?</h2>
             <p className="mt-2 text-muted-foreground">
-              Stage 1–3 pilotunda yalnız gerekli ölçüde satıcı görünen adı, telefon, ilan başlığı,
-              açıklaması, fiyatı, Tekirdağ/Çorlu konumu, ürün fotoğrafları; telefon kontrolü/yayın
-              talimatı kayıtları; minimum moderasyon, şikâyet ve güvenlik kayıtları işlenebilir.
+              İlan başvurusu ve yayın sürecinde yalnız gerekli ölçüde satıcı görünen adı, telefon,
+              ilan başlığı, açıklaması, fiyatı, Tekirdağ/Çorlu konumu, ürün fotoğrafları; telefon
+              kontrolü/yayın talimatı kayıtları; minimum moderasyon, şikâyet ve güvenlik kayıtları
+              işlenebilir.
             </p>
             <p className="mt-2 font-medium">
               T.C. kimlik/pasaport, açık ev adresi, ödeme/banka verisi, çocuk verisi, özel nitelikli
@@ -88,8 +89,8 @@ function PrivacyPage() {
             <p className="mt-2 text-muted-foreground">
               Yayındaki satıcı telefonu ilan aktif olduğu sürece herkes tarafından görülebilir.
               Numara yalnız ilgili ilan hakkında iletişim amacıyla paylaşılır; reklam, pazarlama
-              veya ilgisiz amaçlarla kullanılmamalıdır. Stage 1–3 pilotunda WhatsApp iletişim kanalı
-              kullanılmaz.
+              veya ilgisiz amaçlarla kullanılmamalıdır. İlk doğrulama döneminde satıcı iletişimi
+              yalnız telefon üzerinden yapılır.
             </p>
           </section>
 
@@ -108,8 +109,8 @@ function PrivacyPage() {
               Aktif ilanın başlık, açıklama, fiyat, konum, satıcı görünen adı, onaylı fotoğrafları
               ve bilerek yayımlanan telefon numarası site ziyaretçilerine açıklanır. Diğer veriler
               yalnız hizmetin güvenli işletimi için yetkili altyapı sağlayıcıları ve kanunen yetkili
-              makamlarla gerekli olduğu ölçüde paylaşılır. Stage 1–3 ilan/veri toplama akışı
-              WhatsApp’a aktarılmaz.
+              makamlarla gerekli olduğu ölçüde paylaşılır. İlan/veri toplama akışı mesajlaşma
+              uygulamalarına aktarılmaz.
             </p>
           </section>
 
