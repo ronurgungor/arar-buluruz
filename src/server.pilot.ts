@@ -77,17 +77,14 @@ async function handleSitemap(request: Request): Promise<Response> {
     });
   }
 
-  return new Response(
-    createPilotSitemapXml(new URL(request.url).origin, listingData.listings),
-    {
-      status: 200,
-      headers: {
-        "Cache-Control": "public, max-age=300",
-        "Content-Type": "application/xml; charset=utf-8",
-        "X-Content-Type-Options": "nosniff",
-      },
+  return new Response(createPilotSitemapXml(new URL(request.url).origin, listingData.listings), {
+    status: 200,
+    headers: {
+      "Cache-Control": "public, max-age=300",
+      "Content-Type": "application/xml; charset=utf-8",
+      "X-Content-Type-Options": "nosniff",
     },
-  );
+  });
 }
 
 export default {
