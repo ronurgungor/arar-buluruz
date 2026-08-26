@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { robotsContent } from "@/build-profiles/pilot/public-discovery";
+import { AdSlot } from "@/components/AdSlot";
 import { Wordmark } from "@/components/Wordmark";
 import { locationCities } from "@/data/turkiye-locations";
 
@@ -47,7 +48,7 @@ function Home() {
           to="/ilan-ver"
           className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          İlan Başvurusu
+          İlan Ver
         </Link>
       </div>
 
@@ -101,12 +102,20 @@ function Home() {
           </div>
         </form>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Hedefimiz: ilan vermek her zaman ücretsiz.
-        </p>
+        <div className="mt-6 flex items-center justify-center">
+          <Link
+            to="/ilan-ver"
+            className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-4"
+          >
+            Birkaç adımda ilanını oluştur
+          </Link>
+        </div>
+
+        <AdSlot placement="home_primary" className="mt-6" />
+
         <nav
           aria-label="Arar Buluruz bilgi, kurallar ve iletişim"
-          className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
+          className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
         >
           {infoLinks.map((item) => (
             <Link

@@ -17,7 +17,7 @@ export function PilotTopBar() {
             to="/ilan-ver"
             className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            İlan Başvurusu
+            İlan Ver
           </Link>
         </nav>
       </div>

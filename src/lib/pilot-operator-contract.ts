@@ -10,7 +10,7 @@ export const PILOT_LISTING_STATUSES = [
 ] as const;
 
 export type PilotListingStatus = (typeof PILOT_LISTING_STATUSES)[number];
-export type PilotContactChannel = "whatsapp" | "phone";
+export type PilotContactChannel = "whatsapp" | "phone" | "phone_whatsapp";
 
 export type PilotOperatorListing = {
   id: string;

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const PUBLIC_SELLER_CONTACT_CHANNELS = ["whatsapp", "phone"] as const;
+export const PUBLIC_SELLER_CONTACT_CHANNELS = ["whatsapp", "phone", "phone_whatsapp"] as const;
 
 export const publicSellerContactSchema = z.object({
   channel: z.enum(PUBLIC_SELLER_CONTACT_CHANNELS),
@@ -8,17 +8,34 @@ export const publicSellerContactSchema = z.object({
 });
 
 export type PublicSellerContact = z.infer<typeof publicSellerContactSchema>;
+export type PublicSellerContactAction = {
+  kind: "phone" | "whatsapp";
+  label: "Ara" | "WhatsApp’tan yaz";
+  href: string;
+};
+
+export function buildPublicSellerContactActions(
+  contact: PublicSellerContact,
+): PublicSellerContactAction[] {
+  const parsed = publicSellerContactSchema.parse(contact);
+  const actions: PublicSellerContactAction[] = [];
+  if (parsed.channel === "phone" || parsed.channel === "phone_whatsapp") {
+    actions.push({ kind: "phone", label: "Ara", href: `tel:${parsed.e164}` });
+  }
+  if (parsed.channel === "whatsapp" || parsed.channel === "phone_whatsapp") {
+    actions.push({
+      kind: "whatsapp",
+      label: "WhatsApp’tan yaz",
+      href: `https://wa.me/${parsed.e164.slice(1)}`,
+    });
+  }
+  return actions;
+}
 
 export function buildPublicSellerContactHref(contact: PublicSellerContact): string {
-  const parsed = publicSellerContactSchema.parse(contact);
-
-  if (parsed.channel === "whatsapp") {
-    return `https://wa.me/${parsed.e164.slice(1)}`;
-  }
-
-  return `tel:${parsed.e164}`;
+  return buildPublicSellerContactActions(contact)[0]?.href ?? "";
 }
 
 export function getPublicSellerContactLabel(contact: PublicSellerContact): string {
-  return contact.channel === "whatsapp" ? "WhatsApp’tan yaz" : "Satıcıyı ara";
+  return buildPublicSellerContactActions(contact)[0]?.label ?? "İletişim";
 }
