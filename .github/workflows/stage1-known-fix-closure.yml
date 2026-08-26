@@ -1,6 +1,9 @@
 name: Stage 1 Phase A code gate
 
 on:
+  push:
+    branches:
+      - agent/stage1-self-service-v2
   pull_request:
     branches:
       - main
@@ -9,20 +12,22 @@ permissions:
   contents: write
 
 concurrency:
-  group: stage1-phase-a-${{ github.event.pull_request.number }}
+  group: stage1-phase-a-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   phase-a:
     if: >-
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.event.pull_request.head.ref == 'agent/stage1-self-service-v2'
+      (github.event_name == 'push' && github.ref_name == 'agent/stage1-self-service-v2') ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       github.event.pull_request.head.ref == 'agent/stage1-self-service-v2')
     name: Stage 1 executable code invariants
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
     steps:
-      - name: Check out exact Stage 1 branch
+      - name: Check out Stage 1 branch
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: agent/stage1-self-service-v2
@@ -61,7 +66,6 @@ jobs:
                   raise SystemExit(f"Expected {expected} patch markers in {path}; found {count}")
               p.write_text(text.replace(old, new), encoding="utf-8")
 
-          # Publish readiness must read the two existing declaration timestamps.
           replace_once(
               "src/lib/stage1-moderation-server.ts",
               '''  publication_instruction_at: string | null;\n  created_at: string;''',
@@ -79,14 +83,12 @@ jobs:
               '''  if (!listing.contact_verified_at) {\n    throw new ModerationError("INVALID_STATE", "Telefon kontrolü tamamlanmamış.");\n  }\n  if (!listing.publication_instruction_at) {\n    throw new ModerationError(\n      "INVALID_STATE",\n      "Kamuya açık iletişim yayın talimatı kaydedilmemiş.",\n    );\n  }\n  if (!listing.contact_e164 || !parseContactChannel(listing.contact_channel)) {\n    throw new ModerationError("INVALID_STATE", "Yayınlanabilir satıcı iletişim bilgisi eksik.");\n  }\n  if (!listing.private_seller_declaration_at) {\n    throw new ModerationError("INVALID_STATE", "Özel/ara sıra satıcı beyanı kaydedilmemiş.");\n  }\n  if (!listing.content_rights_declaration_at) {\n    throw new ModerationError("INVALID_STATE", "İçerik ve fotoğraf yetkisi beyanı kaydedilmemiş.");\n  }\n  if ((await fetchPhotos(config, id)).length < 1)''',
           )
 
-          # Unit coverage: each readiness fact fails independently; complete evidence publishes.
           replace_once(
               "src/lib/stage1-moderation-server.test.ts",
               '''  test("rejects missing required seller/content declaration evidence", async () => {\n    currentRow = {\n      ...readyRow(),\n      private_seller_declaration_at: null,\n      content_rights_declaration_at: null,\n    };\n    patchCalls = 0;\n    photoCalls = 0;\n    const response = await handleStage1ModerationRequest(requestForPublish());\n    expect(response.status).toBe(400);\n    expect(await response.json()).toMatchObject({ ok: false, code: "INVALID_STATE" });\n    expect(patchCalls).toBe(0);\n    expect(photoCalls).toBe(0);\n  });''',
               '''  test("rejects missing private-seller declaration independently", async () => {\n    currentRow = { ...readyRow(), private_seller_declaration_at: null };\n    patchCalls = 0;\n    photoCalls = 0;\n    const response = await handleStage1ModerationRequest(requestForPublish());\n    expect(response.status).toBe(400);\n    expect(await response.json()).toMatchObject({ ok: false, code: "INVALID_STATE" });\n    expect(patchCalls).toBe(0);\n    expect(photoCalls).toBe(0);\n  });\n\n  test("rejects missing content-rights declaration independently", async () => {\n    currentRow = { ...readyRow(), content_rights_declaration_at: null };\n    patchCalls = 0;\n    photoCalls = 0;\n    const response = await handleStage1ModerationRequest(requestForPublish());\n    expect(response.status).toBe(400);\n    expect(await response.json()).toMatchObject({ ok: false, code: "INVALID_STATE" });\n    expect(patchCalls).toBe(0);\n    expect(photoCalls).toBe(0);\n  });\n\n  test("publishes when all minimum readiness evidence is present", async () => {\n    currentRow = readyRow();\n    patchCalls = 0;\n    photoCalls = 0;\n    const response = await handleStage1ModerationRequest(requestForPublish());\n    expect(response.status).toBe(200);\n    expect(await response.json()).toMatchObject({ ok: true, listingId });\n    expect(patchCalls).toBe(1);\n    expect(photoCalls).toBe(1);\n  });''',
           )
 
-          # DB raw/privileged paths get the same declaration invariant.
           migration = Path("supabase/migrations/20260826181500_prepare_stage1_self_service.sql")
           text = migration.read_text(encoding="utf-8")
           if "listings_published_stage1_declarations_ready_check" not in text:
@@ -168,8 +170,20 @@ reset role;
               pg.write_text(text.replace(marker, addition + marker, 1), encoding="utf-8")
           PY
 
-      - name: Format Phase A TypeScript only
-        run: bunx prettier --write src/lib/stage1-moderation-server.ts src/lib/stage1-moderation-server.test.ts
+      - name: Format focused Phase A code
+        run: >-
+          bunx prettier --write
+          src/lib/stage1-self-service-contract.test.ts
+          src/lib/stage1-self-service-server.ts
+          src/lib/stage1-self-service-server.test.ts
+          src/lib/stage1-moderation-server.ts
+          src/lib/stage1-moderation-server.test.ts
+          src/lib/public-seller-contact.ts
+          src/lib/public-seller-contact.test.ts
+          src/lib/listing-photo.ts
+          src/lib/listing-photo.test.ts
+          src/lib/listing-photo-trusted.ts
+          src/lib/listing-photo-trusted.test.ts
 
       - name: Focused Stage 1 unit and trusted-photo tests
         run: >-
@@ -184,9 +198,10 @@ reset role;
       - name: TypeScript check
         run: bunx tsc --noEmit --pretty false
 
-      - name: Lint changed Stage 1 code
+      - name: Lint focused Phase A code
         run: >-
           bunx eslint
+          src/lib/stage1-self-service-contract.test.ts
           src/lib/stage1-self-service-server.ts
           src/lib/stage1-self-service-server.test.ts
           src/lib/stage1-moderation-server.ts
@@ -266,8 +281,17 @@ reset role;
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
+            src/lib/stage1-self-service-contract.test.ts \
+            src/lib/stage1-self-service-server.ts \
+            src/lib/stage1-self-service-server.test.ts \
             src/lib/stage1-moderation-server.ts \
             src/lib/stage1-moderation-server.test.ts \
+            src/lib/public-seller-contact.ts \
+            src/lib/public-seller-contact.test.ts \
+            src/lib/listing-photo.ts \
+            src/lib/listing-photo.test.ts \
+            src/lib/listing-photo-trusted.ts \
+            src/lib/listing-photo-trusted.test.ts \
             supabase/migrations/20260826181500_prepare_stage1_self_service.sql \
             supabase/tests/database/stage1_self_service.test.sql
           git diff --cached --check
