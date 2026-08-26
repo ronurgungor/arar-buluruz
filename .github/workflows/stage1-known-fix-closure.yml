@@ -1,4 +1,4 @@
-name: Stage 1 known-fix closure
+name: Stage 1 Phase A code gate
 
 on:
   pull_request:
@@ -8,16 +8,21 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: stage1-phase-a-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
-  known-fix-closure:
+  phase-a:
     if: >-
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.head.ref == 'agent/stage1-self-service-v2'
+    name: Stage 1 executable code invariants
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
 
     steps:
-      - name: Check out Stage 1 branch
+      - name: Check out exact Stage 1 branch
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: agent/stage1-self-service-v2
@@ -30,80 +35,70 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
-      - name: Apply only the two accepted closure fixes
+      - name: Apply only remaining Phase A invariant fixes
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          def once(path: str, old: str, new: str) -> None:
+          def replace_once(path: str, old: str, new: str) -> None:
               p = Path(path)
               text = p.read_text(encoding="utf-8")
               if new in text:
                   return
-              if text.count(old) != 1:
-                  raise SystemExit(f"Patch marker mismatch in {path}: {text.count(old)}")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"Expected exactly one patch marker in {path}; found {count}")
               p.write_text(text.replace(old, new, 1), encoding="utf-8")
 
-          def all_exact(path: str, old: str, new: str, count: int) -> None:
+          def replace_all_exact(path: str, old: str, new: str, expected: int) -> None:
               p = Path(path)
               text = p.read_text(encoding="utf-8")
               if new in text and old not in text:
                   return
-              if text.count(old) != count:
-                  raise SystemExit(f"Patch marker mismatch in {path}: {text.count(old)} != {count}")
+              count = text.count(old)
+              if count != expected:
+                  raise SystemExit(f"Expected {expected} patch markers in {path}; found {count}")
               p.write_text(text.replace(old, new), encoding="utf-8")
 
-          once(
-              "src/lib/stage1-self-service-server.ts",
-              '''  const claim = await claimSubmission(config, keyHash, listingId);\n  if (claim.state !== "claimed") {''',
-              '''  let claim: SubmissionClaim;\n  try {\n    claim = await claimSubmission(config, keyHash, listingId);\n  } catch (cause) {\n    try {\n      await cleanupFailedSubmission(config, listingId, []);\n    } catch (cleanupCause) {\n      throw new AggregateError(\n        [cause, cleanupCause],\n        "Idempotency claim failed and pending-listing cleanup was incomplete.",\n      );\n    }\n    throw cause;\n  }\n\n  if (claim.state !== "claimed") {''',
-          )
-
-          once(
-              "src/lib/stage1-moderation-contract.ts",
-              '''  publicationInstructionRecorded: boolean;\n  photoUrls: string[];''',
-              '''  publicationInstructionRecorded: boolean;\n  privateSellerDeclarationRecorded: boolean;\n  contentRightsDeclarationRecorded: boolean;\n  photoUrls: string[];''',
-          )
-          once(
+          # Publish readiness must read the two existing declaration timestamps.
+          replace_once(
               "src/lib/stage1-moderation-server.ts",
               '''  publication_instruction_at: string | null;\n  created_at: string;''',
               '''  publication_instruction_at: string | null;\n  private_seller_declaration_at: string | null;\n  content_rights_declaration_at: string | null;\n  created_at: string;''',
           )
-          all_exact(
+          replace_all_exact(
               "src/lib/stage1-moderation-server.ts",
               "contact_verified_at,publication_instruction_at,created_at",
               "contact_verified_at,publication_instruction_at,private_seller_declaration_at,content_rights_declaration_at,created_at",
               2,
           )
-          once(
-              "src/lib/stage1-moderation-server.ts",
-              '''      phoneVerified: row.contact_verified_at !== null,\n      publicationInstructionRecorded: row.publication_instruction_at !== null,\n      photoUrls,''',
-              '''      phoneVerified: row.contact_verified_at !== null,\n      publicationInstructionRecorded: row.publication_instruction_at !== null,\n      privateSellerDeclarationRecorded: row.private_seller_declaration_at !== null,\n      contentRightsDeclarationRecorded: row.content_rights_declaration_at !== null,\n      photoUrls,''',
-          )
-          once(
+          replace_once(
               "src/lib/stage1-moderation-server.ts",
               '''  if (!listing.contact_verified_at || !listing.publication_instruction_at || !listing.contact_e164 || !parseContactChannel(listing.contact_channel)) {\n    throw new ModerationError("INVALID_STATE", "Telefon kontrolü ve satıcı yayın talimatı tamamlanmamış.");\n  }\n  if ((await fetchPhotos(config, id)).length < 1)''',
-              '''  if (\n    !listing.contact_verified_at ||\n    !listing.publication_instruction_at ||\n    !listing.contact_e164 ||\n    !parseContactChannel(listing.contact_channel)\n  ) {\n    throw new ModerationError(\n      "INVALID_STATE",\n      "Telefon kontrolü ve satıcı yayın talimatı tamamlanmamış.",\n    );\n  }\n  if (!listing.private_seller_declaration_at || !listing.content_rights_declaration_at) {\n    throw new ModerationError(\n      "INVALID_STATE",\n      "Gerekli satıcı ve içerik beyanı kayıtları tamamlanmamış.",\n    );\n  }\n  if ((await fetchPhotos(config, id)).length < 1)''',
-          )
-          once(
-              "src/routes/kurucu.tsx",
-              '''                      <strong className="text-foreground">Telefon kontrolü:</strong> {listing.phoneVerified ? "Tamam" : "Eksik"} · <strong className="text-foreground">Yayın talimatı:</strong> {listing.publicationInstructionRecorded ? "Kayıtlı" : "Eksik"}''',
-              '''                      <strong className="text-foreground">Telefon kontrolü:</strong> {listing.phoneVerified ? "Tamam" : "Eksik"} · <strong className="text-foreground">Yayın talimatı:</strong> {listing.publicationInstructionRecorded ? "Kayıtlı" : "Eksik"}<br />\n                      <strong className="text-foreground">Özel satıcı beyanı:</strong> {listing.privateSellerDeclarationRecorded ? "Kayıtlı" : "Eksik"} · <strong className="text-foreground">İçerik yetkisi:</strong> {listing.contentRightsDeclarationRecorded ? "Kayıtlı" : "Eksik"}''',
+              '''  if (!listing.contact_verified_at) {\n    throw new ModerationError("INVALID_STATE", "Telefon kontrolü tamamlanmamış.");\n  }\n  if (!listing.publication_instruction_at) {\n    throw new ModerationError(\n      "INVALID_STATE",\n      "Kamuya açık iletişim yayın talimatı kaydedilmemiş.",\n    );\n  }\n  if (!listing.contact_e164 || !parseContactChannel(listing.contact_channel)) {\n    throw new ModerationError("INVALID_STATE", "Yayınlanabilir satıcı iletişim bilgisi eksik.");\n  }\n  if (!listing.private_seller_declaration_at) {\n    throw new ModerationError("INVALID_STATE", "Özel/ara sıra satıcı beyanı kaydedilmemiş.");\n  }\n  if (!listing.content_rights_declaration_at) {\n    throw new ModerationError("INVALID_STATE", "İçerik ve fotoğraf yetkisi beyanı kaydedilmemiş.");\n  }\n  if ((await fetchPhotos(config, id)).length < 1)''',
           )
 
+          # Unit coverage: each readiness fact fails independently; complete evidence publishes.
+          replace_once(
+              "src/lib/stage1-moderation-server.test.ts",
+              '''  test("rejects missing required seller/content declaration evidence", async () => {\n    currentRow = {\n      ...readyRow(),\n      private_seller_declaration_at: null,\n      content_rights_declaration_at: null,\n    };\n    patchCalls = 0;\n    photoCalls = 0;\n    const response = await handleStage1ModerationRequest(requestForPublish());\n    expect(response.status).toBe(400);\n    expect(await response.json()).toMatchObject({ ok: false, code: "INVALID_STATE" });\n    expect(patchCalls).toBe(0);\n    expect(photoCalls).toBe(0);\n  });''',
+              '''  test("rejects missing private-seller declaration independently", async () => {\n    currentRow = { ...readyRow(), private_seller_declaration_at: null };\n    patchCalls = 0;\n    photoCalls = 0;\n    const response = await handleStage1ModerationRequest(requestForPublish());\n    expect(response.status).toBe(400);\n    expect(await response.json()).toMatchObject({ ok: false, code: "INVALID_STATE" });\n    expect(patchCalls).toBe(0);\n    expect(photoCalls).toBe(0);\n  });\n\n  test("rejects missing content-rights declaration independently", async () => {\n    currentRow = { ...readyRow(), content_rights_declaration_at: null };\n    patchCalls = 0;\n    photoCalls = 0;\n    const response = await handleStage1ModerationRequest(requestForPublish());\n    expect(response.status).toBe(400);\n    expect(await response.json()).toMatchObject({ ok: false, code: "INVALID_STATE" });\n    expect(patchCalls).toBe(0);\n    expect(photoCalls).toBe(0);\n  });\n\n  test("publishes when all minimum readiness evidence is present", async () => {\n    currentRow = readyRow();\n    patchCalls = 0;\n    photoCalls = 0;\n    const response = await handleStage1ModerationRequest(requestForPublish());\n    expect(response.status).toBe(200);\n    expect(await response.json()).toMatchObject({ ok: true, listingId });\n    expect(patchCalls).toBe(1);\n    expect(photoCalls).toBe(1);\n  });''',
+          )
+
+          # DB raw/privileged paths get the same declaration invariant.
           migration = Path("supabase/migrations/20260826181500_prepare_stage1_self_service.sql")
           text = migration.read_text(encoding="utf-8")
           if "listings_published_stage1_declarations_ready_check" not in text:
-              marker = "\n-- Public browsers still have read-only access to active published rows only.\n"
-              addition = '''\nalter table public.listings\n  add constraint listings_published_stage1_declarations_ready_check\n  check (\n    status <> 'published'\n    or (\n      private_seller_declaration_at is not null\n      and content_rights_declaration_at is not null\n    )\n  );\n'''
+              marker = "\n-- These are buyer-visible product facts on rows that already pass the existing published-only RLS.\n"
+              addition = '''\n-- Never fabricate declaration evidence. If this additive migration encounters an old\n-- published synthetic row without the new Stage-1 evidence, fail closed by unpublishing it.\nupdate public.listings\nset\n  status = 'unpublished',\n  unpublished_at = coalesce(unpublished_at, now())\nwhere status = 'published'\n  and (\n    private_seller_declaration_at is null\n    or content_rights_declaration_at is null\n  );\n\nalter table public.listings\n  add constraint listings_published_stage1_declarations_ready_check\n  check (\n    status <> 'published'\n    or (\n      private_seller_declaration_at is not null\n      and content_rights_declaration_at is not null\n    )\n  );\n'''
               if marker not in text:
-                  raise SystemExit("Migration insertion marker missing")
+                  raise SystemExit("Stage-1 migration insertion marker missing")
               migration.write_text(text.replace(marker, addition + marker, 1), encoding="utf-8")
 
           pg = Path("supabase/tests/database/stage1_self_service.test.sql")
           text = pg.read_text(encoding="utf-8")
-          if "publish rejects missing required seller declaration evidence" not in text:
+          if "raw publish rejects missing private-seller declaration" not in text:
               marker = "\nselect * from finish();\n"
               addition = r'''
 
@@ -116,18 +111,18 @@ insert into public.listings (
 values
   (
     '96000000-0000-4000-8000-000000000002',
-    'Missing seller declaration fixture',
-    'Synthetic pending listing missing one required Stage-1 declaration.',
+    'Missing private seller declaration',
+    'Synthetic pending listing missing the private-seller declaration.',
     10, false, 'home', 'good', 'Tekirdağ', 'Çorlu', 'Synthetic Seller',
     'phone', '+12025550189', now() - interval '2 minutes', 'one_time_code',
     now() - interval '1 minute', null, now() - interval '1 minute', 'pending'
   ),
   (
     '96000000-0000-4000-8000-000000000003',
-    'Missing content declaration fixture',
-    'Synthetic pending listing missing the content-rights Stage-1 declaration.',
+    'Missing content rights declaration',
+    'Synthetic pending listing missing the content-rights declaration.',
     10, false, 'home', 'good', 'Tekirdağ', 'Çorlu', 'Synthetic Seller',
-    'whatsapp', '+12025550190', now() - interval '2 minutes', 'one_time_code',
+    'phone_whatsapp', '+12025550190', now() - interval '2 minutes', 'one_time_code',
     now() - interval '1 minute', now() - interval '1 minute', null, 'pending'
   );
 
@@ -138,7 +133,7 @@ select throws_like(
     where id = '96000000-0000-4000-8000-000000000002'
   $$,
   '%listings_published_stage1_declarations_ready_check%',
-  'publish rejects missing required seller declaration evidence'
+  'raw publish rejects missing private-seller declaration'
 );
 
 select throws_like(
@@ -148,7 +143,13 @@ select throws_like(
     where id = '96000000-0000-4000-8000-000000000003'
   $$,
   '%listings_published_stage1_declarations_ready_check%',
-  'publish rejects missing required content-rights declaration evidence'
+  'raw publish rejects missing content-rights declaration'
+);
+
+select is(
+  (select status from public.listings where id = '96000000-0000-4000-8000-000000000002'),
+  'pending',
+  'failed raw publish leaves missing-declaration listing pending'
 );
 
 set local role anon;
@@ -163,40 +164,112 @@ select is(
 reset role;
 '''
               if marker not in text:
-                  raise SystemExit("pgTAP insertion marker missing")
+                  raise SystemExit("Stage-1 pgTAP insertion marker missing")
               pg.write_text(text.replace(marker, addition + marker, 1), encoding="utf-8")
           PY
 
-      - name: Format changed implementation files
+      - name: Format Phase A TypeScript only
+        run: bunx prettier --write src/lib/stage1-moderation-server.ts src/lib/stage1-moderation-server.test.ts
+
+      - name: Focused Stage 1 unit and trusted-photo tests
+        run: >-
+          bun test
+          src/lib/stage1-self-service-contract.test.ts
+          src/lib/stage1-self-service-server.test.ts
+          src/lib/stage1-moderation-server.test.ts
+          src/lib/public-seller-contact.test.ts
+          src/lib/listing-photo.test.ts
+          src/lib/listing-photo-trusted.test.ts
+
+      - name: TypeScript check
+        run: bunx tsc --noEmit --pretty false
+
+      - name: Lint changed Stage 1 code
+        run: >-
+          bunx eslint
+          src/lib/stage1-self-service-server.ts
+          src/lib/stage1-self-service-server.test.ts
+          src/lib/stage1-moderation-server.ts
+          src/lib/stage1-moderation-server.test.ts
+          src/lib/public-seller-contact.ts
+          src/lib/public-seller-contact.test.ts
+          src/lib/listing-photo.ts
+          src/lib/listing-photo.test.ts
+          src/lib/listing-photo-trusted.ts
+          src/lib/listing-photo-trusted.test.ts
+
+      - name: Build production-like pilot artifact
+        env:
+          ARAR_BUILD_PROFILE: pilot-rc
+          NITRO_PRESET: node-server
+          VITE_LISTINGS_SOURCE: supabase
+          VITE_SUPABASE_URL: https://synthetic.invalid
+          VITE_SUPABASE_ANON_KEY: synthetic-public-key
+        run: bun run build
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
+        with:
+          version: 2.102.0
+
+      - name: Restore canonical Bun after Supabase setup
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.14
+
+      - name: Enable Auth and Storage only in ephemeral runner copy
         shell: bash
         run: |
-          mapfile -t files < <(git diff --name-only origin/main...HEAD | grep -E '\.(ts|tsx|json|sql)$' || true)
-          if (( ${#files[@]} > 0 )); then bunx prettier --write "${files[@]}"; fi
-          git diff --check
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("supabase/config.toml")
+          text = path.read_text(encoding="utf-8")
+          for old, new in {
+              "[auth]\nenabled = false": "[auth]\nenabled = true",
+              "[storage]\nenabled = false": "[storage]\nenabled = true",
+          }.items():
+              if old not in text:
+                  raise SystemExit(f"Expected fail-closed Supabase config marker not found: {old!r}")
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding="utf-8")
+          PY
 
-      - name: Run focused acceptance before committing
-        run: |
-          bun test src/lib/stage1-self-service-contract.test.ts src/lib/stage1-self-service-server.test.ts src/lib/stage1-moderation-server.test.ts src/lib/public-seller-contact.test.ts src/lib/listing-photo.test.ts src/lib/listing-photo-trusted.test.ts
-          bun run lint
-          VITE_LISTINGS_SOURCE=disabled bun run build
-          git diff --check
-
-      - name: Commit bounded fixes only after focused acceptance passes
+      - name: Start local Supabase and run relevant pgTAP suite
         shell: bash
         run: |
+          supabase start -x realtime,imgproxy,studio,mailpit,edge-runtime,logflare,vector,supavisor
+          supabase db reset --local --no-seed
+          supabase seed buckets --local
+          supabase test db
+
+      - name: Stop local Supabase and restore committed config
+        if: always()
+        shell: bash
+        run: |
+          supabase stop --no-backup || true
+          git checkout -- supabase/config.toml || true
+
+      - name: Diff hygiene
+        shell: bash
+        run: |
+          git diff --check
+          git diff --check origin/main...HEAD
+
+      - name: Commit Phase A fixes only after executable gate passes
+        shell: bash
+        run: |
+          git checkout -- supabase/config.toml
           if git diff --quiet; then
-            echo "Known fixes already present; no commit required."
+            echo "Phase A implementation already present; no commit required."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -u
           git add \
-            src/lib/stage1-self-service-server.ts \
-            src/lib/stage1-moderation-contract.ts \
             src/lib/stage1-moderation-server.ts \
-            src/routes/kurucu.tsx \
+            src/lib/stage1-moderation-server.test.ts \
             supabase/migrations/20260826181500_prepare_stage1_self_service.sql \
             supabase/tests/database/stage1_self_service.test.sql
-          git commit -m "Fix Stage 1 acceptance invariants"
+          git diff --cached --check
+          git commit -m "Enforce Stage 1 publish readiness"
           git push origin HEAD:agent/stage1-self-service-v2
