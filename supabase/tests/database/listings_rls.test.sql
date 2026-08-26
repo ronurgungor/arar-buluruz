@@ -33,7 +33,12 @@ select columns_are(
     'contact_e164',
     'contact_verified_at',
     'contact_verification_method',
-    'publication_instruction_at'
+    'publication_instruction_at',
+    'category',
+    'item_condition',
+    'price_is_free',
+    'private_seller_declaration_at',
+    'content_rights_declaration_at'
   ],
   'listings has the approved pilot and seller-contact columns'
 );
@@ -435,8 +440,6 @@ select throws_ok(
       province,
       district,
       seller_display_name,
-      private_seller_declaration_at,
-      content_rights_declaration_at,
       status,
       published_at
     )
@@ -465,6 +468,8 @@ select throws_ok(
       province,
       district,
       seller_display_name,
+      private_seller_declaration_at,
+      content_rights_declaration_at,
       status,
       published_at,
       expires_at
