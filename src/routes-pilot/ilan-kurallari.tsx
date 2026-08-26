@@ -7,7 +7,7 @@ export const Route = createFileRoute("/ilan-kurallari")({
       { title: "İlan Kuralları — Arar Buluruz" },
       {
         name: "description",
-        content: "Arar Buluruz Çorlu Stage 1–3 özel satıcı ve ilan kuralları.",
+        content: "Arar Buluruz Çorlu doğrulaması özel satıcı ve ilan kuralları.",
       },
       { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
     ],
@@ -19,7 +19,7 @@ function ListingRules() {
   return (
     <PilotPublisherInfoPage
       title="İlan Kuralları"
-      intro="Stage 1–3 pilotu bilinçli olarak çok dardır: yalnız özel kişilerin ara sıra kendi kullanılmış kişisel veya ev eşyalarını ilan etmesi desteklenir."
+      intro="İlk Çorlu doğrulamasında kapsam bilinçli olarak dardır: yalnız özel kişilerin ara sıra kendi kullanılmış kişisel veya ev eşyalarını ilan etmesi desteklenir."
       sections={[
         {
           title: "Satıcı ve ürün kapsamı",
@@ -48,8 +48,8 @@ function ListingRules() {
             "Silahlar, patlayıcılar ve benzeri yüksek riskli ürünler.",
             "Alkol, tütün/nikotin, keyif verici veya uyuşturucu maddeler.",
             "Reçeteli/kısıtlı ilaçlar, kumar ürün veya hizmetleri, finansal ürün veya yatırım teklifleri.",
-            "Cinsel açıdan açık/adult içerik ve ilk pilot kapsamı dışında kalan düzenlemeye tabi veya belirsiz kategoriler.",
-            "Stage 1–3 için profesyonel satıcı, yeni-for-resale veya düzenli ticari satış ilanları.",
+            "Cinsel açıdan açık/adult içerik ve ilk doğrulama kapsamı dışında kalan düzenlemeye tabi veya belirsiz kategoriler.",
+            "Profesyonel satıcı, yeniden satış için yeni ürün veya düzenli ticari satış ilanları.",
           ],
         },
         {
@@ -60,9 +60,9 @@ function ListingRules() {
           ],
         },
         {
-          title: "Ödeme ve haricî satış",
+          title: "Ödeme ve satış",
           paragraphs: [
-            "Arar Buluruz Stage 1–3 pilotunda ödeme almaz, sipariş/rezervasyon oluşturmaz, komisyon tahsil etmez ve haricî satış linki yayınlamaz. Satış koşulları satıcı ve alıcı arasında doğrudan belirlenir.",
+            "Arar Buluruz ilk doğrulama döneminde ödeme almaz, sipariş veya rezervasyon oluşturmaz ve komisyon tahsil etmez. Satış koşulları satıcı ve alıcı arasında doğrudan belirlenir.",
           ],
         },
       ]}
