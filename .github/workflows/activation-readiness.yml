@@ -241,10 +241,11 @@ jobs:
             exit 1
           fi
 
-          curl -fsS 'http://127.0.0.1:4174/ara?q=corlu' -o /tmp/public-validation-search.html
-          if ! grep -Eqi '<meta[^>]+name="robots"[^>]+noindex' /tmp/public-validation-search.html; then
-            echo "Public validation search response was missing robots noindex meta."
-            grep -Eio '<meta[^>]+(robots|noindex)[^>]*>' /tmp/public-validation-search.html || true
+          curl -fsS -D /tmp/public-validation-search.headers \
+            'http://127.0.0.1:4174/ara?q=corlu' -o /tmp/public-validation-search.html
+          if ! grep -Eqi '^x-robots-tag:.*noindex' /tmp/public-validation-search.headers; then
+            echo "Public validation search response was not closed by X-Robots-Tag noindex."
+            cat /tmp/public-validation-search.headers
             exit 1
           fi
 
