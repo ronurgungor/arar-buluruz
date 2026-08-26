@@ -8,7 +8,10 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import { CLOSED_ROBOTS, publicValidationIndexingEnabled } from "@/build-profiles/pilot/public-discovery";
+import {
+  CLOSED_ROBOTS,
+  publicValidationIndexingEnabled,
+} from "@/build-profiles/pilot/public-discovery";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
