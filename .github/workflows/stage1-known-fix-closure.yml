@@ -1,36 +1,25 @@
 name: Stage 1 Phase A code gate
 
-on:
+"on":
   push:
     branches:
       - agent/stage1-self-service-v2
-  pull_request:
-    branches:
-      - main
 
 permissions:
   contents: write
 
-concurrency:
-  group: stage1-phase-a-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   phase-a:
-    if: >-
-      (github.event_name == 'push' && github.ref_name == 'agent/stage1-self-service-v2') ||
-      (github.event_name == 'pull_request' &&
-       github.event.pull_request.head.repo.full_name == github.repository &&
-       github.event.pull_request.head.ref == 'agent/stage1-self-service-v2')
     name: Stage 1 executable code invariants
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
     steps:
-      - name: Check out Stage 1 branch
+      - name: Check out exact event head
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          ref: agent/stage1-self-service-v2
+          ref: ${{ github.sha }}
+          fetch-depth: 0
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -40,135 +29,8 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
-      - name: Apply only remaining Phase A invariant fixes
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          def replace_once(path: str, old: str, new: str) -> None:
-              p = Path(path)
-              text = p.read_text(encoding="utf-8")
-              if new in text:
-                  return
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f"Expected exactly one patch marker in {path}; found {count}")
-              p.write_text(text.replace(old, new, 1), encoding="utf-8")
-
-          def replace_all_exact(path: str, old: str, new: str, expected: int) -> None:
-              p = Path(path)
-              text = p.read_text(encoding="utf-8")
-              if new in text and old not in text:
-                  return
-              count = text.count(old)
-              if count != expected:
-                  raise SystemExit(f"Expected {expected} patch markers in {path}; found {count}")
-              p.write_text(text.replace(old, new), encoding="utf-8")
-
-          replace_once(
-              "src/lib/stage1-moderation-server.ts",
-              '''  publication_instruction_at: string | null;\n  created_at: string;''',
-              '''  publication_instruction_at: string | null;\n  private_seller_declaration_at: string | null;\n  content_rights_declaration_at: string | null;\n  created_at: string;''',
-          )
-          replace_all_exact(
-              "src/lib/stage1-moderation-server.ts",
-              "contact_verified_at,publication_instruction_at,created_at",
-              "contact_verified_at,publication_instruction_at,private_seller_declaration_at,content_rights_declaration_at,created_at",
-              2,
-          )
-          replace_once(
-              "src/lib/stage1-moderation-server.ts",
-              '''  if (!listing.contact_verified_at || !listing.publication_instruction_at || !listing.contact_e164 || !parseContactChannel(listing.contact_channel)) {\n    throw new ModerationError("INVALID_STATE", "Telefon kontrolü ve satıcı yayın talimatı tamamlanmamış.");\n  }\n  if ((await fetchPhotos(config, id)).length < 1)''',
-              '''  if (!listing.contact_verified_at) {\n    throw new ModerationError("INVALID_STATE", "Telefon kontrolü tamamlanmamış.");\n  }\n  if (!listing.publication_instruction_at) {\n    throw new ModerationError(\n      "INVALID_STATE",\n      "Kamuya açık iletişim yayın talimatı kaydedilmemiş.",\n    );\n  }\n  if (!listing.contact_e164 || !parseContactChannel(listing.contact_channel)) {\n    throw new ModerationError("INVALID_STATE", "Yayınlanabilir satıcı iletişim bilgisi eksik.");\n  }\n  if (!listing.private_seller_declaration_at) {\n    throw new ModerationError("INVALID_STATE", "Özel/ara sıra satıcı beyanı kaydedilmemiş.");\n  }\n  if (!listing.content_rights_declaration_at) {\n    throw new ModerationError("INVALID_STATE", "İçerik ve fotoğraf yetkisi beyanı kaydedilmemiş.");\n  }\n  if ((await fetchPhotos(config, id)).length < 1)''',
-          )
-
-          replace_once(
-              "src/lib/stage1-moderation-server.test.ts",
-              '''  test("rejects missing required seller/content declaration evidence", async () => {\n    currentRow = {\n      ...readyRow(),\n      private_seller_declaration_at: null,\n      content_rights_declaration_at: null,\n    };\n    patchCalls = 0;\n    photoCalls = 0;\n    const response = await handleStage1ModerationRequest(requestForPublish());\n    expect(response.status).toBe(400);\n    expect(await response.json()).toMatchObject({ ok: false, code: "INVALID_STATE" });\n    expect(patchCalls).toBe(0);\n    expect(photoCalls).toBe(0);\n  });''',
-              '''  test("rejects missing private-seller declaration independently", async () => {\n    currentRow = { ...readyRow(), private_seller_declaration_at: null };\n    patchCalls = 0;\n    photoCalls = 0;\n    const response = await handleStage1ModerationRequest(requestForPublish());\n    expect(response.status).toBe(400);\n    expect(await response.json()).toMatchObject({ ok: false, code: "INVALID_STATE" });\n    expect(patchCalls).toBe(0);\n    expect(photoCalls).toBe(0);\n  });\n\n  test("rejects missing content-rights declaration independently", async () => {\n    currentRow = { ...readyRow(), content_rights_declaration_at: null };\n    patchCalls = 0;\n    photoCalls = 0;\n    const response = await handleStage1ModerationRequest(requestForPublish());\n    expect(response.status).toBe(400);\n    expect(await response.json()).toMatchObject({ ok: false, code: "INVALID_STATE" });\n    expect(patchCalls).toBe(0);\n    expect(photoCalls).toBe(0);\n  });\n\n  test("publishes when all minimum readiness evidence is present", async () => {\n    currentRow = readyRow();\n    patchCalls = 0;\n    photoCalls = 0;\n    const response = await handleStage1ModerationRequest(requestForPublish());\n    expect(response.status).toBe(200);\n    expect(await response.json()).toMatchObject({ ok: true, listingId });\n    expect(patchCalls).toBe(1);\n    expect(photoCalls).toBe(1);\n  });''',
-          )
-
-          migration = Path("supabase/migrations/20260826181500_prepare_stage1_self_service.sql")
-          text = migration.read_text(encoding="utf-8")
-          if "listings_published_stage1_declarations_ready_check" not in text:
-              marker = "\n-- These are buyer-visible product facts on rows that already pass the existing published-only RLS.\n"
-              addition = '''\n-- Never fabricate declaration evidence. If this additive migration encounters an old\n-- published synthetic row without the new Stage-1 evidence, fail closed by unpublishing it.\nupdate public.listings\nset\n  status = 'unpublished',\n  unpublished_at = coalesce(unpublished_at, now())\nwhere status = 'published'\n  and (\n    private_seller_declaration_at is null\n    or content_rights_declaration_at is null\n  );\n\nalter table public.listings\n  add constraint listings_published_stage1_declarations_ready_check\n  check (\n    status <> 'published'\n    or (\n      private_seller_declaration_at is not null\n      and content_rights_declaration_at is not null\n    )\n  );\n'''
-              if marker not in text:
-                  raise SystemExit("Stage-1 migration insertion marker missing")
-              migration.write_text(text.replace(marker, addition + marker, 1), encoding="utf-8")
-
-          pg = Path("supabase/tests/database/stage1_self_service.test.sql")
-          text = pg.read_text(encoding="utf-8")
-          if "raw publish rejects missing private-seller declaration" not in text:
-              marker = "\nselect * from finish();\n"
-              addition = r'''
-
-insert into public.listings (
-  id, title, description, price_amount, price_is_free, category, item_condition,
-  province, district, seller_display_name, contact_channel, contact_e164,
-  contact_verified_at, contact_verification_method, publication_instruction_at,
-  private_seller_declaration_at, content_rights_declaration_at, status
-)
-values
-  (
-    '96000000-0000-4000-8000-000000000002',
-    'Missing private seller declaration',
-    'Synthetic pending listing missing the private-seller declaration.',
-    10, false, 'home', 'good', 'Tekirdağ', 'Çorlu', 'Synthetic Seller',
-    'phone', '+12025550189', now() - interval '2 minutes', 'one_time_code',
-    now() - interval '1 minute', null, now() - interval '1 minute', 'pending'
-  ),
-  (
-    '96000000-0000-4000-8000-000000000003',
-    'Missing content rights declaration',
-    'Synthetic pending listing missing the content-rights declaration.',
-    10, false, 'home', 'good', 'Tekirdağ', 'Çorlu', 'Synthetic Seller',
-    'phone_whatsapp', '+12025550190', now() - interval '2 minutes', 'one_time_code',
-    now() - interval '1 minute', now() - interval '1 minute', null, 'pending'
-  );
-
-select throws_like(
-  $$
-    update public.listings
-    set status = 'published', published_at = now(), expires_at = now() + interval '1 day'
-    where id = '96000000-0000-4000-8000-000000000002'
-  $$,
-  '%listings_published_stage1_declarations_ready_check%',
-  'raw publish rejects missing private-seller declaration'
-);
-
-select throws_like(
-  $$
-    update public.listings
-    set status = 'published', published_at = now(), expires_at = now() + interval '1 day'
-    where id = '96000000-0000-4000-8000-000000000003'
-  $$,
-  '%listings_published_stage1_declarations_ready_check%',
-  'raw publish rejects missing content-rights declaration'
-);
-
-select is(
-  (select status from public.listings where id = '96000000-0000-4000-8000-000000000002'),
-  'pending',
-  'failed raw publish leaves missing-declaration listing pending'
-);
-
-set local role anon;
-select is(
-  (
-    select count(*)::integer
-    from public.get_public_listing_photos('96000000-0000-4000-8000-000000000002')
-  ),
-  0,
-  'pending self-service photo manifest remains anonymous-invisible'
-);
-reset role;
-'''
-              if marker not in text:
-                  raise SystemExit("Stage-1 pgTAP insertion marker missing")
-              pg.write_text(text.replace(marker, addition + marker, 1), encoding="utf-8")
-          PY
+      - name: Apply deterministic remaining Phase A invariants
+        run: python3 scripts/stage1-phase-a-fix.py
 
       - name: Format focused Phase A code
         run: >-
@@ -237,12 +99,14 @@ reset role;
         run: |
           python3 - <<'PY'
           from pathlib import Path
+
           path = Path("supabase/config.toml")
           text = path.read_text(encoding="utf-8")
-          for old, new in {
+          replacements = {
               "[auth]\nenabled = false": "[auth]\nenabled = true",
               "[storage]\nenabled = false": "[storage]\nenabled = true",
-          }.items():
+          }
+          for old, new in replacements.items():
               if old not in text:
                   raise SystemExit(f"Expected fail-closed Supabase config marker not found: {old!r}")
               text = text.replace(old, new, 1)
@@ -267,6 +131,7 @@ reset role;
       - name: Diff hygiene
         shell: bash
         run: |
+          git fetch origin main --no-tags
           git diff --check
           git diff --check origin/main...HEAD
 
@@ -275,9 +140,16 @@ reset role;
         run: |
           git checkout -- supabase/config.toml
           if git diff --quiet; then
-            echo "Phase A implementation already present; no commit required."
+            echo "Phase A implementation already present; exact head required no mutation."
             exit 0
           fi
+
+          remote_head="$(git ls-remote origin refs/heads/agent/stage1-self-service-v2 | cut -f1)"
+          if [ "$remote_head" != "$GITHUB_SHA" ]; then
+            echo "Ref moved during Phase A execution: expected $GITHUB_SHA, found $remote_head" >&2
+            exit 1
+          fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
