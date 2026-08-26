@@ -30,10 +30,8 @@ function verifyRealActivationIdentity(): void {
   }
 
   requireActivationValue("VITE_OPERATOR_LEGAL_NAME", 4);
-  requireActivationValue("VITE_OPERATOR_ADDRESS", 10);
   const email = requireActivationValue("VITE_OPERATOR_EMAIL", 6);
   const phone = requireActivationValue("VITE_OPERATOR_PHONE_E164", 8);
-  requireActivationValue("VITE_OPERATOR_TAX_REGISTRY", 3);
 
   if (!EMAIL_PATTERN.test(email)) {
     throw new Error("Real-data activation build requires a valid VITE_OPERATOR_EMAIL.");
