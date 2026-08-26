@@ -4,8 +4,11 @@ export const CLOSED_ROBOTS = "noindex, nofollow, noarchive, nosnippet";
 export const publicValidationIndexingEnabled =
   import.meta.env.VITE_REAL_DATA_ACTIVATION === "enabled";
 
-export function robotsContent(indexableInPublicValidation: boolean): string | null {
-  return publicValidationIndexingEnabled && indexableInPublicValidation ? null : CLOSED_ROBOTS;
+export function robotsContent(
+  indexableInPublicValidation: boolean,
+  indexingEnabled = publicValidationIndexingEnabled,
+): string | null {
+  return indexingEnabled && indexableInPublicValidation ? null : CLOSED_ROBOTS;
 }
 
 function escapeXml(value: string): string {
