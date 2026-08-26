@@ -1,138 +1,251 @@
 # Arar Buluruz — New Chat Bootstrap
 
-_Last reviewed: 2026-08-09, Europe/Istanbul_
+_Last reviewed: 2026-08-26, Europe/Istanbul_
+
+## Purpose
+
+This is the common entry point for a new Arar Buluruz chat.
+
+A new chat must reconstruct both:
+
+- **what the project currently is**, and
+- **what role this chat has in the team**.
+
+Do not assume room numbers are permanent identities. `Sohbet N` and `Sohbet Danışman N` are rolling rooms; the Main Execution and Advisor roles persist across them.
 
 ## Mandatory reading order
 
-1. [`AGENTS.md`](../AGENTS.md)
-2. [`ARAR_BULURUZ_PROJECT_MEMORY.md`](ARAR_BULURUZ_PROJECT_MEMORY.md)
-3. [`ARAR_BULURUZ_CURRENT_STATE.md`](ARAR_BULURUZ_CURRENT_STATE.md)
-4. [`ARAR_BULURUZ_DECISION_LOG.md`](ARAR_BULURUZ_DECISION_LOG.md)
-5. [`ARAR_BULURUZ_BACKLOG.md`](ARAR_BULURUZ_BACKLOG.md)
-6. [`REAL_CORLU_PILOT_BACKEND_PREP.md`](REAL_CORLU_PILOT_BACKEND_PREP.md)
-7. [`EXTERNAL_SALES_LINK_SECURITY.md`](EXTERNAL_SALES_LINK_SECURITY.md)
-8. [`TR_SELF_HOSTED_SUPABASE_PREP.md`](TR_SELF_HOSTED_SUPABASE_PREP.md)
-9. relevant dated evidence
+1. [`../AGENTS.md`](../AGENTS.md)
+2. [`AI_OPERATING_MODEL_V2.md`](AI_OPERATING_MODEL_V2.md)
+3. [`ACTIVE_CHAT_HANDOFF.md`](ACTIVE_CHAT_HANDOFF.md)
+4. [`ARAR_BULURUZ_CURRENT_STATE.md`](ARAR_BULURUZ_CURRENT_STATE.md)
+5. exact active branch/PR/issue and executable evidence
+6. [`ARAR_BULURUZ_PROJECT_MEMORY.md`](ARAR_BULURUZ_PROJECT_MEMORY.md)
+7. [`ARAR_BULURUZ_DECISION_LOG.md`](ARAR_BULURUZ_DECISION_LOG.md)
+8. [`ARAR_BULURUZ_BACKLOG.md`](ARAR_BULURUZ_BACKLOG.md) as needed
+9. relevant technical contracts / dated evidence
+10. [`AI_TEAM_CAPABILITIES.md`](AI_TEAM_CAPABILITIES.md) and [`WORK_CODEX_CAPABILITY_PROFILE.md`](WORK_CODEX_CAPABILITY_PROFILE.md) only as historical capability evidence where useful
 
-GitHub `main`, the exact branch/PR and executable evidence override summaries and chat memory.
+GitHub `main`, exact active branch/PR and executable evidence override summaries and chat memory.
 
-## Current canonical snapshot
+`AI_OPERATING_MODEL_V2.md` overrides older capability documents on **current role ownership, routing and handoff protocol** unless a later explicit founder decision supersedes it.
 
-- Repository: `ronurgungor/arar-buluruz`.
-- Current canonical main before this documentation-sync gate: `9376ba60dfc049a4df27ce25255fa5923b2a154e`.
-- PR #52 merged successfully and its V0 usability release was publicly published.
-- Public-runtime smoke testing passed.
-- Users found the application understandable.
-- Initial real supply intent is validated: real users explicitly said their actual listings may be published.
-- PR #53 merged successfully as current `main` `9376ba60dfc049a4df27ce25255fa5923b2a154e`.
-- Post-merge CI `31280761870` succeeded.
-- Post-merge V0 minimal PWA run `31280761873` succeeded.
+## First action in every new room
 
-## Repository state is not the public runtime
+Before giving a material project answer:
 
-This distinction is mandatory.
+1. verify live repository `main` SHA;
+2. verify active PR/issue state relevant to the task;
+3. identify whether this room is the **Main Execution Chat**, **Advisor Chat** or a specialist/reviewer;
+4. identify the current active writer before any repository mutation;
+5. compare the dated `ACTIVE_CHAT_HANDOFF.md` snapshot with live GitHub and correct stale facts mentally before proceeding.
 
-### Repository `main`
+Do not ask the founder to repeat project history that can be recovered from these sources.
 
-`main` now contains inactive preparation for a future controlled real Çorlu pilot, including migration/RLS/private-schema/Storage/external-sales/runbook preparation.
+## Project identity
 
-This preparation is not live production functionality.
+- Product: **Arar Buluruz**
+- Repository: `ronurgungor/arar-buluruz`
+- Canonical branch: `main`
+- Founder-local checkout: `C:\Projects\arar-buluruz`
+- Public Lovable URL: `https://arar-buluruz.lovable.app`
+- Independent from Tarladan; no shared code/data/integrations/brand assets.
 
-### Currently deployed public V0
+## Product thesis
 
-The public runtime still uses:
+Arar Buluruz is a simple, mobile-first, search-first classifieds concept for Türkiye.
 
-- synthetic/mock listings;
-- a zero-data demo listing form;
-- no real backend connection;
-- no real personal data;
-- no real Storage;
+Core principles:
+
+- users type what they need rather than being forced through a category tree;
+- listings should be fast to scan and easy to act on;
+- product complexity stays low until real evidence justifies it;
+- initial marketplace interaction happens outside the platform;
+- monetization comes after product/liquidity evidence, not before it.
+
+The business objective is not to build an impressive prototype. It is to learn whether the product can obtain **real demand, repeatable marketplace value and eventually sustainable profit**.
+
+## Truth-first standard
+
+The founder explicitly prioritizes facts over reassurance.
+
+Do not protect sunk cost. Do not inflate theoretical risks into blockers. Do not minimize real risks to sound optimistic.
+
+Prefer:
+
+1. verified facts;
+2. official/current sources;
+3. real product evidence;
+4. clearly labelled inference/interpretation;
+5. recommendation.
+
+For reviews classify findings as:
+
+- `BLOCKER`
+- `IMPORTANT`
+- `CAN WAIT`
+- `FALSE POSITIVE / OVERENGINEERING`
+
+Every proposed blocker must answer:
+
+> Why exactly does this stop the specific next bounded experiment?
+
+## Current technical evidence boundary
+
+Exact details and SHAs belong in `ARAR_BULURUZ_CURRENT_STATE.md` and live GitHub.
+
+At this bootstrap revision, canonical evidence already supports:
+
+- Development PASS;
+- portability PASS;
+- hosted synthetic pilot release-candidate technical proof PASS;
+- founder-controlled synthetic create/photo/publish/public-contact/unpublish/delete lifecycle proof;
+- private Storage + signed-photo delivery proof;
+- migration/backup/restore/rollback portability proof;
+- PWA/offline/fail-closed production-artifact proof;
+- privileged/service-role material outside the public browser artifact.
+
+Do not casually rebuild already-proven architecture without a material new reason.
+
+Repository readiness is not the same as live production activation.
+
+## Current pilot direction
+
+Use `ACTIVE_CHAT_HANDOFF.md` for the latest exact status.
+
+The intended rollout remains deliberately small:
+
+**1 real Çorlu listing → review → 3 → review → 5–10.**
+
+Initial direction:
+
+- founder-operated moderation;
 - no Auth;
-- no public external-sales CTA.
+- no seller account/dashboard;
+- no public self-service write;
+- no chat;
+- no platform payment/order/reservation;
+- no commission;
+- ads OFF during initial product validation;
+- seller calls founder;
+- founder creates pending listing through trusted operator path;
+- public seller contact initially phone-only;
+- buyer/seller transaction entirely outside Arar Buluruz;
+- WhatsApp intake/contact/complaint OFF for the current first-pilot direction.
 
-Do not infer deployed behavior solely from repository capabilities.
+This is a validation model, not a permanent architecture commitment.
 
-## Product evidence boundary
+## Current hard boundaries
 
-Current evidence supports:
+Unless the founder explicitly changes them:
 
-- users understand the core product;
-- search/discovery and the V0 usability flow are usable enough for the current stage;
-- initial seller/supply intent exists.
+- AWS OFF;
+- production activation OFF;
+- real personal data OFF until the explicit real-data/public-activation gate;
+- paid recurring production infrastructure OFF;
+- monetization/ads OFF during initial validation;
+- Tarladan untouched;
+- no production secret/environment mutation;
+- no Auth/payment/chat/seller-dashboard scope creep.
 
-Current evidence does **not** prove:
+A free pilot does not mean “no law applies”; equally, legal uncertainty is not automatically a prior-permission blocker. Materiality and exact applicability must be assessed.
 
-- successful real listing operations;
-- seller identity/ownership workflows;
-- sustainable moderation;
-- the future seller-contact model;
-- safe public external-sales use;
-- a functioning supply-demand loop;
-- production backend operations.
+## Team model
 
-The next proposed real pilot remains **5–10 founder-controlled real Çorlu listings**, but no real-data activation is authorized.
+### Main Execution Chat
 
-## External-sales / Shopier boundary
+Rolling `Sohbet N` room. Primary implementer and ordinary technical owner.
 
-The accepted model is provider-neutral **Satış bağlantısı / External Sales Link**.
+### Advisor Chat
 
-- no Shopier API;
-- no OAuth;
-- no seller credential access;
-- no scraping;
-- no iframe;
-- Shopier is an independent third-party provider, not an Arar integration or partnership;
-- a seller may later supply their own public sales URL;
-- Arar Buluruz does not process or hold payment funds;
-- the functionality is currently not public.
+Rolling `Sohbet Danışman N` room. Roadmap, prioritization, REDTEAM, independent verification, blocker classification and specialist routing owner.
 
-Do not promote any later research recommendation about a particular provider, contact model or backup vendor into a founder decision unless the decision log explicitly records it.
+### Codex
 
-## Hard founder financial constraint
+Budgeted specialist engineer and strongest escalation path for unusually difficult engineering, debugging, migration, security/server code, deep tests or code-level root cause. May implement directly where its comparative advantage justifies usage.
 
-Arar Buluruz currently earns no revenue.
+### Work
 
-Until a separate explicit **FOUNDER BUDGET / REVENUE GATE** is opened and approved:
+Budgeted deep-research / analysis / independent-review specialist. Use when another reasoning/research pass materially reduces consequential decision risk.
 
-- no paid VPS;
-- no paid hosted backend;
-- no paid backup;
-- no recurring paid production infrastructure.
+### Lovable
 
-Technical readiness is not spending authorization. Existing self-hosting documents describe future technical prerequisites only.
+Credit-budgeted high-throughput frontend/UX specialist. Use for long, repetitive or visual frontend work where it saves meaningful effort. Do not hand it backend/security/production ownership.
 
-## Privacy boundary
+### Founder
 
-Real personal-data collection remains blocked.
+Final consequential decision owner, not routine technical debugger.
 
-No real seller contact, photo, listing or other personal data may be entered before a separate founder-approved real-data gate completes the required privacy/KVKK and production controls.
+See `AI_OPERATING_MODEL_V2.md` for the full routing contract.
 
-## Team and authority
+## One-writer rule
 
-- **Founder:** owns consequential product, backend, data, KVKK, cost and publication decisions.
-- **Main assistant:** routine implementer/coordinator inside an explicitly approved reversible scope.
-- **Independent reviewers (including Claude):** advisory only. Findings are inputs to founder decision-making and are not automatic implementation authorization.
-- **Lovable:** bounded frontend writer/hosting surface; never backend owner.
+Only one writer owns the same active implementation scope at a time.
 
-Only one writer operates at a time. Stop before production deploy, Lovable Publish/Update, remote backend, secrets/environment mutation, real data, Auth/Storage activation, paid service, advertising or analytics unless the founder explicitly opens the relevant gate.
+Before switching writers preserve:
 
-## Next activity
+- exact branch/SHA;
+- working-tree state;
+- files/changes;
+- tests/results;
+- remaining work;
+- rollback notes;
+- forbidden scope.
 
-After this documentation-only sync is merged, the next activity is an **independent Claude full-repository review**.
+Read-only independent review may happen in parallel.
 
-That review is research/advisory only:
+## Chat rollover rule
 
-- no repository mutation is implied;
-- no recommendation is automatically accepted;
-- no new architecture/product decision is created merely because Claude proposes it;
-- implementation requires a separate founder-authorized gate.
+When a room fills, the next room must continue the **role**, not restart the project.
+
+Before rollover update `ACTIVE_CHAT_HANDOFF.md` with:
+
+- exact current `main`;
+- active PR/branch/head;
+- active phase;
+- immediate next action;
+- recent founder decisions not yet reflected elsewhere;
+- unresolved material risks;
+- specialist availability/budget if relevant;
+- active writer and safe-switch status.
+
+The new room then re-verifies live GitHub before acting.
+
+## Scope-creep guard
+
+Do not add now without measured need and explicit scope:
+
+- Auth/accounts;
+- seller dashboards;
+- chat;
+- payments;
+- recommendation engines;
+- category-tree navigation;
+- social features;
+- Kubernetes/EKS;
+- microservices;
+- sophisticated analytics;
+- speculative observability/HA.
+
+Before suggesting a feature ask whether it materially improves:
+
+- listing supply;
+- discovery/search;
+- listing comprehension;
+- seller-contact conversion;
+- pilot safety/compliance;
+- operational simplicity;
+- or later measurable revenue readiness.
+
+If not, do not add it.
 
 ## Knowledge write-back
 
-- durable principle → project memory;
+- durable principle → project memory / operating model;
 - current implementation/runtime → current state;
+- rolling room context → active chat handoff;
 - pending work → backlog;
 - consequential founder choice → decision log;
-- test or publication result → dated evidence where appropriate.
+- test/publication result → dated evidence where appropriate.
 
-No secret, credential, private user record or unnecessary personal data belongs in these files.
+Do not store secrets, credentials, private user records or unnecessary personal data in these files.
