@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound, useNavigate, useRouter } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
+import { CLOSED_ROBOTS, robotsContent } from "@/build-profiles/pilot/public-discovery";
 import { loadPilotListingDetail } from "@/build-profiles/pilot/public-listings";
 import { ALL_CITIES, ALL_DISTRICTS } from "@/lib/listing-search";
 import { hasListingResultsHistory } from "@/lib/listing-return";
@@ -25,16 +26,17 @@ export const Route = createFileRoute("/ilan/$id")({
       return {
         meta: [
           { title: "İlan bulunamadı — Arar Buluruz" },
-          { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
+          { name: "robots", content: CLOSED_ROBOTS },
         ],
       };
     const { listing } = loaderData;
     const description = `${listing.title} — ${formatPrice(listing.price)} · ${listing.city}/${listing.district}`;
+    const robots = robotsContent(true);
     return {
       meta: [
         { title: `${listing.title} — Arar Buluruz` },
         { name: "description", content: description },
-        { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
+        ...(robots ? [{ name: "robots", content: robots }] : []),
       ],
     };
   },
@@ -78,6 +80,13 @@ function ListingDetail() {
           >
             <h1 className="text-lg font-bold text-foreground">İlan şu anda gösterilemiyor.</h1>
             <p className="mt-2 text-sm text-muted-foreground">{result.message}</p>
+            <button
+              type="button"
+              onClick={() => router.invalidate()}
+              className="mt-4 h-11 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+            >
+              Tekrar dene
+            </button>
           </div>
         </main>
       </div>
@@ -88,6 +97,7 @@ function ListingDetail() {
     listing.publicContact?.channel === "phone" && E164_PATTERN.test(listing.publicContact.e164)
       ? listing.publicContact.e164
       : null;
+  const [heroPhoto, ...additionalPhotos] = listing.photos;
 
   return (
     <div className="min-h-screen">
@@ -102,22 +112,34 @@ function ListingDetail() {
           <ChevronLeft className="h-4 w-4" aria-hidden /> Sonuçlara dön
         </button>
 
-        {listing.photos.length > 0 ? (
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            {listing.photos.map((photo, index) => (
-              <img
-                key={photo}
-                src={photo}
-                alt={`${listing.title} fotoğraf ${index + 1}`}
-                width={800}
-                height={600}
-                className="aspect-[4/3] w-full rounded-2xl object-cover"
-              />
-            ))}
+        {heroPhoto ? (
+          <div className="mt-2">
+            <img
+              src={heroPhoto}
+              alt={`${listing.title} fotoğraf 1`}
+              width={800}
+              height={600}
+              className="aspect-[4/3] w-full rounded-2xl object-cover"
+            />
+            {additionalPhotos.length > 0 && (
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {additionalPhotos.map((photo, index) => (
+                  <img
+                    key={photo}
+                    src={photo}
+                    alt={`${listing.title} fotoğraf ${index + 2}`}
+                    width={800}
+                    height={600}
+                    loading="lazy"
+                    className="aspect-[4/3] w-full rounded-xl object-cover"
+                  />
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <div className="mt-2 flex aspect-[4/3] w-full items-center justify-center rounded-2xl bg-muted text-sm text-muted-foreground">
-            Bu pilot ilanında fotoğraf bulunmuyor.
+            Bu ilanda fotoğraf bulunmuyor.
           </div>
         )}
 
@@ -161,8 +183,7 @@ function ListingDetail() {
           {phoneE164 ? (
             <>
               <p className="mb-2 text-center text-xs text-muted-foreground">
-                Arama cihazınızın telefon uygulaması üzerinden gerçekleşir. WhatsApp Stage 1–3
-                pilotunda kapalıdır.
+                Arama cihazınızın telefon uygulaması üzerinden gerçekleşir.
               </p>
               <a
                 href={`tel:${phoneE164}`}
@@ -173,7 +194,7 @@ function ListingDetail() {
             </>
           ) : (
             <p className="rounded-xl border border-border bg-card p-3 text-center text-sm text-muted-foreground">
-              Bu ilanda Stage 1–3 için uygun yayınlanmış telefon bilgisi bulunmuyor.
+              Bu ilanda yayınlanmış telefon bilgisi bulunmuyor.
             </p>
           )}
         </div>
