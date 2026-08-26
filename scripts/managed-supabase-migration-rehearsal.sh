@@ -375,6 +375,8 @@ update public.listings
 set contact_verified_at = now() - interval '2 minutes',
     contact_verification_method = 'whatsapp_same_number',
     publication_instruction_at = now() - interval '1 minute',
+    private_seller_declaration_at = now() - interval '30 seconds',
+    content_rights_declaration_at = now() - interval '30 seconds',
     status = 'published',
     published_at = now(),
     expires_at = now() + interval '1 day'

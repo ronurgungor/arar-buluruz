@@ -10,10 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
-import {
-  LISTING_PHOTO_ALLOWED_MIME_TYPES,
-  LISTING_PHOTO_MAX_BYTES,
-} from "@/lib/listing-photo";
+import { LISTING_PHOTO_ALLOWED_MIME_TYPES, LISTING_PHOTO_MAX_BYTES } from "@/lib/listing-photo";
 import { PILOT_DISTRICT, PILOT_PROVINCE } from "@/lib/pilot-operator-contract";
 import {
   STAGE1_CATEGORIES,
@@ -34,9 +31,8 @@ export const Route = createFileRoute("/ilan-ver")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { handleStage1SelfServiceRequest } = await import(
-          "../lib/stage1-self-service-server"
-        );
+        const { handleStage1SelfServiceRequest } =
+          await import("../lib/stage1-self-service-server");
         return handleStage1SelfServiceRequest(request);
       },
     },
@@ -46,8 +42,7 @@ export const Route = createFileRoute("/ilan-ver")({
       { title: "İlan Ver — Arar Buluruz" },
       {
         name: "description",
-        content:
-          "Fotoğraflarını ekle, ilanını birkaç adımda oluştur ve Çorlu'daki alıcılara ulaş.",
+        content: "Fotoğraflarını ekle, ilanını birkaç adımda oluştur ve Çorlu'daki alıcılara ulaş.",
       },
       { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
     ],
@@ -140,8 +135,7 @@ function Stage1ListingWizard() {
   const [description, setDescription] = useState("");
   const [sellerDisplayName, setSellerDisplayName] = useState("");
   const [phone, setPhone] = useState("+90");
-  const [contactPreference, setContactPreference] =
-    useState<Stage1ContactPreference>("phone");
+  const [contactPreference, setContactPreference] = useState<Stage1ContactPreference>("phone");
   const [privateSellerConfirmed, setPrivateSellerConfirmed] = useState(false);
   const [contentRightsConfirmed, setContentRightsConfirmed] = useState(false);
   const [publicationConfirmed, setPublicationConfirmed] = useState(false);
@@ -230,10 +224,7 @@ function Stage1ListingWizard() {
         setError("İlan başlığı en az 3 karakter olmalıdır.");
         return false;
       }
-      if (
-        !isFree &&
-        (!PRICE_PATTERN.test(price.trim()) || Number(price.replace(",", ".")) < 0)
-      ) {
+      if (!isFree && (!PRICE_PATTERN.test(price.trim()) || Number(price.replace(",", ".")) < 0)) {
         setError("Geçerli bir fiyat girin veya Ücretsiz seçeneğini işaretleyin.");
         return false;
       }
@@ -574,21 +565,13 @@ function Stage1ListingWizard() {
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="text-sm font-medium">İl</span>
-                <select
-                  value={PILOT_PROVINCE}
-                  disabled
-                  className={`mt-1 ${selectClass} bg-muted`}
-                >
+                <select value={PILOT_PROVINCE} disabled className={`mt-1 ${selectClass} bg-muted`}>
                   <option>{PILOT_PROVINCE}</option>
                 </select>
               </label>
               <label className="block">
                 <span className="text-sm font-medium">İlçe</span>
-                <select
-                  value={PILOT_DISTRICT}
-                  disabled
-                  className={`mt-1 ${selectClass} bg-muted`}
-                >
+                <select value={PILOT_DISTRICT} disabled className={`mt-1 ${selectClass} bg-muted`}>
                   <option>{PILOT_DISTRICT}</option>
                 </select>
               </label>

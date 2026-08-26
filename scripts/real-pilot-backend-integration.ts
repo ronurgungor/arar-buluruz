@@ -459,6 +459,8 @@ await requireOk(
       contact_verified_at: new Date(now.getTime() - 2 * 60 * 1000).toISOString(),
       contact_verification_method: "whatsapp_same_number",
       publication_instruction_at: new Date(now.getTime() - 60 * 1000).toISOString(),
+      private_seller_declaration_at: new Date(now.getTime() - 30 * 1000).toISOString(),
+      content_rights_declaration_at: new Date(now.getTime() - 30 * 1000).toISOString(),
       status: "published",
       published_at: now.toISOString(),
       expires_at: expires.toISOString(),

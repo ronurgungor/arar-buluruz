@@ -1,6 +1,10 @@
 import { createContext, useContext, type ReactNode } from "react";
 
-export const AD_PLACEMENTS = ["home_primary", "search_infeed_1", "detail_after_description"] as const;
+export const AD_PLACEMENTS = [
+  "home_primary",
+  "search_infeed_1",
+  "detail_after_description",
+] as const;
 export type AdPlacement = (typeof AD_PLACEMENTS)[number];
 export type AdRenderer = (placement: AdPlacement) => ReactNode;
 

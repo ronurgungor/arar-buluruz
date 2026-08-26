@@ -102,7 +102,9 @@ async function publicPhotoManifest(listingId: string): Promise<Array<{ object_pa
   return (await response.json()) as Array<{ object_path: string }>;
 }
 
-async function privilegedPhotoInventory(listingId: string): Promise<Array<{ object_path: string }>> {
+async function privilegedPhotoInventory(
+  listingId: string,
+): Promise<Array<{ object_path: string }>> {
   const response = await fetch(`${backendOrigin}/rest/v1/rpc/get_listing_photo_inventory`, {
     method: "POST",
     headers: serviceHeaders,
@@ -126,7 +128,10 @@ async function assertAnonDirectWritesDenied(): Promise<void> {
       status: "pending",
     }),
   });
-  assert(!directInsert.ok, `Anonymous direct listing INSERT unexpectedly succeeded: ${directInsert.status}`);
+  assert(
+    !directInsert.ok,
+    `Anonymous direct listing INSERT unexpectedly succeeded: ${directInsert.status}`,
+  );
 
   const directStorage = await fetch(
     `${backendOrigin}/storage/v1/object/listing_photos/forbidden/direct-write.webp`,
@@ -141,16 +146,22 @@ async function assertAnonDirectWritesDenied(): Promise<void> {
       body: new Uint8Array([0x52, 0x49, 0x46, 0x46]),
     },
   );
-  assert(!directStorage.ok, `Anonymous direct Storage write unexpectedly succeeded: ${directStorage.status}`);
+  assert(
+    !directStorage.ok,
+    `Anonymous direct Storage write unexpectedly succeeded: ${directStorage.status}`,
+  );
 }
 
 async function assertSignedObjectUnavailable(objectPath: string): Promise<void> {
   const encoded = objectPath.split("/").map(encodeURIComponent).join("/");
-  const response = await fetch(`${backendOrigin}/storage/v1/object/sign/listing_photos/${encoded}`, {
-    method: "POST",
-    headers: anonHeaders,
-    body: JSON.stringify({ expiresIn: 60 }),
-  });
+  const response = await fetch(
+    `${backendOrigin}/storage/v1/object/sign/listing_photos/${encoded}`,
+    {
+      method: "POST",
+      headers: anonHeaders,
+      body: JSON.stringify({ expiresIn: 60 }),
+    },
+  );
   assert(!response.ok, `Inactive/private photo unexpectedly remained signable: ${response.status}`);
 }
 
@@ -163,19 +174,24 @@ async function assertNoHorizontalOverflow(page: Page, route: string): Promise<vo
 }
 
 async function assertStyledPilot(page: Page): Promise<void> {
-  const style = await page.getByRole("link", { name: "İlan Ver", exact: true }).evaluate((element) => {
-    const computed = getComputedStyle(element);
-    return {
-      display: computed.display,
-      minHeight: computed.minHeight,
-      borderRadius: computed.borderRadius,
-      backgroundColor: computed.backgroundColor,
-    };
-  });
+  const style = await page
+    .getByRole("link", { name: "İlan Ver", exact: true })
+    .evaluate((element) => {
+      const computed = getComputedStyle(element);
+      return {
+        display: computed.display,
+        minHeight: computed.minHeight,
+        borderRadius: computed.borderRadius,
+        backgroundColor: computed.backgroundColor,
+      };
+    });
   assert(style.display !== "inline", `Pilot CTA appears browser-default: ${JSON.stringify(style)}`);
   assert(parseFloat(style.minHeight) >= 40, `Pilot CTA CSS did not load: ${JSON.stringify(style)}`);
   assert(parseFloat(style.borderRadius) > 10, `Pilot CTA radius missing: ${JSON.stringify(style)}`);
-  assert(style.backgroundColor !== "rgba(0, 0, 0, 0)", `Pilot CTA background missing: ${JSON.stringify(style)}`);
+  assert(
+    style.backgroundColor !== "rgba(0, 0, 0, 0)",
+    `Pilot CTA background missing: ${JSON.stringify(style)}`,
+  );
 }
 
 async function submitListing(
@@ -212,10 +228,31 @@ async function submitListing(
 
   await page.getByLabel("İlanda görünecek ad", { exact: true }).fill("Sentetik Satıcı");
   await page.getByLabel("Telefon", { exact: true }).fill(input.phone);
-  await page.getByLabel(input.contact === "phone_whatsapp" ? "Telefon + WhatsApp" : input.contact === "phone" ? "Telefon" : "WhatsApp", { exact: true }).check();
-  await page.getByText(/Özel kişi olarak ara sıra ilan veriyorum/).locator("..").getByRole("checkbox").check();
-  await page.getByText(/Fotoğraf ve metni paylaşmaya yetkim var/).locator("..").getByRole("checkbox").check();
-  await page.getByText(/Bu telefon bana ait/).locator("..").getByRole("checkbox").check();
+  await page
+    .getByLabel(
+      input.contact === "phone_whatsapp"
+        ? "Telefon + WhatsApp"
+        : input.contact === "phone"
+          ? "Telefon"
+          : "WhatsApp",
+      { exact: true },
+    )
+    .check();
+  await page
+    .getByText(/Özel kişi olarak ara sıra ilan veriyorum/)
+    .locator("..")
+    .getByRole("checkbox")
+    .check();
+  await page
+    .getByText(/Fotoğraf ve metni paylaşmaya yetkim var/)
+    .locator("..")
+    .getByRole("checkbox")
+    .check();
+  await page
+    .getByText(/Bu telefon bana ait/)
+    .locator("..")
+    .getByRole("checkbox")
+    .check();
 
   await page.getByRole("button", { name: "İlanı gönder" }).click();
   if (input.expectVerification) {
@@ -252,7 +289,10 @@ for (const page of [sellerPage, founderPage, buyerPage]) {
   });
   page.on("response", (response: PlaywrightResponse) => {
     const url = response.url();
-    if ((url.includes("/assets/") || /\.(?:css|js)(?:\?|$)/.test(url)) && response.status() >= 400) {
+    if (
+      (url.includes("/assets/") || /\.(?:css|js)(?:\?|$)/.test(url)) &&
+      response.status() >= 400
+    ) {
       assetFailures.push(`${response.status()} ${url}`);
     }
   });
@@ -273,7 +313,10 @@ for (const page of [sellerPage, founderPage, buyerPage]) {
 try {
   await buyerPage.goto(publicBaseUrl, { waitUntil: "networkidle" });
   await assertStyledPilot(buyerPage);
-  assert((await buyerPage.locator("[data-ad-placement]").count()) === 0, "Disabled home ad slot left visible DOM.");
+  assert(
+    (await buyerPage.locator("[data-ad-placement]").count()) === 0,
+    "Disabled home ad slot left visible DOM.",
+  );
   assert(assetFailures.length === 0, `Pilot CSS/JS asset failures: ${assetFailures.join(" | ")}`);
   await assertAnonDirectWritesDenied();
 
@@ -286,12 +329,24 @@ try {
     expectVerification: true,
     photoSeed: 17,
   });
-  await sellerPage.screenshot({ path: path.join(resultsDir, "seller-pending-success.png"), fullPage: true });
+  await sellerPage.screenshot({
+    path: path.join(resultsDir, "seller-pending-success.png"),
+    fullPage: true,
+  });
 
-  assert((await anonListingRows(listingId)).length === 0, "Pending listing became anonymously readable.");
-  assert((await publicPhotoManifest(listingId)).length === 0, "Pending photo manifest became public.");
+  assert(
+    (await anonListingRows(listingId)).length === 0,
+    "Pending listing became anonymously readable.",
+  );
+  assert(
+    (await publicPhotoManifest(listingId)).length === 0,
+    "Pending photo manifest became public.",
+  );
   const pendingInventory = await privilegedPhotoInventory(listingId);
-  assert(pendingInventory.length === 1, "Pending listing did not retain one sanitized private photo.");
+  assert(
+    pendingInventory.length === 1,
+    "Pending listing did not retain one sanitized private photo.",
+  );
   const originalObjectPath = pendingInventory[0].object_path;
 
   await founderPage.goto(`${founderBaseUrl}/kurucu`, { waitUntil: "networkidle" });
@@ -307,20 +362,31 @@ try {
     complete: (image as HTMLImageElement).complete,
     width: (image as HTMLImageElement).naturalWidth,
   }));
-  assert(moderationDecoded.complete && moderationDecoded.width > 0, "Founder could not preview sanitized private photo.");
+  assert(
+    moderationDecoded.complete && moderationDecoded.width > 0,
+    "Founder could not preview sanitized private photo.",
+  );
   await pendingCard.getByRole("button", { name: "Yayınla" }).click();
   await founderPage.getByText("İlan yayınlandı.", { exact: true }).waitFor();
 
-  await buyerPage.goto(`${publicBaseUrl}/ara?q=${encodeURIComponent("Stage1 both")}`, { waitUntil: "networkidle" });
+  await buyerPage.goto(`${publicBaseUrl}/ara?q=${encodeURIComponent("Stage1 both")}`, {
+    waitUntil: "networkidle",
+  });
   const resultLink = buyerPage.getByRole("link", { name: new RegExp(title) }).first();
   await resultLink.waitFor();
-  assert((await buyerPage.locator("[data-ad-placement]").count()) === 0, "Disabled search ad slot left visible DOM.");
+  assert(
+    (await buyerPage.locator("[data-ad-placement]").count()) === 0,
+    "Disabled search ad slot left visible DOM.",
+  );
   await resultLink.click();
   await buyerPage.waitForLoadState("networkidle");
   await buyerPage.getByRole("heading", { level: 1, name: title }).waitFor();
   const hero = buyerPage.getByAltText(`${title} fotoğraf 1`);
   const heroSrc = await hero.getAttribute("src");
-  assert(heroSrc?.includes("/storage/v1/object/sign/listing_photos/"), `Public photo is not signed: ${heroSrc}`);
+  assert(
+    heroSrc?.includes("/storage/v1/object/sign/listing_photos/"),
+    `Public photo is not signed: ${heroSrc}`,
+  );
   const heroDecoded = await hero.evaluate((image) => ({
     complete: (image as HTMLImageElement).complete,
     width: (image as HTMLImageElement).naturalWidth,
@@ -330,25 +396,49 @@ try {
   const whatsAppAction = buyerPage.getByRole("link", { name: "WhatsApp’tan yaz", exact: true });
   expectHref(await phoneAction.getAttribute("href"), `tel:${phone}`);
   expectHref(await whatsAppAction.getAttribute("href"), `https://wa.me/${phone.slice(1)}`);
-  assert((await buyerPage.locator("[data-ad-placement]").count()) === 0, "Disabled detail ad slot left visible DOM.");
-  await buyerPage.screenshot({ path: path.join(resultsDir, "published-phone-whatsapp.png"), fullPage: true });
+  assert(
+    (await buyerPage.locator("[data-ad-placement]").count()) === 0,
+    "Disabled detail ad slot left visible DOM.",
+  );
+  await buyerPage.screenshot({
+    path: path.join(resultsDir, "published-phone-whatsapp.png"),
+    fullPage: true,
+  });
 
   await founderPage.goto(`${founderBaseUrl}/kurucu`, { waitUntil: "networkidle" });
   const publishedCard = founderPage.getByTestId(`moderation-listing-${listingId}`);
   await publishedCard.getByRole("button", { name: "Yayından kaldır" }).click();
   await founderPage.getByText("İlan yayından kaldırıldı.", { exact: true }).waitFor();
   assert((await anonListingRows(listingId)).length === 0, "Unpublished listing remained public.");
-  assert((await publicPhotoManifest(listingId)).length === 0, "Unpublished photo manifest remained public.");
+  assert(
+    (await publicPhotoManifest(listingId)).length === 0,
+    "Unpublished photo manifest remained public.",
+  );
   await assertSignedObjectUnavailable(originalObjectPath);
 
   await founderPage.goto(`${founderBaseUrl}/kurucu`, { waitUntil: "networkidle" });
-  await founderPage.getByTestId(`moderation-listing-${listingId}`).getByRole("button", { name: "Sil" }).click();
+  await founderPage
+    .getByTestId(`moderation-listing-${listingId}`)
+    .getByRole("button", { name: "Sil" })
+    .click();
   await founderPage.getByText("İlan ve fotoğrafları silindi.", { exact: true }).waitFor();
-  const deletedProbe = await fetch(`${backendOrigin}/rest/v1/listings?id=eq.${listingId}&select=id`, { headers: serviceHeaders });
-  assert(deletedProbe.ok && ((await deletedProbe.json()) as unknown[]).length === 0, "Deleted listing row remained.");
-  assert((await privilegedPhotoInventory(listingId)).length === 0, "Deleted listing photo metadata remained.");
+  const deletedProbe = await fetch(
+    `${backendOrigin}/rest/v1/listings?id=eq.${listingId}&select=id`,
+    { headers: serviceHeaders },
+  );
+  assert(
+    deletedProbe.ok && ((await deletedProbe.json()) as unknown[]).length === 0,
+    "Deleted listing row remained.",
+  );
+  assert(
+    (await privilegedPhotoInventory(listingId)).length === 0,
+    "Deleted listing photo metadata remained.",
+  );
   const encodedDeletedPath = originalObjectPath.split("/").map(encodeURIComponent).join("/");
-  const deletedObject = await fetch(`${backendOrigin}/storage/v1/object/listing_photos/${encodedDeletedPath}`, { headers: serviceHeaders });
+  const deletedObject = await fetch(
+    `${backendOrigin}/storage/v1/object/listing_photos/${encodedDeletedPath}`,
+    { headers: serviceHeaders },
+  );
   assert(!deletedObject.ok, `Deleted Storage object remained readable: ${deletedObject.status}`);
 
   const rejectTitle = `Stage1 reject ${Date.now()}`;
@@ -366,14 +456,28 @@ try {
   await founderPage.getByText("İlan reddedildi.", { exact: true }).waitFor();
   assert((await anonListingRows(rejectId)).length === 0, "Rejected listing became public.");
   await founderPage.goto(`${founderBaseUrl}/kurucu`, { waitUntil: "networkidle" });
-  await founderPage.getByTestId(`moderation-listing-${rejectId}`).getByRole("button", { name: "Sil" }).click();
+  await founderPage
+    .getByTestId(`moderation-listing-${rejectId}`)
+    .getByRole("button", { name: "Sil" })
+    .click();
   await founderPage.getByText("İlan ve fotoğrafları silindi.", { exact: true }).waitFor();
-  assert((await privilegedPhotoInventory(rejectId)).length === 0, "Rejected listing cleanup left photo metadata.");
+  assert(
+    (await privilegedPhotoInventory(rejectId)).length === 0,
+    "Rejected listing cleanup left photo metadata.",
+  );
 
-  assert(privilegedBrowserMutations.length === 0, `Browser performed privileged backend mutations: ${privilegedBrowserMutations.join(" | ")}`);
-  assert(assetFailures.length === 0, `CSS/JS assets failed during Stage-1 journey: ${assetFailures.join(" | ")}`);
+  assert(
+    privilegedBrowserMutations.length === 0,
+    `Browser performed privileged backend mutations: ${privilegedBrowserMutations.join(" | ")}`,
+  );
+  assert(
+    assetFailures.length === 0,
+    `CSS/JS assets failed during Stage-1 journey: ${assetFailures.join(" | ")}`,
+  );
   assert(runtimeErrors.length === 0, `Browser runtime errors: ${runtimeErrors.join(" | ")}`);
-  console.log("Stage-1 seller submission → pending → moderation → publish/contact → unpublish/delete + reject browser acceptance passed.");
+  console.log(
+    "Stage-1 seller submission → pending → moderation → publish/contact → unpublish/delete + reject browser acceptance passed.",
+  );
 } finally {
   await browser.close();
 }

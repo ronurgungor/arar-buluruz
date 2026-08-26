@@ -170,6 +170,8 @@ jobs:
             contact_verified_at,
             contact_verification_method,
             publication_instruction_at,
+            private_seller_declaration_at,
+            content_rights_declaration_at,
             status,
             published_at,
             expires_at
@@ -189,6 +191,8 @@ jobs:
               now() - interval '2 hours',
               'whatsapp_same_number',
               now() - interval '90 minutes',
+              now() - interval '80 minutes',
+              now() - interval '80 minutes',
               'published',
               now() - interval '1 hour',
               now() + interval '1 day'
@@ -202,6 +206,8 @@ jobs:
               'Corlu',
               'Pilot Seller',
               array['draft', 'integration'],
+              null,
+              null,
               null,
               null,
               null,
@@ -225,6 +231,8 @@ jobs:
               now() - interval '3 days',
               'manual_callback',
               now() - interval '2 days 12 hours',
+              now() - interval '2 days 11 hours',
+              now() - interval '2 days 11 hours',
               'published',
               now() - interval '2 days',
               now() - interval '1 day'
