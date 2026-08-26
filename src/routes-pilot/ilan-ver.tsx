@@ -1,8 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, CheckCircle2, ChevronLeft, ChevronRight, ImagePlus, X } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ImagePlus,
+  X,
+} from "lucide-react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
-import { LISTING_PHOTO_ALLOWED_MIME_TYPES, LISTING_PHOTO_MAX_BYTES } from "@/lib/listing-photo";
+import {
+  LISTING_PHOTO_ALLOWED_MIME_TYPES,
+  LISTING_PHOTO_MAX_BYTES,
+} from "@/lib/listing-photo";
 import { PILOT_DISTRICT, PILOT_PROVINCE } from "@/lib/pilot-operator-contract";
 import {
   STAGE1_CATEGORIES,
@@ -23,7 +34,9 @@ export const Route = createFileRoute("/ilan-ver")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { handleStage1SelfServiceRequest } = await import("../lib/stage1-self-service-server");
+        const { handleStage1SelfServiceRequest } = await import(
+          "../lib/stage1-self-service-server"
+        );
         return handleStage1SelfServiceRequest(request);
       },
     },
@@ -33,7 +46,8 @@ export const Route = createFileRoute("/ilan-ver")({
       { title: "İlan Ver — Arar Buluruz" },
       {
         name: "description",
-        content: "Fotoğraflarını ekle, ilanını birkaç adımda oluştur ve Çorlu'daki alıcılara ulaş.",
+        content:
+          "Fotoğraflarını ekle, ilanını birkaç adımda oluştur ve Çorlu'daki alıcılara ulaş.",
       },
       { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
     ],
@@ -43,6 +57,7 @@ export const Route = createFileRoute("/ilan-ver")({
 
 type PhotoDraft = { id: string; file: File; previewUrl: string };
 type CachedCapability = { phone: string; token: string; expiresAt: string };
+type CapabilitySubmitResult = "submitted" | "verification_required" | "failed";
 
 const CAPABILITY_STORAGE_KEY = "arar-buluruz:stage1-phone-capability";
 const E164_PATTERN = /^\+[1-9][0-9]{7,14}$/;
@@ -95,6 +110,14 @@ function storeCapability(phone: string, token: string, expiresAt: string) {
   }
 }
 
+function clearStoredCapability() {
+  try {
+    window.sessionStorage.removeItem(CAPABILITY_STORAGE_KEY);
+  } catch {
+    // A new verification can still continue when storage is unavailable.
+  }
+}
+
 function formatPricePreview(price: string, isFree: boolean): string {
   if (isFree) return "Ücretsiz";
   const number = Number(price.replace(",", "."));
@@ -117,7 +140,8 @@ function Stage1ListingWizard() {
   const [description, setDescription] = useState("");
   const [sellerDisplayName, setSellerDisplayName] = useState("");
   const [phone, setPhone] = useState("+90");
-  const [contactPreference, setContactPreference] = useState<Stage1ContactPreference>("phone");
+  const [contactPreference, setContactPreference] =
+    useState<Stage1ContactPreference>("phone");
   const [privateSellerConfirmed, setPrivateSellerConfirmed] = useState(false);
   const [contentRightsConfirmed, setContentRightsConfirmed] = useState(false);
   const [publicationConfirmed, setPublicationConfirmed] = useState(false);
@@ -128,6 +152,7 @@ function Stage1ListingWizard() {
   const [successId, setSuccessId] = useState<string | null>(null);
   const idempotencyKeyRef = useRef(crypto.randomUUID());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const photosRef = useRef<PhotoDraft[]>([]);
 
   const totalPhotoBytes = useMemo(
     () => photos.reduce((total, photo) => total + photo.file.size, 0),
@@ -135,10 +160,14 @@ function Stage1ListingWizard() {
   );
 
   useEffect(() => {
-    return () => {
-      for (const photo of photos) URL.revokeObjectURL(photo.previewUrl);
-    };
+    photosRef.current = photos;
   }, [photos]);
+
+  useEffect(() => {
+    return () => {
+      for (const photo of photosRef.current) URL.revokeObjectURL(photo.previewUrl);
+    };
+  }, []);
 
   const clearError = () => setError("");
 
@@ -159,7 +188,10 @@ function Stage1ListingWizard() {
         setError("Her fotoğraf en fazla 8 MB olabilir.");
         continue;
       }
-      if (next.reduce((sum, item) => sum + item.file.size, 0) + file.size > STAGE1_MAX_TOTAL_UPLOAD_BYTES) {
+      if (
+        next.reduce((sum, item) => sum + item.file.size, 0) + file.size >
+        STAGE1_MAX_TOTAL_UPLOAD_BYTES
+      ) {
         setError("Toplam fotoğraf boyutu 32 MB sınırını aşamaz.");
         break;
       }
@@ -198,7 +230,10 @@ function Stage1ListingWizard() {
         setError("İlan başlığı en az 3 karakter olmalıdır.");
         return false;
       }
-      if (!isFree && (!PRICE_PATTERN.test(price.trim()) || Number(price.replace(",", ".")) < 0)) {
+      if (
+        !isFree &&
+        (!PRICE_PATTERN.test(price.trim()) || Number(price.replace(",", ".")) < 0)
+      ) {
         setError("Geçerli bir fiyat girin veya Ücretsiz seçeneğini işaretleyin.");
         return false;
       }
@@ -233,24 +268,21 @@ function Stage1ListingWizard() {
     return form;
   };
 
-  const submitWithCapability = async (capability: string) => {
+  const submitWithCapability = async (capability: string): Promise<CapabilitySubmitResult> => {
     const result = await postSelfService(buildSubmissionForm(capability));
     if (result.ok && result.action === "submitted") {
       setSuccessId(result.listingId);
       setVerificationChallengeId(null);
-      return true;
+      return "submitted";
     }
     if (!result.ok) {
       if (result.code === "VERIFICATION_REQUIRED") {
-        try {
-          window.sessionStorage.removeItem(CAPABILITY_STORAGE_KEY);
-        } catch {
-          // Ignore storage cleanup failure.
-        }
+        clearStoredCapability();
+        return "verification_required";
       }
       setError(result.message);
     }
-    return false;
+    return "failed";
   };
 
   const startVerification = async () => {
@@ -276,14 +308,16 @@ function Stage1ListingWizard() {
       setError("İlanı göndermek için üç kısa beyanı tamamlayın.");
       return;
     }
+
     setBusy(true);
     const cachedCapability = readCachedCapability(phone.trim());
     if (cachedCapability) {
-      const submitted = await submitWithCapability(cachedCapability);
-      if (submitted || error) {
+      const result = await submitWithCapability(cachedCapability);
+      if (result === "submitted" || result === "failed") {
         setBusy(false);
         return;
       }
+      clearError();
     }
     await startVerification();
     setBusy(false);
@@ -318,7 +352,9 @@ function Stage1ListingWizard() {
         <main className="mx-auto max-w-xl px-4 pb-16">
           <section className="mt-10 rounded-2xl border border-border bg-card p-6 text-center">
             <CheckCircle2 aria-hidden className="mx-auto h-10 w-10 text-primary" />
-            <h1 className="mt-4 text-2xl font-extrabold tracking-tight">İlanınız incelemeye alındı</h1>
+            <h1 className="mt-4 text-2xl font-extrabold tracking-tight">
+              İlanınız incelemeye alındı
+            </h1>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               İlan henüz yayında değil. Kurucu incelemesinden sonra uygun bulunursa yayınlanacak.
             </p>
@@ -347,11 +383,17 @@ function Stage1ListingWizard() {
           <span className="text-sm font-semibold text-primary">{step}/4</span>
         </div>
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
-          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${step * 25}%` }} />
+          <div
+            className="h-full rounded-full bg-primary transition-all"
+            style={{ width: `${step * 25}%` }}
+          />
         </div>
 
         {error && (
-          <p role="alert" className="mt-4 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+          <p
+            role="alert"
+            className="mt-4 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"
+          >
             {error}
           </p>
         )}
@@ -371,32 +413,60 @@ function Stage1ListingWizard() {
               className="sr-only"
               onChange={(event) => addPhotos(event.currentTarget.files)}
             />
-            <label
-              htmlFor={undefined}
+            <button
+              type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="mt-4 flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card px-4 text-center hover:bg-accent/40"
+              className="mt-4 flex min-h-28 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card px-4 text-center hover:bg-accent/40"
             >
               <ImagePlus aria-hidden className="h-7 w-7 text-primary" />
               <span className="mt-2 text-sm font-bold">Fotoğraf ekle</span>
-              <span className="mt-1 text-xs text-muted-foreground">JPEG, PNG veya WebP · dosya başına 8 MB</span>
-            </label>
+              <span className="mt-1 text-xs text-muted-foreground">
+                JPEG, PNG veya WebP · dosya başına 8 MB
+              </span>
+            </button>
             {photos.length > 0 && (
               <ol className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {photos.map((photo, index) => (
-                  <li key={photo.id} className="overflow-hidden rounded-xl border border-border bg-card">
-                    <img src={photo.previewUrl} alt={`Seçilen fotoğraf ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
+                  <li
+                    key={photo.id}
+                    className="overflow-hidden rounded-xl border border-border bg-card"
+                  >
+                    <img
+                      src={photo.previewUrl}
+                      alt={`Seçilen fotoğraf ${index + 1}`}
+                      className="aspect-[4/3] w-full object-cover"
+                    />
                     <div className="p-2">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="truncate text-xs font-semibold">{index === 0 ? "Kapak" : `${index + 1}. fotoğraf`}</span>
-                        <button type="button" onClick={() => removePhoto(photo.id)} aria-label={`${index + 1}. fotoğrafı kaldır`} className="rounded-full p-2 hover:bg-accent">
+                        <span className="truncate text-xs font-semibold">
+                          {index === 0 ? "Kapak" : `${index + 1}. fotoğraf`}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(photo.id)}
+                          aria-label={`${index + 1}. fotoğrafı kaldır`}
+                          className="rounded-full p-2 hover:bg-accent"
+                        >
                           <X aria-hidden className="h-4 w-4" />
                         </button>
                       </div>
                       <div className="mt-1 flex gap-1">
-                        <button type="button" disabled={index === 0} onClick={() => movePhoto(index, -1)} aria-label="Fotoğrafı öne al" className="min-h-9 flex-1 rounded-lg border border-border disabled:opacity-30">
+                        <button
+                          type="button"
+                          disabled={index === 0}
+                          onClick={() => movePhoto(index, -1)}
+                          aria-label="Fotoğrafı öne al"
+                          className="min-h-9 flex-1 rounded-lg border border-border disabled:opacity-30"
+                        >
                           <ArrowUp aria-hidden className="mx-auto h-4 w-4" />
                         </button>
-                        <button type="button" disabled={index === photos.length - 1} onClick={() => movePhoto(index, 1)} aria-label="Fotoğrafı geriye al" className="min-h-9 flex-1 rounded-lg border border-border disabled:opacity-30">
+                        <button
+                          type="button"
+                          disabled={index === photos.length - 1}
+                          onClick={() => movePhoto(index, 1)}
+                          aria-label="Fotoğrafı geriye al"
+                          className="min-h-9 flex-1 rounded-lg border border-border disabled:opacity-30"
+                        >
                           <ArrowDown aria-hidden className="mx-auto h-4 w-4" />
                         </button>
                       </div>
@@ -406,7 +476,8 @@ function Stage1ListingWizard() {
               </ol>
             )}
             <p className="mt-3 text-xs text-muted-foreground">
-              {photos.length}/{STAGE1_MAX_PHOTOS} fotoğraf · {(totalPhotoBytes / 1024 / 1024).toFixed(1)} MB
+              {photos.length}/{STAGE1_MAX_PHOTOS} fotoğraf ·{" "}
+              {(totalPhotoBytes / 1024 / 1024).toFixed(1)} MB
             </p>
           </section>
         )}
@@ -415,30 +486,66 @@ function Stage1ListingWizard() {
           <section className="mt-6 space-y-4">
             <div>
               <h2 className="text-lg font-bold">Ürün</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Alıcının ürünü hızlıca anlaması için temel bilgiler yeterli.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Alıcının ürünü hızlıca anlaması için temel bilgiler yeterli.
+              </p>
             </div>
             <label className="block">
               <span className="text-sm font-medium">Kategori</span>
-              <select value={category} onChange={(event) => setCategory(event.target.value as Stage1Category)} className={`mt-1 ${selectClass}`}>
-                {STAGE1_CATEGORIES.map((value) => <option key={value} value={value}>{STAGE1_CATEGORY_LABELS[value]}</option>)}
+              <select
+                value={category}
+                onChange={(event) => setCategory(event.target.value as Stage1Category)}
+                className={`mt-1 ${selectClass}`}
+              >
+                {STAGE1_CATEGORIES.map((value) => (
+                  <option key={value} value={value}>
+                    {STAGE1_CATEGORY_LABELS[value]}
+                  </option>
+                ))}
               </select>
             </label>
             <label className="block">
               <span className="text-sm font-medium">Başlık</span>
-              <input value={title} onChange={(event) => setTitle(event.target.value)} minLength={3} maxLength={120} placeholder="Örn. IKEA çalışma masası" className={`mt-1 ${fieldClass}`} />
+              <input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                minLength={3}
+                maxLength={120}
+                placeholder="Örn. IKEA çalışma masası"
+                className={`mt-1 ${fieldClass}`}
+              />
             </label>
             <label className="block">
               <span className="text-sm font-medium">Durum</span>
-              <select value={condition} onChange={(event) => setCondition(event.target.value as Stage1Condition)} className={`mt-1 ${selectClass}`}>
-                {STAGE1_CONDITIONS.map((value) => <option key={value} value={value}>{STAGE1_CONDITION_LABELS[value]}</option>)}
+              <select
+                value={condition}
+                onChange={(event) => setCondition(event.target.value as Stage1Condition)}
+                className={`mt-1 ${selectClass}`}
+              >
+                {STAGE1_CONDITIONS.map((value) => (
+                  <option key={value} value={value}>
+                    {STAGE1_CONDITION_LABELS[value]}
+                  </option>
+                ))}
               </select>
             </label>
             <label className="block">
               <span className="text-sm font-medium">Fiyat (TL)</span>
-              <input disabled={isFree} value={price} onChange={(event) => setPrice(event.target.value)} inputMode="decimal" placeholder="0" className={`mt-1 ${fieldClass} disabled:bg-muted disabled:text-muted-foreground`} />
+              <input
+                disabled={isFree}
+                value={price}
+                onChange={(event) => setPrice(event.target.value)}
+                inputMode="decimal"
+                placeholder="0"
+                className={`mt-1 ${fieldClass} disabled:bg-muted disabled:text-muted-foreground`}
+              />
             </label>
             <label className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium">
-              <input type="checkbox" checked={isFree} onChange={(event) => setIsFree(event.target.checked)} />
+              <input
+                type="checkbox"
+                checked={isFree}
+                onChange={(event) => setIsFree(event.target.checked)}
+              />
               Ücretsiz veriyorum
             </label>
           </section>
@@ -448,27 +555,47 @@ function Stage1ListingWizard() {
           <section className="mt-6 space-y-4">
             <div>
               <h2 className="text-lg font-bold">Detaylar ve konum</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Ürünün durumu ve önemli ayrıntıları yazın. Açık adres istemiyoruz.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Ürünün durumu ve önemli ayrıntıları yazın. Açık adres istemiyoruz.
+              </p>
             </div>
             <label className="block">
               <span className="text-sm font-medium">Açıklama</span>
-              <textarea value={description} onChange={(event) => setDescription(event.target.value)} minLength={10} maxLength={5000} rows={6} placeholder="Ürünün durumu, ölçüsü, varsa kusurları..." className="mt-1 w-full rounded-xl border border-border bg-card p-4 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" />
+              <textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                minLength={10}
+                maxLength={5000}
+                rows={6}
+                placeholder="Ürünün durumu, ölçüsü, varsa kusurları..."
+                className="mt-1 w-full rounded-xl border border-border bg-card p-4 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+              />
             </label>
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="text-sm font-medium">İl</span>
-                <select value={PILOT_PROVINCE} disabled className={`mt-1 ${selectClass} bg-muted`}>
+                <select
+                  value={PILOT_PROVINCE}
+                  disabled
+                  className={`mt-1 ${selectClass} bg-muted`}
+                >
                   <option>{PILOT_PROVINCE}</option>
                 </select>
               </label>
               <label className="block">
                 <span className="text-sm font-medium">İlçe</span>
-                <select value={PILOT_DISTRICT} disabled className={`mt-1 ${selectClass} bg-muted`}>
+                <select
+                  value={PILOT_DISTRICT}
+                  disabled
+                  className={`mt-1 ${selectClass} bg-muted`}
+                >
                   <option>{PILOT_DISTRICT}</option>
                 </select>
               </label>
             </div>
-            <p className="text-xs text-muted-foreground">Stage 1 yalnız Çorlu ilanlarını kabul eder; tam ev adresi alınmaz.</p>
+            <p className="text-xs text-muted-foreground">
+              Stage 1 yalnız Çorlu ilanlarını kabul eder; tam ev adresi alınmaz.
+            </p>
           </section>
         )}
 
@@ -476,26 +603,68 @@ function Stage1ListingWizard() {
           <section className="mt-6 space-y-4">
             <div>
               <h2 className="text-lg font-bold">Satıcı ve iletişim</h2>
-              <p className="mt-1 text-sm text-muted-foreground">İlan onaylandığında alıcılar seçtiğiniz yöntemle doğrudan size ulaşır.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                İlan onaylandığında alıcılar seçtiğiniz yöntemle doğrudan size ulaşır.
+              </p>
             </div>
             <div className="rounded-xl border border-border bg-accent/35 p-3 text-sm leading-relaxed text-muted-foreground">
-              İlan oluşturmak için verdiğiniz bilgiler moderasyon amacıyla işlenir. Telefonunuz yalnız ilan onaylanırsa seçtiğiniz iletişim yöntemlerinde görünür. <Link to="/gizlilik" className="font-semibold text-primary underline underline-offset-4">Gizlilik ve Aydınlatma</Link>
+              İlan oluşturmak için verdiğiniz bilgiler moderasyon amacıyla işlenir. Telefonunuz
+              yalnız ilan onaylanırsa seçtiğiniz iletişim yöntemlerinde görünür.{" "}
+              <Link
+                to="/gizlilik"
+                className="font-semibold text-primary underline underline-offset-4"
+              >
+                Gizlilik ve Aydınlatma
+              </Link>
             </div>
             <label className="block">
               <span className="text-sm font-medium">İlanda görünecek ad</span>
-              <input value={sellerDisplayName} onChange={(event) => setSellerDisplayName(event.target.value)} minLength={2} maxLength={80} autoComplete="name" placeholder="Adınız" className={`mt-1 ${fieldClass}`} />
+              <input
+                value={sellerDisplayName}
+                onChange={(event) => setSellerDisplayName(event.target.value)}
+                minLength={2}
+                maxLength={80}
+                autoComplete="name"
+                placeholder="Adınız"
+                className={`mt-1 ${fieldClass}`}
+              />
             </label>
             <label className="block">
               <span className="text-sm font-medium">Telefon</span>
-              <input value={phone} onChange={(event) => { setPhone(event.target.value); setVerificationChallengeId(null); }} inputMode="tel" autoComplete="tel" placeholder="+905xxxxxxxxx" className={`mt-1 ${fieldClass}`} />
-              <span className="mt-1 block text-xs text-muted-foreground">Gönderirken telefon kontrolü yapılır; klasik hesap oluşturmanız gerekmez.</span>
+              <input
+                value={phone}
+                onChange={(event) => {
+                  setPhone(event.target.value);
+                  setVerificationChallengeId(null);
+                }}
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="+905xxxxxxxxx"
+                className={`mt-1 ${fieldClass}`}
+              />
+              <span className="mt-1 block text-xs text-muted-foreground">
+                Gönderirken telefon kontrolü yapılır; klasik hesap oluşturmanız gerekmez.
+              </span>
             </label>
             <fieldset>
               <legend className="text-sm font-medium">İletişim tercihi</legend>
               <div className="mt-2 grid gap-2 sm:grid-cols-3">
                 {STAGE1_CONTACT_PREFERENCES.map((value) => (
-                  <label key={value} className={`flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold ${contactPreference === value ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
-                    <input type="radio" name="contact-preference" value={value} checked={contactPreference === value} onChange={() => setContactPreference(value)} />
+                  <label
+                    key={value}
+                    className={`flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold ${
+                      contactPreference === value
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-card"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="contact-preference"
+                      value={value}
+                      checked={contactPreference === value}
+                      onChange={() => setContactPreference(value)}
+                    />
                     {STAGE1_CONTACT_LABELS[value]}
                   </label>
                 ))}
@@ -503,53 +672,118 @@ function Stage1ListingWizard() {
             </fieldset>
             <div className="space-y-3 rounded-xl border border-border bg-card p-4 text-sm">
               <label className="flex items-start gap-3">
-                <input type="checkbox" checked={privateSellerConfirmed} onChange={(event) => setPrivateSellerConfirmed(event.target.checked)} className="mt-1" />
-                <span>Özel kişi olarak ara sıra ilan veriyorum; ürün kendi kullanılmış eşyamdır.</span>
+                <input
+                  type="checkbox"
+                  checked={privateSellerConfirmed}
+                  onChange={(event) => setPrivateSellerConfirmed(event.target.checked)}
+                  className="mt-1"
+                />
+                <span>
+                  Özel kişi olarak ara sıra ilan veriyorum; ürün kendi kullanılmış eşyamdır.
+                </span>
               </label>
               <label className="flex items-start gap-3">
-                <input type="checkbox" checked={contentRightsConfirmed} onChange={(event) => setContentRightsConfirmed(event.target.checked)} className="mt-1" />
-                <span>Fotoğraf ve metni paylaşmaya yetkim var; çocuk/üçüncü kişi veya hassas kişisel veri eklemedim.</span>
+                <input
+                  type="checkbox"
+                  checked={contentRightsConfirmed}
+                  onChange={(event) => setContentRightsConfirmed(event.target.checked)}
+                  className="mt-1"
+                />
+                <span>
+                  Fotoğraf ve metni paylaşmaya yetkim var; çocuk/üçüncü kişi veya hassas kişisel
+                  veri eklemedim.
+                </span>
               </label>
               <label className="flex items-start gap-3">
-                <input type="checkbox" checked={publicationConfirmed} onChange={(event) => setPublicationConfirmed(event.target.checked)} className="mt-1" />
-                <span>Bu telefon bana ait; ilan yayınlanırsa seçtiğim iletişim yöntemleri için kamuya açık gösterilmesini istiyorum.</span>
+                <input
+                  type="checkbox"
+                  checked={publicationConfirmed}
+                  onChange={(event) => setPublicationConfirmed(event.target.checked)}
+                  className="mt-1"
+                />
+                <span>
+                  Bu telefon bana ait; ilan yayınlanırsa seçtiğim iletişim yöntemleri için kamuya
+                  açık gösterilmesini istiyorum.
+                </span>
               </label>
             </div>
             <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm">
               <p className="font-semibold">Önizleme</p>
               <p className="mt-2 line-clamp-2">{title || "İlan başlığı"}</p>
               <p className="mt-1 font-bold text-primary">{formatPricePreview(price, isFree)}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{PILOT_PROVINCE} / {PILOT_DISTRICT} · {STAGE1_CONTACT_LABELS[contactPreference]}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {PILOT_PROVINCE} / {PILOT_DISTRICT} · {STAGE1_CONTACT_LABELS[contactPreference]}
+              </p>
             </div>
             {verificationChallengeId && (
               <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
                 <label className="block">
                   <span className="text-sm font-semibold">6 haneli doğrulama kodu</span>
-                  <input value={verificationCode} onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" placeholder="000000" className={`mt-2 ${fieldClass}`} />
+                  <input
+                    value={verificationCode}
+                    onChange={(event) =>
+                      setVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="000000"
+                    className={`mt-2 ${fieldClass}`}
+                  />
                 </label>
-                <button type="button" disabled={busy} onClick={() => void confirmVerification()} className="mt-3 h-12 w-full rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void confirmVerification()}
+                  className="mt-3 h-12 w-full rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
+                >
                   {busy ? "Doğrulanıyor…" : "Doğrula ve gönder"}
                 </button>
               </div>
             )}
             <p className="text-xs text-muted-foreground">
-              İlan Kuralları'nı okuyabilirsiniz: <Link to="/ilan-kurallari" className="font-semibold text-primary underline underline-offset-4">İlan Kuralları</Link>
+              İlan Kuralları'nı okuyabilirsiniz:{" "}
+              <Link
+                to="/ilan-kurallari"
+                className="font-semibold text-primary underline underline-offset-4"
+              >
+                İlan Kuralları
+              </Link>
             </p>
           </section>
         )}
 
         <div className="mt-8 flex items-center gap-3">
           {step > 1 && (
-            <button type="button" disabled={busy} onClick={() => { clearError(); setVerificationChallengeId(null); setStep((current) => current - 1); }} className="inline-flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border border-border px-4 text-sm font-semibold disabled:opacity-50">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                clearError();
+                setVerificationChallengeId(null);
+                setStep((current) => current - 1);
+              }}
+              className="inline-flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border border-border px-4 text-sm font-semibold disabled:opacity-50"
+            >
               <ChevronLeft aria-hidden className="h-4 w-4" /> Geri
             </button>
           )}
           {step < 4 ? (
-            <button type="button" onClick={() => { if (validateCurrentStep()) setStep((current) => current + 1); }} className="ml-auto inline-flex h-12 flex-1 items-center justify-center gap-1 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground">
+            <button
+              type="button"
+              onClick={() => {
+                if (validateCurrentStep()) setStep((current) => current + 1);
+              }}
+              className="ml-auto inline-flex h-12 flex-1 items-center justify-center gap-1 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground"
+            >
               Devam <ChevronRight aria-hidden className="h-4 w-4" />
             </button>
           ) : !verificationChallengeId ? (
-            <button type="button" disabled={busy} onClick={() => void beginFinalSubmit()} className="ml-auto h-12 flex-1 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void beginFinalSubmit()}
+              className="ml-auto h-12 flex-1 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
+            >
               {busy ? "Hazırlanıyor…" : "İlanı gönder"}
             </button>
           ) : null}
