@@ -5,10 +5,7 @@ import {
   type StoredListingPhotoMetadata,
   type TrustedListingPhotoIngestionStore,
 } from "./listing-photo-trusted";
-import {
-  PILOT_DISTRICT,
-  PILOT_PROVINCE,
-} from "./pilot-operator-contract";
+import { PILOT_DISTRICT, PILOT_PROVINCE } from "./pilot-operator-contract";
 import {
   STAGE1_CAPABILITY_TTL_SECONDS,
   STAGE1_MAX_PHOTOS,
@@ -21,7 +18,8 @@ import {
 } from "./stage1-self-service-contract";
 
 const TARLADAN_PROJECT_REFS = new Set(["jlbsoraqnlricbyagxdk", "gwgrwwvaiizfsqaacnhf"]);
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHA256_HEX_PATTERN = /^[0-9a-f]{64}$/;
 const PRICE_PATTERN = /^\d{1,10}(?:[.,]\d{1,2})?$/;
 const MAX_REQUEST_BYTES = STAGE1_MAX_TOTAL_UPLOAD_BYTES + 2 * 1024 * 1024;
@@ -56,7 +54,10 @@ type CapabilityPayload = {
   expiresAt: string;
   nonce: string;
 };
-type SubmissionClaim = { listing_id: string; state: "claimed" | "complete" | "in_progress" };
+type SubmissionClaim = {
+  listing_id: string;
+  state: "claimed" | "complete" | "in_progress";
+};
 
 const challenges = new Map<string, Challenge>();
 const rateBuckets = new Map<string, RateBucket>();
@@ -91,7 +92,11 @@ function assertSameOrigin(request: Request): void {
     throw new Stage1SubmissionError("INVALID_REQUEST", "İstek kaynağı doğrulanamadı.", 403);
   }
   if (originUrl.origin !== requestUrl.origin) {
-    throw new Stage1SubmissionError("INVALID_REQUEST", "Cross-origin ilan gönderimi kabul edilmez.", 403);
+    throw new Stage1SubmissionError(
+      "INVALID_REQUEST",
+      "Cross-origin ilan gönderimi kabul edilmez.",
+      403,
+    );
   }
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite && fetchSite !== "same-origin") {
@@ -177,6 +182,7 @@ function readBackendConfig(): BackendConfig {
       503,
     );
   }
+
   let url: URL;
   try {
     url = new URL(rawUrl);
@@ -219,8 +225,8 @@ async function requireOk(response: Response, context: string): Promise<Response>
   return response;
 }
 
-function encodeObjectPath(path: string): string {
-  return path.split("/").map(encodeURIComponent).join("/");
+function encodeObjectPath(objectPath: string): string {
+  return objectPath.split("/").map(encodeURIComponent).join("/");
 }
 
 function createIngestionStore(config: BackendConfig): TrustedListingPhotoIngestionStore {
@@ -269,7 +275,10 @@ function createIngestionStore(config: BackendConfig): TrustedListingPhotoIngesti
   };
 }
 
-async function deleteStoredObjects(config: BackendConfig, objectPaths: readonly string[]): Promise<void> {
+async function deleteStoredObjects(
+  config: BackendConfig,
+  objectPaths: readonly string[],
+): Promise<void> {
   if (objectPaths.length === 0) return;
   await requireOk(
     await fetch(`${config.baseUrl}/storage/v1/object/listing_photos`, {
@@ -371,10 +380,11 @@ async function createCapability(e164: string): Promise<{ token: string; expiresA
 }
 
 async function verifyCapability(token: string, expectedE164: string): Promise<CapabilityPayload> {
-  const [payloadPart, signature] = token.split(".");
-  if (!payloadPart || !signature || token.split(".").length !== 2) {
+  const pieces = token.split(".");
+  if (pieces.length !== 2 || !pieces[0] || !pieces[1]) {
     throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
   }
+  const [payloadPart, signature] = pieces;
   const expectedSignature = await signCapabilityPayload(payloadPart, getCapabilitySecret());
   const actualBytes = base64UrlDecode(signature);
   const expectedBytes = base64UrlDecode(expectedSignature);
@@ -396,7 +406,7 @@ async function verifyCapability(token: string, expectedE164: string): Promise<Ca
     throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
   }
   if (
-    stage1E164Schema.safeParse(payload.e164).success === false ||
+    !stage1E164Schema.safeParse(payload.e164).success ||
     payload.e164 !== expectedE164 ||
     !UUID_PATTERN.test(payload.nonce)
   ) {
@@ -417,7 +427,7 @@ async function verifyCapability(token: string, expectedE164: string): Promise<Ca
   return payload;
 }
 
-async function startVerification(form: FormData, clientIp: string, request: Request) {
+async function startVerification(form: FormData, clientIp: string, request: Request): Promise<Response> {
   assertAllowedFields(form, new Set(["action", "phone"]));
   enforceRateLimit(`verification-start:${clientIp}`, 5, 15 * 60 * 1000);
   const e164 = stage1E164Schema.parse(requiredString(form, "phone", 8, 16));
@@ -459,7 +469,7 @@ async function startVerification(form: FormData, clientIp: string, request: Requ
   });
 }
 
-async function verifyPhone(form: FormData, clientIp: string) {
+async function verifyPhone(form: FormData, clientIp: string): Promise<Response> {
   assertAllowedFields(form, new Set(["action", "phone", "challengeId", "code"]));
   enforceRateLimit(`verification-confirm:${clientIp}`, 10, 15 * 60 * 1000);
   const e164 = stage1E164Schema.parse(requiredString(form, "phone", 8, 16));
@@ -471,15 +481,18 @@ async function verifyPhone(form: FormData, clientIp: string) {
   const challenge = challenges.get(challengeId);
   if (!challenge || challenge.expiresAt <= Date.now() || challenge.e164 !== e164) {
     challenges.delete(challengeId);
-    throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması yeniden gerekiyor.", 401);
+    throw new Stage1SubmissionError(
+      "VERIFICATION_REQUIRED",
+      "Telefon doğrulaması yeniden gerekiyor.",
+      401,
+    );
   }
   challenge.attempts += 1;
   if (challenge.attempts > 5) {
     challenges.delete(challengeId);
     throw new Stage1SubmissionError("RATE_LIMITED", "Doğrulama deneme sınırı aşıldı.", 429, 600);
   }
-  const codeHash = await sha256Hex(`${challengeId}:${code}`);
-  if (codeHash !== challenge.codeHash) {
+  if ((await sha256Hex(`${challengeId}:${code}`)) !== challenge.codeHash) {
     throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Doğrulama kodu geçersiz.", 401);
   }
   challenges.delete(challengeId);
@@ -511,12 +524,12 @@ function parsePrice(form: FormData): { price: number; isFree: boolean } {
 }
 
 function readPhotos(form: FormData): File[] {
-  const photos = form.getAll("photo");
-  if (photos.length < 1 || photos.length > STAGE1_MAX_PHOTOS) {
+  const entries = form.getAll("photo");
+  if (entries.length < 1 || entries.length > STAGE1_MAX_PHOTOS) {
     throw new Stage1SubmissionError("INVALID_REQUEST", "1–8 fotoğraf ekleyin.");
   }
   let totalBytes = 0;
-  return photos.map((entry) => {
+  return entries.map((entry) => {
     if (!(entry instanceof File)) {
       throw new Stage1SubmissionError("INVALID_REQUEST", "Fotoğraf dosyası geçersiz.");
     }
@@ -574,7 +587,9 @@ async function completeSubmissionKey(
     "self-service idempotency completion",
   );
   const completed = (await response.json()) as boolean;
-  if (completed !== true) throw new Error("Submission idempotency completion was not acknowledged.");
+  if (completed !== true) {
+    throw new Error("Submission idempotency completion was not acknowledged.");
+  }
 }
 
 async function cleanupFailedSubmission(
@@ -584,7 +599,10 @@ async function cleanupFailedSubmission(
 ): Promise<void> {
   const errors: unknown[] = [];
   try {
-    await deleteStoredObjects(config, photos.map((photo) => photo.objectPath));
+    await deleteStoredObjects(
+      config,
+      photos.map((photo) => photo.objectPath),
+    );
   } catch (error) {
     errors.push(error);
   }
@@ -598,7 +616,60 @@ async function cleanupFailedSubmission(
   }
 }
 
-async function submitListing(form: FormData, clientIp: string) {
+async function createPendingRow(
+  config: BackendConfig,
+  input: {
+    listingId: string;
+    title: string;
+    description: string;
+    price: number;
+    isFree: boolean;
+    category: string;
+    condition: string;
+    province: string;
+    district: string;
+    sellerDisplayName: string;
+    contactPreference: string;
+    phone: string;
+    verifiedAt: string;
+    declarationTime: string;
+  },
+): Promise<void> {
+  const response = await requireOk(
+    await fetch(`${config.baseUrl}/rest/v1/listings`, {
+      method: "POST",
+      headers: { ...serviceHeaders(config), Prefer: "return=representation" },
+      body: JSON.stringify({
+        id: input.listingId,
+        title: input.title,
+        description: input.description,
+        price_amount: input.price,
+        price_is_free: input.isFree,
+        category: input.category,
+        item_condition: input.condition,
+        province: input.province,
+        district: input.district,
+        seller_display_name: input.sellerDisplayName,
+        search_keywords: [],
+        contact_channel: input.contactPreference,
+        contact_e164: input.phone,
+        contact_verified_at: input.verifiedAt,
+        contact_verification_method: "one_time_code",
+        publication_instruction_at: input.declarationTime,
+        private_seller_declaration_at: input.declarationTime,
+        content_rights_declaration_at: input.declarationTime,
+        status: "pending",
+      }),
+    }),
+    "self-service pending listing create",
+  );
+  const rows = (await response.json()) as Array<{ id?: string }>;
+  if (rows.length !== 1 || rows[0]?.id !== input.listingId) {
+    throw new Error("Self-service listing create did not return the requested listing identity.");
+  }
+}
+
+async function submitListing(form: FormData, clientIp: string): Promise<Response> {
   assertAllowedFields(
     form,
     new Set([
@@ -623,6 +694,7 @@ async function submitListing(form: FormData, clientIp: string) {
     ]),
   );
   enforceRateLimit(`submit:${clientIp}`, 3, 60 * 60 * 1000);
+
   const category = stage1CategorySchema.parse(requiredString(form, "category", 3, 32));
   const condition = stage1ConditionSchema.parse(requiredString(form, "condition", 3, 32));
   const title = requiredString(form, "title", 3, 120);
@@ -643,6 +715,7 @@ async function submitListing(form: FormData, clientIp: string) {
   requiredConfirmation(form, "privateSellerDeclaration");
   requiredConfirmation(form, "contentRightsDeclaration");
   requiredConfirmation(form, "publicationInstructionConfirmed");
+
   const capability = requiredString(form, "capability", 20, 4096);
   const verified = await verifyCapability(capability, phone);
   const { price, isFree } = parsePrice(form);
@@ -652,45 +725,45 @@ async function submitListing(form: FormData, clientIp: string) {
     throw new Stage1SubmissionError("INVALID_REQUEST", "İlan gönderim kimliği geçersiz.");
   }
   const keyHash = await sha256Hex(idempotencyKey);
-  if (!SHA256_HEX_PATTERN.test(keyHash)) throw new Error("Idempotency hash generation failed.");
+  if (!SHA256_HEX_PATTERN.test(keyHash)) {
+    throw new Error("Idempotency hash generation failed.");
+  }
 
   const config = readBackendConfig();
   const listingId = crypto.randomUUID();
   const declarationTime = new Date().toISOString();
-  const inserted = await requireOk(
-    await fetch(`${config.baseUrl}/rest/v1/listings`, {
-      method: "POST",
-      headers: { ...serviceHeaders(config), Prefer: "return=representation" },
-      body: JSON.stringify({
-        id: listingId,
-        title,
-        description,
-        price_amount: price,
-        price_is_free: isFree,
-        category,
-        item_condition: condition,
-        province,
-        district,
-        seller_display_name: sellerDisplayName,
-        search_keywords: [],
-        contact_channel: contactPreference,
-        contact_e164: phone,
-        contact_verified_at: verified.verifiedAt,
-        contact_verification_method: "one_time_code",
-        publication_instruction_at: declarationTime,
-        private_seller_declaration_at: declarationTime,
-        content_rights_declaration_at: declarationTime,
-        status: "pending",
-      }),
-    }),
-    "self-service pending listing create",
-  );
-  const rows = (await inserted.json()) as Array<{ id?: string }>;
-  if (rows.length !== 1 || rows[0]?.id !== listingId) {
-    throw new Error("Self-service listing create did not return the requested listing identity.");
+  await createPendingRow(config, {
+    listingId,
+    title,
+    description,
+    price,
+    isFree,
+    category,
+    condition,
+    province,
+    district,
+    sellerDisplayName,
+    contactPreference,
+    phone,
+    verifiedAt: verified.verifiedAt,
+    declarationTime,
+  });
+
+  let claim: SubmissionClaim;
+  try {
+    claim = await claimSubmission(config, keyHash, listingId);
+  } catch (cause) {
+    try {
+      await cleanupFailedSubmission(config, listingId, []);
+    } catch (cleanupCause) {
+      throw new AggregateError(
+        [cause, cleanupCause],
+        "Idempotency claim failed and pending-listing cleanup was incomplete.",
+      );
+    }
+    throw cause;
   }
 
-  const claim = await claimSubmission(config, keyHash, listingId);
   if (claim.state !== "claimed") {
     await deleteListingRow(config, listingId);
     if (claim.state === "complete") {
