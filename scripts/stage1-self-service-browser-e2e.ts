@@ -217,7 +217,15 @@ async function submitListing(
   await page.getByRole("button", { name: /Devam/ }).click();
 
   const category = page.getByLabel("Kategori", { exact: true });
-  await category.waitFor();
+  try {
+    await category.waitFor();
+  } catch (error) {
+    const pageText = (await page.locator("body").innerText()).replace(/\s+/g, " ").slice(0, 1200);
+    throw new Error(
+      `Photo step did not advance. Runtime errors: ${runtimeErrors.join(" | ") || "none"}. Page: ${pageText}`,
+      { cause: error },
+    );
+  }
   await category.selectOption("home");
   await page.getByLabel("Başlık", { exact: true }).fill(input.title);
   await page.getByLabel("Durum", { exact: true }).selectOption("good");
