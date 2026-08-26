@@ -33,10 +33,12 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
-      - name: Verify 5651 traffic-log minimization contract
-        run: bun test src/lib/place-provider-traffic-log.test.ts
+      - name: Verify activation and 5651 contracts
+        run: |
+          bun test src/lib/place-provider-traffic-log.test.ts
+          bun test src/build-profiles/pilot/public-discovery.test.ts
 
-      - name: Verify real-data activation build fails closed without real operator identity
+      - name: Verify real-data activation build fails closed without operator identity
         shell: bash
         run: |
           set +e
@@ -58,7 +60,7 @@ jobs:
           fi
           grep -F 'Real-data activation build requires VITE_OPERATOR_LEGAL_NAME.' <<<"$output"
 
-      - name: Verify synthetic pilot build does not require real identity
+      - name: Verify synthetic pilot build remains closed and does not require real identity
         env:
           ARAR_BUILD_PROFILE: pilot-rc
           VITE_LISTINGS_SOURCE: supabase
@@ -74,7 +76,7 @@ jobs:
           test ! -e src/routes-pilot/giris.tsx
           test ! -e src/routes-pilot/kurucu.tsx
           grep -F '"/iletisim"' src/routes-pilot/index.tsx
-          grep -F 'Stage 1–3' src/routes-pilot/ilan-ver.tsx
+          grep -F 'Yalnız özel kişi olarak, ara sıra ilan veren satıcılar.' src/routes-pilot/ilan-ver.tsx
           grep -F 'Bu telefon numarası bana aittir' src/routes-pilot/ilan-ver.tsx
           grep -F 'KVKK 5/2-d' src/routes-pilot/gizlilik.tsx
           grep -F 'en az bir yıllık hedef' src/routes-pilot/gizlilik.tsx
@@ -83,6 +85,46 @@ jobs:
             echo "WhatsApp CTA leaked into activation-facing pilot graph/artifact."
             exit 1
           fi
+
+      - name: Verify explicit public validation discovery without address or tax prerequisite
+        shell: bash
+        env:
+          ARAR_BUILD_PROFILE: pilot-rc
+          ARAR_REAL_DATA_ACTIVATION: enabled
+          VITE_LISTINGS_SOURCE: supabase
+          VITE_SUPABASE_URL: https://synthetic.invalid
+          VITE_SUPABASE_ANON_KEY: synthetic-public-key
+          VITE_PILOT_INTAKE_E164: "+12025550199"
+          VITE_OPERATOR_LEGAL_NAME: Arar Buluruz Bireysel İşletmecisi
+          VITE_OPERATOR_EMAIL: iletisim@example.invalid
+          VITE_OPERATOR_PHONE_E164: "+12025550199"
+        run: |
+          test -z "${VITE_OPERATOR_ADDRESS:-}"
+          test -z "${VITE_OPERATOR_TAX_REGISTRY:-}"
+          bun run build
+          bunx vite preview --host 127.0.0.1 --port 4174 >/tmp/public-validation-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4174/ >/tmp/public-validation-home.html; then
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS -D /tmp/public-validation-home.headers http://127.0.0.1:4174/ -o /tmp/public-validation-home.html
+          if grep -Eqi '^x-robots-tag:.*noindex' /tmp/public-validation-home.headers; then
+            echo "Explicit public validation home remained closed by X-Robots-Tag."
+            exit 1
+          fi
+          if grep -Eqi '<meta[^>]+name="robots"[^>]+noindex' /tmp/public-validation-home.html; then
+            echo "Explicit public validation home remained closed by robots meta."
+            exit 1
+          fi
+          curl -fsS 'http://127.0.0.1:4174/ara?q=corlu' -o /tmp/public-validation-search.html
+          grep -Eqi '<meta[^>]+name="robots"[^>]+noindex' /tmp/public-validation-search.html
+          sitemap_status="$(curl -sS -o /tmp/public-validation-sitemap.txt -w '%{http_code}' http://127.0.0.1:4174/sitemap.xml)"
+          test "$sitemap_status" = "503"
+          grep -F 'Sitemap is temporarily unavailable' /tmp/public-validation-sitemap.txt
 
       - name: Verify repository remains synthetic-only
         shell: bash
