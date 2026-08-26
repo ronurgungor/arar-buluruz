@@ -11,7 +11,7 @@ This document defines the minimum production contract to be implemented only aft
 
 **GO for design / synthetic contract. NO-GO for production activation.**
 
-The design is implementable without an enterprise observability stack. Production activation still requires the real operator/address blocker in Issue #75, BTK notification, Türkiye-resident infrastructure, and a 5070-qualified timestamp service from an authorized Turkish ESHS.
+The design is implementable without an enterprise observability stack. Production activation still requires the applicable Issue #75 operator/compliance decisions, any required BTK notification, Türkiye-resident infrastructure, and a 5070-qualified timestamp service from an authorized Turkish ESHS. Gate B itself does not decide whether a full public residence/business address is required for the one-listing fact pattern.
 
 ## 1. Authoritative producer
 
@@ -273,11 +273,11 @@ Do not procure now. At activation:
 
 No price, account, certificate or timestamp credit is purchased in Gate B design.
 
-## 11. Separate Issue #75 legal/privacy blocker — public yerleşim yeri
+## 11. Separate Issue #75 legal/privacy question — public yerleşim yeri
 
-The public operator **yerleşim yeri/address** question remains a separate legal/privacy activation blocker.
+The exact public operator **yerleşim yeri/address** applicability remains a separate Issue #75 legal/privacy question for the one-listing fact pattern.
 
-Gate B traffic architecture does not resolve it. Do not assume or document that a virtual office, coworking address, mail-forwarding address or another substitute is legally equivalent. The production public address must be resolved on its own merits before real activation.
+Gate B traffic architecture does not resolve it and does not make a full address a technical prerequisite. Do not assume that a home address must be exposed; equally, do not assume that a virtual office, coworking address, mail-forwarding address or another substitute is legally equivalent. If the applicable rule independently requires a public address, the real value must be supplied before that requirement is treated as satisfied.
 
 ## Official/standards anchors reviewed for Gate B
 
