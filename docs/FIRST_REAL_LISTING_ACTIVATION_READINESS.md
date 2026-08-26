@@ -10,9 +10,27 @@ This document is the canonical activation plan. It does not authorize business r
 ## Current gate state
 
 - **Gate A — activation-facing synthetic implementation: CONDITIONAL PASS.**
-- Gate A exact evidence head: `28f5423369dd1e76489adc5f42c46c9f9b3c83f3`.
-- **Gate B — 5651 production traffic-evidence design: synthetic contract under exact-head validation.**
-- First real listing remains **NO-GO**.
+- Gate A evidence head before the current red-team pass: `28f5423369dd1e76489adc5f42c46c9f9b3c83f3`.
+- **Gate B — 5651 production traffic-evidence design: PASS as a synthetic contract.**
+- Gate B evidence head before the current red-team pass: `56e626a2a2f41bf0b847f014361f5a54d2551b2b`.
+- The current PR is being revalidated against the narrower **one real listing / free / pre-revenue** fact pattern.
+- First real listing remains **NO-GO while production and real-data boundaries are OFF**.
+
+## Stage-1 fact pattern and materiality rule
+
+The first validation is intentionally narrow:
+
+- Çorlu;
+- 1 real listing → review → 3 → review → 5–10;
+- platform revenue 0 TL;
+- ads, commission, payment, order, reservation, Auth, seller account/dashboard, public self-service write, chat and WhatsApp OFF;
+- founder moderation;
+- seller calls the founder;
+- founder creates the pending listing through the proven operator path;
+- public seller contact is phone only;
+- transaction completes entirely off-platform.
+
+A legal/compliance obligation is not automatically a prior-permission technical gate. For each item the question is whether it materially prevents this exact one-listing validation, requires a compliance action before activation, or can be handled later without weakening the law or user safety.
 
 ## Resolved / non-blocking legal positions
 
@@ -20,8 +38,9 @@ This document is the canonical activation plan. It does not authorize business r
 - **VERBİS:** current scale/activity is treated as exempt; substantive KVKK duties still apply.
 - **KEP:** not a current activation prerequisite for the present model.
 - **Public seller phone:** use the KVKK 5/2-d intentional-publication (alenileştirme) model with strict purpose limitation. Publication acknowledgement is separate from aydınlatma.
-- **WhatsApp:** no Art. 9 mechanism will be built for Stage 1–3. Intake, complaint and seller CTA remain OFF.
-- **Seller scope:** Stage 1–3 supports only private occasional sellers listing their own used personal/household goods. Professional/business/regular sellers and new-for-resale goods fail closed.
+- **WhatsApp:** no Art. 9 mechanism will be built for the first validation. Intake, complaint and seller CTA remain OFF.
+- **Seller scope:** only private occasional sellers listing their own used personal/household goods. Professional/business/regular sellers and new-for-resale goods fail closed.
+- **Tax/trade registration field:** not an unconditional application-build prerequisite for this free validation. If a tax/trade identifier exists and is applicable, it may be configured and displayed; the application must never invent one.
 
 ## Processing-basis matrix
 
@@ -35,40 +54,47 @@ This document is the canonical activation plan. It does not authorize business r
 
 Aydınlatma is delivered; it is not “accepted”. Any public-phone publication acknowledgement is a separate statement.
 
+## Public operator identity/contact — implementation boundary
+
+The public pilot graph exposes `/iletisim`, directly reachable from the homepage. Synthetic builds may render clearly non-production placeholders.
+
+For an explicit real-data validation build the implementation requires only the public values that are presently necessary to identify and contact the natural-person operator:
+
+- operator real-person/legal-operator name;
+- electronic contact;
+- phone.
+
+The following are **not hard-coded as unconditional build prerequisites**:
+
+- tax/trade-registry identifier;
+- full public residence/business address.
+
+If either is independently determined to be legally required for the exact operator/fact pattern, the real value must be configured before activation. If it is absent, the real-data build omits the field rather than publishing fake or placeholder information.
+
+### Separate public yerleşim yeri/address question
+
+The exact public address/yerleşim-yeri applicability remains a separate Issue #75 legal/privacy decision. This implementation does not assume that a home address must be exposed, and it does not assume that a virtual office/coworking/mail-forwarding address is legally equivalent. The decision must be made on the exact applicable rule before any required public address is populated.
+
 ## 5651 place-provider workstream
 
 Arar Buluruz conservatively treats the service as a **yer sağlayıcı** because seller-originated listing text/photos are hosted.
 
-### BTK Yer Sağlayıcılığı Bildirimi — pre-activation runbook
+### BTK Yer Sağlayıcılığı Bildirimi — activation runbook
 
 Do **not** submit during synthetic development.
 
-Before the first real listing:
+The application does not model BTK notification as a government permission token. Notification/compliance and prior authorization are distinct concepts.
 
-1. Business/operator legal identity is finalized.
-2. The public **yerleşim yeri/address** blocker is independently resolved.
-3. `/iletisim` contains the real operator identification/contact/address information.
-4. Confirm domain/service identifiers and the legal operator that will make the notification.
-5. Open the official BTK Yer Sağlayıcılığı Bildirim Arayüzü and prepare the requested current information.
-6. Submit only after the operator/business identity exists and before real hosting activity is activated.
-7. Save the notification evidence/confirmation in the private compliance record; do not commit sensitive identity documents to Git.
-8. Any later change to operator/domain/contact information is reviewed for notification/update requirements.
+Before real hosting activation, the runbook must:
+
+1. identify the real natural-person/operator details that the then-current BTK notification process actually asks for;
+2. re-check exact domain/service/operator information and timing in the official interface;
+3. resolve any separate public-address requirement that is actually applicable;
+4. submit the required notification at the legally required time if applicable to the final hosting model;
+5. retain confirmation/evidence privately, with sensitive identity documents kept out of Git;
+6. review later operator/domain/contact changes for update requirements.
 
 Official interface: https://yersaglayici.btk.gov.tr/
-
-### Public identification/contact
-
-The pilot route graph exposes `/iletisim`, directly reachable from public navigation. Synthetic builds may render safe activation-pending placeholders. Any build explicitly marked for real-data activation must fail before build if required real identity/contact values are absent.
-
-Required activation values:
-
-- operator real-person / legal-operator name;
-- public address/yerleşim yeri after the separate blocker is resolved;
-- electronic contact;
-- phone;
-- tax / trade-registry identifiers when applicable/available.
-
-Do not invent virtual-office equivalence.
 
 ### 5651 Gate B — production traffic evidence
 
@@ -81,7 +107,7 @@ Canonical rules:
 - exactly one authoritative producer at the trusted outer public HTTP/TLS reverse-proxy layer;
 - canonical source IP comes from the producer socket peer, not arbitrary forwarding headers;
 - exact minimum schema includes request timestamp, source/destination IP and ports, method, pathname, status, service/protocol, and reliable duration/end/byte fields;
-- no subscriber ID because Stage 1–3 has no Auth;
+- no subscriber ID because there is no Auth;
 - explicit allow-list logging — no request body, seller contact/name, listing text/photo/EXIF, Authorization/cookies/tokens/secrets or arbitrary query strings;
 - UTC daily closed NDJSON rotation;
 - SHA-256 over exact closed bytes;
@@ -96,7 +122,7 @@ Production ingress/storage/ESHS binding remains deferred because AWS, production
 
 ### Notice / takedown
 
-No proactive blanket content-monitoring system is required for this pilot.
+No proactive blanket content-monitoring system is required for this validation.
 
 Operational flow:
 
@@ -107,7 +133,7 @@ Operational flow:
 5. Record the minimum action/result metadata.
 6. Do not retain the removed listing content merely because a traffic-log retention duty exists.
 
-## Stage 1–3 seller/category policy
+## Seller/category policy
 
 Allowed:
 
@@ -131,38 +157,56 @@ Fail closed:
 - WhatsApp intake OFF.
 - WhatsApp complaint OFF.
 - WhatsApp seller CTA OFF.
-- `/ilan-ver` collects no personal/listing data in the browser for Stage 1–3; it shows the pre-collection notice/rules and a founder **phone** contact action.
+- `/ilan-ver` collects no personal/listing data in the browser; it shows the pre-collection notice/rules and a founder phone action.
 - Founder then creates the pending listing manually through the already-proven private operator path.
-- Aydınlatma must be delivered **before** the founder collects the seller’s data by phone.
+- Aydınlatma must be delivered before the founder collects the seller’s data by phone.
 - Separate public-phone publication acknowledgement.
 - Photo/content ownership + no child/third-party/special-category warning.
-- Listing detail includes strict contact-purpose limitation.
+- Listing detail includes strict contact-purpose limitation and phone-only seller CTA.
 - Obvious privacy/wrong-person/takedown contact.
 - Private-seller declaration is required operationally before publication.
-- Professional/business/regular/new-for-resale seller flows fail closed for Stage 1–3.
+- Professional/business/regular/new-for-resale seller flows fail closed.
+- Public copy should describe the current service, not internal stage/test terminology.
+
+## Public discovery / indexability
+
+Synthetic, preview and rehearsal builds remain closed to accidental organic discovery.
+
+Only an explicit real-data public-validation build may open discovery, with this narrow boundary:
+
+- `/` may be indexed;
+- only listing-detail URLs returned by the **published public listing collection** may enter `/sitemap.xml` and may be indexed;
+- missing/unpublished/private listing states remain excluded by the proven public RLS/adapter contract;
+- `/ara?...` remains `noindex` to avoid query/filter index explosion;
+- application, privacy, rules, safety, takedown and operator-information routes are not given a new SEO system;
+- no province/district landing-page generation and no new SEO dependency.
+
+The explicit public-validation sitemap is unavailable in closed synthetic builds and fails closed if the public listing backend cannot be read.
 
 ## Real-data activation build gate
 
-Synthetic `pilot-rc` builds remain possible with safe placeholder public operator information.
+Synthetic `pilot-rc` builds remain possible with safe activation-pending placeholders.
 
-An explicit real-data activation build (`ARAR_REAL_DATA_ACTIVATION=enabled`) must fail closed unless all required real operator public-information environment values are provided. The activation flag does not itself authorize deployment or real-data collection.
+An explicit real-data activation build (`ARAR_REAL_DATA_ACTIVATION=enabled`) must fail closed unless operator legal name, valid electronic contact and valid phone are supplied. Address and tax/trade-registry values are optional at the build layer and are shown only when configured; this technical choice does not decide whether a separate rule ultimately requires one of them.
 
-## Remaining real-activation blockers
+The activation flag does not itself authorize deployment or real-data collection.
 
-The following are intentionally deferred:
+## Remaining work before a real listing can actually be activated
 
-1. independently resolve the public **yerleşim yeri/address** requirement;
-2. establish the real-person commercial-enterprise/business identity;
-3. populate real `/iletisim` and aydınlatma identity/contact/address fields;
-4. make the actual BTK place-provider notification;
+Because production is still OFF, the following operational/infrastructure work remains outside this implementation pass:
+
+1. settle the exact materiality/applicability of the public address/yerleşim-yeri question;
+2. determine whether any business/tax registration step is actually required for this exact free pre-revenue validation rather than treating it as an inherited assumption;
+3. populate the real operator name/contact values and any additional field independently confirmed as required;
+4. perform the applicable BTK place-provider notification step at the required time — as compliance, not an application permission mechanism;
 5. authorize and provision the approved Türkiye production environment;
 6. bind the authoritative outer reverse proxy to encrypted ≥365-day Türkiye-resident traffic evidence and prove spoofing/access/immutability/retention controls;
 7. procure a then-current 5070-authorized Turkish ESHS timestamp service and verify real RFC 3161-compatible timestamping against synthetic closed-log bytes;
 8. verify production TLS/network/admin/secrets;
 9. verify production backup/restore and deletion propagation;
-10. execute the real Stage-1 pre-publication moderation checklist.
+10. execute the real one-listing pre-publication moderation checklist.
 
-Only after these steps may FIRST REAL LISTING move from readiness to GO.
+These items must be classified by materiality at the next advisor/activation decision rather than mechanically promoted to prior-permission blockers.
 
 ## Official/standards anchors
 
