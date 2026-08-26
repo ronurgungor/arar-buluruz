@@ -242,7 +242,11 @@ jobs:
           fi
 
           curl -fsS 'http://127.0.0.1:4174/ara?q=corlu' -o /tmp/public-validation-search.html
-          grep -Eqi '<meta[^>]+name="robots"[^>]+noindex' /tmp/public-validation-search.html
+          if ! grep -Eqi '<meta[^>]+name="robots"[^>]+noindex' /tmp/public-validation-search.html; then
+            echo "Public validation search response was missing robots noindex meta."
+            grep -Eio '<meta[^>]+(robots|noindex)[^>]*>' /tmp/public-validation-search.html || true
+            exit 1
+          fi
 
           curl -fsS -D /tmp/public-validation-detail.headers \
             "http://127.0.0.1:4174/ilan/$published_id" -o /tmp/public-validation-detail.html
@@ -260,14 +264,39 @@ jobs:
               -o /tmp/public-validation-unpublished.html -w '%{http_code}' \
               "http://127.0.0.1:4174/ilan/$unpublished_id"
           )"
-          test "$unpublished_status" = "404"
-          grep -Eqi '^x-robots-tag:.*noindex' /tmp/public-validation-unpublished.headers
+          if [[ "$unpublished_status" != "404" ]]; then
+            echo "Unpublished/private listing returned HTTP $unpublished_status instead of 404."
+            cat /tmp/public-validation-unpublished.headers
+            exit 1
+          fi
+          if ! grep -Eqi '^x-robots-tag:.*noindex' /tmp/public-validation-unpublished.headers; then
+            echo "Unpublished/private listing 404 lacked X-Robots-Tag noindex."
+            cat /tmp/public-validation-unpublished.headers
+            exit 1
+          fi
 
           sitemap_status="$(curl -sS -o /tmp/public-validation-sitemap.xml -w '%{http_code}' http://127.0.0.1:4174/sitemap.xml)"
-          test "$sitemap_status" = "200"
-          test "$(grep -c '<url>' /tmp/public-validation-sitemap.xml)" = "2"
-          grep -F '<loc>http://127.0.0.1:4174/</loc>' /tmp/public-validation-sitemap.xml
-          grep -F "$published_id" /tmp/public-validation-sitemap.xml
+          if [[ "$sitemap_status" != "200" ]]; then
+            echo "Public-validation sitemap returned HTTP $sitemap_status instead of 200."
+            cat /tmp/public-validation-sitemap.xml
+            exit 1
+          fi
+          sitemap_url_count="$(grep -c '<url>' /tmp/public-validation-sitemap.xml)"
+          if [[ "$sitemap_url_count" != "2" ]]; then
+            echo "Public-validation sitemap contained $sitemap_url_count URL entries instead of 2."
+            cat /tmp/public-validation-sitemap.xml
+            exit 1
+          fi
+          if ! grep -F '<loc>http://127.0.0.1:4174/</loc>' /tmp/public-validation-sitemap.xml; then
+            echo "Public-validation sitemap omitted the home URL."
+            cat /tmp/public-validation-sitemap.xml
+            exit 1
+          fi
+          if ! grep -F "$published_id" /tmp/public-validation-sitemap.xml; then
+            echo "Public-validation sitemap omitted the published listing."
+            cat /tmp/public-validation-sitemap.xml
+            exit 1
+          fi
           if grep -F "$unpublished_id" /tmp/public-validation-sitemap.xml; then
             echo "Unpublished/private listing leaked into sitemap."
             exit 1
