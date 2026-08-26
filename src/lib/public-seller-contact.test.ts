@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  buildPublicSellerContactActions,
   buildPublicSellerContactHref,
   getPublicSellerContactLabel,
   publicSellerContactSchema,
@@ -15,8 +16,13 @@ const syntheticPhoneContact = {
   e164: "+12025550124",
 };
 
+const syntheticCombinedContact = {
+  channel: "phone_whatsapp" as const,
+  e164: "+12025550125",
+};
+
 describe("public seller contact contract", () => {
-  test("derives the WhatsApp target from the single E.164 value", () => {
+  test("derives the WhatsApp target from the canonical E.164 value", () => {
     expect(buildPublicSellerContactHref(syntheticWhatsAppContact)).toBe(
       "https://wa.me/12025550123",
     );
@@ -25,7 +31,18 @@ describe("public seller contact contract", () => {
 
   test("derives the phone target from the same E.164 representation", () => {
     expect(buildPublicSellerContactHref(syntheticPhoneContact)).toBe("tel:+12025550124");
-    expect(getPublicSellerContactLabel(syntheticPhoneContact)).toBe("Satıcıyı ara");
+    expect(getPublicSellerContactLabel(syntheticPhoneContact)).toBe("Ara");
+  });
+
+  test("creates both buyer actions without duplicating the seller phone", () => {
+    expect(buildPublicSellerContactActions(syntheticCombinedContact)).toEqual([
+      { kind: "phone", label: "Ara", href: "tel:+12025550125" },
+      {
+        kind: "whatsapp",
+        label: "WhatsApp’tan yaz",
+        href: "https://wa.me/12025550125",
+      },
+    ]);
   });
 
   test("rejects unapproved channels and malformed numbers", () => {
