@@ -51,8 +51,8 @@ function TakedownPage() {
         <section className="mt-4 rounded-2xl border border-border bg-card p-5">
           <h2 className="font-bold">Bildirim kanalları</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            WhatsApp ve public şikâyet formu Stage 1–3 pilotunda kapalıdır. İlan kimliği, bildirim
-            sebebi ve çözüm için zorunlu olan en az bilgiyi paylaşın.
+            Bu sayfada şikâyet formu bulunmaz. İlan kimliği, bildirim sebebi ve çözüm için zorunlu
+            olan en az bilgiyi telefon veya e-posta üzerinden paylaşın.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             {info.phoneHref && (
@@ -77,7 +77,7 @@ function TakedownPage() {
               role="status"
               className="mt-4 rounded-xl border border-border bg-muted/30 p-3 text-sm text-muted-foreground"
             >
-              Gerçek kaldırma iletişim kanalları aktivasyon öncesinde yayımlanacaktır.
+              Kaldırma iletişim kanalları yayın öncesinde etkinleştirilecektir.
             </p>
           )}
         </section>
