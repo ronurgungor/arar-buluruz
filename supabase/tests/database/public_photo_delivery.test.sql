@@ -115,19 +115,22 @@ select ok(
 insert into public.listings (
   id, title, description, price_amount, province, district, seller_display_name,
   contact_channel, contact_e164, contact_verified_at, contact_verification_method,
-  publication_instruction_at, status, published_at, expires_at, unpublished_at
+  publication_instruction_at, private_seller_declaration_at,
+  content_rights_declaration_at, status, published_at, expires_at, unpublished_at
 ) values
   (
     '81000000-0000-4000-8000-000000000001', 'Active public photo fixture',
     'Synthetic active listing for public photo delivery testing.', 1,
     'Tekirdağ', 'Çorlu', 'Synthetic Seller', 'whatsapp', '+12025550131',
     now() - interval '3 hours', 'whatsapp_same_number', now() - interval '2 hours',
+    now() - interval '90 minutes', now() - interval '90 minutes',
     'published', now() - interval '1 hour', now() + interval '1 day', null
   ),
   (
     '81000000-0000-4000-8000-000000000002', 'Pending public photo fixture',
     'Synthetic pending listing that must not expose photo delivery.', 2,
     'Tekirdağ', 'Çorlu', 'Synthetic Seller', null, null, null, null, null,
+    null, null,
     'pending', null, null, null
   ),
   (
@@ -135,6 +138,7 @@ insert into public.listings (
     'Synthetic expired listing that must not expose photo delivery.', 3,
     'Tekirdağ', 'Çorlu', 'Synthetic Seller', 'phone', '+12025550132',
     now() - interval '3 days', 'manual_callback', now() - interval '2 days',
+    now() - interval '2 days 23 hours', now() - interval '2 days 23 hours',
     'published', now() - interval '2 days', now() - interval '1 minute', null
   );
 

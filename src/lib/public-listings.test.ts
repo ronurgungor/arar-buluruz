@@ -27,6 +27,9 @@ const publicRow = {
   title: "Visible pilot listing",
   description: "A valid public listing returned through the approved read-only API.",
   price_amount: "1250.00",
+  price_is_free: false,
+  category: "home",
+  item_condition: "good",
   province: "Tekirdag",
   district: "Corlu",
   seller_display_name: "Pilot Seller",
@@ -79,7 +82,7 @@ const searchListings = [
 ];
 
 function photoAwareFetch(options?: { signedUrl?: string; objectPath?: string }): typeof fetch {
-  return async (input, init) => {
+  return (async (input, init) => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
 
     if (url.pathname === "/rest/v1/listings") {
@@ -126,7 +129,7 @@ function photoAwareFetch(options?: { signedUrl?: string; objectPath?: string }):
     }
 
     throw new Error(`Unexpected fetch URL in test: ${url.toString()}`);
-  };
+  }) as typeof fetch;
 }
 
 describe("search normalization and prefix matching", () => {
@@ -244,13 +247,13 @@ describe("public Supabase REST reader", () => {
   test("loads approved listing columns and lifecycle-gated private photo signed URLs", async () => {
     const requests: Array<{ url: URL; headers: Headers }> = [];
     const baseFetch = photoAwareFetch();
-    const fetchMock: typeof fetch = async (input, init) => {
+    const fetchMock = (async (input, init) => {
       requests.push({
         url: new URL(input instanceof Request ? input.url : input.toString()),
         headers: new Headers(init?.headers),
       });
       return baseFetch(input, init);
-    };
+    }) as typeof fetch;
 
     const listings = await fetchPublicListings(config, fetchMock);
     const listingRequest = requests.find((request) => request.url.pathname === "/rest/v1/listings");
@@ -270,6 +273,9 @@ describe("public Supabase REST reader", () => {
         id: publicRow.id,
         title: publicRow.title,
         price: 1250,
+        isFree: false,
+        category: "home",
+        condition: "good",
         city: publicRow.province,
         district: publicRow.district,
         seller: publicRow.seller_display_name,
@@ -285,13 +291,13 @@ describe("public Supabase REST reader", () => {
   test("loads one row by validated UUID and treats an empty RLS result as not found", async () => {
     let requestedUrl: URL | undefined;
 
-    const fetchMock: typeof fetch = async (input) => {
+    const fetchMock = (async (input) => {
       requestedUrl = new URL(input instanceof Request ? input.url : input.toString());
       return new Response("[]", {
         status: 200,
         headers: { "content-type": "application/json" },
       });
-    };
+    }) as typeof fetch;
 
     const listing = await fetchPublicListing(publicRow.id, config, fetchMock);
 
@@ -301,11 +307,11 @@ describe("public Supabase REST reader", () => {
   });
 
   test("rejects malformed public responses", async () => {
-    const fetchMock: typeof fetch = async () =>
+    const fetchMock = (async () =>
       new Response(JSON.stringify([{ ...publicRow, seller_phone: "+905000000000", id: "bad" }]), {
         status: 200,
         headers: { "content-type": "application/json" },
-      });
+      })) as unknown as typeof fetch;
 
     await expect(fetchPublicListings(config, fetchMock)).rejects.toBeInstanceOf(
       PublicListingsError,
@@ -340,7 +346,7 @@ describe("public Supabase REST reader", () => {
 
   test("rejects insecure non-local Supabase URLs", async () => {
     const insecureConfig = { ...config, url: "http://example.supabase.co" };
-    const fetchMock: typeof fetch = async () => new Response("[]", { status: 200 });
+    const fetchMock = (async () => new Response("[]", { status: 200 })) as unknown as typeof fetch;
 
     await expect(fetchPublicListings(insecureConfig, fetchMock)).rejects.toBeInstanceOf(
       PublicListingsError,
@@ -348,7 +354,8 @@ describe("public Supabase REST reader", () => {
   });
 
   test("fails safely on non-success API responses", async () => {
-    const fetchMock: typeof fetch = async () => new Response("denied", { status: 403 });
+    const fetchMock = (async () =>
+      new Response("denied", { status: 403 })) as unknown as typeof fetch;
 
     await expect(fetchPublicListings(config, fetchMock)).rejects.toThrow(
       "Public listings request failed with status 403.",

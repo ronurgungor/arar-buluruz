@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "src/routes/**",
+    "src/router.tsx",
+    "src/routeTree.gen.ts",
+    "src/components/TopBar.tsx",
+    "src/components/PublisherInfoPage.tsx"
+  ]
+}

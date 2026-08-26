@@ -1,24 +1,36 @@
 name: Stage 1 Phase A code gate
 
-"on":
+on:
   push:
     branches:
       - agent/stage1-self-service-v2
+  pull_request:
+    branches:
+      - main
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: stage1-phase-a-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   phase-a:
+    if: >-
+      (github.event_name == 'push' && github.ref_name == 'agent/stage1-self-service-v2') ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       github.event.pull_request.head.ref == 'agent/stage1-self-service-v2')
     name: Stage 1 executable code invariants
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
     steps:
-      - name: Check out exact event head
+      - name: Check out Stage 1 branch
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          ref: ${{ github.sha }}
+          ref: agent/stage1-self-service-v2
           fetch-depth: 0
 
       - name: Set up Bun
@@ -29,14 +41,13 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
-      - name: Apply deterministic remaining Phase A invariants
-        run: |
-          python3 scripts/stage1-phase-a-fix.py
-          python3 scripts/stage1-phase-a-ts-fix.py
-
-      - name: Format focused Phase A code
+      - name: Check focused Phase A formatting
         run: >-
-          bunx prettier --write
+          bunx prettier --check
+          .github/workflows/stage1-known-fix-closure.yml
+          package.json
+          tsconfig.json
+          tsconfig.pilot.json
           src/lib/stage1-self-service-contract.test.ts
           src/lib/stage1-self-service-server.ts
           src/lib/stage1-self-service-server.test.ts
@@ -48,35 +59,20 @@ jobs:
           src/lib/listing-photo.test.ts
           src/lib/listing-photo-trusted.ts
           src/lib/listing-photo-trusted.test.ts
+          src/data/turkiye-locations.ts
+          src/lib/external-sales-link.test.ts
+          src/lib/pilot-operator-server.ts
+          src/lib/public-listings-contact.test.ts
+          src/lib/public-listings.test.ts
+          src/routes-pilot/ara.tsx
 
-      - name: Focused Stage 1 unit and trusted-photo tests
-        run: >-
-          bun test
-          src/lib/stage1-self-service-contract.test.ts
-          src/lib/stage1-self-service-server.test.ts
-          src/lib/stage1-moderation-server.test.ts
-          src/lib/public-seller-contact.test.ts
-          src/lib/listing-photo.test.ts
-          src/lib/listing-photo-trusted.test.ts
+      - name: Unit contracts
+        run: bun run test:unit
 
-      - name: Focused Stage 1 production TypeScript check
-        shell: bash
+      - name: TypeScript check
         run: |
-          trap 'rm -f tsconfig.stage1-phase-a.json' EXIT
-          cat > tsconfig.stage1-phase-a.json <<'JSON'
-          {
-            "extends": "./tsconfig.json",
-            "include": [
-              "src/lib/stage1-self-service-contract.ts",
-              "src/lib/stage1-self-service-server.ts",
-              "src/lib/stage1-moderation-server.ts",
-              "src/lib/public-seller-contact.ts",
-              "src/lib/listing-photo.ts",
-              "src/lib/listing-photo-trusted.ts"
-            ]
-          }
-          JSON
-          bunx tsc -p tsconfig.stage1-phase-a.json --pretty false
+          bunx tsc --noEmit --pretty false
+          bunx tsc --project tsconfig.pilot.json --noEmit --pretty false
 
       - name: Lint focused Phase A code
         run: >-
@@ -92,6 +88,12 @@ jobs:
           src/lib/listing-photo.test.ts
           src/lib/listing-photo-trusted.ts
           src/lib/listing-photo-trusted.test.ts
+          src/data/turkiye-locations.ts
+          src/lib/external-sales-link.test.ts
+          src/lib/pilot-operator-server.ts
+          src/lib/public-listings-contact.test.ts
+          src/lib/public-listings.test.ts
+          src/routes-pilot/ara.tsx
 
       - name: Build production-like pilot artifact
         env:
@@ -117,14 +119,12 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
           path = Path("supabase/config.toml")
           text = path.read_text(encoding="utf-8")
-          replacements = {
+          for old, new in {
               "[auth]\nenabled = false": "[auth]\nenabled = true",
               "[storage]\nenabled = false": "[storage]\nenabled = true",
-          }
-          for old, new in replacements.items():
+          }.items():
               if old not in text:
                   raise SystemExit(f"Expected fail-closed Supabase config marker not found: {old!r}")
               text = text.replace(old, new, 1)
@@ -149,41 +149,6 @@ jobs:
       - name: Diff hygiene
         shell: bash
         run: |
-          git fetch origin main --no-tags
           git diff --check
           git diff --check origin/main...HEAD
-
-      - name: Commit Phase A fixes only after executable gate passes
-        shell: bash
-        run: |
-          git checkout -- supabase/config.toml
-          if git diff --quiet; then
-            echo "Phase A implementation already present; exact head required no mutation."
-            exit 0
-          fi
-
-          remote_head="$(git ls-remote origin refs/heads/agent/stage1-self-service-v2 | cut -f1)"
-          if [ "$remote_head" != "$GITHUB_SHA" ]; then
-            echo "Ref moved during Phase A execution: expected $GITHUB_SHA, found $remote_head" >&2
-            exit 1
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            src/lib/stage1-self-service-contract.test.ts \
-            src/lib/stage1-self-service-server.ts \
-            src/lib/stage1-self-service-server.test.ts \
-            src/lib/stage1-moderation-server.ts \
-            src/lib/stage1-moderation-server.test.ts \
-            src/lib/public-seller-contact.ts \
-            src/lib/public-seller-contact.test.ts \
-            src/lib/listing-photo.ts \
-            src/lib/listing-photo.test.ts \
-            src/lib/listing-photo-trusted.ts \
-            src/lib/listing-photo-trusted.test.ts \
-            supabase/migrations/20260826181500_prepare_stage1_self_service.sql \
-            supabase/tests/database/stage1_self_service.test.sql
-          git diff --cached --check
-          git commit -m "Enforce Stage 1 publish readiness"
-          git push origin HEAD:agent/stage1-self-service-v2
+          git diff --exit-code

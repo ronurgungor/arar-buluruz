@@ -50,6 +50,28 @@ comment on column public.listings.content_rights_declaration_at is
 comment on column public.listings.contact_channel is
   'Intentionally public contact preference for active listings: phone, whatsapp or phone_whatsapp.';
 
+-- Never fabricate declaration evidence. If this additive migration encounters an old
+-- published synthetic row without the new Stage-1 evidence, fail closed by unpublishing it.
+update public.listings
+set
+  status = 'unpublished',
+  unpublished_at = coalesce(unpublished_at, now())
+where status = 'published'
+  and (
+    private_seller_declaration_at is null
+    or content_rights_declaration_at is null
+  );
+
+alter table public.listings
+  add constraint listings_published_stage1_declarations_ready_check
+  check (
+    status <> 'published'
+    or (
+      private_seller_declaration_at is not null
+      and content_rights_declaration_at is not null
+    )
+  );
+
 -- These are buyer-visible product facts on rows that already pass the existing published-only RLS.
 grant select (category, item_condition, price_is_free) on table public.listings to anon;
 

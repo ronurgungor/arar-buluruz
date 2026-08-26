@@ -18,8 +18,7 @@ import {
 } from "./stage1-self-service-contract";
 
 const TARLADAN_PROJECT_REFS = new Set(["jlbsoraqnlricbyagxdk", "gwgrwwvaiizfsqaacnhf"]);
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHA256_HEX_PATTERN = /^[0-9a-f]{64}$/;
 const PRICE_PATTERN = /^\d{1,10}(?:[.,]\d{1,2})?$/;
 const MAX_REQUEST_BYTES = STAGE1_MAX_TOTAL_UPLOAD_BYTES + 2 * 1024 * 1024;
@@ -100,7 +99,11 @@ function assertSameOrigin(request: Request): void {
   }
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite && fetchSite !== "same-origin") {
-    throw new Stage1SubmissionError("INVALID_REQUEST", "Cross-site ilan gönderimi kabul edilmez.", 403);
+    throw new Stage1SubmissionError(
+      "INVALID_REQUEST",
+      "Cross-site ilan gönderimi kabul edilmez.",
+      403,
+    );
   }
 }
 
@@ -114,8 +117,16 @@ function assertRequestSize(request: Request): void {
     );
   }
   const contentLength = Number(rawLength);
-  if (!Number.isSafeInteger(contentLength) || contentLength < 1 || contentLength > MAX_REQUEST_BYTES) {
-    throw new Stage1SubmissionError("INVALID_REQUEST", "İlan gönderimi boyut sınırını aşıyor.", 413);
+  if (
+    !Number.isSafeInteger(contentLength) ||
+    contentLength < 1 ||
+    contentLength > MAX_REQUEST_BYTES
+  ) {
+    throw new Stage1SubmissionError(
+      "INVALID_REQUEST",
+      "İlan gönderimi boyut sınırını aşıyor.",
+      413,
+    );
   }
 }
 
@@ -241,7 +252,7 @@ function createIngestionStore(config: BackendConfig): TrustedListingPhotoIngesti
             "cache-control": "max-age=60",
             "x-upsert": "false",
           },
-          body: input.bytes,
+          body: new Uint8Array(input.bytes).buffer,
         }),
         "self-service sanitized photo upload",
       );
@@ -349,8 +360,10 @@ function base64UrlEncode(value: Uint8Array | string): string {
   return Buffer.from(value).toString("base64url");
 }
 
-function base64UrlDecode(value: string): Uint8Array {
-  return new Uint8Array(Buffer.from(value, "base64url"));
+function base64UrlDecode(value: string): Uint8Array | null {
+  if (!/^[A-Za-z0-9_-]+$/.test(value)) return null;
+  const decoded = new Uint8Array(Buffer.from(value, "base64url"));
+  return base64UrlEncode(decoded) === value ? decoded : null;
 }
 
 async function signCapabilityPayload(payloadPart: string, secret: string): Promise<string> {
@@ -388,7 +401,7 @@ async function verifyCapability(token: string, expectedE164: string): Promise<Ca
   const expectedSignature = await signCapabilityPayload(payloadPart, getCapabilitySecret());
   const actualBytes = base64UrlDecode(signature);
   const expectedBytes = base64UrlDecode(expectedSignature);
-  if (actualBytes.byteLength !== expectedBytes.byteLength) {
+  if (!actualBytes || !expectedBytes || actualBytes.byteLength !== expectedBytes.byteLength) {
     throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
   }
   let mismatch = 0;
@@ -401,7 +414,9 @@ async function verifyCapability(token: string, expectedE164: string): Promise<Ca
 
   let payload: CapabilityPayload;
   try {
-    payload = JSON.parse(Buffer.from(payloadPart, "base64url").toString("utf8")) as CapabilityPayload;
+    payload = JSON.parse(
+      Buffer.from(payloadPart, "base64url").toString("utf8"),
+    ) as CapabilityPayload;
   } catch {
     throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
   }
@@ -427,7 +442,11 @@ async function verifyCapability(token: string, expectedE164: string): Promise<Ca
   return payload;
 }
 
-async function startVerification(form: FormData, clientIp: string, request: Request): Promise<Response> {
+async function startVerification(
+  form: FormData,
+  clientIp: string,
+  request: Request,
+): Promise<Response> {
   assertAllowedFields(form, new Set(["action", "phone"]));
   enforceRateLimit(`verification-start:${clientIp}`, 5, 15 * 60 * 1000);
   const e164 = stage1E164Schema.parse(requiredString(form, "phone", 8, 16));
@@ -533,7 +552,10 @@ function readPhotos(form: FormData): File[] {
     if (!(entry instanceof File)) {
       throw new Stage1SubmissionError("INVALID_REQUEST", "Fotoğraf dosyası geçersiz.");
     }
-    if (validateListingPhoto(entry.type, entry.size) !== null || entry.size > LISTING_PHOTO_MAX_BYTES) {
+    if (
+      validateListingPhoto(entry.type, entry.size) !== null ||
+      entry.size > LISTING_PHOTO_MAX_BYTES
+    ) {
       throw new Stage1SubmissionError(
         "INVALID_REQUEST",
         "Fotoğraflar JPEG, PNG veya WebP olmalı ve dosya başına 8 MB sınırını aşmamalı.",
@@ -807,7 +829,10 @@ async function submitListing(form: FormData, clientIp: string): Promise<Response
     try {
       await cleanupFailedSubmission(config, listingId, storedPhotos);
     } catch (cleanupCause) {
-      throw new AggregateError([cause, cleanupCause], "Submission failed and cleanup was incomplete.");
+      throw new AggregateError(
+        [cause, cleanupCause],
+        "Submission failed and cleanup was incomplete.",
+      );
     }
     throw cause;
   }

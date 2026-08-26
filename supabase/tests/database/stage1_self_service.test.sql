@@ -58,5 +58,66 @@ select results_eq(
 );
 reset role;
 
+insert into public.listings (
+  id, title, description, price_amount, price_is_free, category, item_condition,
+  province, district, seller_display_name, contact_channel, contact_e164,
+  contact_verified_at, contact_verification_method, publication_instruction_at,
+  private_seller_declaration_at, content_rights_declaration_at, status
+)
+values
+  (
+    '96000000-0000-4000-8000-000000000002',
+    'Missing private seller declaration',
+    'Synthetic pending listing missing the private-seller declaration.',
+    10, false, 'home', 'good', 'Tekirdağ', 'Çorlu', 'Synthetic Seller',
+    'phone', '+12025550189', now() - interval '2 minutes', 'one_time_code',
+    now() - interval '1 minute', null, now() - interval '1 minute', 'pending'
+  ),
+  (
+    '96000000-0000-4000-8000-000000000003',
+    'Missing content rights declaration',
+    'Synthetic pending listing missing the content-rights declaration.',
+    10, false, 'home', 'good', 'Tekirdağ', 'Çorlu', 'Synthetic Seller',
+    'phone_whatsapp', '+12025550190', now() - interval '2 minutes', 'one_time_code',
+    now() - interval '1 minute', now() - interval '1 minute', null, 'pending'
+  );
+
+select throws_like(
+  $$
+    update public.listings
+    set status = 'published', published_at = now(), expires_at = now() + interval '1 day'
+    where id = '96000000-0000-4000-8000-000000000002'
+  $$,
+  '%listings_published_stage1_declarations_ready_check%',
+  'raw publish rejects missing private-seller declaration'
+);
+
+select throws_like(
+  $$
+    update public.listings
+    set status = 'published', published_at = now(), expires_at = now() + interval '1 day'
+    where id = '96000000-0000-4000-8000-000000000003'
+  $$,
+  '%listings_published_stage1_declarations_ready_check%',
+  'raw publish rejects missing content-rights declaration'
+);
+
+select is(
+  (select status from public.listings where id = '96000000-0000-4000-8000-000000000002'),
+  'pending',
+  'failed raw publish leaves missing-declaration listing pending'
+);
+
+set local role anon;
+select is(
+  (
+    select count(*)::integer
+    from public.get_public_listing_photos('96000000-0000-4000-8000-000000000002')
+  ),
+  0,
+  'pending self-service photo manifest remains anonymous-invisible'
+);
+reset role;
+
 select * from finish();
 rollback;

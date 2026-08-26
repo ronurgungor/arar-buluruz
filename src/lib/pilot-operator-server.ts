@@ -408,7 +408,7 @@ function createIngestionStore(config: BackendConfig): TrustedListingPhotoIngesti
             "cache-control": "max-age=60",
             "x-upsert": "false",
           },
-          body: input.bytes,
+          body: new Uint8Array(input.bytes).buffer,
         }),
         "operator sanitized photo upload",
       );

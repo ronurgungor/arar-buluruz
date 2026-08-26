@@ -9,9 +9,10 @@ import {
   validateExternalSalesLink,
   validateOptionalExternalSalesLink,
   type ExternalSalesFraudDimensions,
+  type ExternalSalesInvalidReason,
 } from "./external-sales-link";
 
-function expectInvalid(input: string, reason?: string) {
+function expectInvalid(input: string, reason?: ExternalSalesInvalidReason) {
   const result = validateExternalSalesLink(input);
   expect(result.classification).toBe("INVALID");
   if (reason && result.classification === "INVALID") expect(result.reason).toBe(reason);

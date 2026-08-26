@@ -87,7 +87,9 @@ function cascadeDeleteListing(listingId: string): void {
 function installBackendMock(): void {
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     backendCallCount += 1;
-    const url = new URL(typeof input === "string" ? input : input instanceof URL ? input : input.url);
+    const url = new URL(
+      typeof input === "string" ? input : input instanceof URL ? input : input.url,
+    );
     const method = init?.method ?? (input instanceof Request ? input.method : "GET");
 
     if (url.pathname === "/rest/v1/listings" && method === "POST") {
@@ -136,7 +138,9 @@ function installBackendMock(): void {
     }
 
     if (url.pathname.startsWith("/storage/v1/object/listing_photos/") && method === "POST") {
-      storedObjects.add(decodeURIComponent(url.pathname.slice("/storage/v1/object/listing_photos/".length)));
+      storedObjects.add(
+        decodeURIComponent(url.pathname.slice("/storage/v1/object/listing_photos/".length)),
+      );
       return new Response(null, { status: 200 });
     }
 
@@ -183,12 +187,16 @@ async function syntheticCapability(phone: string): Promise<string> {
     action?: string;
     challengeId?: string;
   };
-  assert(startedPayload.ok && startedPayload.challengeId, "verification challenge was not issued");
+  const challengeId = startedPayload.challengeId;
+  assert(
+    startedPayload.ok && typeof challengeId === "string",
+    "verification challenge was not issued",
+  );
 
   const verify = new FormData();
   verify.set("action", "verify_phone");
   verify.set("phone", phone);
-  verify.set("challengeId", startedPayload.challengeId);
+  verify.set("challengeId", challengeId);
   verify.set("code", "424242");
   const verified = await handleStage1SelfServiceRequest(requestFor(verify));
   expect(verified.status).toBe(200);
@@ -197,8 +205,12 @@ async function syntheticCapability(phone: string): Promise<string> {
     action?: string;
     capability?: string;
   };
-  assert(verifiedPayload.ok && verifiedPayload.capability, "verification capability was not issued");
-  return verifiedPayload.capability;
+  const capability = verifiedPayload.capability;
+  assert(
+    verifiedPayload.ok && typeof capability === "string",
+    "verification capability was not issued",
+  );
+  return capability;
 }
 
 function submissionForm(
@@ -226,7 +238,9 @@ function submissionForm(
   form.set("idempotencyKey", idempotencyKey);
   form.append(
     "photo",
-    new File([options.photoBytes ?? makeSyntheticPng()], "synthetic.png", { type: "image/png" }),
+    new File([new Uint8Array(options.photoBytes ?? makeSyntheticPng()).buffer], "synthetic.png", {
+      type: "image/png",
+    }),
   );
   if (options.extraField) form.set(options.extraField[0], options.extraField[1]);
   return form;
@@ -258,7 +272,9 @@ describe("Stage 1 self-service server acceptance", () => {
     const key = "97000000-0000-4000-8000-000000000001";
 
     failNextClaim = true;
-    const failed = await handleStage1SelfServiceRequest(requestFor(submissionForm(capability, key)));
+    const failed = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm(capability, key)),
+    );
     expect(failed.status).toBe(500);
     expect(await failed.json()).toMatchObject({ ok: false, code: "SUBMISSION_FAILED" });
     expect(listings.size).toBe(0);
@@ -266,7 +282,9 @@ describe("Stage 1 self-service server acceptance", () => {
     expect(storedObjects.size).toBe(0);
     expect(submissionKeys.size).toBe(0);
 
-    const retried = await handleStage1SelfServiceRequest(requestFor(submissionForm(capability, key)));
+    const retried = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm(capability, key)),
+    );
     expect(retried.status).toBe(202);
     const retryPayload = (await retried.json()) as { ok: boolean; listingId: string };
     expect(retryPayload.ok).toBe(true);
@@ -274,7 +292,9 @@ describe("Stage 1 self-service server acceptance", () => {
     expect(photoMetadata.size).toBe(1);
     expect(storedObjects.size).toBe(1);
 
-    const duplicated = await handleStage1SelfServiceRequest(requestFor(submissionForm(capability, key)));
+    const duplicated = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm(capability, key)),
+    );
     expect(duplicated.status).toBe(200);
     expect(await duplicated.json()).toMatchObject({
       ok: true,
@@ -291,29 +311,42 @@ describe("Stage 1 self-service server acceptance", () => {
     const backendBefore = backendCallCount;
 
     const wrongPhone = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm(capability, "97000000-0000-4000-8000-000000000002", { phone: "+12025550190" }), {
-        origin: "https://stage1.example.test",
-        trustedIp: "198.51.100.20",
-      }),
+      requestFor(
+        submissionForm(capability, "97000000-0000-4000-8000-000000000002", {
+          phone: "+12025550190",
+        }),
+        {
+          origin: "https://stage1.example.test",
+          trustedIp: "198.51.100.20",
+        },
+      ),
     );
     expect(wrongPhone.status).toBe(401);
     expect(await wrongPhone.json()).toMatchObject({ ok: false, code: "VERIFICATION_REQUIRED" });
 
     const tampered = `${capability.slice(0, -1)}${capability.endsWith("a") ? "b" : "a"}`;
     const tamperedResponse = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm(tampered, "97000000-0000-4000-8000-000000000003", { phone: "+12025550189" }), {
-        origin: "https://stage1.example.test",
-        trustedIp: "198.51.100.21",
-      }),
+      requestFor(
+        submissionForm(tampered, "97000000-0000-4000-8000-000000000003", { phone: "+12025550189" }),
+        {
+          origin: "https://stage1.example.test",
+          trustedIp: "198.51.100.21",
+        },
+      ),
     );
     expect(tamperedResponse.status).toBe(401);
 
     Date.now = () => originalDateNow() + 31 * 60 * 1000;
     const expired = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm(capability, "97000000-0000-4000-8000-000000000004", { phone: "+12025550189" }), {
-        origin: "https://stage1.example.test",
-        trustedIp: "198.51.100.22",
-      }),
+      requestFor(
+        submissionForm(capability, "97000000-0000-4000-8000-000000000004", {
+          phone: "+12025550189",
+        }),
+        {
+          origin: "https://stage1.example.test",
+          trustedIp: "198.51.100.22",
+        },
+      ),
     );
     Date.now = originalDateNow;
     expect(expired.status).toBe(401);
@@ -356,7 +389,9 @@ describe("Stage 1 self-service server acceptance", () => {
     );
     expect(malformed.status).toBe(500);
     expect(await malformed.json()).toMatchObject({ ok: false, code: "SUBMISSION_FAILED" });
-    expect(Array.from(submissionKeys.values()).some((state) => state.listingId.startsWith("970"))).toBe(false);
+    expect(
+      Array.from(submissionKeys.values()).some((state) => state.listingId.startsWith("970")),
+    ).toBe(false);
   });
 
   test("trusted client-IP rate limit ignores arbitrary X-Forwarded-For", async () => {
