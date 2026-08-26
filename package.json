@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test:unit": "bun test src/build-profiles/pilot/public-discovery.test.ts src/lib/public-listings.test.ts src/lib/public-listings-contact.test.ts src/lib/public-seller-contact.test.ts src/lib/stage1-self-service-contract.test.ts src/lib/external-sales-link.test.ts src/lib/demo-listing.test.ts src/lib/listing-photo.test.ts src/lib/listing-photo-trusted.test.ts src/lib/prototype-contact.test.ts src/lib/pilot-intake.test.ts src/lib/product-phase.test.ts src/lib/discovery-contract.test.ts src/lib/place-provider-traffic-log.test.ts src/data/turkiye-locations.test.ts",
+    "test:unit": "bun test src/build-profiles/pilot/public-discovery.test.ts src/lib/public-listings.test.ts src/lib/public-listings-contact.test.ts src/lib/public-seller-contact.test.ts src/lib/stage1-self-service-contract.test.ts src/lib/stage1-self-service-server.test.ts src/lib/stage1-moderation-server.test.ts src/lib/external-sales-link.test.ts src/lib/demo-listing.test.ts src/lib/listing-photo.test.ts src/lib/listing-photo-trusted.test.ts src/lib/prototype-contact.test.ts src/lib/pilot-intake.test.ts src/lib/product-phase.test.ts src/lib/discovery-contract.test.ts src/lib/place-provider-traffic-log.test.ts src/data/turkiye-locations.test.ts",
     "format": "prettier --write ."
   },
   "dependencies": {
@@ -76,7 +76,7 @@
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",
-    "eslint-plugin-react-hooks": "^6.0.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "nitro": "3.0.260603-beta",
