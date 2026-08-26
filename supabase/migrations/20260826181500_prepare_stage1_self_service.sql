@@ -50,6 +50,9 @@ comment on column public.listings.content_rights_declaration_at is
 comment on column public.listings.contact_channel is
   'Intentionally public contact preference for active listings: phone, whatsapp or phone_whatsapp.';
 
+-- These are buyer-visible product facts on rows that already pass the existing published-only RLS.
+grant select (category, item_condition, price_is_free) on table public.listings to anon;
+
 create table private.listing_submission_keys (
   key_hash text primary key,
   listing_id uuid not null unique references public.listings (id) on delete cascade,
