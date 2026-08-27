@@ -1,6 +1,7 @@
 import { isIP } from "node:net";
 import { LISTING_PHOTO_MAX_BYTES, validateListingPhoto } from "./listing-photo";
 import {
+  TrustedListingPhotoIngestionError,
   ingestTrustedListingPhoto,
   type StoredListingPhotoMetadata,
   type TrustedListingPhotoIngestionStore,
@@ -663,13 +664,14 @@ async function cleanupFailedSubmission(
   config: BackendConfig,
   listingId: string,
   photos: readonly StoredListingPhotoMetadata[],
+  additionalObjectPaths: readonly string[] = [],
 ): Promise<void> {
   const errors: unknown[] = [];
+  const objectPaths = Array.from(
+    new Set([...photos.map((photo) => photo.objectPath), ...additionalObjectPaths]),
+  );
   try {
-    await deleteStoredObjects(
-      config,
-      photos.map((photo) => photo.objectPath),
-    );
+    await deleteStoredObjects(config, objectPaths);
   } catch (error) {
     errors.push(error);
   }
@@ -871,8 +873,12 @@ async function submitListing(form: FormData, clientIp: string): Promise<Response
     }
     await completeAndPublishSubmission(config, keyHash, listingId);
   } catch (cause) {
+    const orphanedObjectPaths =
+      cause instanceof TrustedListingPhotoIngestionError && cause.orphanedObjectPath
+        ? [cause.orphanedObjectPath]
+        : [];
     try {
-      await cleanupFailedSubmission(config, listingId, storedPhotos);
+      await cleanupFailedSubmission(config, listingId, storedPhotos, orphanedObjectPaths);
     } catch (cleanupCause) {
       throw new AggregateError(
         [cause, cleanupCause],
