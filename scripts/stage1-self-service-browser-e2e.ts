@@ -407,12 +407,7 @@ for (const page of [ownerPage, buyerPage, otherSellerPage, founderPage]) {
 
 try {
   await buyerPage.goto(publicBaseUrl, { waitUntil: "networkidle" });
-  await assertResponsiveRoute(
-    ownerPage,
-    `${publicBaseUrl}/ilan-ver`,
-    "/ilan-ver",
-    "İlan Ver",
-  );
+  await assertResponsiveRoute(ownerPage, `${publicBaseUrl}/ilan-ver`, "/ilan-ver", "İlan Ver");
   await assertAnonDirectWritesDenied();
   assert(
     (await buyerPage.locator("[data-ad-placement]").count()) === 0,
@@ -475,7 +470,9 @@ try {
     `tel:${ownerPhone}`,
   );
   expectHref(
-    await contactBar.getByRole("link", { name: "WhatsApp’tan yaz", exact: true }).getAttribute("href"),
+    await contactBar
+      .getByRole("link", { name: "WhatsApp’tan yaz", exact: true })
+      .getAttribute("href"),
     `https://wa.me/${ownerPhone.slice(1)}`,
   );
 
@@ -485,18 +482,8 @@ try {
     "/ara",
     "İlan ara",
   );
-  await assertResponsiveRoute(
-    buyerPage,
-    `${publicBaseUrl}/ilan/${listingId}`,
-    "/ilan/$id",
-    title,
-  );
-  await assertResponsiveRoute(
-    ownerPage,
-    `${publicBaseUrl}/ilanlarim`,
-    "/ilanlarim",
-    "İlanlarım",
-  );
+  await assertResponsiveRoute(buyerPage, `${publicBaseUrl}/ilan/${listingId}`, "/ilan/$id", title);
+  await assertResponsiveRoute(ownerPage, `${publicBaseUrl}/ilanlarim`, "/ilanlarim", "İlanlarım");
 
   await openOwnerListings(ownerPage, ownerPhone);
   const ownerCard = ownerPage.getByTestId(`seller-listing-${listingId}`);
