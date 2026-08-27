@@ -196,7 +196,8 @@ const turkiyeWideInsert = await fetch(`${baseUrl}/rest/v1/listings`, {
   },
   body: JSON.stringify({
     title: "Synthetic Türkiye-wide listing",
-    description: "Synthetic fixture proving the database no longer carries a Çorlu-only product lock.",
+    description:
+      "Synthetic fixture proving the database no longer carries a Çorlu-only product lock.",
     price_amount: 1,
     province: "İstanbul",
     district: "Kadıköy",
