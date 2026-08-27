@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound, useNavigate, useRouter } from "@tanstack/react-router";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, MapPin, MessageCircle, Phone, UserRound } from "lucide-react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
 import { CLOSED_ROBOTS, robotsContent } from "@/build-profiles/pilot/public-discovery";
 import { loadPilotListingDetail } from "@/build-profiles/pilot/public-listings";
@@ -65,7 +65,7 @@ function ListingDetail() {
     return (
       <div className="min-h-screen">
         <PilotTopBar />
-        <main className="mx-auto max-w-2xl px-4 pb-16">
+        <main className="mx-auto max-w-3xl px-4 pb-16">
           <button
             type="button"
             data-testid="results-back"
@@ -101,7 +101,7 @@ function ListingDetail() {
   return (
     <div className="min-h-screen">
       <PilotTopBar />
-      <main className="mx-auto max-w-2xl px-4 pb-[calc(11rem+env(safe-area-inset-bottom))]">
+      <main className="mx-auto max-w-3xl px-4 pb-[calc(11rem+env(safe-area-inset-bottom))]">
         <button
           type="button"
           data-testid="results-back"
@@ -118,7 +118,7 @@ function ListingDetail() {
               alt={`${listing.title} fotoğraf 1`}
               width={800}
               height={600}
-              className="aspect-[4/3] w-full rounded-2xl object-cover"
+              className="aspect-[4/3] w-full rounded-3xl object-cover shadow-sm"
             />
             {additionalPhotos.length > 0 && (
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -142,23 +142,45 @@ function ListingDetail() {
           </div>
         )}
 
-        <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-foreground">
-          {listing.title}
-        </h1>
-        <p className="mt-1 text-3xl font-black text-primary">
-          {listing.isFree ? "Ücretsiz" : formatPrice(listing.price)}
-        </p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {listing.city} / {listing.district}
-        </p>
-        <p className="mt-1 text-sm font-semibold text-foreground">{listing.seller}</p>
-        <p className="mt-4 leading-relaxed text-foreground">{listing.description}</p>
+        <section className="mt-5 rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+            {listing.title}
+          </h1>
+          <p className="mt-2 text-3xl font-black text-primary">
+            {listing.isFree ? "Ücretsiz" : formatPrice(listing.price)}
+          </p>
+          <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+            <MapPin aria-hidden className="h-4 w-4" />
+            {listing.city} / {listing.district}
+          </p>
+        </section>
+
+        <section className="mt-4 rounded-2xl border border-border bg-card p-5">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+            Açıklama
+          </h2>
+          <p className="mt-3 whitespace-pre-wrap leading-relaxed text-foreground">
+            {listing.description}
+          </p>
+        </section>
+
+        <section className="mt-4 flex items-center gap-3 rounded-2xl border border-border bg-card p-5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+            <UserRound aria-hidden className="h-5 w-5 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Satıcı
+            </p>
+            <p className="mt-0.5 truncate font-bold text-foreground">{listing.seller}</p>
+          </div>
+        </section>
 
         <AdSlot placement="detail_after_description" className="mt-6" />
 
         <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
-          Satıcı iletişim bilgisi yalnız bu ilan hakkında iletişim kurmanız için paylaşılmıştır;
-          reklam, pazarlama veya ilgisiz amaçlarla kullanmayın.
+          Satıcıyla yalnız bu ilan hakkında iletişim kurun. İletişim bilgisini reklam, pazarlama
+          veya ilgisiz amaçlarla kullanmayın.
         </p>
 
         <div className="mt-5 flex flex-wrap gap-4 text-sm">
@@ -167,10 +189,10 @@ function ListingDetail() {
             params={{ id: listing.id }}
             className="font-semibold text-primary underline underline-offset-4"
           >
-            Yanlış telefon / kişisel veri / ilan bildir
+            İlanı bildir
           </Link>
           <Link to="/iletisim" className="font-semibold text-primary underline underline-offset-4">
-            İletişim ve kaldırma
+            Yardım ve iletişim
           </Link>
         </div>
       </main>
@@ -179,7 +201,7 @@ function ListingDetail() {
         data-testid="detail-contact-bar"
         className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
       >
-        <div className="mx-auto max-w-2xl px-4 py-3">
+        <div className="mx-auto max-w-3xl px-4 py-3">
           {contactActions.length > 0 ? (
             <div
               className={`grid gap-2 ${contactActions.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}
@@ -189,8 +211,13 @@ function ListingDetail() {
                   key={action.kind}
                   href={action.href}
                   rel={action.kind === "whatsapp" ? "noopener noreferrer" : undefined}
-                  className="flex h-12 min-h-12 items-center justify-center rounded-full bg-primary px-3 text-center text-sm font-bold text-primary-foreground hover:bg-primary/90"
+                  className="flex h-12 min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-3 text-center text-sm font-bold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
                 >
+                  {action.kind === "whatsapp" ? (
+                    <MessageCircle aria-hidden className="h-4 w-4" />
+                  ) : (
+                    <Phone aria-hidden className="h-4 w-4" />
+                  )}
                   {action.label}
                 </a>
               ))}
