@@ -70,7 +70,7 @@ jobs:
         run: |
           bash scripts/pilot-rc-artifact-boundary-check.sh
 
-          grep -F '4 kısa adım' src/routes-pilot/ilan-ver.tsx
+          grep -F 'Birkaç dakikada yayına hazırla' src/routes-pilot/ilan-ver.tsx
           grep -F 'data-testid="stage1-photo-input"' src/routes-pilot/ilan-ver.tsx
           grep -F 'phone_whatsapp' src/lib/stage1-self-service-contract.ts
           grep -F 'PILOT_SELF_SERVICE_ENABLED' src/lib/stage1-self-service-server.ts
