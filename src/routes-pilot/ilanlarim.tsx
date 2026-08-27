@@ -222,7 +222,10 @@ function SellerListings() {
   const saveEdit = async () => {
     if (!editing) return;
     const normalizedPrice = Number(editing.priceText.replace(",", "."));
-    if (!editing.isFree && (!editing.priceText.trim() || !Number.isFinite(normalizedPrice) || normalizedPrice <= 0)) {
+    if (
+      !editing.isFree &&
+      (!editing.priceText.trim() || !Number.isFinite(normalizedPrice) || normalizedPrice <= 0)
+    ) {
       setError("Geçerli bir fiyat girin veya Ücretsiz seçeneğini işaretleyin.");
       return;
     }
@@ -333,7 +336,10 @@ function SellerListings() {
           </p>
         )}
         {notice && (
-          <p role="status" className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-3 text-sm">
+          <p
+            role="status"
+            className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-3 text-sm"
+          >
             {notice}
           </p>
         )}
@@ -530,9 +536,7 @@ function SellerListings() {
                   aria-label="İlanlarım fiyat"
                   disabled={editing.isFree}
                   value={editing.isFree ? "" : editing.priceText}
-                  onChange={(event) =>
-                    setEditing({ ...editing, priceText: event.target.value })
-                  }
+                  onChange={(event) => setEditing({ ...editing, priceText: event.target.value })}
                   inputMode="decimal"
                   placeholder={editing.isFree ? "" : "Örn. 12.500"}
                   className={`${fieldClass} pl-9 disabled:bg-muted`}
