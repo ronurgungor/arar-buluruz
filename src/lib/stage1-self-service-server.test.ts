@@ -7,6 +7,7 @@ const originalConsoleError = console.error;
 const originalDateNow = Date.now;
 
 const listings = new Set<string>();
+const listingBodies = new Map<string, Record<string, unknown>>();
 const storedObjects = new Set<string>();
 const photoMetadata = new Set<string>();
 const submissionKeys = new Map<string, { listingId: string; complete: boolean }>();
@@ -76,6 +77,7 @@ function json(value: unknown, status = 200): Response {
 
 function cascadeDeleteListing(listingId: string): void {
   listings.delete(listingId);
+  listingBodies.delete(listingId);
   for (const [keyHash, state] of submissionKeys) {
     if (state.listingId === listingId) submissionKeys.delete(keyHash);
   }
@@ -93,9 +95,63 @@ function installBackendMock(): void {
     const method = init?.method ?? (input instanceof Request ? input.method : "GET");
 
     if (url.pathname === "/rest/v1/listings" && method === "POST") {
-      const body = JSON.parse(String(init?.body)) as { id: string };
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown> & { id: string };
+      const now = new Date().toISOString();
       listings.add(body.id);
+      listingBodies.set(body.id, {
+        ...body,
+        created_at: now,
+        updated_at: now,
+        published_at: null,
+        expires_at: null,
+        unpublished_at: null,
+        sold_at: null,
+      });
       return json([{ id: body.id }], 201);
+    }
+
+    if (url.pathname === "/rest/v1/listings" && method === "GET") {
+      const id = (url.searchParams.get("id") ?? "").replace(/^eq\./, "");
+      const phone = (url.searchParams.get("contact_e164") ?? "").replace(/^eq\./, "");
+      const rows = Array.from(listingBodies.values()).filter((row) => {
+        if (id && row.id !== id) return false;
+        if (phone && row.contact_e164 !== phone) return false;
+        return true;
+      });
+      return json(rows);
+    }
+
+    if (url.pathname === "/rest/v1/listings" && method === "PATCH") {
+      const id = (url.searchParams.get("id") ?? "").replace(/^eq\./, "");
+      const current = listingBodies.get(id);
+      if (!current) return json([]);
+      const patch = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      listingBodies.set(id, { ...current, ...patch, updated_at: new Date().toISOString() });
+      return json([{ id }]);
+    }
+
+    if (url.pathname === "/rest/v1/rpc/get_listing_photo_inventory" && method === "POST") {
+      const body = JSON.parse(String(init?.body)) as { p_listing_id: string };
+      const rows = Array.from(photoMetadata)
+        .filter((path) => path.startsWith(`listings/${body.p_listing_id}/`))
+        .map((object_path, sort_order) => ({
+          photo_id: object_path.split("/").at(-1)?.replace(/\.webp$/, "") ?? crypto.randomUUID(),
+          object_path,
+          mime_type: "image/webp",
+          byte_size: 100,
+          sort_order,
+        }));
+      return json(rows);
+    }
+
+    if (
+      url.pathname.startsWith("/storage/v1/object/sign/listing_photos/") &&
+      method === "POST"
+    ) {
+      const objectPath = decodeURIComponent(
+        url.pathname.slice("/storage/v1/object/sign/listing_photos/".length),
+      );
+      return json({ signedURL: `/object/sign/listing_photos/${objectPath}?token=synthetic` });
     }
 
     if (url.pathname === "/rest/v1/rpc/claim_listing_submission_key" && method === "POST") {
@@ -137,6 +193,18 @@ function installBackendMock(): void {
         return new Response("listing is not publish-ready", { status: 409 });
       }
       existing.complete = true;
+      const current = listingBodies.get(body.p_listing_id);
+      if (current) {
+        listingBodies.set(body.p_listing_id, {
+          ...current,
+          status: "published",
+          published_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+          unpublished_at: null,
+          sold_at: null,
+          updated_at: new Date().toISOString(),
+        });
+      }
       return json(true);
     }
 
