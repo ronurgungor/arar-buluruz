@@ -21,6 +21,22 @@ select ok(
   not has_function_privilege('anon', 'public.claim_listing_submission_key(text,uuid)', 'EXECUTE'),
   'anon cannot claim privileged submission keys'
 );
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.complete_and_publish_listing_submission(text,uuid,timestamptz)',
+    'EXECUTE'
+  ),
+  'anon cannot invoke atomic publication'
+);
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.complete_and_publish_listing_submission(text,uuid,timestamptz)',
+    'EXECUTE'
+  ),
+  'service role may invoke the constrained atomic publication RPC'
+);
 
 insert into public.listings (
   id, title, description, price_amount, price_is_free, category, item_condition,
@@ -46,9 +62,52 @@ select is(
 );
 reset role;
 
-update public.listings
-set status = 'published', published_at = now(), expires_at = now() + interval '30 days'
-where id = '96000000-0000-4000-8000-000000000001';
+insert into private.listing_submission_keys (key_hash, listing_id)
+values (
+  repeat('a', 64),
+  '96000000-0000-4000-8000-000000000001'
+);
+
+insert into private.listing_photos (
+  id, listing_id, object_path, mime_type, byte_size, sort_order
+)
+values (
+  '96100000-0000-4000-8000-000000000001',
+  '96000000-0000-4000-8000-000000000001',
+  'listings/96000000-0000-4000-8000-000000000001/96100000-0000-4000-8000-000000000001.webp',
+  'image/webp',
+  72,
+  0
+);
+
+select is(
+  public.complete_and_publish_listing_submission(
+    repeat('a', 64),
+    '96000000-0000-4000-8000-000000000001',
+    now() + interval '30 days'
+  ),
+  true,
+  'atomic publication completes a fully ready listing'
+);
+
+select is(
+  (
+    select status
+    from public.listings
+    where id = '96000000-0000-4000-8000-000000000001'
+  ),
+  'published',
+  'fully ready listing is published atomically'
+);
+
+select ok(
+  (
+    select completed_at is not null
+    from private.listing_submission_keys
+    where key_hash = repeat('a', 64)
+  ),
+  'idempotency completion is committed with publication'
+);
 
 set local role anon;
 select results_eq(
@@ -57,6 +116,59 @@ select results_eq(
   'published self-service listing exposes the selected phone+WhatsApp contact contract'
 );
 reset role;
+
+insert into public.listings (
+  id, title, description, price_amount, price_is_free, category, item_condition,
+  province, district, seller_display_name, contact_channel, contact_e164,
+  contact_verified_at, contact_verification_method, publication_instruction_at,
+  private_seller_declaration_at, content_rights_declaration_at, status
+)
+values (
+  '96000000-0000-4000-8000-000000000004',
+  'No photo publication fixture',
+  'Synthetic publish-ready evidence except for the required trusted photo.',
+  10, false, 'vehicle', 'used', 'İstanbul', 'Kadıköy', 'Synthetic Seller',
+  'phone', '+12025550191', now() - interval '2 minutes', 'one_time_code',
+  now() - interval '1 minute', now() - interval '1 minute', now() - interval '1 minute',
+  'pending'
+);
+
+insert into private.listing_submission_keys (key_hash, listing_id)
+values (
+  repeat('b', 64),
+  '96000000-0000-4000-8000-000000000004'
+);
+
+select throws_like(
+  $
+    select public.complete_and_publish_listing_submission(
+      repeat('b', 64),
+      '96000000-0000-4000-8000-000000000004',
+      now() + interval '30 days'
+    )
+  $,
+  '%publish-ready%',
+  'atomic publication rejects a listing without trusted photo metadata'
+);
+
+select is(
+  (
+    select status
+    from public.listings
+    where id = '96000000-0000-4000-8000-000000000004'
+  ),
+  'pending',
+  'failed photo readiness leaves the listing non-public'
+);
+
+select ok(
+  (
+    select completed_at is null
+    from private.listing_submission_keys
+    where key_hash = repeat('b', 64)
+  ),
+  'failed publication does not consume the idempotency completion'
+);
 
 insert into public.listings (
   id, title, description, price_amount, price_is_free, category, item_condition,
