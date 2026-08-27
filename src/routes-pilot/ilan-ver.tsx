@@ -481,9 +481,12 @@ function Stage1ListingWizard() {
                 Alıcının ürünü hızlıca anlaması için temel bilgiler yeterli.
               </p>
             </div>
-            <label className="block">
-              <span className="text-sm font-medium">Kategori</span>
+            <div className="block">
+              <label htmlFor="stage1-category" className="text-sm font-medium">
+                Kategori
+              </label>
               <select
+                id="stage1-category"
                 value={category}
                 onChange={(event) => setCategory(event.target.value as Stage1Category)}
                 className={`mt-1 ${selectClass}`}
@@ -494,7 +497,7 @@ function Stage1ListingWizard() {
                   </option>
                 ))}
               </select>
-            </label>
+            </div>
             <label className="block">
               <span className="text-sm font-medium">Başlık</span>
               <input
@@ -506,9 +509,12 @@ function Stage1ListingWizard() {
                 className={`mt-1 ${fieldClass}`}
               />
             </label>
-            <label className="block">
-              <span className="text-sm font-medium">Durum</span>
+            <div className="block">
+              <label htmlFor="stage1-condition" className="text-sm font-medium">
+                Durum
+              </label>
               <select
+                id="stage1-condition"
                 value={condition}
                 onChange={(event) => setCondition(event.target.value as Stage1Condition)}
                 className={`mt-1 ${selectClass}`}
@@ -519,7 +525,7 @@ function Stage1ListingWizard() {
                   </option>
                 ))}
               </select>
-            </label>
+            </div>
             <label className="block">
               <span className="text-sm font-medium">Fiyat (TL)</span>
               <input
