@@ -42,7 +42,8 @@ export const Route = createFileRoute("/ilan-ver")({
       { title: "İlan Ver — Arar Buluruz" },
       {
         name: "description",
-        content: "Fotoğraflarını ekle, ilanını birkaç adımda oluştur ve Türkiye'deki alıcılara ulaş.",
+        content:
+          "Fotoğraflarını ekle, ilanını birkaç adımda oluştur ve Türkiye'deki alıcılara ulaş.",
       },
       { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
     ],
@@ -355,11 +356,10 @@ function Stage1ListingWizard() {
         <main className="mx-auto max-w-xl px-4 pb-16">
           <section className="mt-10 rounded-2xl border border-border bg-card p-6 text-center">
             <CheckCircle2 aria-hidden className="mx-auto h-10 w-10 text-primary" />
-            <h1 className="mt-4 text-2xl font-extrabold tracking-tight">
-              İlanın yayınlandı
-            </h1>
+            <h1 className="mt-4 text-2xl font-extrabold tracking-tight">İlanın yayınlandı</h1>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              İlanın güvenli gönderim kontrolleri tamamlandı ve yayına alındı. İlanını telefon doğrulamasıyla yönetebilirsin.
+              İlanın güvenli gönderim kontrolleri tamamlandı ve yayına alındı. İlanını telefon
+              doğrulamasıyla yönetebilirsin.
             </p>
             <p className="mt-3 text-xs text-muted-foreground">İlan no: {successId}</p>
             <Link
@@ -381,7 +381,9 @@ function Stage1ListingWizard() {
         <div className="mt-5 flex items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight">İlan Ver</h1>
-            <p className="mt-1 text-sm text-muted-foreground">4 kısa adım · Türkiye genelinde ilan</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              4 kısa adım · Türkiye genelinde ilan
+            </p>
           </div>
           <span className="text-sm font-semibold text-primary">{step}/4</span>
         </div>
@@ -635,11 +637,14 @@ function Stage1ListingWizard() {
             <div>
               <h2 className="text-lg font-bold">Satıcı ve iletişim</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Telefon doğrulaması tamamlanıp ilan güvenli biçimde yayınlandığında alıcılar seçtiğiniz yöntemle doğrudan size ulaşır.
+                Telefon doğrulaması tamamlanıp ilan güvenli biçimde yayınlandığında alıcılar
+                seçtiğiniz yöntemle doğrudan size ulaşır.
               </p>
             </div>
             <div className="rounded-xl border border-border bg-accent/35 p-3 text-sm leading-relaxed text-muted-foreground">
-              İlan oluşturmak için verdiğiniz bilgiler ilanı yayınlamak ve kötüye kullanımı önlemek amacıyla işlenir. Telefonunuz yalnız seçtiğiniz iletişim yöntemlerinde görünür.{" "}
+              İlan oluşturmak için verdiğiniz bilgiler ilanı yayınlamak ve kötüye kullanımı
+              önlemek amacıyla işlenir. Telefonunuz yalnız seçtiğiniz iletişim yöntemlerinde
+              görünür.{" "}
               <Link
                 to="/gizlilik"
                 className="font-semibold text-primary underline underline-offset-4"
@@ -733,7 +738,8 @@ function Stage1ListingWizard() {
                   className="mt-1"
                 />
                 <span>
-                  Bu telefon bana ait; ilan yayınlandığında seçtiğim iletişim yöntemleri için kamuya açık gösterilmesini istiyorum.
+                  Bu telefon bana ait; ilan yayınlandığında seçtiğim iletişim yöntemleri için
+                  kamuya açık gösterilmesini istiyorum.
                 </span>
               </label>
             </div>
@@ -742,7 +748,8 @@ function Stage1ListingWizard() {
               <p className="mt-2 line-clamp-2">{title || "İlan başlığı"}</p>
               <p className="mt-1 font-bold text-primary">{formatPricePreview(price, isFree)}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {province || "İl"} / {district || "İlçe"} · {STAGE1_CONTACT_LABELS[contactPreference]}
+                {province || "İl"} / {district || "İlçe"} ·{" "}
+                {STAGE1_CONTACT_LABELS[contactPreference]}
               </p>
             </div>
             {verificationChallengeId && (
