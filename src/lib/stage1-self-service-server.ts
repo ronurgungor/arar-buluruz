@@ -893,7 +893,6 @@ async function submitListing(form: FormData, clientIp: string): Promise<Response
   );
 }
 
-
 function requiredUuid(form: FormData, key = "listingId"): string {
   const value = requiredString(form, key, 36, 36).toLowerCase();
   if (!UUID_PATTERN.test(value)) {
@@ -1095,14 +1094,13 @@ async function sellerList(form: FormData, clientIp: string): Promise<Response> {
   const { phone } = await assertSellerCapability(form);
   const config = readBackendConfig();
   const rows = await fetchSellerRows(config, { phone });
-  const listings = await Promise.all(
-    rows.map((row) => mapSellerListing(config, row)),
-  );
+  const listings = await Promise.all(rows.map((row) => mapSellerListing(config, row)));
   return jsonResponse({
     ok: true,
     action: "seller_list",
     listings,
-    message: listings.length > 0 ? "İlanların yüklendi." : "Bu telefonla yönetilen ilan bulunamadı.",
+    message:
+      listings.length > 0 ? "İlanların yüklendi." : "Bu telefonla yönetilen ilan bulunamadı.",
   });
 }
 
