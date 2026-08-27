@@ -30,7 +30,7 @@ export const Route = createFileRoute("/ilan/$id")({
         ],
       };
     const { listing } = loaderData;
-    const description = `${listing.title} — ${formatPrice(listing.price)} · ${listing.city}/${listing.district}`;
+    const description = `${listing.title} — ${listing.isFree ? "Ücretsiz" : formatPrice(listing.price)} · ${listing.city}/${listing.district}`;
     const robots = robotsContent(true);
     return {
       meta: [
@@ -145,7 +145,9 @@ function ListingDetail() {
         <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-foreground">
           {listing.title}
         </h1>
-        <p className="mt-1 text-3xl font-black text-primary">{formatPrice(listing.price)}</p>
+        <p className="mt-1 text-3xl font-black text-primary">
+          {listing.isFree ? "Ücretsiz" : formatPrice(listing.price)}
+        </p>
         <p className="mt-2 text-sm text-muted-foreground">
           {listing.city} / {listing.district}
         </p>
