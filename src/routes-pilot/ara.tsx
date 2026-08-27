@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { ChevronDown, Search as SearchIcon } from "lucide-react";
+import { ChevronDown, Search as SearchIcon, SlidersHorizontal } from "lucide-react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
 import { loadPilotListingsCollection } from "@/build-profiles/pilot/public-listings";
 import { AdSlot } from "@/components/AdSlot";
@@ -94,9 +94,16 @@ function SearchPage() {
   return (
     <div className="min-h-screen">
       <PilotTopBar />
-      <main className="mx-auto max-w-2xl px-4 pb-16">
+      <main className="mx-auto max-w-3xl px-4 pb-16">
+        <div className="pt-5">
+          <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">İlan ara</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Ne aradığını yaz, konumu seç ve ilanları karşılaştır.
+          </p>
+        </div>
+
         <form
-          className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 pt-4"
+          className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2"
           onSubmit={(event) => {
             event.preventDefault();
             setSearch({ q: term });
@@ -112,7 +119,7 @@ function SearchPage() {
               onChange={(event) => setTerm(event.target.value)}
               aria-label="Ne arıyorsun?"
               placeholder="Ne arıyorsun?"
-              className="h-12 w-full rounded-full border border-border bg-card pl-11 pr-4 text-base outline-none focus:border-primary"
+              className="h-12 w-full rounded-full border border-border bg-card pl-11 pr-4 text-base shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
             />
           </div>
           <button
@@ -123,8 +130,16 @@ function SearchPage() {
           </button>
         </form>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <div className="relative min-w-0 max-w-[45%]">
+        <section
+          aria-label="Arama filtreleri"
+          className="mt-3 rounded-2xl border border-border bg-card p-3 shadow-sm"
+        >
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <SlidersHorizontal aria-hidden className="h-4 w-4" />
+            Filtrele
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[9rem] flex-1 sm:max-w-[14rem]">
             <select
               value={activeCity}
               onChange={(event) => setSearch({ il: event.target.value, ilce: ALL_DISTRICTS })}
@@ -140,7 +155,7 @@ function SearchPage() {
               className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
             />
           </div>
-          <div className="relative min-w-0 max-w-[45%]">
+          <div className="relative min-w-[8rem] flex-1 sm:max-w-[14rem]">
             <select
               value={activeDistrict}
               disabled={!hasCity}
@@ -163,12 +178,13 @@ function SearchPage() {
               key={key}
               type="button"
               onClick={() => setSearch({ sirala: key })}
-              className={`h-11 rounded-full border px-4 text-sm font-medium transition-colors ${sirala === key ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground hover:bg-accent"}`}
+              className={`h-11 rounded-full border px-4 text-sm font-medium transition-colors ${sirala === key ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground hover:bg-accent"}`}
             >
               {sortLabels[key]}
             </button>
           ))}
-        </div>
+          </div>
+        </section>
 
         {listingData.state !== "ready" ? (
           <div
@@ -191,19 +207,19 @@ function SearchPage() {
               role="status"
               aria-live="polite"
               aria-atomic="true"
-              className="mt-3 text-sm text-muted-foreground"
+              className="mt-5 text-sm font-medium text-muted-foreground"
             >
               {results.length === 0 ? "Sonuç bulunamadı" : `${results.length} ilan bulundu`}
             </p>
-            <ul className="mt-2 divide-y divide-border/70">
+            <ul className="mt-3 space-y-3">
               {results.map((listing, index) => (
                 <Fragment key={listing.id}>
-                  <li className="py-2">
+                  <li className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
                     <Link
                       to="/ilan/$id"
                       params={{ id: listing.id }}
                       state={(previous) => ({ ...previous, ...LISTING_RESULTS_HISTORY_STATE })}
-                      className="flex items-center gap-3 rounded-xl p-1 transition-colors hover:bg-accent/40"
+                      className="flex items-center gap-3 p-3 transition-colors hover:bg-accent/40 sm:gap-4"
                     >
                       {listing.photos[0] ? (
                         <img
@@ -212,38 +228,41 @@ function SearchPage() {
                           width={800}
                           height={600}
                           loading="lazy"
-                          className="h-20 w-20 shrink-0 rounded-lg object-cover sm:h-24 sm:w-28"
+                          className="h-24 w-24 shrink-0 rounded-xl object-cover sm:h-28 sm:w-36"
                         />
                       ) : (
                         <div
                           aria-label="Fotoğraf bulunmuyor"
-                          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-muted px-2 text-center text-xs text-muted-foreground sm:h-24 sm:w-28"
+                          className="flex h-24 w-24 shrink-0 items-center justify-center rounded-xl bg-muted px-2 text-center text-xs text-muted-foreground sm:h-28 sm:w-36"
                         >
                           Fotoğraf yok
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">
+                        <h2 className="line-clamp-2 text-base font-bold leading-snug text-foreground">
                           {listing.title}
                         </h2>
-                        <p className="mt-0.5 text-base font-extrabold text-primary">
+                        <p className="mt-2 text-lg font-extrabold text-primary">
                           {listing.isFree ? "Ücretsiz" : formatPrice(listing.price)}
                         </p>
-                        <p className="truncate text-[13px] text-muted-foreground">
+                        <p className="mt-1 truncate text-[13px] font-medium text-muted-foreground">
                           {listing.city} / {listing.district}
                         </p>
                       </div>
                     </Link>
                   </li>
                   {index === 2 && results.length >= 4 ? (
-                    <AdSlot placement="search_infeed_1" container="li" className="py-3" />
+                    <AdSlot placement="search_infeed_1" container="li" />
                   ) : null}
                 </Fragment>
               ))}
             </ul>
             {results.length === 0 && (
-              <div className="mt-10 text-center">
-                <p className="text-muted-foreground">Sonuç bulunamadı. Farklı bir kelime dene.</p>
+              <div className="mt-8 rounded-2xl border border-border bg-card p-7 text-center shadow-sm">
+                <p className="font-semibold text-foreground">Aramana uygun ilan bulamadık.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Farklı bir kelime veya daha geniş bir konum deneyebilirsin.
+                </p>
                 {activeCity !== ALL_CITIES && (
                   <button
                     type="button"
