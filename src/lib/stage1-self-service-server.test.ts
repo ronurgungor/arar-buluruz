@@ -232,6 +232,15 @@ function installBackendMock(): void {
       return new Response(null, { status: 200 });
     }
 
+    if (url.pathname.startsWith("/storage/v1/object/listing_photos/") && method === "GET") {
+      const objectPath = decodeURIComponent(
+        url.pathname.slice("/storage/v1/object/listing_photos/".length),
+      );
+      return new Response(storedObjects.has(objectPath) ? "synthetic" : null, {
+        status: storedObjects.has(objectPath) ? 200 : 404,
+      });
+    }
+
     if (url.pathname === "/storage/v1/object/listing_photos" && method === "DELETE") {
       const body = JSON.parse(String(init?.body)) as { prefixes: string[] };
       for (const path of body.prefixes) storedObjects.delete(path);
@@ -479,6 +488,110 @@ describe("Stage 1 self-service server acceptance", () => {
     expect(await malformed.json()).toMatchObject({ ok: false, code: "SUBMISSION_FAILED" });
     expect(
       Array.from(submissionKeys.values()).some((state) => state.listingId.startsWith("970")),
+    ).toBe(false);
+  });
+
+  test("verified phone owns edit, unpublish, sold and delete while cross-phone access is denied", async () => {
+    const ownerPhone = "+12025550210";
+    const otherPhone = "+12025550211";
+    const ownerCapability = await syntheticCapability(ownerPhone);
+    const otherCapability = await syntheticCapability(otherPhone);
+    const idempotencyKey = "97000000-0000-4000-8000-000000000010";
+
+    const created = await handleStage1SelfServiceRequest(
+      requestFor(
+        submissionForm(ownerCapability, idempotencyKey, { phone: ownerPhone }),
+      ),
+    );
+    expect(created.status).toBe(201);
+    const createdPayload = (await created.json()) as { ok: boolean; listingId: string };
+    expect(createdPayload.ok).toBe(true);
+    const listingId = createdPayload.listingId;
+    expect(listingBodies.get(listingId)?.status).toBe("published");
+
+    const crossPhone = new FormData();
+    crossPhone.set("action", "seller_unpublish");
+    crossPhone.set("phone", otherPhone);
+    crossPhone.set("capability", otherCapability);
+    crossPhone.set("listingId", listingId);
+    const denied = await handleStage1SelfServiceRequest(requestFor(crossPhone));
+    expect(denied.status).toBe(403);
+    expect(await denied.json()).toMatchObject({ ok: false, code: "NOT_AUTHORIZED" });
+    expect(listingBodies.get(listingId)?.status).toBe("published");
+
+    const edit = new FormData();
+    edit.set("action", "seller_update");
+    edit.set("phone", ownerPhone);
+    edit.set("capability", ownerCapability);
+    edit.set("listingId", listingId);
+    edit.set("category", "vehicle");
+    edit.set("condition", "used");
+    edit.set("priceMode", "free");
+    edit.set("price", "700000");
+    edit.set("title", "Mercedes B 150 satılık");
+    edit.set("description", "Sentetik seller management düzenleme testi açıklaması.");
+    edit.set("province", "İstanbul");
+    edit.set("district", "Kadıköy");
+    edit.set("contactPreference", "phone_whatsapp");
+    const edited = await handleStage1SelfServiceRequest(requestFor(edit));
+    expect(edited.status).toBe(200);
+    expect(await edited.json()).toMatchObject({ ok: true, action: "seller_updated", listingId });
+    expect(listingBodies.get(listingId)).toMatchObject({
+      category: "vehicle",
+      price_amount: 0,
+      price_is_free: true,
+      province: "İstanbul",
+      district: "Kadıköy",
+      status: "published",
+    });
+
+    const unpublish = new FormData();
+    unpublish.set("action", "seller_unpublish");
+    unpublish.set("phone", ownerPhone);
+    unpublish.set("capability", ownerCapability);
+    unpublish.set("listingId", listingId);
+    const unpublished = await handleStage1SelfServiceRequest(requestFor(unpublish));
+    expect(unpublished.status).toBe(200);
+    expect(listingBodies.get(listingId)?.status).toBe("unpublished");
+
+    const sold = new FormData();
+    sold.set("action", "seller_sold");
+    sold.set("phone", ownerPhone);
+    sold.set("capability", ownerCapability);
+    sold.set("listingId", listingId);
+    const soldResponse = await handleStage1SelfServiceRequest(requestFor(sold));
+    expect(soldResponse.status).toBe(200);
+    expect(listingBodies.get(listingId)?.status).toBe("sold");
+
+    const list = new FormData();
+    list.set("action", "seller_list");
+    list.set("phone", ownerPhone);
+    list.set("capability", ownerCapability);
+    const listed = await handleStage1SelfServiceRequest(requestFor(list));
+    expect(listed.status).toBe(200);
+    const listedPayload = (await listed.json()) as {
+      ok: boolean;
+      listings: Array<{ id: string; status: string; isFree: boolean }>;
+    };
+    expect(listedPayload.listings).toContainEqual(
+      expect.objectContaining({ id: listingId, status: "sold", isFree: true }),
+    );
+
+    const remove = new FormData();
+    remove.set("action", "seller_delete");
+    remove.set("phone", ownerPhone);
+    remove.set("capability", ownerCapability);
+    remove.set("listingId", listingId);
+    const deleted = await handleStage1SelfServiceRequest(requestFor(remove));
+    expect(deleted.status).toBe(200);
+    expect(await deleted.json()).toMatchObject({ ok: true, action: "seller_deleted", listingId });
+    expect(listings.has(listingId)).toBe(false);
+    expect(listingBodies.has(listingId)).toBe(false);
+    expect(
+      Array.from(photoMetadata).some((path) => path.startsWith(`listings/${listingId}/`)),
+    ).toBe(false);
+    expect(
+      Array.from(storedObjects).some((path) => path.startsWith(`listings/${listingId}/`)),
     ).toBe(false);
   });
 
