@@ -213,9 +213,9 @@ function SellerListings() {
       setBusy(false);
       return;
     }
-    setNotice(result.message);
     setDeleteConfirmId("");
     await loadListings(capability);
+    setNotice(result.message);
     setBusy(false);
   };
 
@@ -243,9 +243,9 @@ function SellerListings() {
       setBusy(false);
       return;
     }
-    setNotice(result.message);
     setEditing(null);
     await loadListings(capability);
+    setNotice(result.message);
     setBusy(false);
   };
 
