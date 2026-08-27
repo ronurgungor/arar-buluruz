@@ -24,9 +24,9 @@ Current product authority: `docs/PRODUCT_CONTRACT_V2.md`.
 - [x] Add responsive no-overflow browser smoke at approximately 360 / 390 / 768 / 1280 px.
 - [x] Close frontend exact-head checkpoint at `41691652070cbc117a943578a49056d49d51e6f0` with all seven canonical workflows GREEN.
 - [x] Resolve Stage 1 acceptance runner collision by same-SHA rerun; no application-code change required.
-- [-] Synchronize canonical docs / Issue #75 / founder machine profile to Product Contract V2.
-- [ ] Run narrow security REDTEAM against atomic publication, verified-phone ownership, lifecycle authorization, private photo/storage and service-role boundaries.
-- [ ] Fix only MATERIAL repository-controlled REDTEAM findings.
+- [x] Synchronize canonical docs / Issue #75 / founder machine profile to Product Contract V2.
+- [x] Run narrow security REDTEAM against atomic publication, verified-phone ownership, lifecycle authorization, private photo/storage and service-role boundaries. Dedicated Codex invocation was unavailable in this session; Main Execution completed the narrow repository review and recorded that limitation transparently.
+- [x] Fix the one MATERIAL repository-controlled REDTEAM finding: retry the exact known orphan photo path during whole-submission compensation.
 - [ ] If material code changes occur, rerun all seven canonical workflows on one exact final SHA.
 - [ ] Keep PR #78 DRAFT / UNMERGED and stop for founder/advisor hands-on product review.
 
