@@ -10,8 +10,8 @@ import {
   X,
 } from "lucide-react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
+import { getDistrictsForCity, locationCities } from "@/data/turkiye-locations";
 import { LISTING_PHOTO_ALLOWED_MIME_TYPES, LISTING_PHOTO_MAX_BYTES } from "@/lib/listing-photo";
-import { PILOT_DISTRICT, PILOT_PROVINCE } from "@/lib/pilot-operator-contract";
 import {
   STAGE1_CATEGORIES,
   STAGE1_CATEGORY_LABELS,
@@ -42,7 +42,7 @@ export const Route = createFileRoute("/ilan-ver")({
       { title: "İlan Ver — Arar Buluruz" },
       {
         name: "description",
-        content: "Fotoğraflarını ekle, ilanını birkaç adımda oluştur ve Çorlu'daki alıcılara ulaş.",
+        content: "Fotoğraflarını ekle, ilanını birkaç adımda oluştur ve Türkiye'deki alıcılara ulaş.",
       },
       { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
     ],
@@ -127,12 +127,14 @@ function formatPricePreview(price: string, isFree: boolean): string {
 function Stage1ListingWizard() {
   const [step, setStep] = useState(1);
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
-  const [category, setCategory] = useState<Stage1Category>("other");
+  const [category, setCategory] = useState<Stage1Category | "">("");
   const [title, setTitle] = useState("");
-  const [condition, setCondition] = useState<Stage1Condition>("good");
+  const [condition, setCondition] = useState<Stage1Condition | "">("");
   const [price, setPrice] = useState("");
   const [isFree, setIsFree] = useState(false);
   const [description, setDescription] = useState("");
+  const [province, setProvince] = useState("");
+  const [district, setDistrict] = useState("");
   const [sellerDisplayName, setSellerDisplayName] = useState("");
   const [phone, setPhone] = useState("+90");
   const [contactPreference, setContactPreference] = useState<Stage1ContactPreference>("phone");
@@ -220,6 +222,10 @@ function Stage1ListingWizard() {
       return false;
     }
     if (step === 2) {
+      if (!category || !condition) {
+        setError("Kategori ve durum seçin.");
+        return false;
+      }
       if (title.trim().length < 3) {
         setError("İlan başlığı en az 3 karakter olmalıdır.");
         return false;
@@ -229,9 +235,15 @@ function Stage1ListingWizard() {
         return false;
       }
     }
-    if (step === 3 && description.trim().length < 10) {
-      setError("Açıklama en az 10 karakter olmalıdır.");
-      return false;
+    if (step === 3) {
+      if (description.trim().length < 10) {
+        setError("Açıklama en az 10 karakter olmalıdır.");
+        return false;
+      }
+      if (!province || !district) {
+        setError("İl ve ilçe seçin.");
+        return false;
+      }
     }
     return true;
   };
@@ -245,8 +257,8 @@ function Stage1ListingWizard() {
     form.set("priceMode", isFree ? "free" : "priced");
     form.set("price", isFree ? "0" : price.trim());
     form.set("description", description.trim());
-    form.set("province", PILOT_PROVINCE);
-    form.set("district", PILOT_DISTRICT);
+    form.set("province", province);
+    form.set("district", district);
     form.set("sellerDisplayName", sellerDisplayName.trim());
     form.set("phone", phone.trim());
     form.set("contactPreference", contactPreference);
@@ -344,10 +356,10 @@ function Stage1ListingWizard() {
           <section className="mt-10 rounded-2xl border border-border bg-card p-6 text-center">
             <CheckCircle2 aria-hidden className="mx-auto h-10 w-10 text-primary" />
             <h1 className="mt-4 text-2xl font-extrabold tracking-tight">
-              İlanınız incelemeye alındı
+              İlanın yayınlandı
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              İlan henüz yayında değil. Kurucu incelemesinden sonra uygun bulunursa yayınlanacak.
+              İlanın güvenli gönderim kontrolleri tamamlandı ve yayına alındı. İlanını telefon doğrulamasıyla yönetebilirsin.
             </p>
             <p className="mt-3 text-xs text-muted-foreground">İlan no: {successId}</p>
             <Link
@@ -369,7 +381,7 @@ function Stage1ListingWizard() {
         <div className="mt-5 flex items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight">İlan Ver</h1>
-            <p className="mt-1 text-sm text-muted-foreground">4 kısa adım · Çorlu pilotu</p>
+            <p className="mt-1 text-sm text-muted-foreground">4 kısa adım · Türkiye genelinde ilan</p>
           </div>
           <span className="text-sm font-semibold text-primary">{step}/4</span>
         </div>
@@ -491,6 +503,7 @@ function Stage1ListingWizard() {
                 onChange={(event) => setCategory(event.target.value as Stage1Category)}
                 className={`mt-1 ${selectClass}`}
               >
+                <option value="">Kategori seçin</option>
                 {STAGE1_CATEGORIES.map((value) => (
                   <option key={value} value={value}>
                     {STAGE1_CATEGORY_LABELS[value]}
@@ -519,6 +532,7 @@ function Stage1ListingWizard() {
                 onChange={(event) => setCondition(event.target.value as Stage1Condition)}
                 className={`mt-1 ${selectClass}`}
               >
+                <option value="">Durum seçin</option>
                 {STAGE1_CONDITIONS.map((value) => (
                   <option key={value} value={value}>
                     {STAGE1_CONDITION_LABELS[value]}
@@ -541,7 +555,11 @@ function Stage1ListingWizard() {
               <input
                 type="checkbox"
                 checked={isFree}
-                onChange={(event) => setIsFree(event.target.checked)}
+                onChange={(event) => {
+                  const checked = event.target.checked;
+                  setIsFree(checked);
+                  if (checked) setPrice("");
+                }}
               />
               Ücretsiz veriyorum
             </label>
@@ -571,19 +589,43 @@ function Stage1ListingWizard() {
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="text-sm font-medium">İl</span>
-                <select value={PILOT_PROVINCE} disabled className={`mt-1 ${selectClass} bg-muted`}>
-                  <option>{PILOT_PROVINCE}</option>
+                <select
+                  aria-label="İl"
+                  value={province}
+                  onChange={(event) => {
+                    setProvince(event.target.value);
+                    setDistrict("");
+                  }}
+                  className={`mt-1 ${selectClass}`}
+                >
+                  <option value="">İl seçin</option>
+                  {locationCities.slice(1).map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label className="block">
                 <span className="text-sm font-medium">İlçe</span>
-                <select value={PILOT_DISTRICT} disabled className={`mt-1 ${selectClass} bg-muted`}>
-                  <option>{PILOT_DISTRICT}</option>
+                <select
+                  aria-label="İlçe"
+                  value={district}
+                  disabled={!province}
+                  onChange={(event) => setDistrict(event.target.value)}
+                  className={`mt-1 ${selectClass} disabled:bg-muted`}
+                >
+                  <option value="">İlçe seçin</option>
+                  {getDistrictsForCity(province).map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
                 </select>
               </label>
             </div>
             <p className="text-xs text-muted-foreground">
-              Stage 1 yalnız Çorlu ilanlarını kabul eder; tam ev adresi alınmaz.
+              Yalnızca il ve ilçe bilgisi alınır; açık adres istemiyoruz.
             </p>
           </section>
         )}
@@ -593,12 +635,11 @@ function Stage1ListingWizard() {
             <div>
               <h2 className="text-lg font-bold">Satıcı ve iletişim</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                İlan onaylandığında alıcılar seçtiğiniz yöntemle doğrudan size ulaşır.
+                Telefon doğrulaması tamamlanıp ilan güvenli biçimde yayınlandığında alıcılar seçtiğiniz yöntemle doğrudan size ulaşır.
               </p>
             </div>
             <div className="rounded-xl border border-border bg-accent/35 p-3 text-sm leading-relaxed text-muted-foreground">
-              İlan oluşturmak için verdiğiniz bilgiler moderasyon amacıyla işlenir. Telefonunuz
-              yalnız ilan onaylanırsa seçtiğiniz iletişim yöntemlerinde görünür.{" "}
+              İlan oluşturmak için verdiğiniz bilgiler ilanı yayınlamak ve kötüye kullanımı önlemek amacıyla işlenir. Telefonunuz yalnız seçtiğiniz iletişim yöntemlerinde görünür.{" "}
               <Link
                 to="/gizlilik"
                 className="font-semibold text-primary underline underline-offset-4"
@@ -692,8 +733,7 @@ function Stage1ListingWizard() {
                   className="mt-1"
                 />
                 <span>
-                  Bu telefon bana ait; ilan yayınlanırsa seçtiğim iletişim yöntemleri için kamuya
-                  açık gösterilmesini istiyorum.
+                  Bu telefon bana ait; ilan yayınlandığında seçtiğim iletişim yöntemleri için kamuya açık gösterilmesini istiyorum.
                 </span>
               </label>
             </div>
@@ -702,7 +742,7 @@ function Stage1ListingWizard() {
               <p className="mt-2 line-clamp-2">{title || "İlan başlığı"}</p>
               <p className="mt-1 font-bold text-primary">{formatPricePreview(price, isFree)}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {PILOT_PROVINCE} / {PILOT_DISTRICT} · {STAGE1_CONTACT_LABELS[contactPreference]}
+                {province || "İl"} / {district || "İlçe"} · {STAGE1_CONTACT_LABELS[contactPreference]}
               </p>
             </div>
             {verificationChallengeId && (
@@ -726,7 +766,7 @@ function Stage1ListingWizard() {
                   onClick={() => void confirmVerification()}
                   className="mt-3 h-12 w-full rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
                 >
-                  {busy ? "Doğrulanıyor…" : "Doğrula ve gönder"}
+                  {busy ? "Doğrulanıyor…" : "Doğrula ve yayınla"}
                 </button>
               </div>
             )}
@@ -774,7 +814,7 @@ function Stage1ListingWizard() {
               onClick={() => void beginFinalSubmit()}
               className="ml-auto h-12 flex-1 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
             >
-              {busy ? "Hazırlanıyor…" : "İlanı gönder"}
+              {busy ? "Hazırlanıyor…" : "İlanı yayınla"}
             </button>
           ) : null}
         </div>
