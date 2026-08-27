@@ -120,6 +120,26 @@ function installBackendMock(): void {
       ]);
     }
 
+    if (
+      url.pathname === "/rest/v1/rpc/complete_and_publish_listing_submission" &&
+      method === "POST"
+    ) {
+      const body = JSON.parse(String(init?.body)) as {
+        p_key_hash: string;
+        p_listing_id: string;
+      };
+      const existing = submissionKeys.get(body.p_key_hash);
+      if (
+        !existing ||
+        existing.listingId !== body.p_listing_id ||
+        !Array.from(photoMetadata).some((path) => path.startsWith(`listings/${body.p_listing_id}/`))
+      ) {
+        return new Response("listing is not publish-ready", { status: 409 });
+      }
+      existing.complete = true;
+      return json(true);
+    }
+
     if (url.pathname === "/rest/v1/rpc/complete_listing_submission_key" && method === "POST") {
       const body = JSON.parse(String(init?.body)) as {
         p_key_hash: string;
@@ -285,7 +305,7 @@ describe("Stage 1 self-service server acceptance", () => {
     const retried = await handleStage1SelfServiceRequest(
       requestFor(submissionForm(capability, key)),
     );
-    expect(retried.status).toBe(202);
+    expect(retried.status).toBe(201);
     const retryPayload = (await retried.json()) as { ok: boolean; listingId: string };
     expect(retryPayload.ok).toBe(true);
     expect(listings.has(retryPayload.listingId)).toBe(true);
