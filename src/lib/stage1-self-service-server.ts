@@ -893,6 +893,388 @@ async function submitListing(form: FormData, clientIp: string): Promise<Response
   );
 }
 
+
+function requiredUuid(form: FormData, key = "listingId"): string {
+  const value = requiredString(form, key, 36, 36).toLowerCase();
+  if (!UUID_PATTERN.test(value)) {
+    throw new Stage1SubmissionError("INVALID_REQUEST", "İlan kimliği geçersiz.");
+  }
+  return value;
+}
+
+function sellerStatus(value: string): Stage1SellerListingStatus | null {
+  return value === "pending" ||
+    value === "published" ||
+    value === "unpublished" ||
+    value === "rejected" ||
+    value === "sold"
+    ? value
+    : null;
+}
+
+async function fetchSellerRows(
+  config: BackendConfig,
+  input: { listingId?: string; phone?: string },
+): Promise<SellerBackendRow[]> {
+  const url = new URL(`${config.baseUrl}/rest/v1/listings`);
+  if (input.listingId) url.searchParams.set("id", `eq.${input.listingId}`);
+  if (input.phone) url.searchParams.set("contact_e164", `eq.${input.phone}`);
+  url.searchParams.set(
+    "select",
+    [
+      "id",
+      "title",
+      "description",
+      "price_amount",
+      "price_is_free",
+      "category",
+      "item_condition",
+      "province",
+      "district",
+      "seller_display_name",
+      "status",
+      "contact_channel",
+      "contact_e164",
+      "contact_verified_at",
+      "publication_instruction_at",
+      "private_seller_declaration_at",
+      "content_rights_declaration_at",
+      "created_at",
+      "updated_at",
+      "published_at",
+      "expires_at",
+      "unpublished_at",
+      "sold_at",
+    ].join(","),
+  );
+  url.searchParams.set("order", "created_at.desc,id.desc");
+  const response = await requireOk(
+    await fetch(url, { headers: { ...serviceHeaders(config), Accept: "application/json" } }),
+    "seller listing read",
+  );
+  const rows = (await response.json()) as SellerBackendRow[];
+  if (!Array.isArray(rows) || rows.length > 100) {
+    throw new Error("Seller listing inventory returned an invalid response.");
+  }
+  return rows;
+}
+
+async function fetchSellerPhotoInventory(
+  config: BackendConfig,
+  listingId: string,
+): Promise<SellerPhotoRow[]> {
+  const response = await requireOk(
+    await fetch(`${config.baseUrl}/rest/v1/rpc/get_listing_photo_inventory`, {
+      method: "POST",
+      headers: serviceHeaders(config),
+      body: JSON.stringify({ p_listing_id: listingId }),
+    }),
+    "seller photo inventory",
+  );
+  const rows = (await response.json()) as SellerPhotoRow[];
+  if (!Array.isArray(rows) || rows.length > STAGE1_MAX_PHOTOS) {
+    throw new Error("Seller photo inventory returned an invalid response.");
+  }
+  return rows;
+}
+
+async function signSellerPhoto(config: BackendConfig, objectPath: string): Promise<string> {
+  const response = await requireOk(
+    await fetch(
+      `${config.baseUrl}/storage/v1/object/sign/listing_photos/${encodeObjectPath(objectPath)}`,
+      {
+        method: "POST",
+        headers: serviceHeaders(config),
+        body: JSON.stringify({ expiresIn: 60 }),
+      },
+    ),
+    "seller photo sign",
+  );
+  const payload = (await response.json()) as { signedURL?: string; signedUrl?: string };
+  const raw = payload.signedURL ?? payload.signedUrl;
+  if (!raw) throw new Error("Seller photo signing returned no URL.");
+  const normalized = raw.startsWith("/object/") ? `/storage/v1${raw}` : raw;
+  const signed = new URL(normalized, config.baseUrl);
+  if (signed.origin !== new URL(config.baseUrl).origin) {
+    throw new Error("Seller photo signing changed backend origin.");
+  }
+  return signed.toString();
+}
+
+async function assertSellerCapability(form: FormData): Promise<{
+  phone: string;
+  verified: CapabilityPayload;
+}> {
+  const phone = stage1E164Schema.parse(requiredString(form, "phone", 8, 16));
+  const capability = requiredString(form, "capability", 20, 4096);
+  return { phone, verified: await verifyCapability(capability, phone) };
+}
+
+async function requireOwnedListing(
+  config: BackendConfig,
+  listingId: string,
+  phone: string,
+): Promise<SellerBackendRow> {
+  const rows = await fetchSellerRows(config, { listingId });
+  const listing = rows[0];
+  if (!listing || listing.contact_e164 !== phone) {
+    throw new Stage1SubmissionError(
+      "NOT_AUTHORIZED",
+      "Bu ilan için yönetim yetkisi doğrulanamadı.",
+      403,
+    );
+  }
+  return listing;
+}
+
+async function mapSellerListing(
+  config: BackendConfig,
+  row: SellerBackendRow,
+): Promise<Stage1SellerListing> {
+  const category = stage1CategorySchema.safeParse(row.category);
+  const condition = stage1ConditionSchema.safeParse(row.item_condition);
+  const contactPreference = stage1ContactPreferenceSchema.safeParse(row.contact_channel);
+  const status = sellerStatus(row.status);
+  if (!category.success || !condition.success || !contactPreference.success || !status) {
+    throw new Error("Seller listing violated the classifieds contract.");
+  }
+  const inventory = await fetchSellerPhotoInventory(config, row.id);
+  const photoUrls = await Promise.all(
+    inventory
+      .slice()
+      .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
+      .map((photo) => signSellerPhoto(config, photo.object_path)),
+  );
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    price: Number(row.price_amount),
+    isFree: row.price_is_free,
+    category: category.data,
+    condition: condition.data,
+    province: row.province,
+    district: row.district,
+    sellerDisplayName: row.seller_display_name,
+    contactPreference: contactPreference.data,
+    status,
+    photoUrls,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    publishedAt: row.published_at,
+    unpublishedAt: row.unpublished_at,
+    soldAt: row.sold_at,
+  };
+}
+
+async function patchSellerListing(
+  config: BackendConfig,
+  listingId: string,
+  patch: Record<string, unknown>,
+  context: string,
+): Promise<void> {
+  const url = new URL(`${config.baseUrl}/rest/v1/listings`);
+  url.searchParams.set("id", `eq.${listingId}`);
+  const response = await requireOk(
+    await fetch(url, {
+      method: "PATCH",
+      headers: { ...serviceHeaders(config), Prefer: "return=representation" },
+      body: JSON.stringify(patch),
+    }),
+    context,
+  );
+  const rows = (await response.json()) as Array<{ id?: string }>;
+  if (rows.length !== 1 || rows[0]?.id !== listingId) {
+    throw new Error(`${context} did not mutate exactly one listing.`);
+  }
+}
+
+async function sellerList(form: FormData, clientIp: string): Promise<Response> {
+  assertAllowedFields(form, new Set(["action", "phone", "capability"]));
+  enforceRateLimit(`seller-list:${clientIp}`, 30, 15 * 60 * 1000);
+  const { phone } = await assertSellerCapability(form);
+  const config = readBackendConfig();
+  const rows = await fetchSellerRows(config, { phone });
+  const listings = await Promise.all(rows.map((row) => mapSellerListing(config, row)));
+  return jsonResponse({
+    ok: true,
+    action: "seller_list",
+    listings,
+    message: listings.length > 0 ? "İlanların yüklendi." : "Bu telefonla yönetilen ilan bulunamadı.",
+  });
+}
+
+async function sellerUpdate(form: FormData, clientIp: string): Promise<Response> {
+  assertAllowedFields(
+    form,
+    new Set([
+      "action",
+      "phone",
+      "capability",
+      "listingId",
+      "category",
+      "condition",
+      "priceMode",
+      "price",
+      "title",
+      "description",
+      "province",
+      "district",
+      "contactPreference",
+    ]),
+  );
+  enforceRateLimit(`seller-update:${clientIp}`, 20, 15 * 60 * 1000);
+  const { phone } = await assertSellerCapability(form);
+  const config = readBackendConfig();
+  const listingId = requiredUuid(form);
+  const listing = await requireOwnedListing(config, listingId, phone);
+  if (listing.status !== "published" && listing.status !== "unpublished") {
+    throw new Stage1SubmissionError(
+      "INVALID_REQUEST",
+      "Bu ilan mevcut durumunda düzenlenemez.",
+      409,
+    );
+  }
+
+  const category = stage1CategorySchema.parse(requiredString(form, "category", 3, 32));
+  const condition = stage1ConditionSchema.parse(requiredString(form, "condition", 3, 32));
+  const contactPreference = stage1ContactPreferenceSchema.parse(
+    requiredString(form, "contactPreference", 5, 20),
+  );
+  const title = requiredString(form, "title", 3, 120);
+  const description = requiredString(form, "description", 10, 5000);
+  const province = requiredString(form, "province", 2, 64);
+  const district = requiredString(form, "district", 2, 64);
+  if (!isLocationCity(province) || !getDistrictsForCity(province).includes(district)) {
+    throw new Stage1SubmissionError(
+      "INVALID_REQUEST",
+      "İl ve ilçe seçimi Türkiye konum kataloğuyla eşleşmiyor.",
+    );
+  }
+  const { price, isFree } = parsePrice(form);
+  const now = new Date().toISOString();
+  await patchSellerListing(
+    config,
+    listingId,
+    {
+      category,
+      item_condition: condition,
+      contact_channel: contactPreference,
+      publication_instruction_at: now,
+      title,
+      description,
+      province,
+      district,
+      price_amount: price,
+      price_is_free: isFree,
+    },
+    "seller listing update",
+  );
+  return jsonResponse({
+    ok: true,
+    action: "seller_updated",
+    listingId,
+    message: "İlan güncellendi.",
+  });
+}
+
+async function sellerUnpublish(form: FormData, clientIp: string): Promise<Response> {
+  assertAllowedFields(form, new Set(["action", "phone", "capability", "listingId"]));
+  enforceRateLimit(`seller-unpublish:${clientIp}`, 20, 15 * 60 * 1000);
+  const { phone } = await assertSellerCapability(form);
+  const config = readBackendConfig();
+  const listingId = requiredUuid(form);
+  const listing = await requireOwnedListing(config, listingId, phone);
+  if (listing.status !== "published") {
+    throw new Stage1SubmissionError("INVALID_REQUEST", "Yalnız yayındaki ilan kaldırılabilir.", 409);
+  }
+  await patchSellerListing(
+    config,
+    listingId,
+    { status: "unpublished", unpublished_at: new Date().toISOString() },
+    "seller listing unpublish",
+  );
+  return jsonResponse({
+    ok: true,
+    action: "seller_unpublished",
+    listingId,
+    message: "İlan yayından kaldırıldı.",
+  });
+}
+
+async function sellerMarkSold(form: FormData, clientIp: string): Promise<Response> {
+  assertAllowedFields(form, new Set(["action", "phone", "capability", "listingId"]));
+  enforceRateLimit(`seller-sold:${clientIp}`, 20, 15 * 60 * 1000);
+  const { phone } = await assertSellerCapability(form);
+  const config = readBackendConfig();
+  const listingId = requiredUuid(form);
+  const listing = await requireOwnedListing(config, listingId, phone);
+  if (listing.status !== "published" && listing.status !== "unpublished") {
+    throw new Stage1SubmissionError("INVALID_REQUEST", "Bu ilan satıldı olarak işaretlenemez.", 409);
+  }
+  const now = new Date().toISOString();
+  await patchSellerListing(
+    config,
+    listingId,
+    {
+      status: "sold",
+      unpublished_at: listing.unpublished_at ?? now,
+      sold_at: now,
+    },
+    "seller listing sold",
+  );
+  return jsonResponse({
+    ok: true,
+    action: "seller_sold",
+    listingId,
+    message: "İlan satıldı olarak işaretlendi.",
+  });
+}
+
+async function sellerDelete(form: FormData, clientIp: string): Promise<Response> {
+  assertAllowedFields(form, new Set(["action", "phone", "capability", "listingId"]));
+  enforceRateLimit(`seller-delete:${clientIp}`, 10, 15 * 60 * 1000);
+  const { phone } = await assertSellerCapability(form);
+  const config = readBackendConfig();
+  const listingId = requiredUuid(form);
+  const listing = await requireOwnedListing(config, listingId, phone);
+
+  if (listing.status === "published") {
+    await patchSellerListing(
+      config,
+      listingId,
+      { status: "unpublished", unpublished_at: new Date().toISOString() },
+      "seller pre-delete unpublish",
+    );
+  }
+
+  const inventory = await fetchSellerPhotoInventory(config, listingId);
+  const objectPaths = inventory.map((photo) => photo.object_path);
+  await deleteStoredObjects(config, objectPaths);
+  await deleteListingRow(config, listingId);
+
+  if ((await fetchSellerRows(config, { listingId })).length !== 0) {
+    throw new Error("Seller delete verification found the listing row.");
+  }
+  if ((await fetchSellerPhotoInventory(config, listingId)).length !== 0) {
+    throw new Error("Seller delete verification found private photo metadata.");
+  }
+  for (const objectPath of objectPaths) {
+    const probe = await fetch(
+      `${config.baseUrl}/storage/v1/object/listing_photos/${encodeObjectPath(objectPath)}`,
+      { headers: serviceHeaders(config, "application/octet-stream") },
+    );
+    if (probe.ok) throw new Error(`Seller delete verification found Storage object ${objectPath}.`);
+  }
+
+  return jsonResponse({
+    ok: true,
+    action: "seller_deleted",
+    listingId,
+    message: "İlan silindi.",
+  });
+}
+
 export async function handleStage1SelfServiceRequest(request: Request): Promise<Response> {
   try {
     if (process.env.PILOT_SELF_SERVICE_ENABLED !== "enabled") {
@@ -910,7 +1292,12 @@ export async function handleStage1SelfServiceRequest(request: Request): Promise<
     if (action === "start_verification") return await startVerification(form, clientIp, request);
     if (action === "verify_phone") return await verifyPhone(form, clientIp);
     if (action === "submit_listing") return await submitListing(form, clientIp);
-    throw new Stage1SubmissionError("INVALID_REQUEST", "Bilinmeyen ilan gönderim işlemi.");
+    if (action === "seller_list") return await sellerList(form, clientIp);
+    if (action === "seller_update") return await sellerUpdate(form, clientIp);
+    if (action === "seller_unpublish") return await sellerUnpublish(form, clientIp);
+    if (action === "seller_sold") return await sellerMarkSold(form, clientIp);
+    if (action === "seller_delete") return await sellerDelete(form, clientIp);
+    throw new Stage1SubmissionError("INVALID_REQUEST", "Bilinmeyen ilan işlemi.");
   } catch (error) {
     if (error instanceof Stage1SubmissionError) {
       return jsonResponse(
