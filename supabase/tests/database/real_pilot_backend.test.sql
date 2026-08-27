@@ -99,8 +99,8 @@ values
     'Active real-pilot fixture',
     'Synthetic active listing for the real pilot backend preparation test.',
     100,
-    'Tekirdag',
-    'Corlu',
+    'Tekirdağ',
+    'Çorlu',
     'Synthetic Seller',
     array['active'],
     'whatsapp',
@@ -228,11 +228,11 @@ select is(
     where id = '10000000-0000-4000-8000-000000000001'
   ),
   'Tekirdağ/Çorlu',
-  'legacy synthetic location spelling is normalized to the canonical catalog spelling'
+  'canonical Türkiye catalog spelling is preserved for listing location'
 );
 
-select throws_ok(
-  $$
+select lives_ok(
+  $
     insert into public.listings (
       title,
       description,
@@ -241,17 +241,15 @@ select throws_ok(
       district,
       seller_display_name
     ) values (
-      'Out of pilot scope',
-      'The real Corlu pilot database must reject locations outside the approved pilot scope.',
+      'Türkiye rollout location',
+      'The general classifieds database accepts a normal Türkiye province and district pair.',
       1,
       'İstanbul',
       'Kadıköy',
       'Synthetic Seller'
     )
-  $$,
-  '23514',
-  null,
-  'location outside the Corlu pilot scope is rejected'
+  $,
+  'database no longer carries a Corlu-only product constraint'
 );
 
 set local role anon;
