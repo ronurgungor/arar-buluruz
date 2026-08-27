@@ -553,8 +553,10 @@ function Stage1ListingWizard() {
                 />
               </div>
             </div>
-            <label className="block">
-              <span className="text-sm font-medium">Fiyat (TL)</span>
+            <div>
+              <label htmlFor="stage1-price" className="text-sm font-medium">
+                Fiyat (TL)
+              </label>
               <div className="relative mt-1">
                 <span
                   aria-hidden
@@ -563,6 +565,7 @@ function Stage1ListingWizard() {
                   ₺
                 </span>
                 <input
+                  id="stage1-price"
                   disabled={isFree}
                   value={price}
                   onChange={(event) => setPrice(event.target.value)}
@@ -576,7 +579,7 @@ function Stage1ListingWizard() {
                   Bu ilan Ücretsiz olarak görünecek.
                 </span>
               )}
-            </label>
+            </div>
             <label className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium">
               <input
                 type="checkbox"
