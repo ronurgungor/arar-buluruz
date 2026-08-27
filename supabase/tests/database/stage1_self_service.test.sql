@@ -140,13 +140,13 @@ values (
 );
 
 select throws_like(
-  $
+  $sql$
     select public.complete_and_publish_listing_submission(
       repeat('b', 64),
       '96000000-0000-4000-8000-000000000004',
       now() + interval '30 days'
     )
-  $,
+  $sql$,
   '%publish-ready%',
   'atomic publication rejects a listing without trusted photo metadata'
 );
