@@ -227,7 +227,7 @@ function SearchPage() {
                           {listing.title}
                         </h2>
                         <p className="mt-0.5 text-base font-extrabold text-primary">
-                          {formatPrice(listing.price)}
+                          {listing.isFree ? "Ücretsiz" : formatPrice(listing.price)}
                         </p>
                         <p className="truncate text-[13px] text-muted-foreground">
                           {listing.city} / {listing.district}
