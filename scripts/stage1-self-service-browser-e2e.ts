@@ -86,7 +86,7 @@ const serviceHeaders = {
 async function anonListingRows(listingId: string): Promise<unknown[]> {
   const url = new URL(`${backendOrigin}/rest/v1/listings`);
   url.searchParams.set("id", `eq.${listingId}`);
-  url.searchParams.set("select", "id,status,contact_channel,contact_e164");
+  url.searchParams.set("select", "id");
   const response = await fetch(url, { headers: anonHeaders });
   assert(response.ok, `Anonymous listing probe failed: ${response.status}`);
   return (await response.json()) as unknown[];
