@@ -7,6 +7,7 @@ export const PILOT_LISTING_STATUSES = [
   "published",
   "unpublished",
   "rejected",
+  "sold",
 ] as const;
 
 export type PilotListingStatus = (typeof PILOT_LISTING_STATUSES)[number];
