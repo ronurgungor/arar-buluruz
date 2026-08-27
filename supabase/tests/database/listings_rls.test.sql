@@ -38,7 +38,8 @@ select columns_are(
     'item_condition',
     'price_is_free',
     'private_seller_declaration_at',
-    'content_rights_declaration_at'
+    'content_rights_declaration_at',
+    'sold_at'
   ],
   'listings has the approved pilot and seller-contact columns'
 );
