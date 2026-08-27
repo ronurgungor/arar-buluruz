@@ -335,8 +335,8 @@ async function submitListing(
   const success = page.getByTestId("listing-published-success");
   const listingId = (await success.getAttribute("data-listing-id")) ?? "";
   assert(/^[0-9a-f-]{36}$/i.test(listingId), "Published listing id data attribute is missing.");
-  await page.getByRole("link", { name: "İlanı görüntüle", exact: true }).waitFor();
-  await page.getByRole("link", { name: "İlanlarım", exact: true }).waitFor();
+  await success.getByRole("link", { name: "İlanı görüntüle", exact: true }).waitFor();
+  await success.getByRole("link", { name: "İlanlarım", exact: true }).waitFor();
   return listingId;
 }
 
