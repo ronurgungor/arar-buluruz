@@ -232,7 +232,7 @@ select is(
 );
 
 select lives_ok(
-  $
+  $sql$
     insert into public.listings (
       title,
       description,
@@ -248,7 +248,7 @@ select lives_ok(
       'Kadıköy',
       'Synthetic Seller'
     )
-  $,
+  $sql$,
   'database no longer carries a Corlu-only product constraint'
 );
 
