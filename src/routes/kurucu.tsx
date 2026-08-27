@@ -228,6 +228,11 @@ function FounderModeration() {
                       {listing.phoneVerified ? "Tamam" : "Eksik"} ·{" "}
                       <strong className="text-foreground">Yayın talimatı:</strong>{" "}
                       {listing.publicationInstructionRecorded ? "Kayıtlı" : "Eksik"}
+                      <br />
+                      <strong className="text-foreground">Özel satıcı beyanı:</strong>{" "}
+                      {listing.privateSellerDeclarationRecorded ? "Kayıtlı" : "Eksik"} ·{" "}
+                      <strong className="text-foreground">İçerik hakları beyanı:</strong>{" "}
+                      {listing.contentRightsDeclarationRecorded ? "Kayıtlı" : "Eksik"}
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
                       {(listing.status === "pending" || listing.status === "unpublished") && (
