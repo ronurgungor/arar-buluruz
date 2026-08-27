@@ -417,7 +417,10 @@ describe("Stage 1 self-service server acceptance", () => {
     failNextStorageDelete = true;
     const orphanRetryKey = "97000000-0000-4000-8000-000000000020";
     const failedPhoto = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm(capability, orphanRetryKey)),
+      requestFor(submissionForm(capability, orphanRetryKey), {
+        origin: "https://stage1.example.test",
+        trustedIp: "198.51.100.70",
+      }),
     );
 
     expect(failedPhoto.status).toBe(500);
