@@ -135,7 +135,11 @@ function installBackendMock(): void {
       const rows = Array.from(photoMetadata)
         .filter((path) => path.startsWith(`listings/${body.p_listing_id}/`))
         .map((object_path, sort_order) => ({
-          photo_id: object_path.split("/").at(-1)?.replace(/\.webp$/, "") ?? crypto.randomUUID(),
+          photo_id:
+            object_path
+              .split("/")
+              .at(-1)
+              ?.replace(/\.webp$/, "") ?? crypto.randomUUID(),
           object_path,
           mime_type: "image/webp",
           byte_size: 100,
@@ -144,10 +148,7 @@ function installBackendMock(): void {
       return json(rows);
     }
 
-    if (
-      url.pathname.startsWith("/storage/v1/object/sign/listing_photos/") &&
-      method === "POST"
-    ) {
+    if (url.pathname.startsWith("/storage/v1/object/sign/listing_photos/") && method === "POST") {
       const objectPath = decodeURIComponent(
         url.pathname.slice("/storage/v1/object/sign/listing_photos/".length),
       );
@@ -499,9 +500,10 @@ describe("Stage 1 self-service server acceptance", () => {
     const idempotencyKey = "97000000-0000-4000-8000-000000000010";
 
     const created = await handleStage1SelfServiceRequest(
-      requestFor(
-        submissionForm(ownerCapability, idempotencyKey, { phone: ownerPhone }),
-      ),
+      requestFor(submissionForm(ownerCapability, idempotencyKey, { phone: ownerPhone }), {
+        origin: "https://stage1.example.test",
+        trustedIp: "198.51.100.60",
+      }),
     );
     expect(created.status).toBe(201);
     const createdPayload = (await created.json()) as { ok: boolean; listingId: string };
