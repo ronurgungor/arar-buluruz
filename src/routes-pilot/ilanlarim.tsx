@@ -20,7 +20,7 @@ import type {
   Stage1SellerManagementResponse,
 } from "@/lib/stage1-seller-management-contract";
 
-export const Route = createFileRoute("/ilanlarim" as never)({
+export const Route = createFileRoute("/ilanlarim")({
   server: {
     handlers: {
       POST: async ({ request }) => {
