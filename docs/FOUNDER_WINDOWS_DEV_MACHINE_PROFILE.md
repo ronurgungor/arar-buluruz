@@ -1,6 +1,6 @@
 # Arar Buluruz — Founder Windows Development Machine Profile
 
-_Last verified: 2026-07-31, Europe/Istanbul_
+_Last verified: 2026-08-27, Europe/Istanbul_
 
 ## Purpose and privacy
 
@@ -49,8 +49,8 @@ Official references:
 - npm: `11.6.2`.
 - Python: `3.14.2`.
 - Bun: not detected. The repository requires Bun `1.3.14` and `bun.lock`.
-- Docker client/server/Compose: not detected.
-- WSL: command surface exists, but no usable WSL installation/version/distribution was verified.
+- Docker Desktop/Engine: now works technically on this machine for local development/rehearsal use. This does not convert the underlying unsupported Windows/CPU baseline into a supported production-administration platform.
+- WSL: now works technically. Exact WSL version/distribution support posture is not asserted beyond that verified functional fact.
 - Supabase CLI: not detected.
 - GitHub CLI: not detected.
 - VS Code: not detected through the command path; this does not prove that no editor is installed.
@@ -76,12 +76,12 @@ No development should begin from the observed local checkout until it is fetched
 | Bun install, lint, unit tests and application build | Hardware is suitable; toolchain incomplete | Install exact Bun `1.3.14` before local execution. Do not introduce npm lockfiles. |
 | Browser and focused Playwright testing | Suitable with reasonable concurrency | Avoid running unnecessary parallel browser workers with many other applications open. |
 | Native local PostgreSQL for focused development | Hardware and storage are suitable | Prefer test-only data; do not introduce real user data locally. |
-| Docker/WSL-based full local stack | Not currently ready or supported | Current Windows build, WSL state and SLAT reading must be resolved first. |
-| Full Gate 1 database/RLS/E2E verification | Use GitHub Actions by default for now | Existing CI remains the canonical containerized execution surface. |
+| Docker/WSL-based local stack | Technically functional, but host OS/CPU baseline remains unsupported | Use when convenient for focused local work; do not make it a mandatory project prerequisite. |
+| Full Gate 1 database/RLS/E2E verification | GitHub Actions remains canonical | Local Docker may reproduce/debug, but canonical verification remains the exact-head GitHub Actions surface. |
 | Production hosting | Not allowed | Production services and personal data belong on the approved Türkiye-hosted server, not this desktop. |
 | Sole production recovery or secret custody device | Not ready | Supported OS and disk-encryption/recovery posture must first be verified. |
 
-Current Docker Desktop documentation requires a supported Windows 11 release, WSL 2.1.5 or later for the WSL backend, 8 GB RAM, hardware virtualization and SLAT. The machine has enough RAM and firmware virtualization, but the current OS/WSL/SLAT state does not meet a verified supported baseline.
+Current Docker/WSL functionality is technically usable, but the machine still runs Windows 11 Pro 21H2 / build 22000 and Ryzen 7 1700 remains outside Microsoft's current supported Windows 11 AMD processor baseline. Local Docker success therefore does not make this host a supported Windows 11 production-administration baseline.
 
 Official Docker references:
 
@@ -90,15 +90,19 @@ Official Docker references:
 
 ## Current development strategy
 
-Until the Windows/security baseline is repaired:
+1. Use the founder PC for repository work, code review, frontend development, Bun-based local validation and focused browser checks.
+2. WSL and Docker Desktop/Engine may be used for local reproduction or convenience because they now work technically.
+3. **Do not make local Docker a mandatory or canonical prerequisite** for Arar Buluruz development or release decisions.
+4. GitHub Actions remains the canonical exact-head verification surface for containerized migrations, RLS, Storage, browser E2E and self-host migration rehearsal.
+5. Do not use the founder PC as the live production host.
+6. Do not make this unsupported Windows/CPU machine the sole production recovery or privileged-secret custody device.
+7. No RAM, CPU or GPU purchase is currently required merely to continue Arar Buluruz development.
 
-1. Use the founder PC for repository work, code review, normal frontend development, exact Bun lint/unit/build work after Bun installation, and focused browser checks.
-2. Use GitHub Actions for Docker-dependent database reset, migration, RLS, REST integration and full browser E2E evidence.
-3. Do not make local Docker Desktop a prerequisite for the next product decision or hosting package.
-4. Do not use the founder PC as the live application host.
-5. Do not store production database dumps, privileged deployment credentials or the only recovery copy on this machine.
+The support caveat remains material:
 
-No RAM, CPU or GPU purchase is currently required for the project. A hardware upgrade should be justified only if a supported operating-system path, repeated local container workload or measured development bottleneck requires it.
+- Windows 11 Pro 21H2 / build `22000` remains outside supported servicing;
+- Ryzen 7 1700 remains outside Microsoft's current supported Windows 11 AMD processor baseline;
+- working WSL/Docker is a technical capability fact, not a support-status override.
 
 ## Required remediation and recheck sequence
 
@@ -109,7 +113,7 @@ Before relying on this machine for local containers or production administration
 3. Assess BIOS update requirements and sequencing from official ASUS documentation; do not flash directly from `0406` without a reviewed rollback and compatibility plan.
 4. Install exact Bun `1.3.14`.
 5. Fetch and fast-forward the local repository from canonical GitHub `main`.
-6. Decide whether WSL 2/Docker is genuinely required locally; prefer CI when it avoids unnecessary machine changes.
+6. Keep WSL/Docker optional for local development; prefer GitHub Actions when canonical/reproducible verification is the goal.
 7. Re-run the privacy-filtered machine profile after any OS, BIOS, CPU, RAM, storage, WSL or Docker change.
 
 ## Revalidation triggers
