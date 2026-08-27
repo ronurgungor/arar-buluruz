@@ -1,8 +1,36 @@
 # Arar Buluruz — Backlog
 
-_Last updated: 2026-08-09, Europe/Istanbul_
+_Last updated: 2026-08-27, Europe/Istanbul_
 
 Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
+
+
+## Current product/frontend checkpoint — 2026-08-27
+
+Current product authority: `docs/PRODUCT_CONTRACT_V2.md`.
+
+- [x] Supersede Çorlu-only/founder-entry/pre-approval/no-self-service assumptions as current product truth.
+- [x] Implement Türkiye-wide İl / İlçe seller self-service.
+- [x] Preserve 1–8 trusted photo flow, private Storage and signed-photo lifecycle.
+- [x] Support broad categories and explicit condition selection.
+- [x] Implement priced / Ücretsiz behavior without public `₺0` rendering.
+- [x] Support Telefon / WhatsApp / Telefon + WhatsApp.
+- [x] Preserve verified-phone capability isolation and cross-phone denial.
+- [x] Implement atomic auto-publication after required evidence + trusted-photo readiness.
+- [x] Move founder role to post-moderation/takedown for the normal product path.
+- [x] Implement lightweight `/ilanlarim` seller ownership: view/edit/unpublish/sold/delete.
+- [x] Preserve search normalization including `b150` ↔ `b 150`.
+- [x] Complete near-final consumer UX pass on `/ilan-ver`, `/ara`, `/ilan/$id`, `/ilanlarim` and shared navigation.
+- [x] Add responsive no-overflow browser smoke at approximately 360 / 390 / 768 / 1280 px.
+- [x] Close frontend exact-head checkpoint at `41691652070cbc117a943578a49056d49d51e6f0` with all seven canonical workflows GREEN.
+- [x] Resolve Stage 1 acceptance runner collision by same-SHA rerun; no application-code change required.
+- [-] Synchronize canonical docs / Issue #75 / founder machine profile to Product Contract V2.
+- [ ] Run narrow security REDTEAM against atomic publication, verified-phone ownership, lifecycle authorization, private photo/storage and service-role boundaries.
+- [ ] Fix only MATERIAL repository-controlled REDTEAM findings.
+- [ ] If material code changes occur, rerun all seven canonical workflows on one exact final SHA.
+- [ ] Keep PR #78 DRAFT / UNMERGED and stop for founder/advisor hands-on product review.
+
+Production, real data, AWS, paid services, Ads/monetization, payments/orders/reservations/commission, in-app chat, classic Auth/password, native app/Play Store and Tarladan changes remain outside this batch.
 
 ## Completed foundations
 
@@ -154,7 +182,7 @@ The older “Current gate status” wording below is retained as historical sequ
 - [x] Record initial real supply intent: real users explicitly said their actual listings may be published.
 - [x] Keep this evidence narrow: initial supply intent is validated, but real listing operations, moderation sustainability, seller-contact operations and a functioning supply-demand loop are not yet validated.
 
-### Real Çorlu pilot backend preparation
+### Historical — Real Çorlu pilot backend preparation (superseded as current product framing)
 
 - [x] Prepare the future founder-controlled 5–10 real Çorlu listing backend/data/security foundation through PR #53 without activating it.
 - [x] Merge PR #53 normally as `9376ba60dfc049a4df27ce25255fa5923b2a154e`.
@@ -164,7 +192,7 @@ The older “Current gate status” wording below is retained as historical sequ
 
 ### Documentation sync before independent review
 
-- [-] Synchronize canonical documentation with the post-PR53 repository/public-runtime split, supply-intent evidence and founder zero-spend boundary.
+- [x] Historical post-PR53 documentation synchronization completed; later Product Contract V2 sync supersedes its product assumptions.
 - [ ] Run an independent Claude full-repository review after this documentation sync merges.
 - [ ] Treat Claude findings as advisory only; do not automatically implement recommendations.
 - [ ] Open a separate founder-authorized gate for any implementation resulting from the review.
@@ -188,7 +216,7 @@ Technical readiness, a provider shortlist, a successful future POC or completion
 - [ ] Do not connect the public runtime to the prepared real backend.
 - [ ] Do not enable production Storage/Auth/secrets.
 - [ ] Do not activate public external-sales CTA.
-- [ ] Keep the future real pilot target at 5–10 founder-controlled Çorlu listings until a separate founder real-data/public-activation gate is opened.
+- [ ] Historical constraint superseded by D-025 for product geography/intake. Keep real personal-data/public production activation closed until a separate founder gate.
 
 ## Current gate status — historical/superseded wording
 
@@ -231,7 +259,7 @@ Restore onto a completely empty environment remains mandatory once a production 
 
 ## V0 evaluation boundary
 
-Current evidence now supports product comprehension and initial real seller/supply intent. It does not yet prove real listing operations, accounts, listing management, moderation sustainability, seller-contact operations, external-sales safety or a functioning supply-demand loop.
+Current repository evidence now also proves the synthetic seller self-service, verified-phone ownership, listing management, buyer contact and post-moderation lifecycle technically. It still does not prove real-world seller completion, moderation sustainability, buyer conversion, abuse rates, marketplace liquidity or a functioning supply-demand loop.
 
 ## Operating rules
 
