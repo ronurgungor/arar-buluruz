@@ -329,6 +329,7 @@ async function verifyFreshSellerManagement(page: Page, phone: string): Promise<v
   await page.getByLabel("İlanlarım doğrulama kodu", { exact: true }).waitFor();
   await page.getByLabel("İlanlarım doğrulama kodu", { exact: true }).fill(verificationCode);
   await page.getByRole("button", { name: "Doğrula ve ilanlarımı göster" }).click();
+  await page.getByText("Bu telefonla yönetilen ilan bulunamadı.", { exact: true }).waitFor();
 }
 
 function expectHref(actual: string | null, expected: string): void {
