@@ -642,9 +642,8 @@ function Stage1ListingWizard() {
               </p>
             </div>
             <div className="rounded-xl border border-border bg-accent/35 p-3 text-sm leading-relaxed text-muted-foreground">
-              İlan oluşturmak için verdiğiniz bilgiler ilanı yayınlamak ve kötüye kullanımı
-              önlemek amacıyla işlenir. Telefonunuz yalnız seçtiğiniz iletişim yöntemlerinde
-              görünür.{" "}
+              İlan oluşturmak için verdiğiniz bilgiler ilanı yayınlamak ve kötüye kullanımı önlemek
+              amacıyla işlenir. Telefonunuz yalnız seçtiğiniz iletişim yöntemlerinde görünür.{" "}
               <Link
                 to="/gizlilik"
                 className="font-semibold text-primary underline underline-offset-4"
@@ -738,8 +737,8 @@ function Stage1ListingWizard() {
                   className="mt-1"
                 />
                 <span>
-                  Bu telefon bana ait; ilan yayınlandığında seçtiğim iletişim yöntemleri için
-                  kamuya açık gösterilmesini istiyorum.
+                  Bu telefon bana ait; ilan yayınlandığında seçtiğim iletişim yöntemleri için kamuya
+                  açık gösterilmesini istiyorum.
                 </span>
               </label>
             </div>
