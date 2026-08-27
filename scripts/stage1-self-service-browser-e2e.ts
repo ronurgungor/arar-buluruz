@@ -350,7 +350,14 @@ const assetFailures: string[] = [];
 for (const page of [ownerPage, buyerPage, otherSellerPage, founderPage]) {
   page.on("pageerror", (error) => runtimeErrors.push(`pageerror: ${error.message}`));
   page.on("console", (message) => {
-    if (message.type() === "error") runtimeErrors.push(`console: ${message.text()}`);
+    if (message.type() !== "error") return;
+    const text = message.text();
+    // Deliberate negative-path probes assert their 403/404 semantics directly below.
+    // Chromium also mirrors those expected responses as generic console errors.
+    if (/^Failed to load resource: the server responded with a status of (?:403|404)/.test(text)) {
+      return;
+    }
+    runtimeErrors.push(`console: ${text}`);
   });
   page.on("response", (response: PlaywrightResponse) => {
     const url = response.url();
