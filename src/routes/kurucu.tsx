@@ -57,6 +57,7 @@ function statusLabel(status: Stage1ModerationListing["status"]) {
   if (status === "published") return "Yayında";
   if (status === "unpublished") return "Yayından kaldırıldı";
   if (status === "rejected") return "Reddedildi";
+  if (status === "sold") return "Satıldı";
   return "Taslak";
 }
 
@@ -66,7 +67,6 @@ function FounderModeration() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [expiryDays, setExpiryDays] = useState("30");
 
   const refresh = async () => {
     const form = new FormData();
@@ -85,17 +85,13 @@ function FounderModeration() {
     void refresh();
   }, []);
 
-  const runAction = async (
-    action: "publish" | "reject" | "unpublish" | "delete",
-    listingId: string,
-  ) => {
+  const runAction = async (action: "unpublish" | "delete", listingId: string) => {
     setBusyId(listingId);
     setMessage("");
     setError("");
     const form = new FormData();
     form.set("action", action);
     form.set("listingId", listingId);
-    if (action === "publish") form.set("expiresInDays", expiryDays);
     const result = await callModeration(form);
     if (result.ok) {
       setMessage(result.message);
@@ -113,23 +109,9 @@ function FounderModeration() {
         <section className="mt-6 rounded-2xl border border-border bg-card p-5">
           <h1 className="text-2xl font-extrabold tracking-tight">İlan moderasyonu</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Satıcı ilanını kendi oluşturur. Bu yerel ve güvenilir yüzey yalnız inceleme, yayınlama,
-            reddetme ve kaldırma içindir.
+            Satıcı doğrulanmış ilanını doğrudan yayınlar. Bu yerel ve güvenilir yüzey sonradan moderasyon, şikâyet inceleme ve gerektiğinde yayından kaldırma içindir.
           </p>
-          <div className="mt-4 flex flex-wrap items-end gap-3">
-            <label className="block">
-              <span className="text-xs font-medium text-muted-foreground">Yayın süresi</span>
-              <select
-                value={expiryDays}
-                onChange={(event) => setExpiryDays(event.target.value)}
-                className="mt-1 h-11 rounded-xl border border-border bg-card px-3 text-sm"
-              >
-                <option value="7">7 gün</option>
-                <option value="30">30 gün</option>
-                <option value="60">60 gün</option>
-                <option value="90">90 gün</option>
-              </select>
-            </label>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => {
@@ -235,26 +217,6 @@ function FounderModeration() {
                       {listing.contentRightsDeclarationRecorded ? "Kayıtlı" : "Eksik"}
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {(listing.status === "pending" || listing.status === "unpublished") && (
-                        <button
-                          type="button"
-                          disabled={busyId !== null}
-                          onClick={() => void runAction("publish", listing.id)}
-                          className="h-11 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
-                        >
-                          Yayınla
-                        </button>
-                      )}
-                      {listing.status === "pending" && (
-                        <button
-                          type="button"
-                          disabled={busyId !== null}
-                          onClick={() => void runAction("reject", listing.id)}
-                          className="h-11 rounded-full border border-border px-5 text-sm font-semibold disabled:opacity-50"
-                        >
-                          Reddet
-                        </button>
-                      )}
                       {listing.status === "published" && (
                         <button
                           type="button"
