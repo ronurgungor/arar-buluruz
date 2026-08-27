@@ -168,8 +168,8 @@ const pendingInsert = await fetch(`${baseUrl}/rest/v1/listings`, {
     title: "Synthetic service-role pilot listing",
     description: "Synthetic fixture proving the trusted operational write path before real data.",
     price_amount: 2500,
-    province: "Tekirdag",
-    district: "Corlu",
+    province: "Tekirdağ",
+    district: "Çorlu",
     seller_display_name: "Synthetic Seller",
     search_keywords: ["synthetic", "pilot"],
     contact_channel: "whatsapp",
@@ -188,12 +188,15 @@ if (((await hiddenPending.json()) as unknown[]).length !== 0) {
   throw new Error("Anonymous Data API exposed the pending synthetic listing.");
 }
 
-const outOfScopeInsert = await fetch(`${baseUrl}/rest/v1/listings`, {
+const turkiyeWideInsert = await fetch(`${baseUrl}/rest/v1/listings`, {
   method: "POST",
-  headers: apiHeaders(serviceRoleKey),
+  headers: {
+    ...apiHeaders(serviceRoleKey),
+    Prefer: "return=representation",
+  },
   body: JSON.stringify({
-    title: "Synthetic out-of-scope listing",
-    description: "Synthetic location fixture that must be rejected by the Corlu pilot lock.",
+    title: "Synthetic Türkiye-wide listing",
+    description: "Synthetic fixture proving the database no longer carries a Çorlu-only product lock.",
     price_amount: 1,
     province: "İstanbul",
     district: "Kadıköy",
@@ -201,7 +204,17 @@ const outOfScopeInsert = await fetch(`${baseUrl}/rest/v1/listings`, {
     status: "pending",
   }),
 });
-await requireRejected(outOfScopeInsert, "out-of-scope location insert");
+await requireOk(turkiyeWideInsert, "Türkiye-wide location insert");
+const turkiyeWideRows = (await turkiyeWideInsert.json()) as Array<{ id?: string }>;
+const turkiyeWideId = turkiyeWideRows[0]?.id;
+if (!turkiyeWideId) throw new Error("Türkiye-wide location insert returned no listing id.");
+await requireOk(
+  await fetch(`${baseUrl}/rest/v1/listings?id=eq.${turkiyeWideId}`, {
+    method: "DELETE",
+    headers: apiHeaders(serviceRoleKey),
+  }),
+  "Türkiye-wide location fixture cleanup",
+);
 
 const privateSchemaProbe = await fetch(`${baseUrl}/rest/v1/listing_photos`, {
   headers: {
@@ -598,5 +611,5 @@ await requireOk(
 );
 
 console.log(
-  "Real Corlu trusted photo pipeline passed with synthetic local fixtures only: sanitize -> WebP -> private Storage -> private metadata -> lifecycle-gated signed delivery.",
+  "Türkiye-wide trusted photo pipeline passed with synthetic local fixtures only: sanitize -> WebP -> private Storage -> private metadata -> lifecycle-gated signed delivery.",
 );
