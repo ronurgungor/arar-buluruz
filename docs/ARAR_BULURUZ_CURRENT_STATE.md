@@ -1,6 +1,6 @@
 # Arar Buluruz — Current State
 
-_Last updated: 2026-08-24, Europe/Istanbul_
+_Last updated: 2026-08-27, Europe/Istanbul_
 
 ## Canonical repository state
 
@@ -14,24 +14,54 @@ _Last updated: 2026-08-24, Europe/Istanbul_
 
 ## Current phase
 
-**Pre-AWS pilot release-candidate technical execution is complete. Production activation remains closed.**
+**Near-final consumer self-service product implementation is GREEN in PR #78; production and real data remain closed.**
 
-Issue #66 proved provider portability. Issue #72 subsequently proved the application-level hosted synthetic pilot release candidate against the dedicated Arar Buluruz development environment without activating AWS, production or real data.
+Current product authority is `docs/PRODUCT_CONTRACT_V2.md`.
 
-The current strategy authority remains `docs/EXECUTION_STRATEGY_2026-08-21.md` except where this newer current-state file records subsequently completed evidence.
+Frontend exact-head checkpoint:
 
-Hard boundaries remain unchanged:
+`41691652070cbc117a943578a49056d49d51e6f0`
 
-- mock/synthetic data only;
+PR #78 is **OPEN / DRAFT / UNMERGED**.
+
+All seven canonical workflows are GREEN on that exact head:
+
+- Activation readiness — `33091191102`;
+- V0 minimal PWA — `33091191295`;
+- CI — `33091191358`;
+- Real pilot backend prep — `33091191160`;
+- Stage 1 Phase A code gate — `33091191189`;
+- Self-host migration rehearsal — `33091191164`;
+- Stage 1 self-service acceptance — `33091191129`, successful rerun job `98587435492`.
+
+The first Stage 1 acceptance attempt failed before browser execution because local Supabase could not bind host port `54322`. The same job reran successfully on the same SHA without application-code changes.
+
+Current consumer product facts:
+
+- Türkiye-wide İl / İlçe;
+- seller self-service;
+- phone verification;
+- atomic auto-publication after trusted-photo and required evidence readiness;
+- founder post-moderation/takedown rather than routine pre-approval;
+- Telefon / WhatsApp / Telefon + WhatsApp;
+- lightweight `İlanlarım` seller ownership;
+- no classic username/password account;
+- broad categories and search normalization;
+- near-final responsive consumer UX.
+
+Older Çorlu-only, seller-calls-founder, founder-entry, phone-only, WhatsApp-OFF and no-self-service product assumptions are **superseded** as current product truth. They remain historical evidence where retained in dated documents.
+
+Hard boundaries remain:
+
+- synthetic/mock data only;
 - no real seller/listing/contact/photo/personal data;
 - no real users;
-- production backend OFF;
-- production deployment OFF;
+- production backend/deployment OFF;
 - AWS OFF;
-- paid infrastructure OFF;
-- dedicated Supabase development environment remains Free only;
-- no Auth/account/payment/chat/advertising/monetization scope expansion;
-- existing `tarladan` resources remain untouched and out of scope.
+- paid infrastructure/services OFF;
+- Ads/monetization OFF;
+- no payment/order/reservation/commission/in-app chat;
+- Tarladan untouched.
 
 **REAL DATA COLLECTION remains CLOSED.**
 
@@ -229,17 +259,31 @@ The known public V0 remains synthetic/mock and non-collecting unless a separate 
 
 PR #74 and Issue #72 completion do **not** authorize Lovable Publish/Update, AWS provisioning, production deployment or real-data collection.
 
-## Minimal pilot product scope
+## Current consumer product scope
 
-After all later activation gates pass, the controlled rollout remains:
+The old controlled Çorlu-only intake model is superseded as the current product contract.
 
-1. **1 real Çorlu listing**;
-2. review;
-3. **3 listings**;
-4. review;
-5. **5–10 listings**.
+The current product is Türkiye-wide and seller self-service:
 
-Operating model remains founder-operated, with no seller Auth/accounts/dashboard, no public self-service writes, no chat, no payment custody/commission and no advertising/paid listings/subscriptions during validation.
+- seller creates the listing directly;
+- 1–8 trusted photos;
+- broad category + title + condition;
+- priced or Ücretsiz;
+- description + İl + İlçe;
+- seller display name + verified phone;
+- Telefon / WhatsApp / Telefon + WhatsApp;
+- short required publication/declaration evidence;
+- atomic auto-publication;
+- founder post-moderation/takedown;
+- lightweight phone-verified `İlanlarım` management;
+- buyer search/detail/signed-photo/direct-contact flow;
+- no classic Auth/password, in-app chat, payment, order, reservation, commission or shipping.
+
+Search continues to normalize compact/spaced queries such as `b150` and `b 150`.
+
+Free listings display **Ücretsiz**, never `₺0`.
+
+The consumer UI must not present itself as a pilot, Stage 1 test harness, founder intake process or compliance tool.
 
 ## Remaining activation gates
 
@@ -263,16 +307,15 @@ AWS account/provisioning, pricing/credit eligibility, Istanbul availability/resi
 
 ## Shortest safe path from this checkpoint
 
-After Issues #66 and #72 technical completion:
+1. keep production, real data, AWS and recurring spend OFF;
+2. preserve the GREEN self-service/backend/security contracts already proved in PR #78;
+3. keep canonical documentation synchronized with `PRODUCT_CONTRACT_V2.md`;
+4. complete the narrow security REDTEAM and fix only material repository-controlled findings;
+5. after any material code fix, require all seven canonical workflows to pass on one exact SHA;
+6. keep PR #78 draft/unmerged until founder/advisor hands-on product review;
+7. separately resolve the applicable real-data/legal/production gates before any real seller data or production activation.
 
-1. keep product scope frozen and real data OFF;
-2. keep the dedicated Supabase Free environment synthetic-only and Tarladan untouched;
-3. complete the separate privacy/legal/operational real-data gate;
-4. do not open AWS merely to repeat already-passed release-candidate/portability proofs;
-5. at a later explicit production gate, verify actual infrastructure, residency, TLS/network/secrets/backups and perform the required production backup/restore check;
-6. only after explicit real-data authorization begin the **1 → 3 → 5–10** Çorlu canary.
-
-Do **not** add Auth, accounts, payments, chat, ads, seller dashboards, complex analytics, recommendation engines, microservices, Kubernetes or speculative observability merely to satisfy this path.
+Do not add classic Auth/accounts, in-app chat, payments, orders, reservations, commission, ads, recommendation engines, microservices, Kubernetes or speculative observability merely to satisfy this path.
 
 ## Historical-document rule
 
