@@ -11,11 +11,12 @@ Current work must begin from the repository, not old chat memory.
 Read in this order:
 
 1. [`docs/ARAR_BULURUZ_CURRENT_STATE.md`](docs/ARAR_BULURUZ_CURRENT_STATE.md)
-2. [`docs/EXECUTION_STRATEGY_2026-08-21.md`](docs/EXECUTION_STRATEGY_2026-08-21.md)
-3. [`docs/AI_CHAT_BOOTSTRAP.md`](docs/AI_CHAT_BOOTSTRAP.md)
-4. [`AGENTS.md`](AGENTS.md)
-5. [`docs/ARAR_BULURUZ_DECISION_LOG.md`](docs/ARAR_BULURUZ_DECISION_LOG.md)
-6. relevant technical contracts and dated evidence
+2. [`docs/PRODUCT_CONTRACT_V2.md`](docs/PRODUCT_CONTRACT_V2.md)
+3. [`docs/EXECUTION_STRATEGY_2026-08-21.md`](docs/EXECUTION_STRATEGY_2026-08-21.md)
+4. [`docs/AI_CHAT_BOOTSTRAP.md`](docs/AI_CHAT_BOOTSTRAP.md)
+5. [`AGENTS.md`](AGENTS.md)
+6. [`docs/ARAR_BULURUZ_DECISION_LOG.md`](docs/ARAR_BULURUZ_DECISION_LOG.md)
+7. relevant technical contracts and dated evidence
 
 Older `PROJECT_MEMORY`, `BACKLOG`, provider and readiness documents remain historical evidence. If their current-status/provider/budget wording conflicts with the current-state/strategy documents above, the newer documents control.
 
@@ -23,20 +24,34 @@ GitHub `main` and the exact branch/PR under review remain more authoritative tha
 
 ## Current product boundary
 
-The first real pilot is intentionally minimal and is **not active yet**.
+The current repository product contract is a **Türkiye-wide seller self-service classifieds experience**. It is technically prepared and verified in PR #78, but production/real-data activation is still OFF.
 
-Target operating model after later gates pass:
+Current consumer model:
 
-- founder-operated Çorlu pilot;
-- rollout **1 listing → review → 3 → review → 5–10**;
-- no seller Auth/accounts by default;
-- no public self-service writes;
-- no payment custody or commission;
-- no chat;
-- no advertising, paid listing or subscription during validation;
-- buyers and sellers communicate outside the platform;
-- exactly one intentionally public seller contact may be shown on an active listing;
-- external-sales/Shopier functionality is out of the first pilot unless separately reopened.
+- seller creates the listing directly;
+- 1–8 trusted photos;
+- broad category + title + condition;
+- price or Ücretsiz;
+- description + İl / İlçe;
+- seller display name + phone;
+- Telefon / WhatsApp / Telefon + WhatsApp;
+- provider-neutral phone verification;
+- atomic auto-publication after required declaration/publication evidence and trusted-photo readiness;
+- lightweight phone-verified `İlanlarım` ownership;
+- founder post-moderation/takedown;
+- search normalization including `b150` ↔ `b 150`;
+- no classic username/password account;
+- no in-app chat, payment/order/reservation/commission/shipping.
+
+Older Çorlu-only, seller-calls-founder, founder-pre-approval, phone-only, WhatsApp-OFF and no-self-service assumptions are historical/superseded as current product truth.
+
+Frontend exact-head checkpoint:
+
+`41691652070cbc117a943578a49056d49d51e6f0`
+
+All seven canonical workflows were GREEN on that exact head. See `docs/PRODUCT_CONTRACT_V2.md` and `docs/ARAR_BULURUZ_CURRENT_STATE.md`.
+
+Production activation, real personal data, AWS/paid infrastructure, Ads/monetization and Tarladan changes remain closed.
 
 ## Current development/infrastructure sequence
 
