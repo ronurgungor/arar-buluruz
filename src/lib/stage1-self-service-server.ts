@@ -1095,7 +1095,9 @@ async function sellerList(form: FormData, clientIp: string): Promise<Response> {
   const { phone } = await assertSellerCapability(form);
   const config = readBackendConfig();
   const rows = await fetchSellerRows(config, { phone });
-  const listings = await Promise.all(rows.map((row) => mapSellerListing(config, row)));
+  const listings = await Promise.all(
+    rows.map((row) => mapSellerListing(config, row)),
+  );
   return jsonResponse({
     ok: true,
     action: "seller_list",
@@ -1186,7 +1188,11 @@ async function sellerUnpublish(form: FormData, clientIp: string): Promise<Respon
   const listingId = requiredUuid(form);
   const listing = await requireOwnedListing(config, listingId, phone);
   if (listing.status !== "published") {
-    throw new Stage1SubmissionError("INVALID_REQUEST", "Yalnız yayındaki ilan kaldırılabilir.", 409);
+    throw new Stage1SubmissionError(
+      "INVALID_REQUEST",
+      "Yalnız yayındaki ilan kaldırılabilir.",
+      409,
+    );
   }
   await patchSellerListing(
     config,
@@ -1210,7 +1216,11 @@ async function sellerMarkSold(form: FormData, clientIp: string): Promise<Respons
   const listingId = requiredUuid(form);
   const listing = await requireOwnedListing(config, listingId, phone);
   if (listing.status !== "published" && listing.status !== "unpublished") {
-    throw new Stage1SubmissionError("INVALID_REQUEST", "Bu ilan satıldı olarak işaretlenemez.", 409);
+    throw new Stage1SubmissionError(
+      "INVALID_REQUEST",
+      "Bu ilan satıldı olarak işaretlenemez.",
+      409,
+    );
   }
   const now = new Date().toISOString();
   await patchSellerListing(
