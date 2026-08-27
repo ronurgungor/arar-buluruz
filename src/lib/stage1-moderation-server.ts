@@ -236,6 +236,8 @@ async function listListings(config: BackendConfig): Promise<Stage1ModerationList
         contactE164: row.contact_e164,
         phoneVerified: row.contact_verified_at !== null,
         publicationInstructionRecorded: row.publication_instruction_at !== null,
+        privateSellerDeclarationRecorded: row.private_seller_declaration_at !== null,
+        contentRightsDeclarationRecorded: row.content_rights_declaration_at !== null,
         photoUrls,
         createdAt: row.created_at,
         publishedAt: row.published_at,
