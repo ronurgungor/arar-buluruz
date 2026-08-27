@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { CheckCircle2, Trash2 } from "lucide-react";
+import { CheckCircle2, ChevronDown, Eye, Trash2 } from "lucide-react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
 import { getDistrictsForCity, locationCities } from "@/data/turkiye-locations";
 import {
@@ -45,12 +45,13 @@ export const Route = createFileRoute("/ilanlarim")({
 
 type SellerApiResponse = Stage1SubmissionResponse | Stage1SellerManagementResponse;
 type CachedCapability = { phone: string; token: string; expiresAt: string };
+type EditingListing = Stage1SellerListing & { priceText: string };
 
 const CAPABILITY_STORAGE_KEY = "arar-buluruz:stage1-phone-capability";
 const E164_PATTERN = /^\+[1-9][0-9]{7,14}$/;
 const fieldClass =
   "h-12 w-full rounded-xl border border-border bg-card px-4 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10";
-const selectClass = `${fieldClass} appearance-none`;
+const selectClass = `${fieldClass} appearance-none pr-10`;
 
 async function postSeller(form: FormData): Promise<SellerApiResponse> {
   try {
@@ -116,7 +117,7 @@ function SellerListings() {
   const [challengeId, setChallengeId] = useState("");
   const [code, setCode] = useState("");
   const [listings, setListings] = useState<Stage1SellerListing[]>([]);
-  const [editing, setEditing] = useState<Stage1SellerListing | null>(null);
+  const [editing, setEditing] = useState<EditingListing | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -136,7 +137,6 @@ function SellerListings() {
     if (result.ok && result.action === "seller_list") {
       setListings(result.listings);
       setCapability(activeCapability);
-      setNotice(result.message);
       return true;
     }
     if (!result.ok) setError(result.message);
@@ -221,6 +221,11 @@ function SellerListings() {
 
   const saveEdit = async () => {
     if (!editing) return;
+    const normalizedPrice = Number(editing.priceText.replace(",", "."));
+    if (!editing.isFree && (!editing.priceText.trim() || !Number.isFinite(normalizedPrice) || normalizedPrice <= 0)) {
+      setError("Geçerli bir fiyat girin veya Ücretsiz seçeneğini işaretleyin.");
+      return;
+    }
     setBusy(true);
     setError("");
     const form = new FormData();
@@ -231,7 +236,7 @@ function SellerListings() {
     form.set("category", editing.category);
     form.set("condition", editing.condition);
     form.set("priceMode", editing.isFree ? "free" : "priced");
-    form.set("price", editing.isFree ? "0" : String(editing.price));
+    form.set("price", editing.isFree ? "0" : editing.priceText.trim());
     form.set("title", editing.title);
     form.set("description", editing.description);
     form.set("province", editing.province);
@@ -252,16 +257,23 @@ function SellerListings() {
   return (
     <div className="min-h-screen">
       <PilotTopBar />
-      <main className="mx-auto max-w-2xl px-4 pb-16">
+      <main className="mx-auto max-w-3xl px-4 pb-16">
         <div className="mt-6">
-          <h1 className="text-2xl font-extrabold tracking-tight">İlanlarım</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">İlanlarım</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Hesap açmadan, ilan verdiğin telefonu doğrulayarak ilanlarını yönet.
+            İlan verdiğin telefonu doğrula; yayınlarını tek yerden yönet.
           </p>
         </div>
 
         {!capability && (
-          <section className="mt-6 rounded-2xl border border-border bg-card p-4">
+          <section className="mt-6 rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
+            <div className="mb-4">
+              <h2 className="font-bold text-foreground">Telefonunu doğrula</h2>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                Hesap veya şifre gerekmez. İlan verirken kullandığın numaraya tek kullanımlık kod
+                göndeririz.
+              </p>
+            </div>
             <label className="block">
               <span className="text-sm font-medium">İlan verdiğin telefon</span>
               <input
@@ -284,7 +296,7 @@ function SellerListings() {
                 onClick={() => void begin()}
                 className="mt-3 h-12 w-full rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
               >
-                {busy ? "Kontrol ediliyor…" : "Telefonumu doğrula"}
+                {busy ? "Kontrol ediliyor…" : "Doğrulama kodu gönder"}
               </button>
             ) : (
               <div className="mt-4">
@@ -315,13 +327,13 @@ function SellerListings() {
         {error && (
           <p
             role="alert"
-            className="mt-4 rounded-xl border border-destructive/40 p-3 text-sm text-destructive"
+            className="mt-4 rounded-2xl border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"
           >
             {error}
           </p>
         )}
         {notice && (
-          <p role="status" className="mt-4 rounded-xl border border-border bg-card p-3 text-sm">
+          <p role="status" className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-3 text-sm">
             {notice}
           </p>
         )}
@@ -329,8 +341,11 @@ function SellerListings() {
         {capability && !editing && (
           <section className="mt-6">
             {listings.length === 0 ? (
-              <div className="rounded-2xl border border-border bg-card p-6 text-center">
-                <p className="font-semibold">Bu telefonla yönetilen ilan bulunamadı.</p>
+              <div className="rounded-3xl border border-border bg-card p-7 text-center shadow-sm">
+                <p className="font-bold">Bu telefonla yönetilen ilan bulunamadı.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Yeni bir ilan yayınladığında burada görünecek.
+                </p>
                 <Link
                   to="/ilan-ver"
                   className="mt-4 inline-flex text-sm font-semibold text-primary underline"
@@ -344,30 +359,51 @@ function SellerListings() {
                   <li
                     key={listing.id}
                     data-testid={`seller-listing-${listing.id}`}
-                    className="rounded-2xl border border-border bg-card p-4"
+                    className="rounded-2xl border border-border bg-card p-4 shadow-sm"
                   >
                     <div className="flex gap-3">
                       {listing.photoUrls[0] ? (
                         <img
                           src={listing.photoUrls[0]}
                           alt={`${listing.title} yönetim fotoğrafı`}
-                          className="h-20 w-24 shrink-0 rounded-xl object-cover"
+                          className="h-24 w-28 shrink-0 rounded-xl object-cover sm:h-28 sm:w-36"
                         />
                       ) : null}
                       <div className="min-w-0 flex-1">
-                        <p className="line-clamp-2 font-bold">{listing.title}</p>
-                        <p className="mt-1 font-extrabold text-primary">{formatPrice(listing)}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {listing.province} / {listing.district} · {statusLabels[listing.status]}
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <p className="line-clamp-2 min-w-0 flex-1 font-bold">{listing.title}</p>
+                          <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
+                            {statusLabels[listing.status]}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-lg font-extrabold text-primary">
+                          {formatPrice(listing)}
+                        </p>
+                        <p className="mt-1 text-xs font-medium text-muted-foreground">
+                          {listing.province} / {listing.district}
                         </p>
                       </div>
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
+                      {listing.status === "published" && (
+                        <a
+                          href={`/ilan/${listing.id}`}
+                          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border px-4 text-sm font-semibold transition-colors hover:bg-accent"
+                        >
+                          <Eye aria-hidden className="h-4 w-4" />
+                          Görüntüle
+                        </a>
+                      )}
                       {(listing.status === "published" || listing.status === "unpublished") && (
                         <button
                           type="button"
-                          onClick={() => setEditing({ ...listing })}
-                          className="min-h-11 rounded-full border border-border px-4 text-sm font-semibold"
+                          onClick={() =>
+                            setEditing({
+                              ...listing,
+                              priceText: listing.isFree ? "" : String(listing.price),
+                            })
+                          }
+                          className="min-h-11 rounded-full border border-border px-4 text-sm font-semibold transition-colors hover:bg-accent"
                         >
                           Düzenle
                         </button>
@@ -419,7 +455,7 @@ function SellerListings() {
         )}
 
         {editing && (
-          <section className="mt-6 space-y-4 rounded-2xl border border-border bg-card p-4">
+          <section className="mt-6 space-y-4 rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-primary" aria-hidden />
               <h2 className="text-lg font-bold">İlanı düzenle</h2>
@@ -436,51 +472,72 @@ function SellerListings() {
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block">
                 <span className="text-sm font-medium">Kategori</span>
-                <select
-                  aria-label="İlanlarım kategori"
-                  value={editing.category}
-                  onChange={(event) =>
-                    setEditing({ ...editing, category: event.target.value as Stage1Category })
-                  }
-                  className={`mt-1 ${selectClass}`}
-                >
-                  {STAGE1_CATEGORIES.map((value) => (
-                    <option key={value} value={value}>
-                      {STAGE1_CATEGORY_LABELS[value]}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative mt-1">
+                  <select
+                    aria-label="İlanlarım kategori"
+                    value={editing.category}
+                    onChange={(event) =>
+                      setEditing({ ...editing, category: event.target.value as Stage1Category })
+                    }
+                    className={selectClass}
+                  >
+                    {STAGE1_CATEGORIES.map((value) => (
+                      <option key={value} value={value}>
+                        {STAGE1_CATEGORY_LABELS[value]}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    aria-hidden
+                    className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  />
+                </div>
               </label>
               <label className="block">
                 <span className="text-sm font-medium">Durum</span>
-                <select
-                  aria-label="İlanlarım durum"
-                  value={editing.condition}
-                  onChange={(event) =>
-                    setEditing({ ...editing, condition: event.target.value as Stage1Condition })
-                  }
-                  className={`mt-1 ${selectClass}`}
-                >
-                  {STAGE1_CONDITIONS.map((value) => (
-                    <option key={value} value={value}>
-                      {STAGE1_CONDITION_LABELS[value]}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative mt-1">
+                  <select
+                    aria-label="İlanlarım durum"
+                    value={editing.condition}
+                    onChange={(event) =>
+                      setEditing({ ...editing, condition: event.target.value as Stage1Condition })
+                    }
+                    className={selectClass}
+                  >
+                    {STAGE1_CONDITIONS.map((value) => (
+                      <option key={value} value={value}>
+                        {STAGE1_CONDITION_LABELS[value]}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    aria-hidden
+                    className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  />
+                </div>
               </label>
             </div>
             <label className="block">
               <span className="text-sm font-medium">Fiyat (TL)</span>
-              <input
-                aria-label="İlanlarım fiyat"
-                disabled={editing.isFree}
-                value={editing.isFree ? "" : String(editing.price)}
-                onChange={(event) =>
-                  setEditing({ ...editing, price: Number(event.target.value || 0) })
-                }
-                inputMode="decimal"
-                className={`mt-1 ${fieldClass} disabled:bg-muted`}
-              />
+              <div className="relative mt-1">
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground"
+                >
+                  ₺
+                </span>
+                <input
+                  aria-label="İlanlarım fiyat"
+                  disabled={editing.isFree}
+                  value={editing.isFree ? "" : editing.priceText}
+                  onChange={(event) =>
+                    setEditing({ ...editing, priceText: event.target.value })
+                  }
+                  inputMode="decimal"
+                  placeholder={editing.isFree ? "" : "Örn. 12.500"}
+                  className={`${fieldClass} pl-9 disabled:bg-muted`}
+                />
+              </div>
             </label>
             <label className="flex min-h-11 items-center gap-3 rounded-xl border border-border px-4 py-3 text-sm font-medium">
               <input
@@ -490,7 +547,7 @@ function SellerListings() {
                   setEditing({
                     ...editing,
                     isFree: event.target.checked,
-                    price: event.target.checked ? 0 : editing.price,
+                    priceText: "",
                   })
                 }
               />
@@ -509,36 +566,48 @@ function SellerListings() {
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="text-sm font-medium">İl</span>
-                <select
-                  aria-label="İlanlarım il"
-                  value={editing.province}
-                  onChange={(event) =>
-                    setEditing({ ...editing, province: event.target.value, district: "" })
-                  }
-                  className={`mt-1 ${selectClass}`}
-                >
-                  {locationCities.slice(1).map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative mt-1">
+                  <select
+                    aria-label="İlanlarım il"
+                    value={editing.province}
+                    onChange={(event) =>
+                      setEditing({ ...editing, province: event.target.value, district: "" })
+                    }
+                    className={selectClass}
+                  >
+                    {locationCities.slice(1).map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    aria-hidden
+                    className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  />
+                </div>
               </label>
               <label className="block">
                 <span className="text-sm font-medium">İlçe</span>
-                <select
-                  aria-label="İlanlarım ilçe"
-                  value={editing.district}
-                  onChange={(event) => setEditing({ ...editing, district: event.target.value })}
-                  className={`mt-1 ${selectClass}`}
-                >
-                  <option value="">İlçe seçin</option>
-                  {districts.map((district) => (
-                    <option key={district} value={district}>
-                      {district}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative mt-1">
+                  <select
+                    aria-label="İlanlarım ilçe"
+                    value={editing.district}
+                    onChange={(event) => setEditing({ ...editing, district: event.target.value })}
+                    className={selectClass}
+                  >
+                    <option value="">İlçe seçin</option>
+                    {districts.map((district) => (
+                      <option key={district} value={district}>
+                        {district}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    aria-hidden
+                    className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  />
+                </div>
               </label>
             </div>
             <fieldset>
@@ -547,7 +616,7 @@ function SellerListings() {
                 {STAGE1_CONTACT_PREFERENCES.map((value) => (
                   <label
                     key={value}
-                    className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-3"
+                    className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-3 transition-colors ${editing.contactPreference === value ? "border-primary bg-primary/5" : "border-border"}`}
                   >
                     <input
                       type="radio"
