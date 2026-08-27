@@ -412,31 +412,21 @@ describe("Stage 1 self-service server acceptance", () => {
     expect(listings.size).toBe(1);
     expect(photoMetadata.size).toBe(1);
     expect(storedObjects.size).toBe(1);
-  });
-
-  test("whole-submission cleanup retries a known orphan path after photo compensation fails", async () => {
-    const phone = "+12025550220";
-    const capability = await syntheticCapability(phone);
-    const key = "97000000-0000-4000-8000-000000000020";
 
     failNextPhotoMetadataRegistration = true;
     failNextStorageDelete = true;
-
-    const failed = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm(capability, key, { phone }), {
-        origin: "https://stage1.example.test",
-        trustedIp: "198.51.100.70",
-      }),
+    const orphanRetryKey = "97000000-0000-4000-8000-000000000020";
+    const failedPhoto = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm(capability, orphanRetryKey)),
     );
 
-    expect(failed.status).toBe(500);
-    expect(await failed.json()).toMatchObject({ ok: false, code: "SUBMISSION_FAILED" });
-    expect(listings.size).toBe(0);
-    expect(photoMetadata.size).toBe(0);
-    expect(storedObjects.size).toBe(0);
-    expect(
-      Array.from(submissionKeys.values()).some((state) => state.listingId.startsWith("970")),
-    ).toBe(false);
+    expect(failedPhoto.status).toBe(500);
+    expect(await failedPhoto.json()).toMatchObject({ ok: false, code: "SUBMISSION_FAILED" });
+    expect(listings.size).toBe(1);
+    expect(listings.has(retryPayload.listingId)).toBe(true);
+    expect(photoMetadata.size).toBe(1);
+    expect(storedObjects.size).toBe(1);
+    expect(submissionKeys.size).toBe(1);
   });
 
   test("capability is phone-bound, tamper-resistant and expires", async () => {
