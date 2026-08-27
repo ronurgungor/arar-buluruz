@@ -238,7 +238,7 @@ async function submitListing(
   await page.getByRole("button", { name: /Devam/ }).click();
 
   await page.getByLabel("İlanda görünecek ad", { exact: true }).fill("Sentetik Satıcı");
-  await page.getByLabel("Telefon", { exact: true }).fill(input.phone);
+  await page.getByLabel("Telefon numarası", { exact: true }).fill(input.phone);
   await page
     .getByLabel(
       input.contact === "phone_whatsapp"
