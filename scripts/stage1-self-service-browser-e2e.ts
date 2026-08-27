@@ -484,8 +484,8 @@ try {
   await ownerPage.getByLabel("İlanlarım başlık").fill(`${title} güncel`);
   await ownerPage.getByLabel("Ücretsiz veriyorum").uncheck();
   await ownerPage.getByLabel("İlanlarım fiyat").fill("4321");
-  await ownerPage.getByLabel("İlanlarım il").selectOption("İstanbul");
-  await ownerPage.getByLabel("İlanlarım ilçe").selectOption("Kadıköy");
+  await ownerPage.getByLabel("İlanlarım il", { exact: true }).selectOption("İstanbul");
+  await ownerPage.getByLabel("İlanlarım ilçe", { exact: true }).selectOption("Kadıköy");
   await ownerPage.getByRole("button", { name: "Değişiklikleri kaydet" }).click();
   await ownerPage.getByText("İlan güncellendi.", { exact: true }).waitFor();
 
