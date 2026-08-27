@@ -14,6 +14,8 @@ export type Stage1ModerationListing = {
   contactE164: string | null;
   phoneVerified: boolean;
   publicationInstructionRecorded: boolean;
+  privateSellerDeclarationRecorded: boolean;
+  contentRightsDeclarationRecorded: boolean;
   photoUrls: string[];
   createdAt: string;
   publishedAt: string | null;
