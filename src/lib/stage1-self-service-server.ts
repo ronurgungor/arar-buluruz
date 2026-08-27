@@ -5,7 +5,12 @@ import {
   type StoredListingPhotoMetadata,
   type TrustedListingPhotoIngestionStore,
 } from "./listing-photo-trusted";
-import { PILOT_DISTRICT, PILOT_PROVINCE } from "./pilot-operator-contract";
+import { getDistrictsForCity, isLocationCity } from "../data/turkiye-locations";
+import type {
+  Stage1SellerListing,
+  Stage1SellerListingStatus,
+  Stage1SellerManagementResponse,
+} from "./stage1-seller-management-contract";
 import {
   STAGE1_CAPABILITY_TTL_SECONDS,
   STAGE1_MAX_PHOTOS,
@@ -58,10 +63,46 @@ type SubmissionClaim = {
   state: "claimed" | "complete" | "in_progress";
 };
 
+type Stage1ApiResponse = Stage1SubmissionResponse | Stage1SellerManagementResponse;
+
+type SellerBackendRow = {
+  id: string;
+  title: string;
+  description: string;
+  price_amount: number | string;
+  price_is_free: boolean;
+  category: string;
+  item_condition: string;
+  province: string;
+  district: string;
+  seller_display_name: string;
+  status: string;
+  contact_channel: string | null;
+  contact_e164: string | null;
+  contact_verified_at: string | null;
+  publication_instruction_at: string | null;
+  private_seller_declaration_at: string | null;
+  content_rights_declaration_at: string | null;
+  created_at: string;
+  updated_at: string;
+  published_at: string | null;
+  expires_at: string | null;
+  unpublished_at: string | null;
+  sold_at: string | null;
+};
+
+type SellerPhotoRow = {
+  photo_id: string;
+  object_path: string;
+  mime_type: string;
+  byte_size: number | string;
+  sort_order: number | string;
+};
+
 const challenges = new Map<string, Challenge>();
 const rateBuckets = new Map<string, RateBucket>();
 
-function jsonResponse(payload: Stage1SubmissionResponse, status = 200): Response {
+function jsonResponse(payload: Stage1ApiResponse, status = 200): Response {
   const headers = new Headers({
     "Cache-Control": "no-store",
     "Content-Type": "application/json; charset=utf-8",
@@ -595,22 +636,26 @@ async function claimSubmission(
   return claim;
 }
 
-async function completeSubmissionKey(
+async function completeAndPublishSubmission(
   config: BackendConfig,
   keyHash: string,
   listingId: string,
 ): Promise<void> {
   const response = await requireOk(
-    await fetch(`${config.baseUrl}/rest/v1/rpc/complete_listing_submission_key`, {
+    await fetch(`${config.baseUrl}/rest/v1/rpc/complete_and_publish_listing_submission`, {
       method: "POST",
       headers: serviceHeaders(config),
-      body: JSON.stringify({ p_key_hash: keyHash, p_listing_id: listingId }),
+      body: JSON.stringify({
+        p_key_hash: keyHash,
+        p_listing_id: listingId,
+        p_expires_at: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+      }),
     }),
-    "self-service idempotency completion",
+    "self-service atomic publication",
   );
   const completed = (await response.json()) as boolean;
   if (completed !== true) {
-    throw new Error("Submission idempotency completion was not acknowledged.");
+    throw new Error("Atomic listing publication was not acknowledged.");
   }
 }
 
@@ -728,10 +773,10 @@ async function submitListing(form: FormData, clientIp: string): Promise<Response
   );
   const province = requiredString(form, "province", 2, 64);
   const district = requiredString(form, "district", 2, 64);
-  if (province !== PILOT_PROVINCE || district !== PILOT_DISTRICT) {
+  if (!isLocationCity(province) || !getDistrictsForCity(province).includes(district)) {
     throw new Stage1SubmissionError(
       "INVALID_REQUEST",
-      `Stage 1 ilanları yalnız ${PILOT_PROVINCE} / ${PILOT_DISTRICT} konumunda kabul edilir.`,
+      "İl ve ilçe seçimi Türkiye konum kataloğuyla eşleşmiyor.",
     );
   }
   requiredConfirmation(form, "privateSellerDeclaration");
@@ -794,7 +839,7 @@ async function submitListing(form: FormData, clientIp: string): Promise<Response
           ok: true,
           action: "submitted",
           listingId: claim.listing_id,
-          message: "İlanınız incelemeye alındı.",
+          message: "İlanın yayınlandı.",
         },
         200,
       );
@@ -824,7 +869,7 @@ async function submitListing(form: FormData, clientIp: string): Promise<Response
       );
       storedPhotos.push(metadata);
     }
-    await completeSubmissionKey(config, keyHash, listingId);
+    await completeAndPublishSubmission(config, keyHash, listingId);
   } catch (cause) {
     try {
       await cleanupFailedSubmission(config, listingId, storedPhotos);
@@ -842,9 +887,9 @@ async function submitListing(form: FormData, clientIp: string): Promise<Response
       ok: true,
       action: "submitted",
       listingId,
-      message: "İlanınız incelemeye alındı. Yayınlanmadan önce kontrol edilecek.",
+      message: "İlanın yayınlandı.",
     },
-    202,
+    201,
   );
 }
 
