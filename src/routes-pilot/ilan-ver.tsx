@@ -1,13 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import {
-  CheckCircle2,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ImagePlus,
-  X,
-} from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ImagePlus, X } from "lucide-react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
 import { getDistrictsForCity, locationCities } from "@/data/turkiye-locations";
 import { LISTING_PHOTO_ALLOWED_MIME_TYPES, LISTING_PHOTO_MAX_BYTES } from "@/lib/listing-photo";
@@ -750,9 +743,7 @@ function Stage1ListingWizard() {
                   onChange={(event) => setPrivateSellerConfirmed(event.target.checked)}
                   className="mt-1"
                 />
-                <span>
-                  Özel kişi olarak ara sıra ilan veriyorum; bu ilan kendi eşyam için.
-                </span>
+                <span>Özel kişi olarak ara sıra ilan veriyorum; bu ilan kendi eşyam için.</span>
               </label>
               <label className="flex items-start gap-3">
                 <input
