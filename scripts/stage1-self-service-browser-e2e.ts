@@ -433,7 +433,7 @@ try {
     .getByTestId(`moderation-listing-${listingId}`)
     .getByRole("button", { name: "Sil" })
     .click();
-  await founderPage.getByText("İlan ve fotoğrafları silindi.", { exact: true }).waitFor();
+  await founderPage.getByText("İlan ve ilişkili fotoğraflar silindi.", { exact: true }).waitFor();
   const deletedProbe = await fetch(
     `${backendOrigin}/rest/v1/listings?id=eq.${listingId}&select=id`,
     { headers: serviceHeaders },
@@ -472,7 +472,7 @@ try {
     .getByTestId(`moderation-listing-${rejectId}`)
     .getByRole("button", { name: "Sil" })
     .click();
-  await founderPage.getByText("İlan ve fotoğrafları silindi.", { exact: true }).waitFor();
+  await founderPage.getByText("İlan ve ilişkili fotoğraflar silindi.", { exact: true }).waitFor();
   assert(
     (await privilegedPhotoInventory(rejectId)).length === 0,
     "Rejected listing cleanup left photo metadata.",
