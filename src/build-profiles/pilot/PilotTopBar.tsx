@@ -16,10 +16,7 @@ export function PilotTopBar({ hidePostAction = false }: PilotTopBarProps) {
         >
           <Wordmark />
         </Link>
-        <nav
-          aria-label="Ana gezinme"
-          className="flex shrink-0 items-center gap-1 text-sm sm:gap-2"
-        >
+        <nav aria-label="Ana gezinme" className="flex shrink-0 items-center gap-1 text-sm sm:gap-2">
           <a
             href="/ara"
             className="inline-flex min-h-11 items-center rounded-full px-3 py-2 font-semibold text-foreground transition-colors hover:bg-accent"
