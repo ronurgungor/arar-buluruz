@@ -21,6 +21,8 @@ export function normalizeSearchText(value: string): string {
     .replace(/[çğıöşü]/g, (character) => TURKISH_CHARACTER_FOLD[character] ?? character)
     .normalize("NFKD")
     .replace(/\p{M}+/gu, "")
+    .replace(/(\p{L})(\p{N})/gu, "$1 $2")
+    .replace(/(\p{N})(\p{L})/gu, "$1 $2")
     .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim()
     .replace(/\s+/g, " ");
