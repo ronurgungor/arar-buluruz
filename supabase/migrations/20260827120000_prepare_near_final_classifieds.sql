@@ -31,14 +31,12 @@ alter table public.listings
         'baby-kids',
         'other'
       )
-    ),
-  alter column category drop default,
-  alter column item_condition drop default;
+    );
 
 comment on column public.listings.category is
-  'Broad general-classifieds category metadata; no category-specific field tree is introduced.';
+  'Broad general-classifieds category metadata. Consumer submission always requires an explicit category; the legacy DB default is retained only for backward-compatible internal fixtures.';
 comment on column public.listings.item_condition is
-  'Seller-selected item condition; application UI requires an explicit selection.';
+  'Consumer submission requires an explicit item condition; the legacy DB default is retained only for backward-compatible internal fixtures.';
 
 -- Sold is a seller-controlled terminal public-lifecycle state.
 alter table public.listings
