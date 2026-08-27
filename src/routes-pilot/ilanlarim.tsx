@@ -293,9 +293,7 @@ function SellerListings() {
                   <input
                     aria-label="İlanlarım doğrulama kodu"
                     value={code}
-                    onChange={(event) =>
-                      setCode(event.target.value.replace(/\D/g, "").slice(0, 6))
-                    }
+                    onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     className={`mt-1 ${fieldClass}`}
@@ -315,7 +313,10 @@ function SellerListings() {
         )}
 
         {error && (
-          <p role="alert" className="mt-4 rounded-xl border border-destructive/40 p-3 text-sm text-destructive">
+          <p
+            role="alert"
+            className="mt-4 rounded-xl border border-destructive/40 p-3 text-sm text-destructive"
+          >
             {error}
           </p>
         )}
@@ -330,7 +331,10 @@ function SellerListings() {
             {listings.length === 0 ? (
               <div className="rounded-2xl border border-border bg-card p-6 text-center">
                 <p className="font-semibold">Bu telefonla yönetilen ilan bulunamadı.</p>
-                <Link to="/ilan-ver" className="mt-4 inline-flex text-sm font-semibold text-primary underline">
+                <Link
+                  to="/ilan-ver"
+                  className="mt-4 inline-flex text-sm font-semibold text-primary underline"
+                >
                   Yeni ilan ver
                 </Link>
               </div>
@@ -541,12 +545,18 @@ function SellerListings() {
               <legend className="text-sm font-medium">İletişim tercihi</legend>
               <div className="mt-2 grid gap-2 sm:grid-cols-3">
                 {STAGE1_CONTACT_PREFERENCES.map((value) => (
-                  <label key={value} className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-3">
+                  <label
+                    key={value}
+                    className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-3"
+                  >
                     <input
                       type="radio"
                       checked={editing.contactPreference === value}
                       onChange={() =>
-                        setEditing({ ...editing, contactPreference: value as Stage1ContactPreference })
+                        setEditing({
+                          ...editing,
+                          contactPreference: value as Stage1ContactPreference,
+                        })
                       }
                     />
                     {STAGE1_CONTACT_LABELS[value]}
