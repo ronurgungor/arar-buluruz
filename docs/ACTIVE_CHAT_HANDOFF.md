@@ -1,242 +1,149 @@
 # Arar Buluruz — Active Chat Handoff
 
-_Last updated: 2026-08-26, Europe/Istanbul_
+_Last updated: 2026-08-27, Europe/Istanbul_
 
 ## Purpose
 
-This is the **short-lived continuity layer** between chat rooms.
+This is the short-lived continuity layer between Arar Buluruz chat rooms.
 
-It does not replace GitHub code, exact PR evidence, `ARAR_BULURUZ_CURRENT_STATE.md`, the decision log or official external sources. It records the current working context that is most likely to be lost when a chat room fills up.
-
-Before acting, a new chat must verify live GitHub state.
-
----
+It does not replace live GitHub, exact workflow evidence, `ARAR_BULURUZ_CURRENT_STATE.md`, `PRODUCT_CONTRACT_V2.md`, the decision log or official external sources. A new room must verify live repository state before acting.
 
 ## Active roles
 
-- **Founder:** final consequential decision owner.
-- **Current Main Execution Chat:** `Sohbet 8` at the time of this handoff. When it fills, the role moves to `Sohbet 9`, then onward. The room number is not the identity of the role.
-- **Current Advisor Chat:** `Sohbet Danışman 1` at the time of this handoff. When it fills, the role moves to `Sohbet Danışman 2`, then onward.
-- **Codex:** budgeted highest-leverage specialist engineer; may implement difficult engineering work, but is not the routine default developer.
-- **Work:** budgeted deep-research/analysis/independent-review specialist; does not own final project decisions.
-- **Lovable:** credit-budgeted high-throughput frontend/UX specialist; use when it saves meaningful implementation effort.
+- **Founder:** final consequential decision owner; not routine QA.
+- **Main Execution Chat:** ordinary implementation, debugging, CI and repository synchronization owner.
+- **Advisor Chat:** independent product/strategy/risk review.
+- **Codex:** narrow specialist engineering/security review when a Codex session is actually available.
+- **Work:** deep research/independent review when materially useful.
+- **Lovable:** optional frontend accelerator only; never a hard dependency.
 
-Read `docs/AI_OPERATING_MODEL_V2.md` for the durable role/routing rules.
+One-writer rule remains in force.
 
----
+## Live repository checkpoint
 
-## Live repository checkpoint at handoff creation
+Frontend exact-head checkpoint independently and executable-evidence verified:
 
-Verified on 2026-08-26 before creating this handoff:
+`41691652070cbc117a943578a49056d49d51e6f0`
 
-- Repository: `ronurgungor/arar-buluruz`
-- Canonical branch: `main`
-- Canonical `main` SHA: `0e00bb6ee6ad3f8a46ecdeabf8515dba934f7168`
-- PR #74: merged/closed; hosted synthetic pilot RC proof completed.
-- Issue #72: completed/closed in current-state documentation.
-- Active phase: first real listing activation readiness.
-- Issue #75: active first-real-listing readiness gate.
-- PR #76: **OPEN**, base `main`, branch `agent/first-real-listing-readiness`, exact observed head `56e626a2a2f41bf0b847f014361f5a54d2551b2b`, mergeable at observation time.
-- PR #76 changes activation-facing pilot/legal/logging preparation; it is **not merged** and does not authorize production or real data.
+PR #78:
 
-Re-verify all of the above before using them later.
+**OPEN / DRAFT / UNMERGED**
 
----
+All seven canonical workflows are GREEN on that exact head:
 
-## Proven technical state — do not casually rebuild
+- Activation readiness — run `33091191102`;
+- V0 minimal PWA — run `33091191295`;
+- CI — run `33091191358`;
+- Real pilot backend prep — run `33091191160`;
+- Stage 1 Phase A code gate — run `33091191189`;
+- Self-host migration rehearsal — run `33091191164`;
+- Stage 1 self-service acceptance — run `33091191129`, successful rerun job `98587435492`.
 
-Current canonical evidence already supports:
+The initial Stage 1 acceptance attempt failed before the browser journey because local Supabase could not bind host port `54322`. The same job was rerun on the same SHA and passed with no application-code change. Treat this as resolved runner/local-container collision evidence, not a product regression.
 
-- Development = PASS.
-- Portability = PASS.
-- Product pilot release-candidate technical proof = PASS.
-- Managed Supabase synthetic → pinned self-host migration/rollback proof completed.
-- Founder create → sanitized private photo → pending → publish → public search/detail → signed photo → seller contact → unpublish → hard delete flow proved synthetically.
-- Separate reject → hard delete flow proved.
-- Private Storage / signed-photo architecture proved.
-- PWA/offline/fail-closed production-artifact behavior proved.
-- Service-role/privileged material kept outside the public artifact/browser boundary.
-- Tarladan remains untouched and out of scope.
+Subsequent documentation-only commits on the PR branch may move the branch head. Re-verify live GitHub before relying on this exact SHA as current branch head.
 
-Do not reopen these architecture blocks without a material new reason.
+## Current product truth
 
----
+Read `docs/PRODUCT_CONTRACT_V2.md` before making product decisions.
 
-## Current pilot product model
+The current consumer model is:
 
-The intended validation sequence is:
+- Türkiye-wide İl / İlçe;
+- seller self-service;
+- 1–8 trusted photos;
+- broad categories;
+- explicit condition selection;
+- priced or **Ücretsiz**;
+- seller display name + phone;
+- contact preference: **Telefon / WhatsApp / Telefon + WhatsApp**;
+- provider-neutral phone verification;
+- short required seller/publication declarations;
+- atomic auto-publication after all required facts and trusted-photo state are ready;
+- founder **post-moderation/takedown**, not normal pre-approval;
+- lightweight `İlanlarım` ownership via phone verification;
+- no classic username/password account;
+- no in-app chat, payment, order, reservation, commission or shipping;
+- search normalization including `b150` ↔ `b 150`;
+- near-final consumer UX on `/ilan-ver`, `/ara`, `/ilan/$id`, `/ilanlarim`;
+- public header: **Ara / İlan Ver / İlanlarım**.
 
-1. **1 real Çorlu listing**;
-2. review;
-3. **3 listings**;
-4. review;
-5. **5–10 listings**.
+The following older assumptions are superseded as current product identity:
 
-Current intended Stage-1 operating model:
-
-- founder-operated moderation;
-- no Auth;
-- no seller account/dashboard;
-- no public self-service write;
-- no chat;
-- no platform payment/order/reservation;
-- no commission;
-- **ads OFF during initial product validation**;
+- Çorlu-only product;
 - seller calls founder;
-- founder creates pending listing through trusted operator path;
-- public seller contact initially **phone-only**;
-- buyer/seller transaction happens outside Arar Buluruz;
-- WhatsApp intake/contact/complaint is intentionally OFF for the first pilot direction.
+- founder routinely creates listings;
+- founder pre-approval as normal publication;
+- phone-only seller contact;
+- WhatsApp OFF;
+- no self-service;
+- no seller ownership surface;
+- pilot/test/internal-tool framing in consumer UI.
 
-Do not re-add Auth, dashboard, payment, chat, category tree, recommendation engine, Kubernetes or speculative infrastructure without measured need and explicit scope approval.
+Historical documents may still describe those states. Do not delete history merely to make old evidence look current.
 
----
+## Frozen backend/security invariants
 
-## Recent founder/advisor corrections that must not be lost
+Do not reopen these without a demonstrated contract defect:
 
-These points were clarified after some older readiness documents were written.
+- RLS and grants;
+- service-role outside browser;
+- verified-phone capability isolation;
+- cross-phone authorization;
+- direct anon-write denial;
+- private Storage;
+- trusted photo decode/re-encode;
+- signed-photo lifecycle;
+- atomic auto-publication;
+- idempotency/race handling;
+- rate limiting;
+- partial-failure/orphan cleanup;
+- founder post-moderation fail-closed takedown.
 
-### 1. Truth and economic viability outrank reassurance
+Tarladan remains untouched.
 
-The founder explicitly prioritizes:
+## Current hard boundaries
 
-- facts over comforting conclusions;
-- product usefulness over sunk-cost protection;
-- revenue/economic viability over technical showmanship;
-- the shortest defensible experiment over bureaucracy for its own sake.
+Still OFF / closed unless explicitly authorized later:
 
-Do not soften negative evidence merely to make the founder feel better.
+- production activation;
+- real personal data / real seller data;
+- AWS / production provisioning;
+- recurring paid infrastructure/services;
+- Ads/monetization;
+- payment/order/reservation/commission;
+- in-app chat;
+- full classic Auth/password system;
+- native app / Play Store;
+- production secret/environment mutation.
 
-### 2. REDTEAM materiality rule
+Repository readiness is not real-data or production authorization.
 
-Do not equate every legal/compliance uncertainty with a launch blocker.
+## Lovable state
 
-For every proposed blocker ask:
+Lovable is not blocking the product.
 
-> Why exactly does this stop the specific next bounded experiment?
+Latest pre-flight established:
 
-Classify findings as:
+- workspace: Onur's Lovable;
+- plan: Free;
+- usable credits unavailable at that checkpoint;
+- official Arar Buluruz Lovable project stale relative to the frozen GREEN branch;
+- no safe Lovable implementation base was available;
+- no Lovable implementation/diff was created.
 
-- `BLOCKER` — must stop the next specific action;
-- `IMPORTANT` — should fix/verify, not necessarily a stop;
-- `CAN WAIT` — real but later;
-- `FALSE POSITIVE / OVERENGINEERING` — do not spend time now.
+Do not wait for Lovable, buy credits, use stale Lovable main or discard completed direct frontend work. If credits later become available, use it only for a bounded visual/accessibility polish pass from the then-current exact SHA.
 
-### 3. Free validation is not treated as a generic government-permission gate
+## Immediate continuation objective
 
-The current operating correction is:
+After the frontend exact-head GREEN checkpoint:
 
-- a free web/app product test is **not assumed to require a generic prior government approval/permission** merely because it is public;
-- separate legal obligations such as privacy, provider notification/logging or takedown must still be evaluated on their actual applicability and materiality;
-- a CİMER/SGB answer, if sought, is information/clarification and must not automatically be converted into a de facto permission certificate for product validation.
+1. synchronize canonical docs and Issue #75 to the current product truth;
+2. synchronize the founder Windows development-machine profile;
+3. run the approved narrow security REDTEAM against the current code state when the requested specialist is available;
+4. fix only MATERIAL repository-controlled findings;
+5. rerun all seven canonical workflows on one exact final SHA if code/security changes occur;
+6. keep PR #78 **DRAFT / UNMERGED**;
+7. stop for founder/advisor hands-on product review.
 
-This is an operating/legal-materiality correction, not permission to ignore applicable law.
-
-### 4. Company/business registration is not an automatic pre-revenue technical prerequisite
-
-Do **not** assume the founder must create a Ltd./AŞ merely to test one free listing.
-
-The initial validation direction is pre-revenue:
-
-- 0 TL platform revenue;
-- no ads initially;
-- no commission/payment/order/reservation.
-
-Company/tax/monetization status should be reopened when monetization or continued commercial operation actually makes it material.
-
-Any PR/build rule that hard-codes business/tax registration as an unconditional prerequisite for the first free validation must therefore be re-reviewed rather than blindly accepted.
-
-### 5. Monetization is a later explicit gate
-
-Initial product-validation question:
-
-> Do people discover/use the product and contact sellers?
-
-Only after useful product/liquidity evidence should Ads/monetization be opened.
-
-Ad economics should be measured from actual page/ad impressions and actual RPM/eCPM rather than using session time alone as the business model.
-
-Opening Ads/revenue changes the tax/commercial fact pattern and requires a separate current-law review.
-
----
-
-## PR #76 — current caution before merge
-
-PR #76 contains substantial useful activation work, but it was created under assumptions that are now being re-examined.
-
-Before merge, the Main Execution Chat / Advisor should specifically review whether PR #76 still incorrectly encodes any of the following as unconditional Stage-1 blockers:
-
-- business/tax registration;
-- public legal identity fields tied to a commercial-entity assumption;
-- public residence/address assumptions not yet established for the exact pre-revenue fact pattern;
-- any language that turns information/notification obligations into a prior-permission model.
-
-Do not throw away valid PR #76 engineering work merely because some gate assumptions changed. Preserve good implementation and remove only stale assumptions after exact review.
-
-PR #76 does **not** overlap this handoff-documentation branch at the time this file was created.
-
----
-
-## Frontend / launch-completion question currently open
-
-The advisor has been asked to determine whether the application is genuinely frontend-complete for the first real validation.
-
-Known high-level state:
-
-- home/search/listing-detail flows exist;
-- city/district search exists;
-- private photo + signed delivery architecture exists;
-- seller phone contact exists in pilot preparation;
-- phone-first `/ilan-ver` pilot direction exists in PR #76;
-- complaint/contact/privacy/rules pages are being prepared in PR #76;
-- seller-facing Auth/dashboard/self-service upload are intentionally absent, not missing features for Stage-1.
-
-One launch/discovery item was identified for exact review before public traffic testing:
-
-- pilot routes/sitemap/indexability behavior may still carry prior synthetic/private `noindex` assumptions.
-
-Do **not** blindly implement an SEO change from this note. The Main Execution Chat should inspect exact current route/meta/robots/sitemap behavior and make the smallest launch-appropriate change only if public organic discovery is actually part of the first validation plan.
-
-Do not build dozens of province/district SEO landing pages for a one-listing pilot.
-
----
-
-## Specialist budget / routing state
-
-At this handoff:
-
-- **Lovable:** the most recent attempt reported workspace credits exhausted; previously created frontend-lab improvements may still exist and should be reviewed rather than recreated blindly.
-- **Codex:** use as specialist engineering escalation where its superior engineering execution materially helps; do not spend usage on routine work.
-- **Work:** use for difficult/high-consequence research or independent analysis only when a second pass materially reduces decision risk.
-
-These are high-change facts; re-check availability before relying on them.
-
----
-
-## Hard boundaries still in force unless founder explicitly changes them
-
-- AWS OFF.
-- Production activation OFF.
-- Real personal data OFF until an explicit real-data/public-activation decision.
-- Paid recurring infrastructure OFF.
-- Tarladan untouched.
-- No Auth/payment/chat/commission/ads during initial free validation unless a later founder gate explicitly changes scope.
-- No secret/environment/production-resource mutation without explicit founder authorization.
-
----
-
-## Immediate continuity objective
-
-The next work should **not** restart architecture research from zero.
-
-The current practical objective is:
-
-1. finish the cross-chat operating/handoff documentation update;
-2. let the Main Execution Chat inspect the exact current frontend + PR #76 state;
-3. identify only the remaining work required for a real **1-listing free product validation**;
-4. preserve already-proven photo/search/detail/PWA/backend contracts;
-5. remove stale blockers/assumptions only when evidence justifies it;
-6. use Codex/Work/Lovable only where their comparative advantage justifies limited usage;
-7. reach the shortest defensible path to real traffic and real seller-contact evidence.
-
-The project objective is not to maximize preparation. It is to learn whether Arar Buluruz can become a useful and profitable product without taking unjustified legal, privacy, security or financial risk.
+Founder should inspect the product as a user, not perform routine technical QA.
