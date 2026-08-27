@@ -109,7 +109,8 @@ function FounderModeration() {
         <section className="mt-6 rounded-2xl border border-border bg-card p-5">
           <h1 className="text-2xl font-extrabold tracking-tight">İlan moderasyonu</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Satıcı doğrulanmış ilanını doğrudan yayınlar. Bu yerel ve güvenilir yüzey sonradan moderasyon, şikâyet inceleme ve gerektiğinde yayından kaldırma içindir.
+            Satıcı doğrulanmış ilanını doğrudan yayınlar. Bu yerel ve güvenilir yüzey sonradan
+            moderasyon, şikâyet inceleme ve gerektiğinde yayından kaldırma içindir.
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button
