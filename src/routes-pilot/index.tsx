@@ -11,16 +11,16 @@ export const Route = createFileRoute("/")({
     const robots = robotsContent(true);
     return {
       meta: [
-        { title: "Arar Buluruz — Çorlu" },
+        { title: "Arar Buluruz — Türkiye genelinde ilan ara" },
         {
           name: "description",
-          content: "Çorlu'da yayındaki ilanları ara ve satıcıyla doğrudan iletişime geç.",
+          content: "Türkiye genelindeki ilanları ara ve satıcıyla doğrudan iletişime geç.",
         },
         ...(robots ? [{ name: "robots", content: robots }] : []),
-        { property: "og:title", content: "Arar Buluruz — Çorlu" },
+        { property: "og:title", content: "Arar Buluruz — Türkiye genelinde ilan ara" },
         {
           property: "og:description",
-          content: "Çorlu'da yayındaki ilanları ara ve satıcıyla doğrudan iletişime geç.",
+          content: "Türkiye genelindeki ilanları ara ve satıcıyla doğrudan iletişime geç.",
         },
       ],
     };
@@ -43,10 +43,22 @@ function Home() {
 
   return (
     <main className="flex min-h-screen flex-col px-4">
-      <div className="mx-auto flex w-full max-w-xl justify-end gap-2 py-4">
+      <div className="mx-auto flex w-full max-w-xl items-center justify-end gap-1 py-3 text-sm">
+        <a
+          href="/ara"
+          className="inline-flex min-h-11 items-center rounded-full px-3 py-2 font-semibold text-foreground hover:bg-accent"
+        >
+          Ara
+        </a>
+        <a
+          href="/ilanlarim"
+          className="inline-flex min-h-11 items-center rounded-full px-3 py-2 font-semibold text-foreground hover:bg-accent"
+        >
+          İlanlarım
+        </a>
         <Link
           to="/ilan-ver"
-          className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 py-2 font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
           İlan Ver
         </Link>
