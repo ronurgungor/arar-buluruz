@@ -13,12 +13,12 @@ export function PilotTopBar() {
           <Wordmark />
         </Link>
         <nav className="flex shrink-0 items-center gap-2">
-          <Link
-            to="/ilanlarim"
+          <a
+            href="/ilanlarim"
             className="inline-flex min-h-11 items-center rounded-full px-3 py-2 text-sm font-semibold text-foreground hover:bg-accent"
           >
             İlanlarım
-          </Link>
+          </a>
           <Link
             to="/ilan-ver"
             className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
