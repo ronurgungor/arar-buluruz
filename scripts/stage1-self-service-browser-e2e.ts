@@ -447,7 +447,7 @@ try {
   await openOwnerListings(ownerPage, ownerPhone);
   const ownerCard = ownerPage.getByTestId(`seller-listing-${listingId}`);
   await ownerCard.waitFor();
-  await ownerCard.getByText("Yayında", { exact: true }).waitFor();
+  await ownerCard.getByText(/· Yayında$/).waitFor();
 
   await verifyFreshSellerManagement(otherSellerPage, otherPhone);
   assert(
