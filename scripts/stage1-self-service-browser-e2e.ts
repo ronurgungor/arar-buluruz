@@ -447,7 +447,7 @@ try {
   await openOwnerListings(ownerPage, ownerPhone);
   const ownerCard = ownerPage.getByTestId(`seller-listing-${listingId}`);
   await ownerCard.waitFor();
-  await ownerCard.getByText("Yayında", { exact: false }).waitFor();
+  await ownerCard.getByText("Yayında", { exact: true }).waitFor();
 
   await verifyFreshSellerManagement(otherSellerPage, otherPhone);
   assert(
@@ -481,8 +481,8 @@ try {
 
   await ownerCard.getByRole("button", { name: "Düzenle" }).click();
   await ownerPage.getByLabel("İlanlarım başlık").fill(`${title} güncel`);
-  await ownerPage.getByLabel("İlanlarım fiyat").fill("4321");
   await ownerPage.getByLabel("Ücretsiz veriyorum").uncheck();
+  await ownerPage.getByLabel("İlanlarım fiyat").fill("4321");
   await ownerPage.getByLabel("İlanlarım il").selectOption("İstanbul");
   await ownerPage.getByLabel("İlanlarım ilçe").selectOption("Kadıköy");
   await ownerPage.getByRole("button", { name: "Değişiklikleri kaydet" }).click();
