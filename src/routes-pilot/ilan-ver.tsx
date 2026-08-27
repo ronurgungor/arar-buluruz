@@ -621,6 +621,7 @@ function Stage1ListingWizard() {
             <label className="block">
               <span className="text-sm font-medium">Telefon</span>
               <input
+                aria-label="Telefon numarası"
                 value={phone}
                 onChange={(event) => {
                   setPhone(event.target.value);
