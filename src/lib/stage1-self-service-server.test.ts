@@ -12,6 +12,8 @@ const storedObjects = new Set<string>();
 const photoMetadata = new Set<string>();
 const submissionKeys = new Map<string, { listingId: string; complete: boolean }>();
 let failNextClaim = false;
+let failNextPhotoMetadataRegistration = false;
+let failNextStorageDelete = false;
 let backendCallCount = 0;
 
 function assert(condition: boolean, message: string): asserts condition {
@@ -221,6 +223,10 @@ function installBackendMock(): void {
     }
 
     if (url.pathname === "/rest/v1/rpc/register_sanitized_listing_photo" && method === "POST") {
+      if (failNextPhotoMetadataRegistration) {
+        failNextPhotoMetadataRegistration = false;
+        return new Response("synthetic metadata failure", { status: 500 });
+      }
       const body = JSON.parse(String(init?.body)) as { p_object_path: string };
       photoMetadata.add(body.p_object_path);
       return json(true);
@@ -243,6 +249,10 @@ function installBackendMock(): void {
     }
 
     if (url.pathname === "/storage/v1/object/listing_photos" && method === "DELETE") {
+      if (failNextStorageDelete) {
+        failNextStorageDelete = false;
+        return new Response("synthetic storage delete failure", { status: 500 });
+      }
       const body = JSON.parse(String(init?.body)) as { prefixes: string[] };
       for (const path of body.prefixes) storedObjects.delete(path);
       return json([]);
@@ -402,6 +412,31 @@ describe("Stage 1 self-service server acceptance", () => {
     expect(listings.size).toBe(1);
     expect(photoMetadata.size).toBe(1);
     expect(storedObjects.size).toBe(1);
+  });
+
+  test("whole-submission cleanup retries a known orphan path after photo compensation fails", async () => {
+    const phone = "+12025550220";
+    const capability = await syntheticCapability(phone);
+    const key = "97000000-0000-4000-8000-000000000020";
+
+    failNextPhotoMetadataRegistration = true;
+    failNextStorageDelete = true;
+
+    const failed = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm(capability, key, { phone }), {
+        origin: "https://stage1.example.test",
+        trustedIp: "198.51.100.70",
+      }),
+    );
+
+    expect(failed.status).toBe(500);
+    expect(await failed.json()).toMatchObject({ ok: false, code: "SUBMISSION_FAILED" });
+    expect(listings.size).toBe(0);
+    expect(photoMetadata.size).toBe(0);
+    expect(storedObjects.size).toBe(0);
+    expect(
+      Array.from(submissionKeys.values()).some((state) => state.listingId.startsWith("970")),
+    ).toBe(false);
   });
 
   test("capability is phone-bound, tamper-resistant and expires", async () => {
