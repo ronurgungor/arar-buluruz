@@ -192,6 +192,26 @@ async function assertNoHorizontalOverflow(page: Page, route: string): Promise<vo
   assert(dimensions.document <= dimensions.viewport, `${route} has horizontal overflow`);
 }
 
+async function assertResponsiveRoute(
+  page: Page,
+  url: string,
+  route: string,
+  heading: string,
+): Promise<void> {
+  for (const viewport of [
+    { width: 360, height: 780 },
+    { width: 390, height: 844 },
+    { width: 768, height: 1024 },
+    { width: 1280, height: 900 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(url, { waitUntil: "networkidle" });
+    await page.getByRole("heading", { level: 1, name: heading, exact: true }).waitFor();
+    await assertNoHorizontalOverflow(page, `${route} @ ${viewport.width}px`);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+}
+
 async function assertDetailUnavailable(
   page: Page,
   listingId: string,
@@ -312,16 +332,18 @@ async function submitListing(
     await page.getByRole("heading", { level: 1, name: "İlanın yayınlandı" }).waitFor();
   }
 
-  const idText = await page.getByText(/^İlan no:/).textContent();
-  const listingId = idText?.replace(/^İlan no:\s*/, "").trim() ?? "";
-  assert(/^[0-9a-f-]{36}$/i.test(listingId), `Published listing id missing: ${idText}`);
+  const success = page.getByTestId("listing-published-success");
+  const listingId = (await success.getAttribute("data-listing-id")) ?? "";
+  assert(/^[0-9a-f-]{36}$/i.test(listingId), "Published listing id data attribute is missing.");
+  await page.getByRole("link", { name: "İlanı görüntüle", exact: true }).waitFor();
+  await page.getByRole("link", { name: "İlanlarım", exact: true }).waitFor();
   return listingId;
 }
 
 async function openOwnerListings(page: Page, phone: string): Promise<void> {
   await page.goto(`${publicBaseUrl}/ilanlarim`, { waitUntil: "networkidle" });
   await page.getByLabel("İlanlarım telefon numarası", { exact: true }).fill(phone);
-  await page.getByRole("button", { name: "Telefonumu doğrula" }).click();
+  await page.getByRole("button", { name: "Doğrulama kodu gönder" }).click();
 }
 
 async function verifyFreshSellerManagement(page: Page, phone: string): Promise<void> {
@@ -385,6 +407,12 @@ for (const page of [ownerPage, buyerPage, otherSellerPage, founderPage]) {
 
 try {
   await buyerPage.goto(publicBaseUrl, { waitUntil: "networkidle" });
+  await assertResponsiveRoute(
+    ownerPage,
+    `${publicBaseUrl}/ilan-ver`,
+    "/ilan-ver",
+    "İlan Ver",
+  );
   await assertAnonDirectWritesDenied();
   assert(
     (await buyerPage.locator("[data-ad-placement]").count()) === 0,
@@ -441,21 +469,39 @@ try {
     width: (image as HTMLImageElement).naturalWidth,
   }));
   assert(decoded.complete && decoded.width > 0, "Signed public photo did not decode.");
+  const contactBar = buyerPage.getByTestId("detail-contact-bar");
   expectHref(
-    await buyerPage.getByRole("link", { name: "Ara", exact: true }).getAttribute("href"),
+    await contactBar.getByRole("link", { name: "Ara", exact: true }).getAttribute("href"),
     `tel:${ownerPhone}`,
   );
   expectHref(
-    await buyerPage
-      .getByRole("link", { name: "WhatsApp’tan yaz", exact: true })
-      .getAttribute("href"),
+    await contactBar.getByRole("link", { name: "WhatsApp’tan yaz", exact: true }).getAttribute("href"),
     `https://wa.me/${ownerPhone.slice(1)}`,
+  );
+
+  await assertResponsiveRoute(
+    buyerPage,
+    `${publicBaseUrl}/ara?q=${encodeURIComponent("b150")}`,
+    "/ara",
+    "İlan ara",
+  );
+  await assertResponsiveRoute(
+    buyerPage,
+    `${publicBaseUrl}/ilan/${listingId}`,
+    "/ilan/$id",
+    title,
+  );
+  await assertResponsiveRoute(
+    ownerPage,
+    `${publicBaseUrl}/ilanlarim`,
+    "/ilanlarim",
+    "İlanlarım",
   );
 
   await openOwnerListings(ownerPage, ownerPhone);
   const ownerCard = ownerPage.getByTestId(`seller-listing-${listingId}`);
   await ownerCard.waitFor();
-  await ownerCard.getByText(/· Yayında$/).waitFor();
+  await ownerCard.getByText("Yayında", { exact: true }).waitFor();
 
   await verifyFreshSellerManagement(otherSellerPage, otherPhone);
   assert(
