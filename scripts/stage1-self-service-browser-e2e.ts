@@ -85,7 +85,9 @@ const serviceHeaders = {
 
 async function anonListingRows(
   listingId: string,
-): Promise<Array<{ id: string; title: string; price_is_free: boolean; province: string; district: string }>> {
+): Promise<
+  Array<{ id: string; title: string; price_is_free: boolean; province: string; district: string }>
+> {
   const url = new URL(`${backendOrigin}/rest/v1/listings`);
   url.searchParams.set("id", `eq.${listingId}`);
   url.searchParams.set("select", "id,title,price_is_free,province,district");
@@ -190,7 +192,11 @@ async function assertNoHorizontalOverflow(page: Page, route: string): Promise<vo
   assert(dimensions.document <= dimensions.viewport, `${route} has horizontal overflow`);
 }
 
-async function assertDetailUnavailable(page: Page, listingId: string, title: string): Promise<void> {
+async function assertDetailUnavailable(
+  page: Page,
+  listingId: string,
+  title: string,
+): Promise<void> {
   await page.goto(`${publicBaseUrl}/ilan/${listingId}`, { waitUntil: "networkidle" });
   assert(
     (await page.getByRole("heading", { level: 1, name: title }).count()) === 0,
@@ -347,7 +353,10 @@ for (const page of [ownerPage, buyerPage, otherSellerPage, founderPage]) {
   });
   page.on("response", (response: PlaywrightResponse) => {
     const url = response.url();
-    if ((url.includes("/assets/") || /\.(?:css|js)(?:\?|$)/.test(url)) && response.status() >= 400) {
+    if (
+      (url.includes("/assets/") || /\.(?:css|js)(?:\?|$)/.test(url)) &&
+      response.status() >= 400
+    ) {
       assetFailures.push(`${response.status()} ${url}`);
     }
   });
@@ -369,7 +378,10 @@ for (const page of [ownerPage, buyerPage, otherSellerPage, founderPage]) {
 try {
   await buyerPage.goto(publicBaseUrl, { waitUntil: "networkidle" });
   await assertAnonDirectWritesDenied();
-  assert((await buyerPage.locator("[data-ad-placement]").count()) === 0, "Disabled home ad slot left DOM.");
+  assert(
+    (await buyerPage.locator("[data-ad-placement]").count()) === 0,
+    "Disabled home ad slot left DOM.",
+  );
 
   const ownerPhone = "+12025550188";
   const otherPhone = "+12025550199";
@@ -426,7 +438,9 @@ try {
     `tel:${ownerPhone}`,
   );
   expectHref(
-    await buyerPage.getByRole("link", { name: "WhatsApp’tan yaz", exact: true }).getAttribute("href"),
+    await buyerPage
+      .getByRole("link", { name: "WhatsApp’tan yaz", exact: true })
+      .getAttribute("href"),
     `https://wa.me/${ownerPhone.slice(1)}`,
   );
 
@@ -442,7 +456,7 @@ try {
   );
   const otherCapability = await otherSellerPage.evaluate(() => {
     const raw = sessionStorage.getItem("arar-buluruz:stage1-phone-capability");
-    return raw ? (JSON.parse(raw) as { token?: string }).token ?? "" : "";
+    return raw ? ((JSON.parse(raw) as { token?: string }).token ?? "") : "";
   });
   assert(otherCapability.length > 20, "Other seller verification capability was not stored.");
   const denied = await otherSellerPage.evaluate(
@@ -486,8 +500,14 @@ try {
   const updatedCard = ownerPage.getByTestId(`seller-listing-${listingId}`);
   await updatedCard.getByRole("button", { name: "Yayından kaldır" }).click();
   await ownerPage.getByText("İlan yayından kaldırıldı.", { exact: true }).waitFor();
-  assert((await anonListingRows(listingId)).length === 0, "Seller-unpublished listing remained public.");
-  assert((await publicPhotoManifest(listingId)).length === 0, "Seller-unpublished photo remained public.");
+  assert(
+    (await anonListingRows(listingId)).length === 0,
+    "Seller-unpublished listing remained public.",
+  );
+  assert(
+    (await publicPhotoManifest(listingId)).length === 0,
+    "Seller-unpublished photo remained public.",
+  );
   await assertSignedObjectUnavailable(originalObjectPath);
   await assertDetailUnavailable(buyerPage, listingId, `${title} güncel`);
 
@@ -502,8 +522,14 @@ try {
     .click();
   await ownerPage.getByRole("button", { name: "Evet, sil" }).click();
   await ownerPage.getByText("İlan silindi.", { exact: true }).waitFor();
-  assert((await anonListingRows(listingId)).length === 0, "Seller-deleted listing row remained public.");
-  assert((await privilegedPhotoInventory(listingId)).length === 0, "Seller delete left photo metadata.");
+  assert(
+    (await anonListingRows(listingId)).length === 0,
+    "Seller-deleted listing row remained public.",
+  );
+  assert(
+    (await privilegedPhotoInventory(listingId)).length === 0,
+    "Seller delete left photo metadata.",
+  );
   const encodedDeletedPath = originalObjectPath.split("/").map(encodeURIComponent).join("/");
   const deletedObject = await fetch(
     `${backendOrigin}/storage/v1/object/listing_photos/${encodedDeletedPath}`,
@@ -523,9 +549,15 @@ try {
     isFree: false,
   });
   const founderInventory = await privilegedPhotoInventory(founderListingId);
-  assert(founderInventory.length === 1, "Founder-takedown fixture did not retain one trusted photo.");
+  assert(
+    founderInventory.length === 1,
+    "Founder-takedown fixture did not retain one trusted photo.",
+  );
   const founderObjectPath = founderInventory[0].object_path;
-  assert((await anonListingRows(founderListingId)).length === 1, "Founder fixture did not auto-publish.");
+  assert(
+    (await anonListingRows(founderListingId)).length === 1,
+    "Founder fixture did not auto-publish.",
+  );
 
   await founderPage.goto(`${founderBaseUrl}/kurucu`, { waitUntil: "networkidle" });
   await founderPage.getByRole("heading", { level: 1, name: "İlan moderasyonu" }).waitFor();
@@ -542,8 +574,14 @@ try {
   );
   await founderCard.getByRole("button", { name: "Yayından kaldır" }).click();
   await founderPage.getByText("İlan yayından kaldırıldı.", { exact: true }).waitFor();
-  assert((await anonListingRows(founderListingId)).length === 0, "Founder takedown remained public.");
-  assert((await publicPhotoManifest(founderListingId)).length === 0, "Founder takedown photo remained public.");
+  assert(
+    (await anonListingRows(founderListingId)).length === 0,
+    "Founder takedown remained public.",
+  );
+  assert(
+    (await publicPhotoManifest(founderListingId)).length === 0,
+    "Founder takedown photo remained public.",
+  );
   await assertSignedObjectUnavailable(founderObjectPath);
   await assertDetailUnavailable(buyerPage, founderListingId, founderTitle);
 
