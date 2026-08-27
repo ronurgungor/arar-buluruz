@@ -60,7 +60,7 @@ No reviewed path demonstrated an authorization bypass, anonymous write path, pre
 
 #### R-001 — Whole-submission cleanup did not retry the exact orphan path reported by a failed photo compensation
 
-**Class:** IMPORTANT  
+**Class:** IMPORTANT
 **Status:** FIXED
 
 The trusted photo ingestion layer correctly reported `TrustedListingPhotoIngestionError.orphanedObjectPath` when:
