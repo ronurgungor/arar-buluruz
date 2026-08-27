@@ -367,6 +367,7 @@ try {
   await pendingCard.getByText("İncelemede", { exact: true }).waitFor();
   await pendingCard.getByText(/Telefon kontrolü:/).waitFor();
   await pendingCard.getByText(/Özel satıcı beyanı:/).waitFor();
+  await pendingCard.getByText(/İçerik hakları beyanı:/).waitFor();
   const moderationImage = pendingCard.getByAltText(`${title} moderasyon fotoğrafı`);
   await moderationImage.waitFor();
   const moderationDecoded = await moderationImage.evaluate((image) => ({
