@@ -139,50 +139,50 @@ function SearchPage() {
             Filtrele
           </div>
           <div className="flex flex-wrap items-center gap-2">
-          <div className="relative min-w-[9rem] flex-1 sm:max-w-[14rem]">
-            <select
-              value={activeCity}
-              onChange={(event) => setSearch({ il: event.target.value, ilce: ALL_DISTRICTS })}
-              aria-label="Konum"
-              className={locationSelectClass}
-            >
-              {locationCities.map((city) => (
-                <option key={city}>{city}</option>
-              ))}
-            </select>
-            <ChevronDown
-              aria-hidden
-              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-            />
-          </div>
-          <div className="relative min-w-[8rem] flex-1 sm:max-w-[14rem]">
-            <select
-              value={activeDistrict}
-              disabled={!hasCity}
-              onChange={(event) => setSearch({ ilce: event.target.value })}
-              aria-label="İlçe"
-              className={locationSelectClass}
-            >
-              <option>{ALL_DISTRICTS}</option>
-              {districts.map((district) => (
-                <option key={district}>{district}</option>
-              ))}
-            </select>
-            <ChevronDown
-              aria-hidden
-              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-            />
-          </div>
-          {(Object.keys(sortLabels) as Array<keyof typeof sortLabels>).map((key) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setSearch({ sirala: key })}
-              className={`h-11 rounded-full border px-4 text-sm font-medium transition-colors ${sirala === key ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground hover:bg-accent"}`}
-            >
-              {sortLabels[key]}
-            </button>
-          ))}
+            <div className="relative min-w-[9rem] flex-1 sm:max-w-[14rem]">
+              <select
+                value={activeCity}
+                onChange={(event) => setSearch({ il: event.target.value, ilce: ALL_DISTRICTS })}
+                aria-label="Konum"
+                className={locationSelectClass}
+              >
+                {locationCities.map((city) => (
+                  <option key={city}>{city}</option>
+                ))}
+              </select>
+              <ChevronDown
+                aria-hidden
+                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              />
+            </div>
+            <div className="relative min-w-[8rem] flex-1 sm:max-w-[14rem]">
+              <select
+                value={activeDistrict}
+                disabled={!hasCity}
+                onChange={(event) => setSearch({ ilce: event.target.value })}
+                aria-label="İlçe"
+                className={locationSelectClass}
+              >
+                <option>{ALL_DISTRICTS}</option>
+                {districts.map((district) => (
+                  <option key={district}>{district}</option>
+                ))}
+              </select>
+              <ChevronDown
+                aria-hidden
+                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              />
+            </div>
+            {(Object.keys(sortLabels) as Array<keyof typeof sortLabels>).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setSearch({ sirala: key })}
+                className={`h-11 rounded-full border px-4 text-sm font-medium transition-colors ${sirala === key ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground hover:bg-accent"}`}
+              >
+                {sortLabels[key]}
+              </button>
+            ))}
           </div>
         </section>
 
