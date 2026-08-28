@@ -423,11 +423,7 @@ for (const page of [ownerPage, buyerPage, otherSellerPage, founderPage]) {
     const url = response.url();
     if (response.status() === 401) {
       const request = response.request();
-      const key = unauthorizedKey(
-        request.method(),
-        new URL(url).pathname,
-        requestAction(request),
-      );
+      const key = unauthorizedKey(request.method(), new URL(url).pathname, requestAction(request));
       const remaining = expectedUnauthorizedResponses.get(key) ?? 0;
       if (remaining > 0) {
         if (remaining === 1) expectedUnauthorizedResponses.delete(key);
