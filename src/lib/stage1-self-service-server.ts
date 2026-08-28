@@ -13,12 +13,11 @@ import type {
   Stage1SellerManagementResponse,
 } from "./stage1-seller-management-contract";
 import {
-  STAGE1_CAPABILITY_TTL_SECONDS,
   STAGE1_MAX_PHOTOS,
   STAGE1_MAX_TOTAL_UPLOAD_BYTES,
+  STAGE1_SELLER_SESSION_TTL_SECONDS,
   stage1CategorySchema,
   stage1ConditionSchema,
-  stage1ContactPreferenceSchema,
   stage1E164Schema,
   type Stage1SubmissionResponse,
 } from "./stage1-self-service-contract";
@@ -29,11 +28,14 @@ const SHA256_HEX_PATTERN = /^[0-9a-f]{64}$/;
 const PRICE_PATTERN = /^\d{1,10}(?:[.,]\d{1,2})?$/;
 const MAX_REQUEST_BYTES = STAGE1_MAX_TOTAL_UPLOAD_BYTES + 2 * 1024 * 1024;
 const VERIFICATION_TTL_MS = 10 * 60 * 1000;
+const SELLER_SESSION_COOKIE = "arar_seller_session";
+const LISTING_RULES_VERSION = "2026-08-28-v1";
 
 class Stage1SubmissionError extends Error {
   readonly code: Exclude<Stage1SubmissionResponse, { ok: true }>["code"];
   readonly status: number;
   readonly retryAfterSeconds?: number;
+  readonly limiterClass?: string;
 
   constructor(
     code: Exclude<Stage1SubmissionResponse, { ok: true }>["code"],
@@ -41,19 +43,21 @@ class Stage1SubmissionError extends Error {
     status = 400,
     retryAfterSeconds?: number,
     options?: ErrorOptions,
+    limiterClass?: string,
   ) {
     super(message, options);
     this.name = "Stage1SubmissionError";
     this.code = code;
     this.status = status;
     this.retryAfterSeconds = retryAfterSeconds;
+    this.limiterClass = limiterClass;
   }
 }
 
 type BackendConfig = { baseUrl: string; serviceRoleKey: string };
 type Challenge = { e164: string; codeHash: string; expiresAt: number; attempts: number };
 type RateBucket = { count: number; resetAt: number };
-type CapabilityPayload = {
+type SellerSessionPayload = {
   e164: string;
   verifiedAt: string;
   expiresAt: string;
@@ -73,7 +77,7 @@ type SellerBackendRow = {
   price_amount: number | string;
   price_is_free: boolean;
   category: string;
-  item_condition: string;
+  item_condition: string | null;
   province: string;
   district: string;
   seller_display_name: string;
@@ -84,6 +88,8 @@ type SellerBackendRow = {
   publication_instruction_at: string | null;
   private_seller_declaration_at: string | null;
   content_rights_declaration_at: string | null;
+  listing_rules_version: string | null;
+  listing_rules_accepted_at: string | null;
   created_at: string;
   updated_at: string;
   published_at: string | null;
@@ -103,12 +109,20 @@ type SellerPhotoRow = {
 const challenges = new Map<string, Challenge>();
 const rateBuckets = new Map<string, RateBucket>();
 
-function jsonResponse(payload: Stage1ApiResponse, status = 200): Response {
+function jsonResponse(
+  payload: Stage1ApiResponse,
+  status = 200,
+  extraHeaders?: HeadersInit,
+): Response {
   const headers = new Headers({
     "Cache-Control": "no-store",
     "Content-Type": "application/json; charset=utf-8",
     "X-Content-Type-Options": "nosniff",
   });
+  if (extraHeaders) {
+    const incoming = new Headers(extraHeaders);
+    incoming.forEach((value, key) => headers.append(key, value));
+  }
   if (!payload.ok && payload.retryAfterSeconds) {
     headers.set("Retry-After", String(payload.retryAfterSeconds));
   }
@@ -202,23 +216,40 @@ function resolveTrustedClientIp(request: Request): string {
   return value;
 }
 
-function enforceRateLimit(key: string, limit: number, windowMs: number): void {
+function enforceRateLimit(
+  limiterClass: string,
+  key: string,
+  limit: number,
+  windowMs: number,
+  relaxed = false,
+): void {
+  const effectiveLimit = relaxed ? Math.max(limit * 10, limit + 20) : limit;
   const now = Date.now();
-  const current = rateBuckets.get(key);
+  const bucketKey = `${limiterClass}:${key}`;
+  const current = rateBuckets.get(bucketKey);
   if (!current || current.resetAt <= now) {
-    rateBuckets.set(key, { count: 1, resetAt: now + windowMs });
+    rateBuckets.set(bucketKey, { count: 1, resetAt: now + windowMs });
     return;
   }
-  if (current.count >= limit) {
+  if (current.count >= effectiveLimit) {
     const retryAfterSeconds = Math.max(1, Math.ceil((current.resetAt - now) / 1000));
     throw new Stage1SubmissionError(
       "RATE_LIMITED",
       "Çok fazla istek gönderildi. Lütfen kısa bir süre sonra tekrar deneyin.",
       429,
       retryAfterSeconds,
+      undefined,
+      limiterClass,
     );
   }
   current.count += 1;
+}
+
+function usesRelaxedSyntheticLimits(request: Request): boolean {
+  return (
+    isLoopbackHost(new URL(request.url).hostname) &&
+    process.env.PILOT_PHONE_VERIFICATION_MODE?.trim() === "synthetic"
+  );
 }
 
 function readBackendConfig(): BackendConfig {
@@ -367,10 +398,17 @@ function requiredString(form: FormData, key: string, min: number, max: number): 
   return value;
 }
 
-function requiredConfirmation(form: FormData, key: string): void {
-  if (form.get(key) !== "confirmed") {
-    throw new Stage1SubmissionError("INVALID_REQUEST", "Gerekli ilan beyanları tamamlanmadı.");
+function optionalString(form: FormData, key: string, max: number): string | null {
+  const raw = form.get(key);
+  if (raw === null) return null;
+  if (typeof raw !== "string") {
+    throw new Stage1SubmissionError("INVALID_REQUEST", "İlan bilgileri eksik veya geçersiz.");
   }
+  const value = raw.trim();
+  if (value.length > max) {
+    throw new Stage1SubmissionError("INVALID_REQUEST", "İlan bilgileri eksik veya geçersiz.");
+  }
+  return value || null;
 }
 
 function assertAllowedFields(form: FormData, allowed: ReadonlySet<string>): void {
@@ -408,7 +446,7 @@ function base64UrlDecode(value: string): Uint8Array | null {
   return base64UrlEncode(decoded) === value ? decoded : null;
 }
 
-async function signCapabilityPayload(payloadPart: string, secret: string): Promise<string> {
+async function signSellerSessionPayload(payloadPart: string, secret: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -423,24 +461,24 @@ async function signCapabilityPayload(payloadPart: string, secret: string): Promi
 async function createCapability(e164: string): Promise<{ token: string; expiresAt: string }> {
   const now = new Date();
   const expiresAt = new Date(now.getTime() + STAGE1_CAPABILITY_TTL_SECONDS * 1000);
-  const payload: CapabilityPayload = {
+  const payload: SellerSessionPayload = {
     e164,
     verifiedAt: now.toISOString(),
     expiresAt: expiresAt.toISOString(),
     nonce: crypto.randomUUID(),
   };
   const payloadPart = base64UrlEncode(JSON.stringify(payload));
-  const signature = await signCapabilityPayload(payloadPart, getCapabilitySecret());
+  const signature = await signSellerSessionPayload(payloadPart, getCapabilitySecret());
   return { token: `${payloadPart}.${signature}`, expiresAt: payload.expiresAt };
 }
 
-async function verifyCapability(token: string, expectedE164: string): Promise<CapabilityPayload> {
+async function verifyCapability(token: string, expectedE164: string): Promise<SellerSessionPayload> {
   const pieces = token.split(".");
   if (pieces.length !== 2 || !pieces[0] || !pieces[1]) {
     throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
   }
   const [payloadPart, signature] = pieces;
-  const expectedSignature = await signCapabilityPayload(payloadPart, getCapabilitySecret());
+  const expectedSignature = await signSellerSessionPayload(payloadPart, getCapabilitySecret());
   const actualBytes = base64UrlDecode(signature);
   const expectedBytes = base64UrlDecode(expectedSignature);
   if (!actualBytes || !expectedBytes || actualBytes.byteLength !== expectedBytes.byteLength) {
@@ -454,11 +492,11 @@ async function verifyCapability(token: string, expectedE164: string): Promise<Ca
     throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
   }
 
-  let payload: CapabilityPayload;
+  let payload: SellerSessionPayload;
   try {
     payload = JSON.parse(
       Buffer.from(payloadPart, "base64url").toString("utf8"),
-    ) as CapabilityPayload;
+    ) as SellerSessionPayload;
   } catch {
     throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
   }
@@ -1008,7 +1046,7 @@ async function signSellerPhoto(config: BackendConfig, objectPath: string): Promi
 
 async function assertSellerCapability(form: FormData): Promise<{
   phone: string;
-  verified: CapabilityPayload;
+  verified: SellerSessionPayload;
 }> {
   const phone = stage1E164Schema.parse(requiredString(form, "phone", 8, 16));
   const capability = requiredString(form, "capability", 20, 4096);
