@@ -25,7 +25,6 @@ export const stage1E164Schema = z.string().regex(/^\+[1-9][0-9]{7,14}$/);
 export type Stage1Category = z.infer<typeof stage1CategorySchema>;
 export type Stage1Condition = z.infer<typeof stage1ConditionSchema>;
 
-
 export const STAGE1_CATEGORY_LABELS: Record<Stage1Category, string> = {
   vehicle: "Vasıta / Araç",
   "real-estate": "Emlak",
