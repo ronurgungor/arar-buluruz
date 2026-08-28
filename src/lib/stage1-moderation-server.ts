@@ -1,4 +1,4 @@
-import { isPilotListingStatus, type PilotContactChannel } from "./pilot-operator-contract";
+import { isPilotListingStatus } from "./pilot-operator-contract";
 import type {
   Stage1ModerationListing,
   Stage1ModerationResponse,
@@ -16,7 +16,7 @@ type BackendRow = {
   price_amount: number | string;
   price_is_free: boolean;
   category: string;
-  item_condition: string;
+  item_condition: string | null;
   seller_display_name: string;
   status: string;
   contact_channel: string | null;
@@ -25,6 +25,8 @@ type BackendRow = {
   publication_instruction_at: string | null;
   private_seller_declaration_at: string | null;
   content_rights_declaration_at: string | null;
+  listing_rules_version: string | null;
+  listing_rules_accepted_at: string | null;
   created_at: string;
   published_at: string | null;
   expires_at: string | null;
@@ -148,7 +150,7 @@ async function fetchListing(config: BackendConfig, id: string): Promise<BackendR
   url.searchParams.set("id", `eq.${id}`);
   url.searchParams.set(
     "select",
-    "id,title,description,price_amount,price_is_free,category,item_condition,seller_display_name,status,contact_channel,contact_e164,contact_verified_at,publication_instruction_at,private_seller_declaration_at,content_rights_declaration_at,created_at,published_at,expires_at,unpublished_at",
+    "id,title,description,price_amount,price_is_free,category,item_condition,seller_display_name,status,contact_channel,contact_e164,contact_verified_at,publication_instruction_at,private_seller_declaration_at,content_rights_declaration_at,listing_rules_version,listing_rules_accepted_at,created_at,published_at,expires_at,unpublished_at",
   );
   url.searchParams.set("limit", "1");
   const response = await requireOk(
@@ -197,15 +199,11 @@ async function signPhoto(config: BackendConfig, objectPath: string): Promise<str
   return new URL(normalized, config.baseUrl).toString();
 }
 
-function parseContactChannel(value: string | null): PilotContactChannel | null {
-  return value === "phone" || value === "whatsapp" || value === "phone_whatsapp" ? value : null;
-}
-
 async function listListings(config: BackendConfig): Promise<Stage1ModerationListing[]> {
   const url = new URL(`${config.baseUrl}/rest/v1/listings`);
   url.searchParams.set(
     "select",
-    "id,title,description,price_amount,price_is_free,category,item_condition,seller_display_name,status,contact_channel,contact_e164,contact_verified_at,publication_instruction_at,private_seller_declaration_at,content_rights_declaration_at,created_at,published_at,expires_at,unpublished_at",
+    "id,title,description,price_amount,price_is_free,category,item_condition,seller_display_name,status,contact_channel,contact_e164,contact_verified_at,publication_instruction_at,private_seller_declaration_at,content_rights_declaration_at,listing_rules_version,listing_rules_accepted_at,created_at,published_at,expires_at,unpublished_at",
   );
   url.searchParams.set("order", "created_at.desc,id.desc");
   url.searchParams.set("limit", "50");
@@ -232,12 +230,11 @@ async function listListings(config: BackendConfig): Promise<Stage1ModerationList
         condition: row.item_condition,
         sellerDisplayName: row.seller_display_name,
         status: row.status,
-        contactChannel: parseContactChannel(row.contact_channel),
         contactE164: row.contact_e164,
         phoneVerified: row.contact_verified_at !== null,
         publicationInstructionRecorded: row.publication_instruction_at !== null,
-        privateSellerDeclarationRecorded: row.private_seller_declaration_at !== null,
-        contentRightsDeclarationRecorded: row.content_rights_declaration_at !== null,
+        listingRulesVersion: row.listing_rules_version,
+        listingRulesAccepted: row.listing_rules_accepted_at !== null,
         photoUrls,
         createdAt: row.created_at,
         publishedAt: row.published_at,
@@ -287,14 +284,11 @@ async function publish(config: BackendConfig, form: FormData): Promise<string> {
       "Kamuya açık iletişim yayın talimatı kaydedilmemiş.",
     );
   }
-  if (!listing.contact_e164 || !parseContactChannel(listing.contact_channel)) {
-    throw new ModerationError("INVALID_STATE", "Yayınlanabilir satıcı iletişim bilgisi eksik.");
+  if (!listing.contact_e164) {
+    throw new ModerationError("INVALID_STATE", "Yayınlanabilir satıcı telefonu eksik.");
   }
-  if (!listing.private_seller_declaration_at) {
-    throw new ModerationError("INVALID_STATE", "Özel/ara sıra satıcı beyanı kaydedilmemiş.");
-  }
-  if (!listing.content_rights_declaration_at) {
-    throw new ModerationError("INVALID_STATE", "İçerik ve fotoğraf yetkisi beyanı kaydedilmemiş.");
+  if (!listing.listing_rules_version || !listing.listing_rules_accepted_at) {
+    throw new ModerationError("INVALID_STATE", "Güncel ilan kuralları kabul kaydı eksik.");
   }
   if ((await fetchPhotos(config, id)).length < 1)
     throw new ModerationError("INVALID_STATE", "Fotoğrafsız ilan yayınlanamaz.");
