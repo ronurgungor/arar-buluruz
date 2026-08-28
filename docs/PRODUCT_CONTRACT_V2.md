@@ -1,20 +1,20 @@
 # Arar Buluruz — Product Contract V2
 
-_Last updated: 2026-08-27, Europe/Istanbul_
+_Last updated: 2026-08-28, Europe/Istanbul_
 
 ## Authority
 
-This file is the current **product contract** for the consumer classifieds experience.
+This file is the current **consumer product contract** for Arar Buluruz.
 
-It does not replace executable code, exact-head CI evidence, `ARAR_BULURUZ_CURRENT_STATE.md`, legal/compliance decisions, or the decision log. If an older product note, pilot document, backlog entry or historical decision conflicts with this contract, the older product assumption is superseded unless explicitly re-opened by the founder.
+Executable code, exact-head workflow evidence, `ARAR_BULURUZ_CURRENT_STATE.md`, legal/compliance decisions and the decision log remain separate authorities for their own domains. Older product notes remain historical evidence; where they conflict with this contract, they are superseded unless the founder explicitly re-opens them.
 
 ## Product identity
 
 Arar Buluruz is a simple, mobile-first classifieds product for **Türkiye**.
 
-The product should feel like a normal consumer classifieds experience, not a pilot, test harness, founder-operated intake form, compliance form or internal admin tool.
+The consumer experience should feel like a normal classifieds product, not a founder intake form, pilot console, compliance questionnaire or internal admin tool.
 
-Primary public roles are discoverable without introducing a classic account concept:
+Primary public roles:
 
 - **Ara**
 - **İlan Ver**
@@ -24,119 +24,128 @@ Primary public roles are discoverable without introducing a classic account conc
 
 The seller creates the listing directly.
 
-Current 4-step consumer flow:
+Current consumer flow:
 
-1. photos;
-2. category, title, condition, price / Ücretsiz;
-3. description, İl, İlçe;
-4. seller display name, phone, contact preference, short required declarations, phone verification and publication.
+1. 1–8 photos;
+2. broad category, title, optional condition, price / Ücretsiz;
+3. optional description, İl, İlçe;
+4. seller display name, one public phone, verification when required, concise publication disclosure and publish.
 
 ### Photos
 
 - 1–8 photos;
 - local preview;
 - first photo is the cover;
-- reorder and remove are available;
-- one-photo state does not show unnecessary reorder controls;
-- the existing trusted image decode/re-encode, private Storage and lifecycle controls remain unchanged.
+- reorder/remove remain available;
+- trusted decode/re-encode is mandatory;
+- Storage remains private;
+- public photo delivery remains lifecycle-gated and signed.
 
 ### Product fields
 
-Broad categories remain intentionally simple. No complex category tree or category-specific attribute engine is required at this stage.
+Broad categories remain intentionally simple. No large category tree or universal category-specific attribute engine is required in this stage.
 
-Condition has no default selection.
+**Condition is optional.** It has no silent UI or database default.
 
-Price supports a normal TL/₺ presentation.
+**Description is optional.** Empty description is a valid representation; filler text must not be fabricated.
 
-**Ücretsiz** is an explicit state:
+Price supports normal TL/₺ presentation.
 
-- selecting Ücretsiz clears the visible price;
-- the price field becomes inactive;
-- turning Ücretsiz off returns an empty price field;
-- free listings render as **Ücretsiz**, never `₺0`.
+**Ücretsiz** is explicit:
+
+- selecting Ücretsiz clears/inactivates the price field;
+- turning it off returns an empty price field;
+- public rendering says **Ücretsiz**, never `₺0`.
 
 ### Location
 
-Location is Türkiye-wide:
+The product is Türkiye-wide:
 
 - İl;
 - İlçe;
 - no Çorlu-only product restriction;
 - no exact home-address field in the normal listing flow.
 
-### Seller contact
+## Seller contact and verification
 
-Seller provides:
+The seller provides:
 
 - display name;
-- phone;
-- contact preference: **Telefon / WhatsApp / Telefon + WhatsApp**.
+- **one phone number**.
 
-The phone is verified through the current provider-neutral verification contract before the first publication action for that verified-phone capability.
+There is **no seller contact-preference selector**.
+
+The verified public phone is intentionally visible on an active listing and the buyer receives both actions derived from that same E.164 value:
+
+- **Ara** → `tel:<verified phone>`
+- **WhatsApp’tan yaz** → `https://wa.me/<same phone without +>`
+
+Legacy/internal `contact_channel` metadata may remain for compatibility, but it is not a seller preference or consent field. New self-service listings derive the combined delivery metadata server-side.
 
 The product does not require a classic username/password account.
 
-### Required declarations
+### Remembered seller session
 
-Backend-required declaration evidence remains mandatory, but consumer presentation must stay short and natural.
+Successful phone verification creates a bounded seller-recognition session:
 
-The declarations preserve the current semantics for:
+- signed;
+- phone-bound;
+- **HttpOnly**;
+- **SameSite=Lax**;
+- **Secure** on HTTPS;
+- maximum current lifetime: **7 days**.
 
-- private/occasional seller status;
-- content/photo rights and third-party-data responsibility;
-- intentional publication of the selected seller-contact channel.
+The secret session token is not stored in JavaScript-accessible local/session storage.
 
-Longer detail belongs in linked notices/rules rather than a compliance wall in the main listing flow.
+A still-valid session avoids needless repeat OTP prompts. Expiry, tampering or phone mismatch fails closed and requires verification again.
+
+## Publication evidence
+
+The former three consumer declaration checkboxes are **superseded**.
+
+New publication does not fabricate historical declaration timestamps.
+
+Current publication evidence is:
+
+- verified phone;
+- public-phone publication instruction;
+- versioned listing-rules evidence: `listing_rules_version` + `listing_rules_accepted_at`;
+- trusted-photo readiness;
+- listing lifecycle readiness.
+
+The publish action presents concise links/copy and records acceptance of the current listing-rules version. Privacy/aydınlatma remains informational/legal disclosure, not a blanket consent checkbox.
+
+Historical declaration columns may remain nullable for migration/history compatibility. They are not required or invented for new self-service publication.
 
 ## Publication model
 
-The current product contract is:
+Current contract:
 
-**seller self-service → verified phone → trusted photo completion → atomic auto-publication**
+**seller self-service → verified/remembered seller session → trusted photo completion → atomic auto-publication**
 
-Normal publication is **not** founder pre-approval.
+Normal publication is **not founder pre-approval**.
 
 Founder operations are **post-moderation / takedown**.
 
-The publication transaction must remain fail closed. A listing must not become public before all required publication facts and trusted photo state are ready.
+The publication transaction remains fail closed. A listing must not become public before all current publication facts and trusted-photo state are ready.
 
-Success state is consumer-facing:
+Success state remains consumer-facing:
 
 - **İlanın yayınlandı**
 - **İlanı görüntüle**
 - **İlanlarım**
 
-Raw UUID is not a prominent consumer element.
+## Buyer search and detail
 
-## Buyer search and listing detail
-
-Search preserves the established normalization contract, including equivalent matching such as:
+Search preserves established normalization, including:
 
 `b150` ↔ `b 150`
 
-Search results prioritize:
+Search results prioritize photo, title, price/Ücretsiz and location.
 
-1. photo;
-2. title;
-3. price / Ücretsiz;
-4. location.
+Listing detail prioritizes photos, title, price/Ücretsiz, location, optional condition, optional description, seller and the two direct contact actions.
 
-Listing detail prioritizes:
-
-1. photos;
-2. title;
-3. price / Ücretsiz;
-4. location;
-5. description;
-6. seller;
-7. direct contact actions.
-
-Seller-contact behavior remains exact:
-
-- phone CTA → `tel:`
-- WhatsApp CTA → `https://wa.me/`
-
-There is no in-app chat, payment, shipping, reservation or ratings system in the current product contract.
+There is no in-app chat, payment, order, reservation, commission, shipping or ratings system in the current product contract.
 
 ## İlanlarım
 
@@ -144,17 +153,9 @@ There is no in-app chat, payment, shipping, reservation or ratings system in the
 
 Flow:
 
-**phone verification → own listings → manage**
+**remembered seller session when valid → otherwise phone verification → own listings → manage**
 
-Each listing shows:
-
-- photo;
-- title;
-- price / Ücretsiz;
-- location;
-- lifecycle status.
-
-Current actions:
+Actions:
 
 - Görüntüle;
 - Düzenle;
@@ -162,91 +163,93 @@ Current actions:
 - Satıldı;
 - Sil.
 
-Cross-phone ownership isolation remains a security boundary. A different verified phone must not infer or mutate another seller's listings.
+Cross-phone isolation is a security boundary. Another verified phone must not infer or mutate the seller's listings.
 
-No token/capability/auth implementation terminology belongs in consumer copy.
+## Rate limiting and abuse boundary
+
+Rate limiting is purpose-specific rather than one undifferentiated IP counter:
+
+- OTP-start limits include a phone-primary limiter plus coarse trusted-IP protection;
+- wrong OTP attempts are challenge-bounded;
+- listing creation/management uses seller-phone velocity limits plus coarse trusted-IP protection;
+- idempotent replay is resolved before consuming a new-listing quota;
+- local synthetic CI may use explicitly relaxed ceilings without weakening production-like limits.
+
+Unexpected rate limiting remains observable by limiter class. Arbitrary forwarded headers must not bypass trusted-client-IP handling.
+
+## Vasıta / Araç and EİDS
+
+**Vasıta / Araç remains part of the product taxonomy and synthetic/local development experience.**
+
+Real production vehicle publication is **fail closed until the required EİDS authorization verification is actually integrated and approved**.
+
+Do not remove the category merely to avoid EİDS work; do not silently publish real vehicle listings before that gate.
 
 ## Moderation
 
-Founder moderation remains operationally available for post-publication control.
+Founder moderation is post-publication operational control, not routine listing entry.
 
-Founder can take down or delete a listing through the privileged server-side path.
+Founder may inspect, take down or delete through the privileged server-side path. A takedown must fail closed across public collection/detail/contact/signed-photo delivery.
 
-A founder takedown must fail closed across:
+High-risk reports such as wrong-person phone, child imagery, sensitive data or unauthorized personal data should support immediate takedown-first review.
 
-- public collection;
-- public detail;
-- public contact;
-- public signed-photo delivery.
+## Security/backend invariants
 
-Founder UI is not part of the consumer product identity.
+Do not weaken these without a demonstrated defect and founder-approved architecture change:
 
-## Security and backend invariants
-
-Frontend work must not weaken or redesign these established boundaries without a demonstrated contract defect:
-
-- RLS;
-- service-role browser boundary;
-- verified-phone capability isolation;
-- seller lifecycle authorization;
-- direct anonymous write denial;
+- RLS/grants;
+- service-role outside browser;
+- direct anon-write denial;
 - private Storage;
-- trusted photo sanitization;
+- trusted image sanitization;
 - signed-photo lifecycle;
-- idempotency and race handling;
-- rate limiting;
-- atomic auto-publication;
-- partial-failure cleanup;
-- post-moderation takedown.
-
-## Responsive quality
-
-Consumer routes must remain usable and free of horizontal overflow across phone, tablet and desktop widths.
-
-Current automated responsive smoke covers approximately:
-
-- 360 px;
-- 390 px;
-- 768 px;
-- 1280 px.
-
-Touch targets, labels, focus behavior, loading, errors and empty states should remain consumer-grade.
-
-## Exact-head frontend checkpoint
-
-Frontend near-final checkpoint:
-
-`41691652070cbc117a943578a49056d49d51e6f0`
-
-PR #78 remains:
-
-**OPEN / DRAFT / UNMERGED**
-
-All seven canonical workflows are GREEN on that exact head:
-
-- Activation readiness — `33091191102`;
-- V0 minimal PWA — `33091191295`;
-- CI — `33091191358`;
-- Real pilot backend prep — `33091191160`;
-- Stage 1 Phase A code gate — `33091191189`;
-- Self-host migration rehearsal — `33091191164`;
-- Stage 1 self-service acceptance — `33091191129`, successful rerun job `98587435492`.
-
-The first Stage 1 acceptance attempt on this SHA failed before browser execution because local Supabase could not bind host port `54322`; rerunning the same job on the same SHA succeeded without application-code changes.
+- phone-bound seller authorization;
+- idempotency/race handling;
+- atomic publication;
+- partial-failure/orphan cleanup;
+- post-moderation fail-closed takedown.
 
 ## Current hard boundaries
 
-These remain closed unless explicitly authorized later:
+Still OFF unless separately authorized:
 
 - production activation;
 - real personal data / real seller data;
-- AWS / production hosting provisioning;
+- AWS / production infrastructure provisioning;
 - recurring paid infrastructure/services;
+- real SMS;
+- EİDS production integration;
 - Ads/monetization;
 - payment/order/reservation/commission;
 - in-app chat;
-- full classic Auth/account/password system;
-- native app / Play Store rollout;
+- classic Auth/password account system;
+- native app / Play Store;
 - Tarladan changes.
 
-Repository readiness does not authorize production or real-data collection.
+Repository readiness does not authorize real-data collection or production.
+
+## Settled business/formalization sequence
+
+The founder's current settled sequence is:
+
+**APPLICATION COMPLETION → ŞAHIS ŞİRKETİ → KOSGEB → SUPPORT / INVESTMENT → FUNDED PRODUCTION / LEGAL / EİDS / INFRASTRUCTURE**
+
+This sequence supersedes assumptions that paid production infrastructure, production EİDS/legal execution or monetization should be opened before the application is substantially complete and the company/KOSGEB sequence is reached.
+
+## Historical supersession note
+
+D-025 and earlier decisions remain historical records. The 2026-08-28 simplification specifically supersedes:
+
+- seller selection among Telefon / WhatsApp / Telefon + WhatsApp;
+- three consumer declaration checkboxes;
+- fabricated declaration timestamps;
+- short-lived JavaScript-readable capability framing;
+- universal condition/description requirements.
+
+It does **not** erase the prior decisions or their evidence. Valid security, privacy, migration and lifecycle principles remain preserved where compatible with this contract.
+
+## PR #78 closure rule
+
+PR #78 remains **OPEN / DRAFT / UNMERGED** until explicitly changed by the founder.
+
+Do not claim final technical closure until all seven canonical workflows are **SUCCESS on one exact SHA**. Live GitHub workflow evidence controls over older checkpoint text.
