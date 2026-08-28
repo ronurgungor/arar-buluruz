@@ -20,6 +20,24 @@ function assert(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
+const expectedUnauthorizedResponses = new Map<string, number>();
+let expectedUnauthorizedConsoleErrors = 0;
+
+function requestAction(request: { postData(): string | null }): string {
+  const body = request.postData() ?? "";
+  const match = body.match(/name="action"\r?\n\r?\n([^\r\n]+)/);
+  return match?.[1] ?? "";
+}
+
+function unauthorizedKey(method: string, pathname: string, action: string): string {
+  return `${method.toUpperCase()} ${pathname} action=${action}`;
+}
+
+function expectUnauthorizedOnce(method: string, pathname: string, action: string): void {
+  const key = unauthorizedKey(method, pathname, action);
+  expectedUnauthorizedResponses.set(key, (expectedUnauthorizedResponses.get(key) ?? 0) + 1);
+}
+
 function concatBytes(...parts: readonly Uint8Array[]): Uint8Array {
   const output = new Uint8Array(parts.reduce((sum, part) => sum + part.byteLength, 0));
   let offset = 0;
@@ -306,6 +324,9 @@ async function submitListing(
     .first()
     .waitFor();
 
+  if (input.expectVerification) {
+    expectUnauthorizedOnce("POST", "/ilan-ver", "submit_listing");
+  }
   await page.getByRole("button", { name: "İlanı yayınla" }).click();
   if (input.expectVerification) {
     await page.getByLabel("6 haneli doğrulama kodu", { exact: true }).waitFor();
@@ -355,6 +376,7 @@ async function openOwnerListings(page: Page, phone: string): Promise<void> {
 }
 
 async function verifyFreshSellerManagement(page: Page, phone: string): Promise<void> {
+  expectUnauthorizedOnce("POST", "/ilanlarim", "seller_list");
   await openOwnerListings(page, phone);
   await page.getByLabel("İlanlarım doğrulama kodu", { exact: true }).waitFor();
   await page.getByLabel("İlanlarım doğrulama kodu", { exact: true }).fill(verificationCode);
@@ -383,14 +405,38 @@ for (const page of [ownerPage, buyerPage, otherSellerPage, founderPage]) {
     if (message.type() !== "error") return;
     const text = message.text();
     // Deliberate negative-path probes assert their 403/404 semantics directly below.
-    // Chromium also mirrors those expected responses as generic console errors.
     if (/^Failed to load resource: the server responded with a status of (?:403|404)/.test(text)) {
+      return;
+    }
+    if (
+      /^Failed to load resource: the server responded with a status of 401 \(Unauthorized\)/.test(
+        text,
+      ) &&
+      expectedUnauthorizedConsoleErrors > 0
+    ) {
+      expectedUnauthorizedConsoleErrors -= 1;
       return;
     }
     runtimeErrors.push(`console: ${text}`);
   });
   page.on("response", (response: PlaywrightResponse) => {
     const url = response.url();
+    if (response.status() === 401) {
+      const request = response.request();
+      const key = unauthorizedKey(
+        request.method(),
+        new URL(url).pathname,
+        requestAction(request),
+      );
+      const remaining = expectedUnauthorizedResponses.get(key) ?? 0;
+      if (remaining > 0) {
+        if (remaining === 1) expectedUnauthorizedResponses.delete(key);
+        else expectedUnauthorizedResponses.set(key, remaining - 1);
+        expectedUnauthorizedConsoleErrors += 1;
+      } else {
+        runtimeErrors.push(`unexpected HTTP 401: ${key}`);
+      }
+    }
     if (
       (url.includes("/assets/") || /\.(?:css|js)(?:\?|$)/.test(url)) &&
       response.status() >= 400
@@ -653,6 +699,18 @@ try {
   assert(
     privilegedBrowserMutations.length === 0,
     `Browser performed privileged backend mutations: ${privilegedBrowserMutations.join(" | ")}`,
+  );
+  assert(
+    expectedUnauthorizedResponses.size === 0,
+    `Expected session-required 401 responses did not occur: ${Array.from(
+      expectedUnauthorizedResponses.entries(),
+    )
+      .map(([key, count]) => `${key} x${count}`)
+      .join(" | ")}`,
+  );
+  assert(
+    expectedUnauthorizedConsoleErrors === 0,
+    `Expected 401 console evidence was not fully consumed: ${expectedUnauthorizedConsoleErrors}`,
   );
   assert(assetFailures.length === 0, `CSS/JS asset failures: ${assetFailures.join(" | ")}`);
   assert(runtimeErrors.length === 0, `Browser runtime errors: ${runtimeErrors.join(" | ")}`);
