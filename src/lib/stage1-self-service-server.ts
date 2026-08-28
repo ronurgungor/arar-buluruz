@@ -458,9 +458,9 @@ async function signSellerSessionPayload(payloadPart: string, secret: string): Pr
   return base64UrlEncode(new Uint8Array(signature));
 }
 
-async function createCapability(e164: string): Promise<{ token: string; expiresAt: string }> {
+async function createSellerSession(e164: string): Promise<{ token: string; expiresAt: string }> {
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + STAGE1_CAPABILITY_TTL_SECONDS * 1000);
+  const expiresAt = new Date(now.getTime() + STAGE1_SELLER_SESSION_TTL_SECONDS * 1000);
   const payload: SellerSessionPayload = {
     e164,
     verifiedAt: now.toISOString(),
@@ -472,7 +472,10 @@ async function createCapability(e164: string): Promise<{ token: string; expiresA
   return { token: `${payloadPart}.${signature}`, expiresAt: payload.expiresAt };
 }
 
-async function verifyCapability(token: string, expectedE164: string): Promise<SellerSessionPayload> {
+async function verifySellerSessionToken(
+  token: string,
+  expectedE164: string,
+): Promise<SellerSessionPayload> {
   const pieces = token.split(".");
   if (pieces.length !== 2 || !pieces[0] || !pieces[1]) {
     throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
@@ -515,11 +518,43 @@ async function verifyCapability(token: string, expectedE164: string): Promise<Se
     !Number.isFinite(expiresAt) ||
     verifiedAt > now + 60_000 ||
     expiresAt <= now ||
-    expiresAt - verifiedAt > STAGE1_CAPABILITY_TTL_SECONDS * 1000 + 1000
+    expiresAt - verifiedAt > STAGE1_SELLER_SESSION_TTL_SECONDS * 1000 + 1000
   ) {
     throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
   }
   return payload;
+}
+
+function readCookie(request: Request, name: string): string | null {
+  const raw = request.headers.get("cookie") ?? "";
+  for (const part of raw.split(";")) {
+    const [cookieName, ...valueParts] = part.trim().split("=");
+    if (cookieName === name) return valueParts.join("=") || null;
+  }
+  return null;
+}
+
+function sellerSessionCookie(token: string, request: Request): string {
+  const attributes = [
+    `${SELLER_SESSION_COOKIE}=${token}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    `Max-Age=${STAGE1_SELLER_SESSION_TTL_SECONDS}`,
+  ];
+  if (new URL(request.url).protocol === "https:") attributes.push("Secure");
+  return attributes.join("; ");
+}
+
+async function requireSellerSession(
+  request: Request,
+  expectedE164: string,
+): Promise<SellerSessionPayload> {
+  const token = readCookie(request, SELLER_SESSION_COOKIE);
+  if (!token) {
+    throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
+  }
+  return await verifySellerSessionToken(token, expectedE164);
 }
 
 async function startVerification(
@@ -528,8 +563,11 @@ async function startVerification(
   request: Request,
 ): Promise<Response> {
   assertAllowedFields(form, new Set(["action", "phone"]));
-  enforceRateLimit(`verification-start:${clientIp}`, 5, 15 * 60 * 1000);
   const e164 = stage1E164Schema.parse(requiredString(form, "phone", 8, 16));
+  const relaxed = usesRelaxedSyntheticLimits(request);
+  enforceRateLimit("otp-start-phone", e164, 5, 15 * 60 * 1000, relaxed);
+  enforceRateLimit("otp-start-ip", clientIp, 40, 15 * 60 * 1000, relaxed);
+
   const mode = process.env.PILOT_PHONE_VERIFICATION_MODE?.trim() ?? "disabled";
   if (mode !== "synthetic") {
     throw new Stage1SubmissionError(
@@ -568,15 +606,27 @@ async function startVerification(
   });
 }
 
-async function verifyPhone(form: FormData, clientIp: string): Promise<Response> {
+async function verifyPhone(
+  form: FormData,
+  clientIp: string,
+  request: Request,
+): Promise<Response> {
   assertAllowedFields(form, new Set(["action", "phone", "challengeId", "code"]));
-  enforceRateLimit(`verification-confirm:${clientIp}`, 10, 15 * 60 * 1000);
   const e164 = stage1E164Schema.parse(requiredString(form, "phone", 8, 16));
   const challengeId = requiredString(form, "challengeId", 36, 36).toLowerCase();
   const code = requiredString(form, "code", 6, 6);
   if (!UUID_PATTERN.test(challengeId) || !/^\d{6}$/.test(code)) {
     throw new Stage1SubmissionError("INVALID_REQUEST", "Doğrulama bilgisi geçersiz.");
   }
+
+  enforceRateLimit(
+    "otp-confirm-ip",
+    clientIp,
+    100,
+    15 * 60 * 1000,
+    usesRelaxedSyntheticLimits(request),
+  );
+
   const challenge = challenges.get(challengeId);
   if (!challenge || challenge.expiresAt <= Date.now() || challenge.e164 !== e164) {
     challenges.delete(challengeId);
@@ -586,23 +636,35 @@ async function verifyPhone(form: FormData, clientIp: string): Promise<Response> 
       401,
     );
   }
+
   challenge.attempts += 1;
   if (challenge.attempts > 5) {
     challenges.delete(challengeId);
-    throw new Stage1SubmissionError("RATE_LIMITED", "Doğrulama deneme sınırı aşıldı.", 429, 600);
+    throw new Stage1SubmissionError(
+      "RATE_LIMITED",
+      "Doğrulama deneme sınırı aşıldı.",
+      429,
+      600,
+      undefined,
+      "otp-challenge",
+    );
   }
   if ((await sha256Hex(`${challengeId}:${code}`)) !== challenge.codeHash) {
     throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Doğrulama kodu geçersiz.", 401);
   }
+
   challenges.delete(challengeId);
-  const capability = await createCapability(e164);
-  return jsonResponse({
-    ok: true,
-    action: "phone_verified",
-    capability: capability.token,
-    capabilityExpiresAt: capability.expiresAt,
-    message: "Telefon kontrolü doğrulandı.",
-  });
+  const session = await createSellerSession(e164);
+  return jsonResponse(
+    {
+      ok: true,
+      action: "phone_verified",
+      sessionExpiresAt: session.expiresAt,
+      message: "Telefon doğrulandı.",
+    },
+    200,
+    { "Set-Cookie": sellerSessionCookie(session.token, request) },
+  );
 }
 
 function parsePrice(form: FormData): { price: number; isFree: boolean } {
