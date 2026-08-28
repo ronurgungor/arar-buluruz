@@ -63,7 +63,29 @@ function DemoListingForm() {
   const districts = city ? getDistrictsForCity(city) : [];
 
   useEffect(() => {
+    const resetAfterBfcacheRestore = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = null;
+      }
+      setPhotoPreviewUrl(null);
+      setPhotoName("");
+      setPhotoError("");
+      setTitle("");
+      setPrice("");
+      setCity("");
+      setDistrict("");
+      setDescription("");
+      setPriceError("");
+      setSubmitted(false);
+      submissionLockedRef.current = false;
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    };
+
+    window.addEventListener("pageshow", resetAfterBfcacheRestore);
     return () => {
+      window.removeEventListener("pageshow", resetAfterBfcacheRestore);
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     };
   }, []);
