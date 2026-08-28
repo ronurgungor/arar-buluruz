@@ -18,18 +18,14 @@ export function buildPublicSellerContactActions(
   contact: PublicSellerContact,
 ): PublicSellerContactAction[] {
   const parsed = publicSellerContactSchema.parse(contact);
-  const actions: PublicSellerContactAction[] = [];
-  if (parsed.channel === "phone" || parsed.channel === "phone_whatsapp") {
-    actions.push({ kind: "phone", label: "Ara", href: `tel:${parsed.e164}` });
-  }
-  if (parsed.channel === "whatsapp" || parsed.channel === "phone_whatsapp") {
-    actions.push({
+  return [
+    { kind: "phone", label: "Ara", href: `tel:${parsed.e164}` },
+    {
       kind: "whatsapp",
       label: "WhatsApp’tan yaz",
       href: `https://wa.me/${parsed.e164.slice(1)}`,
-    });
-  }
-  return actions;
+    },
+  ];
 }
 
 export function buildPublicSellerContactHref(contact: PublicSellerContact): string {
