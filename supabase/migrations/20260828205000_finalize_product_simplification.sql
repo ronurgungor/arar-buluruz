@@ -83,6 +83,18 @@ alter table public.listings
         listing_rules_version is not null
         and listing_rules_accepted_at is not null
       )
+      or (
+        -- Compatibility only for historical operator-created rows using the old
+        -- verification methods. New self-service publication uses one_time_code
+        -- and must satisfy the versioned rules evidence branch above.
+        contact_verification_method in (
+          'whatsapp_same_number',
+          'manual_callback',
+          'founder_equivalent'
+        )
+        and private_seller_declaration_at is not null
+        and content_rights_declaration_at is not null
+      )
     );
 
 -- Replace atomic publication readiness with the current evidence contract.
