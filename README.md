@@ -24,34 +24,43 @@ GitHub `main` and the exact branch/PR under review remain more authoritative tha
 
 ## Current product boundary
 
-The current repository product contract is a **Türkiye-wide seller self-service classifieds experience**. It is technically prepared and verified in PR #78, but production/real-data activation is still OFF.
+The repository product contract is a **Türkiye-wide seller self-service classifieds experience**. PR #78 is in final closure; production and real-data activation remain OFF.
 
 Current consumer model:
 
 - seller creates the listing directly;
 - 1–8 trusted photos;
-- broad category + title + condition;
+- broad category + title;
+- condition optional, with no default;
+- description optional;
 - price or Ücretsiz;
-- description + İl / İlçe;
-- seller display name + phone;
-- Telefon / WhatsApp / Telefon + WhatsApp;
-- provider-neutral phone verification;
-- atomic auto-publication after required declaration/publication evidence and trusted-photo readiness;
-- lightweight phone-verified `İlanlarım` ownership;
+- İl / İlçe;
+- seller display name + one verified public phone;
+- no seller contact-preference selector;
+- buyer receives both **Ara** (`tel:`) and **WhatsApp’tan yaz** (`https://wa.me/`) from that phone;
+- no three declaration checkboxes;
+- versioned listing-rules evidence for publication;
+- bounded 7-day signed HttpOnly seller session to avoid unnecessary repeat OTP;
+- purpose-specific phone/challenge/seller rate limiting plus coarse trusted-IP protection;
+- atomic auto-publication;
+- lightweight `İlanlarım`;
 - founder post-moderation/takedown;
 - search normalization including `b150` ↔ `b 150`;
+- Vasıta retained, with real production vehicle publication fail-closed until EİDS is integrated;
 - no classic username/password account;
-- no in-app chat, payment/order/reservation/commission/shipping.
+- no in-app chat, platform payment/order/reservation/commission/shipping.
 
-Older Çorlu-only, seller-calls-founder, founder-pre-approval, phone-only, WhatsApp-OFF and no-self-service assumptions are historical/superseded as current product truth.
+Older Çorlu-only, seller-calls-founder, founder-pre-approval, contact-choice, checkbox-declaration and JavaScript-readable capability assumptions remain historical and are superseded where they conflict with `docs/PRODUCT_CONTRACT_V2.md`.
 
-Frontend exact-head checkpoint:
+PR #78 remains **OPEN / DRAFT / UNMERGED**. Do not claim final technical closure until all seven canonical workflows succeed on one exact SHA.
 
-`41691652070cbc117a943578a49056d49d51e6f0`
+Production activation, real personal data, AWS/paid infrastructure, real SMS, production EİDS, Ads/monetization and Tarladan changes remain closed.
 
-All seven canonical workflows were GREEN on that exact head. See `docs/PRODUCT_CONTRACT_V2.md` and `docs/ARAR_BULURUZ_CURRENT_STATE.md`.
+## Settled business/formalization sequence
 
-Production activation, real personal data, AWS/paid infrastructure, Ads/monetization and Tarladan changes remain closed.
+**APPLICATION COMPLETION → ŞAHIS ŞİRKETİ → KOSGEB → SUPPORT / INVESTMENT → FUNDED PRODUCTION / LEGAL / EİDS / INFRASTRUCTURE**
+
+Repository/local/synthetic development continues first. Company formation and production-grade spending/legal/EİDS/infrastructure are not pulled forward merely because code is technically ready.
 
 ## Current development/infrastructure sequence
 
