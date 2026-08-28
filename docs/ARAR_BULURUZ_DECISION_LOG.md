@@ -1,6 +1,6 @@
 # Arar Buluruz — Decision Log
 
-_Last updated: 2026-08-10, Europe/Istanbul_
+_Last updated: 2026-08-28, Europe/Istanbul_
 
 This is an append-oriented record of consequential product, technical and operating decisions. It preserves **what was decided, why, alternatives rejected and what would cause reconsideration**.
 
@@ -283,3 +283,29 @@ Each new entry should include:
 - **Executable evidence:** PR #78 exact frontend checkpoint `41691652070cbc117a943578a49056d49d51e6f0`; all seven canonical workflows GREEN, including Stage 1 self-service acceptance run `33091191129` after a same-SHA rerun resolved a transient local port collision.
 - **Canonical product document:** `docs/PRODUCT_CONTRACT_V2.md`.
 - **Review trigger:** Measured real seller/buyer behavior, material abuse/security evidence, monetization, professional sellers, need for classic accounts/chat/payment, or a founder decision to change the product contract.
+
+
+## D-026 — Simplified public-phone, rules-evidence and remembered-seller contract
+
+- **Date:** 2026-08-28
+- **Status:** Active founder-selected product contract; production/real-data activation closed
+- **Decision:** Simplify D-025 without reopening the Türkiye-wide self-service direction. A seller provides one verified public phone; the buyer always receives both **Ara** and **WhatsApp** actions derived from the same E.164 number. The consumer no longer chooses Telefon / WhatsApp / Telefon + WhatsApp.
+- **Publication evidence:** The three consumer declaration checkboxes are superseded. New publication records versioned `listing_rules_version` + `listing_rules_accepted_at`, together with verified-phone/publication/trusted-photo facts. Historical declaration columns remain nullable for history/migration compatibility and must not be fabricated for new rows.
+- **Optional fields:** Condition and description are optional. Condition has no silent database/UI default; empty description is valid and no filler text is invented.
+- **Seller recognition:** Successful verification creates a bounded 7-day signed, phone-bound HttpOnly, SameSite=Lax seller session, Secure on HTTPS. A valid session avoids needless repeat OTP. JavaScript-readable capability/sessionStorage storage is superseded.
+- **Rate limiting:** OTP start is phone-primary plus coarse trusted-IP protection; wrong-code attempts are challenge-bounded; listing velocity is seller-phone-primary plus coarse trusted-IP protection; idempotent replay is resolved before new-listing quota consumption. Synthetic local CI may use explicit relaxed ceilings.
+- **Moderation:** Founder remains post-moderation/takedown, not normal pre-publication approval.
+- **Vasıta/EİDS:** Vasıta remains in the product and synthetic/local test scope. Real production vehicle publication fails closed until required EİDS authorization verification is integrated and separately approved.
+- **Supersedes:** D-025 only where it specified seller contact choice, short consumer declarations, JavaScript-readable verified-phone capability framing, or effectively universal condition/description requirements. D-025's Türkiye-wide self-service, atomic publication, seller ownership, search and preserved security boundaries remain active.
+- **Production boundary:** No production, real personal data, AWS, paid infrastructure, real SMS, Ads, payment/order, production EİDS or Tarladan change is authorized by this decision.
+- **Review trigger:** Measured abuse, seller completion problems, a legal/production EİDS requirement, or a founder decision to change the consumer contract.
+
+## D-027 — Settled company/KOSGEB/funded-production sequence
+
+- **Date:** 2026-08-28
+- **Status:** Active founder business sequence
+- **Decision:** The current settled sequence is **APPLICATION COMPLETION → ŞAHIS ŞİRKETİ → KOSGEB → SUPPORT / INVESTMENT → FUNDED PRODUCTION / LEGAL / EİDS / INFRASTRUCTURE**.
+- **Rationale:** Finish the application and technical product before opening avoidable company/recurring-cost/production work; then formalize the business and use KOSGEB/support/investment to fund production-grade legal, EİDS and infrastructure requirements.
+- **Consequence:** Repository/local/synthetic work may continue. Company formation, paid production infrastructure, production legal/EİDS execution and recurring spend are not pulled forward merely because code is technically ready.
+- **Compatibility:** D-022's zero-spend gate remains compatible. Historical production-provider research remains reference material, not a purchase instruction.
+- **Review trigger:** A material KOSGEB eligibility/timing requirement, a legal deadline that must precede the sequence, or explicit founder revision.
