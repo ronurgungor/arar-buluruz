@@ -13,20 +13,22 @@ function readyRow(): Record<string, unknown> {
   return {
     id: listingId,
     title: "Moderasyon readiness fixture",
-    description: "Sentetik moderasyon yayın hazırlığı kabul testi ilanı.",
+    description: "",
     price_amount: 100,
     price_is_free: false,
     category: "home",
-    item_condition: "good",
+    item_condition: null,
     seller_display_name: "Sentetik Satıcı",
     status: "pending",
     contact_channel: "phone_whatsapp",
     contact_e164: "+12025550188",
-    contact_verified_at: "2026-08-26T10:00:00.000Z",
-    publication_instruction_at: "2026-08-26T10:01:00.000Z",
-    private_seller_declaration_at: "2026-08-26T10:01:00.000Z",
-    content_rights_declaration_at: "2026-08-26T10:01:00.000Z",
-    created_at: "2026-08-26T09:00:00.000Z",
+    contact_verified_at: "2026-08-28T10:00:00.000Z",
+    publication_instruction_at: "2026-08-28T10:01:00.000Z",
+    private_seller_declaration_at: null,
+    content_rights_declaration_at: null,
+    listing_rules_version: "2026-08-28-v1",
+    listing_rules_accepted_at: "2026-08-28T10:01:00.000Z",
+    created_at: "2026-08-28T09:00:00.000Z",
     published_at: null,
     expires_at: null,
     unpublished_at: null,
@@ -87,8 +89,8 @@ afterAll(() => {
   console.error = originalConsoleError;
 });
 
-describe("Stage 1 moderation publish readiness", () => {
-  test("rejects missing phone-control verification independently", async () => {
+describe("founder exceptional publish readiness", () => {
+  test("rejects missing phone verification", async () => {
     currentRow = { ...readyRow(), contact_verified_at: null };
     patchCalls = 0;
     photoCalls = 0;
@@ -99,7 +101,7 @@ describe("Stage 1 moderation publish readiness", () => {
     expect(photoCalls).toBe(0);
   });
 
-  test("rejects missing public-contact publication instruction independently", async () => {
+  test("rejects missing publication instruction", async () => {
     currentRow = { ...readyRow(), publication_instruction_at: null };
     patchCalls = 0;
     photoCalls = 0;
@@ -110,8 +112,8 @@ describe("Stage 1 moderation publish readiness", () => {
     expect(photoCalls).toBe(0);
   });
 
-  test("rejects missing private-seller declaration independently", async () => {
-    currentRow = { ...readyRow(), private_seller_declaration_at: null };
+  test("rejects missing versioned listing rules evidence", async () => {
+    currentRow = { ...readyRow(), listing_rules_accepted_at: null };
     patchCalls = 0;
     photoCalls = 0;
     const response = await handleStage1ModerationRequest(requestForPublish());
@@ -121,18 +123,7 @@ describe("Stage 1 moderation publish readiness", () => {
     expect(photoCalls).toBe(0);
   });
 
-  test("rejects missing content-rights declaration independently", async () => {
-    currentRow = { ...readyRow(), content_rights_declaration_at: null };
-    patchCalls = 0;
-    photoCalls = 0;
-    const response = await handleStage1ModerationRequest(requestForPublish());
-    expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({ ok: false, code: "INVALID_STATE" });
-    expect(patchCalls).toBe(0);
-    expect(photoCalls).toBe(0);
-  });
-
-  test("publishes when all minimum readiness evidence is present", async () => {
+  test("publishes exceptional pending state without fabricating obsolete declarations", async () => {
     currentRow = readyRow();
     patchCalls = 0;
     photoCalls = 0;
