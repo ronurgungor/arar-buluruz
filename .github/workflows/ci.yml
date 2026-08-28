@@ -186,7 +186,7 @@ jobs:
               'Corlu',
               'Pilot Seller',
               array['visible', 'integration'],
-              'whatsapp',
+              'phone_whatsapp',
               '+12025550123',
               now() - interval '2 hours',
               'whatsapp_same_number',
