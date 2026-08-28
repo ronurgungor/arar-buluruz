@@ -7,6 +7,7 @@ import { AdSlot } from "@/components/AdSlot";
 import { ALL_CITIES, ALL_DISTRICTS } from "@/lib/listing-search";
 import { hasListingResultsHistory } from "@/lib/listing-return";
 import { buildPublicSellerContactActions } from "@/lib/public-seller-contact";
+import { STAGE1_CONDITION_LABELS } from "@/lib/stage1-self-service-contract";
 
 const formatPrice = (value: number) =>
   new Intl.NumberFormat("tr-TR", {
@@ -149,20 +150,29 @@ function ListingDetail() {
           <p className="mt-2 text-3xl font-black text-primary">
             {listing.isFree ? "Ücretsiz" : formatPrice(listing.price)}
           </p>
-          <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-            <MapPin aria-hidden className="h-4 w-4" />
-            {listing.city} / {listing.district}
-          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <p className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+              <MapPin aria-hidden className="h-4 w-4" />
+              {listing.city} / {listing.district}
+            </p>
+            {listing.condition && (
+              <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                {STAGE1_CONDITION_LABELS[listing.condition]}
+              </span>
+            )}
+          </div>
         </section>
 
-        <section className="mt-4 rounded-2xl border border-border bg-card p-5">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-            Açıklama
-          </h2>
-          <p className="mt-3 whitespace-pre-wrap leading-relaxed text-foreground">
-            {listing.description}
-          </p>
-        </section>
+        {listing.description.trim() && (
+          <section className="mt-4 rounded-2xl border border-border bg-card p-5">
+            <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+              Açıklama
+            </h2>
+            <p className="mt-3 whitespace-pre-wrap leading-relaxed text-foreground">
+              {listing.description}
+            </p>
+          </section>
+        )}
 
         <section className="mt-4 flex items-center gap-3 rounded-2xl border border-border bg-card p-5">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
