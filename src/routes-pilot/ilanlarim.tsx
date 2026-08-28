@@ -258,10 +258,10 @@ function SellerListings() {
         {!hasAccess && (
           <section className="mt-6 rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
             <div className="mb-4">
-              <h2 className="font-bold text-foreground">Telefonunu doğrula</h2>
+              <h2 className="font-bold text-foreground">Telefonunla devam et</h2>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                Hesap veya şifre gerekmez. İlan verirken kullandığın numaraya tek kullanımlık kod
-                göndeririz.
+                Hesap veya şifre gerekmez. Bu cihazda doğrulaman hâlâ geçerliyse kod istemeden
+                ilanlarını gösteririz.
               </p>
             </div>
             <label className="block">
@@ -287,7 +287,7 @@ function SellerListings() {
                 onClick={() => void begin()}
                 className="mt-3 h-12 w-full rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
               >
-                {busy ? "Kontrol ediliyor…" : "Doğrulama kodu gönder"}
+                {busy ? "Kontrol ediliyor…" : "İlanlarımı göster"}
               </button>
             ) : (
               <div className="mt-4">
@@ -488,16 +488,24 @@ function SellerListings() {
                 </div>
               </label>
               <label className="block">
-                <span className="text-sm font-medium">Durum</span>
+                <span className="text-sm font-medium">
+                  Durum <span className="font-normal text-muted-foreground">(isteğe bağlı)</span>
+                </span>
                 <div className="relative mt-1">
                   <select
                     aria-label="İlanlarım durum"
-                    value={editing.condition}
+                    value={editing.condition ?? ""}
                     onChange={(event) =>
-                      setEditing({ ...editing, condition: event.target.value as Stage1Condition })
+                      setEditing({
+                        ...editing,
+                        condition: event.target.value
+                          ? (event.target.value as Stage1Condition)
+                          : null,
+                      })
                     }
                     className={selectClass}
                   >
+                    <option value="">Durum belirtme</option>
                     {STAGE1_CONDITIONS.map((value) => (
                       <option key={value} value={value}>
                         {STAGE1_CONDITION_LABELS[value]}
@@ -546,7 +554,9 @@ function SellerListings() {
               Ücretsiz veriyorum
             </label>
             <label className="block">
-              <span className="text-sm font-medium">Açıklama</span>
+              <span className="text-sm font-medium">
+                Açıklama <span className="font-normal text-muted-foreground">(isteğe bağlı)</span>
+              </span>
               <textarea
                 aria-label="İlanlarım açıklama"
                 rows={5}
@@ -602,29 +612,6 @@ function SellerListings() {
                 </div>
               </label>
             </div>
-            <fieldset>
-              <legend className="text-sm font-medium">İletişim tercihi</legend>
-              <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                {STAGE1_CONTACT_PREFERENCES.map((value) => (
-                  <label
-                    key={value}
-                    className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-3 transition-colors ${editing.contactPreference === value ? "border-primary bg-primary/5" : "border-border"}`}
-                  >
-                    <input
-                      type="radio"
-                      checked={editing.contactPreference === value}
-                      onChange={() =>
-                        setEditing({
-                          ...editing,
-                          contactPreference: value as Stage1ContactPreference,
-                        })
-                      }
-                    />
-                    {STAGE1_CONTACT_LABELS[value]}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
             <div className="flex gap-2">
               <button
                 type="button"
