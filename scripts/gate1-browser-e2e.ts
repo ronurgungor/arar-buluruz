@@ -6,6 +6,7 @@ const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:4173";
 const visibleListingId = "00000000-0000-4000-8000-000000000101";
 const draftListingId = "00000000-0000-4000-8000-000000000102";
 const expiredListingId = "00000000-0000-4000-8000-000000000103";
+const expectedPublicPhoneHref = "tel:+12025550123";
 const expectedPublicWhatsAppPath = "/12025550123";
 const expectedIntakeWhatsAppPath = "/12025550199";
 const whatsappUrlPattern = /^https:\/\/wa\.me\//;
@@ -212,8 +213,17 @@ async function runProfile(browser: Browser, profile: BrowserProfile) {
     `${profile.name} real listing detail exposed a mock ad slot.`,
   );
 
-  const publicContactLink = page.getByRole("link", { name: "WhatsApp’tan yaz" });
-  const detailWhatsAppHref = await publicContactLink.getAttribute("href");
+  const detailPhoneHref = await page
+    .getByRole("link", { name: "Ara", exact: true })
+    .getAttribute("href");
+  assert(
+    detailPhoneHref === expectedPublicPhoneHref,
+    `${profile.name} visible listing did not derive the expected phone target: ${detailPhoneHref}`,
+  );
+
+  const detailWhatsAppHref = await page
+    .getByRole("link", { name: "WhatsApp’tan yaz", exact: true })
+    .getAttribute("href");
   assert(detailWhatsAppHref, `${profile.name} visible listing did not expose a WhatsApp href.`);
   const publicContactUrl = new URL(detailWhatsAppHref);
   assert(
@@ -223,8 +233,8 @@ async function runProfile(browser: Browser, profile: BrowserProfile) {
     `${profile.name} visible listing did not derive the expected WhatsApp target: ${detailWhatsAppHref}`,
   );
   assert(
-    (await page.getByRole("link", { name: "Satıcıyı ara" }).count()) === 0,
-    `${profile.name} visible listing exposed both seller contact channels instead of exactly one.`,
+    (await page.getByTestId("detail-contact-bar").getByRole("link").count()) === 2,
+    `${profile.name} visible listing did not expose exactly the derived phone + WhatsApp actions.`,
   );
 
   await assertNoHorizontalOverflow(page, profile.name, "/ilan/$id");
