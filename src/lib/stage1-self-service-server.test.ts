@@ -208,9 +208,7 @@ function installBackendMock(): void {
         typeof row.publication_instruction_at === "string" &&
         typeof row.listing_rules_version === "string" &&
         typeof row.listing_rules_accepted_at === "string" &&
-        Array.from(photoMetadata).some((path) =>
-          path.startsWith(`listings/${body.p_listing_id}/`),
-        );
+        Array.from(photoMetadata).some((path) => path.startsWith(`listings/${body.p_listing_id}/`));
       if (!existing || existing.listingId !== body.p_listing_id || !ready) {
         return new Response("listing is not publish-ready", { status: 409 });
       }
@@ -396,9 +394,10 @@ describe("Stage 1 self-service server acceptance", () => {
     const backendBefore = backendCallCount;
 
     const wrongPhone = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm("97000000-0000-4000-8000-000000000081", { phone: "+12025550182" }), {
-        cookie,
-      }),
+      requestFor(
+        submissionForm("97000000-0000-4000-8000-000000000081", { phone: "+12025550182" }),
+        { cookie },
+      ),
     );
     expect(wrongPhone.status).toBe(401);
 
@@ -537,10 +536,9 @@ describe("Stage 1 self-service server acceptance", () => {
     const otherCookie = await syntheticSession(otherPhone);
 
     const created = await handleStage1SelfServiceRequest(
-      requestFor(
-        submissionForm("97000000-0000-4000-8000-000000000090", { phone: ownerPhone }),
-        { cookie: ownerCookie },
-      ),
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000090", { phone: ownerPhone }), {
+        cookie: ownerCookie,
+      }),
     );
     expect(created.status).toBe(201);
     const { listingId } = (await created.json()) as { listingId: string };
