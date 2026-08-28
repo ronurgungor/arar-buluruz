@@ -7,7 +7,7 @@ export const Route = createFileRoute("/gizlilik")({
       { title: "Gizlilik ve Aydınlatma — Arar Buluruz" },
       {
         name: "description",
-        content: "Arar Buluruz Çorlu pilotu kişisel veri işleme ve aydınlatma bilgileri.",
+        content: "Arar Buluruz kişisel veri işleme ve aydınlatma bilgileri.",
       },
       { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
     ],
@@ -24,17 +24,18 @@ function PrivacyPage() {
         <Link to="/" className="text-sm font-semibold text-primary underline underline-offset-4">
           Ana sayfaya dön
         </Link>
+
         <h1 className="mt-6 text-3xl font-bold tracking-tight">Gizlilik ve Aydınlatma</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Bu açıklama, kişisel veri alınmadan önce hangi verilerin neden işlendiğini ve haklarınızı
-          anlatır. Aydınlatma bir “kabul” veya genel açık rıza değildir.
+          Bu sayfa, ilan verirken hangi bilgilerin neden işlendiğini anlatır. Aydınlatma metni bir
+          genel açık rıza kutusu değildir.
         </p>
 
         <div className="mt-8 space-y-7 text-sm leading-6">
           <section>
-            <h2 className="font-semibold">Veri sorumlusu ve iletişim</h2>
+            <h2 className="font-semibold">İşletmeci ve iletişim</h2>
             <p className="mt-2 text-muted-foreground">
-              Veri sorumlusu / işletmeci: {info.legalName}
+              İşletmeci / veri sorumlusu: {info.legalName}
             </p>
             {info.address && <p className="mt-1 text-muted-foreground">Adres: {info.address}</p>}
             <p className="mt-1 text-muted-foreground">
@@ -45,93 +46,81 @@ function PrivacyPage() {
               to="/iletisim"
               className="mt-2 inline-flex font-semibold text-primary underline underline-offset-4"
             >
-              İletişim ve kaldırma bilgileri
+              İletişim ve kaldırma
             </Link>
           </section>
 
           <section>
-            <h2 className="font-semibold">Hangi veriler işlenebilir?</h2>
+            <h2 className="font-semibold">Hangi bilgiler işlenir?</h2>
             <p className="mt-2 text-muted-foreground">
-              İlan başvurusu ve yayın sürecinde yalnız gerekli ölçüde satıcı görünen adı, telefon,
-              ilan başlığı, açıklaması, fiyatı, Tekirdağ/Çorlu konumu, ürün fotoğrafları; telefon
-              kontrolü/yayın talimatı kayıtları; minimum moderasyon, şikâyet ve güvenlik kayıtları
-              işlenebilir.
+              İlan oluşturma ve yönetiminde gerekli olduğu ölçüde görünen satıcı adı, doğrulanmış
+              telefon, ilan başlığı, isteğe bağlı açıklama ve durum bilgisi, fiyat/Ücretsiz bilgisi,
+              İl/İlçe, fotoğraflar, telefon doğrulama ve yayın talimatı kayıtları ile sınırlı
+              güvenlik/moderasyon kayıtları işlenebilir.
             </p>
             <p className="mt-2 font-medium">
-              T.C. kimlik/pasaport, açık ev adresi, ödeme/banka verisi, çocuk verisi, özel nitelikli
-              kişisel veri veya üçüncü kişilere ait telefon/fotoğraf gibi gereksiz verileri
-              göndermeyin.
+              T.C. kimlik/pasaport, açık ev adresi, banka/ödeme verisi, çocuk verisi, özel nitelikli
+              kişisel veri veya size ait olmayan telefon/fotoğraf gibi gereksiz verileri eklemeyin.
             </p>
           </section>
 
           <section>
-            <h2 className="font-semibold">Amaçlar ve hukuki sebepler</h2>
-            <ul className="mt-2 list-disc space-y-2 pl-5 text-muted-foreground">
-              <li>
-                İlan başvurusu/hizmet talebinin yürütülmesi: gerekli olduğu ölçüde KVKK 5/2-c.
-              </li>
-              <li>
-                Satıcı telefonunun ilanda kamuya açık yayımlanması: satıcının ilan amacıyla bilinçli
-                alenileştirmesi kapsamında KVKK 5/2-d ve yalnız aynı amaçla kullanım.
-              </li>
-              <li>Moderasyon, kötüye kullanım ve güvenlik: ölçülülük/denge ile KVKK 5/2-f.</li>
-              <li>Uyuşmazlık ve kaldırma kanıtı: gerekli minimum ölçüde KVKK 5/2-e.</li>
-              <li>KVKK/5651 gibi kanuni kayıt yükümlülükleri: KVKK 5/2-ç.</li>
-            </ul>
+            <h2 className="font-semibold">Telefon neden herkese açık?</h2>
             <p className="mt-2 text-muted-foreground">
-              Tüm işlemler için tek bir genel açık rıza alınmaz. Telefonun kamuya açık yayımlanması
-              için ayrı yayın beyanı alınır; bu beyan aydınlatmanın kabulü değildir.
+              Yayındaki ilanın doğrulanmış telefonu, alıcının satıcıya doğrudan ulaşabilmesi için
+              ilan aktif olduğu sürece herkese açık görünür. Aynı numaradan <strong>Ara</strong> ve
+              <strong> WhatsApp</strong> bağlantıları oluşturulur. Arar Buluruz bu iletişimi kendi
+              içinde mesajlaşma sistemine dönüştürmez.
             </p>
           </section>
 
           <section>
-            <h2 className="font-semibold">Kamuya açık telefon</h2>
+            <h2 className="font-semibold">Yayın ve doğrulama</h2>
             <p className="mt-2 text-muted-foreground">
-              Yayındaki satıcı telefonu ilan aktif olduğu sürece herkes tarafından görülebilir.
-              Numara yalnız ilgili ilan hakkında iletişim amacıyla paylaşılır; reklam, pazarlama
-              veya ilgisiz amaçlarla kullanılmamalıdır. İlk doğrulama döneminde satıcı iletişimi
-              yalnız telefon üzerinden yapılır.
+              Satıcı ilanı kendisi oluşturur. Telefon doğrulandıktan, zorunlu alanlar ve güvenli
+              fotoğraf işlemi tamamlandıktan sonra ilan teknik kontrollerle otomatik yayımlanabilir.
+              Yayın öncesi kurucu onayı normal akışın parçası değildir.
+            </p>
+            <p className="mt-2 text-muted-foreground">
+              İlanı yayınlama işlemi, ekranda bağlantısı verilen güncel İlan Kuralları'nın kabulü ve
+              telefonun ilan amacıyla yayımlanması yönündeki talimatın kaydıdır.
             </p>
           </section>
 
           <section>
-            <h2 className="font-semibold">Fotoğraflar ve içerik</h2>
+            <h2 className="font-semibold">Fotoğraf ve içerik</h2>
             <p className="mt-2 text-muted-foreground">
-              Yalnız satıcının sahip olduğu veya yayımlamaya yetkili olduğu metin ve fotoğraflar
-              kabul edilir. Kurucu yayın öncesi manuel içerik/gizlilik incelemesi yapar ve fotoğraf
-              dosyası güvenli yeniden-encode akışından geçirilir.
+              Fotoğraflar güvenli yeniden kodlama işleminden geçirilir ve ilan aktif değilken özel
+              depolamada tutulur. Yalnız paylaşmaya yetkili olduğunuz içerikleri yükleyin; gereksiz
+              üçüncü kişi verisi, çocuk görüntüsü, belge, açık adres veya hassas bilgi eklemeyin.
             </p>
           </section>
 
           <section>
             <h2 className="font-semibold">Kimlerle paylaşılır?</h2>
             <p className="mt-2 text-muted-foreground">
-              Aktif ilanın başlık, açıklama, fiyat, konum, satıcı görünen adı, onaylı fotoğrafları
-              ve bilerek yayımlanan telefon numarası site ziyaretçilerine açıklanır. Diğer veriler
-              yalnız hizmetin güvenli işletimi için yetkili altyapı sağlayıcıları ve kanunen yetkili
-              makamlarla gerekli olduğu ölçüde paylaşılır. İlan/veri toplama akışı mesajlaşma
-              uygulamalarına aktarılmaz.
+              Aktif ilanın başlığı, fiyatı, İl/İlçesi, satıcı görünen adı, seçilmiş içerik alanları,
+              güvenli fotoğrafları ve doğrulanmış telefonu site ziyaretçilerine açıklanır. Diğer
+              veriler yalnız hizmeti güvenli işletmek, yasal yükümlülükleri yerine getirmek ve
+              başvuru/şikâyetleri yönetmek için gerekli olduğu ölçüde işlenir.
             </p>
           </section>
 
           <section>
-            <h2 className="font-semibold">Saklama ve silme</h2>
+            <h2 className="font-semibold">Ödeme ve satış</h2>
             <p className="mt-2 text-muted-foreground">
-              İlan, telefon ve fotoğraf gibi canlı içerikler amaç sona erdiğinde pilot saklama/silme
-              planına göre kaldırılır. 5651 kapsamındaki asgari trafik kayıtları ise ilan
-              içeriğinden ayrı bir kanuni kayıt sınıfıdır ve en az bir yıllık hedefle korunur; canlı
-              ilan silme işlemi bu trafik kayıtlarını otomatik olarak silmez. Trafik kayıtlarında
-              istek gövdesi, parola, token, telefon veya ilan içeriği tutulmaz.
+              Arar Buluruz şu aşamada ödeme almaz, sipariş/rezervasyon oluşturmaz, komisyon tahsil
+              etmez ve kargo sistemi işletmez. Alıcı ve satıcı doğrudan iletişim kurar.
             </p>
           </section>
 
           <section>
-            <h2 className="font-semibold">Haklar ve kaldırma</h2>
+            <h2 className="font-semibold">Kaldırma ve haklar</h2>
             <p className="mt-2 text-muted-foreground">
-              KVKK kapsamındaki erişim, düzeltme, silme ve diğer başvurularınız ile yanlış telefon,
-              size ait veri veya acil içerik kaldırma bildirimlerinizi İletişim ve Kaldırma kanalına
-              iletebilirsiniz. Yüksek riskli gizlilik bildirimlerinde ilan önce yayından kaldırılır,
-              sonra incelenir.
+              Yanlış kişiye ait telefon, çocuk görüntüsü, hassas veri, yetkisiz kişisel veri veya
+              benzeri yüksek riskli bildirimlerde ilan önce yayından kaldırılır, sonra incelenir.
+              KVKK kapsamındaki başvurular ve içerik kaldırma talepleri için iletişim kanalını
+              kullanabilirsiniz.
             </p>
             <Link
               to="/iletisim"
@@ -139,6 +128,15 @@ function PrivacyPage() {
             >
               Başvuru / kaldırma kanalını aç
             </Link>
+          </section>
+
+          <section>
+            <h2 className="font-semibold">Saklama</h2>
+            <p className="mt-2 text-muted-foreground">
+              Canlı ilan, telefon ve fotoğraf gibi içerikler amaç ve geçerli saklama ihtiyacı sona
+              erdiğinde silinir veya erişimden kaldırılır. Kanunen ayrı saklanması gereken asgari
+              trafik/güvenlik kayıtları varsa bunlar ilan içeriğinden ayrı değerlendirilir.
+            </p>
           </section>
         </div>
       </article>
