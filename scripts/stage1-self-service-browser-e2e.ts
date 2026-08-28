@@ -20,22 +20,52 @@ function assert(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
-const expectedUnauthorizedResponses = new Map<string, number>();
-let expectedUnauthorizedConsoleErrors = 0;
+type UnauthorizedExpectation = {
+  page: Page;
+  method: string;
+  pathname: string;
+  label: string;
+};
 
-function requestAction(request: { postData(): string | null }): string {
-  const body = request.postData() ?? "";
-  const match = body.match(/name="action"\r?\n\r?\n([^\r\n]+)/);
-  return match?.[1] ?? "";
+const expectedUnauthorizedResponses: UnauthorizedExpectation[] = [];
+const expectedUnauthorizedConsoleErrors = new Map<Page, number>();
+
+function expectUnauthorizedOnce(
+  page: Page,
+  method: string,
+  pathname: string,
+  label: string,
+): void {
+  expectedUnauthorizedResponses.push({
+    page,
+    method: method.toUpperCase(),
+    pathname,
+    label,
+  });
 }
 
-function unauthorizedKey(method: string, pathname: string, action: string): string {
-  return `${method.toUpperCase()} ${pathname} action=${action}`;
-}
+function consumeExpectedUnauthorizedResponse(
+  page: Page,
+  response: PlaywrightResponse,
+): boolean {
+  if (response.status() !== 401) return false;
 
-function expectUnauthorizedOnce(method: string, pathname: string, action: string): void {
-  const key = unauthorizedKey(method, pathname, action);
-  expectedUnauthorizedResponses.set(key, (expectedUnauthorizedResponses.get(key) ?? 0) + 1);
+  const method = response.request().method().toUpperCase();
+  const pathname = new URL(response.url()).pathname;
+  const index = expectedUnauthorizedResponses.findIndex(
+    (expectation) =>
+      expectation.page === page &&
+      expectation.method === method &&
+      expectation.pathname === pathname,
+  );
+  if (index < 0) return false;
+
+  expectedUnauthorizedResponses.splice(index, 1);
+  expectedUnauthorizedConsoleErrors.set(
+    page,
+    (expectedUnauthorizedConsoleErrors.get(page) ?? 0) + 1,
+  );
+  return true;
 }
 
 function concatBytes(...parts: readonly Uint8Array[]): Uint8Array {
@@ -325,7 +355,7 @@ async function submitListing(
     .waitFor();
 
   if (input.expectVerification) {
-    expectUnauthorizedOnce("POST", "/ilan-ver", "submit_listing");
+    expectUnauthorizedOnce(page, "POST", "/ilan-ver", "initial submit requires verification");
   }
   await page.getByRole("button", { name: "İlanı yayınla" }).click();
   if (input.expectVerification) {
@@ -376,7 +406,7 @@ async function openOwnerListings(page: Page, phone: string): Promise<void> {
 }
 
 async function verifyFreshSellerManagement(page: Page, phone: string): Promise<void> {
-  expectUnauthorizedOnce("POST", "/ilanlarim", "seller_list");
+  expectUnauthorizedOnce(page, "POST", "/ilanlarim", "fresh seller list requires verification");
   await openOwnerListings(page, phone);
   await page.getByLabel("İlanlarım doğrulama kodu", { exact: true }).waitFor();
   await page.getByLabel("İlanlarım doğrulama kodu", { exact: true }).fill(verificationCode);
@@ -411,26 +441,23 @@ for (const page of [ownerPage, buyerPage, otherSellerPage, founderPage]) {
     if (
       /^Failed to load resource: the server responded with a status of 401 \(Unauthorized\)/.test(
         text,
-      ) &&
-      expectedUnauthorizedConsoleErrors > 0
+      )
     ) {
-      expectedUnauthorizedConsoleErrors -= 1;
-      return;
+      const allowance = expectedUnauthorizedConsoleErrors.get(page) ?? 0;
+      if (allowance > 0) {
+        expectedUnauthorizedConsoleErrors.set(page, allowance - 1);
+        return;
+      }
     }
     runtimeErrors.push(`console: ${text}`);
   });
   page.on("response", (response: PlaywrightResponse) => {
     const url = response.url();
     if (response.status() === 401) {
-      const request = response.request();
-      const key = unauthorizedKey(request.method(), new URL(url).pathname, requestAction(request));
-      const remaining = expectedUnauthorizedResponses.get(key) ?? 0;
-      if (remaining > 0) {
-        if (remaining === 1) expectedUnauthorizedResponses.delete(key);
-        else expectedUnauthorizedResponses.set(key, remaining - 1);
-        expectedUnauthorizedConsoleErrors += 1;
-      } else {
-        runtimeErrors.push(`unexpected HTTP 401: ${key}`);
+      if (!consumeExpectedUnauthorizedResponse(page, response)) {
+        runtimeErrors.push(
+          `unexpected HTTP 401: ${response.request().method()} ${new URL(url).pathname}`,
+        );
       }
     }
     if (
@@ -697,16 +724,13 @@ try {
     `Browser performed privileged backend mutations: ${privilegedBrowserMutations.join(" | ")}`,
   );
   assert(
-    expectedUnauthorizedResponses.size === 0,
-    `Expected session-required 401 responses did not occur: ${Array.from(
-      expectedUnauthorizedResponses.entries(),
-    )
-      .map(([key, count]) => `${key} x${count}`)
+    expectedUnauthorizedResponses.length === 0,
+    `Expected session-required 401 responses did not occur: ${expectedUnauthorizedResponses
+      .map(
+        (expectation) =>
+          `${expectation.method} ${expectation.pathname} (${expectation.label})`,
+      )
       .join(" | ")}`,
-  );
-  assert(
-    expectedUnauthorizedConsoleErrors === 0,
-    `Expected 401 console evidence was not fully consumed: ${expectedUnauthorizedConsoleErrors}`,
   );
   assert(assetFailures.length === 0, `CSS/JS asset failures: ${assetFailures.join(" | ")}`);
   assert(runtimeErrors.length === 0, `Browser runtime errors: ${runtimeErrors.join(" | ")}`);
