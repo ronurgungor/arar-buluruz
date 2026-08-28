@@ -1,8 +1,4 @@
-import type {
-  Stage1Category,
-  Stage1Condition,
-  Stage1ContactPreference,
-} from "./stage1-self-service-contract";
+import type { Stage1Category, Stage1Condition } from "./stage1-self-service-contract";
 
 export type Stage1SellerListingStatus =
   | "pending"
@@ -18,11 +14,10 @@ export type Stage1SellerListing = {
   price: number;
   isFree: boolean;
   category: Stage1Category;
-  condition: Stage1Condition;
+  condition: Stage1Condition | null;
   province: string;
   district: string;
   sellerDisplayName: string;
-  contactPreference: Stage1ContactPreference;
   status: Stage1SellerListingStatus;
   photoUrls: string[];
   createdAt: string;
