@@ -1,6 +1,6 @@
 # Arar Buluruz — Current State
 
-_Last updated: 2026-08-27, Europe/Istanbul_
+_Last updated: 2026-08-28, Europe/Istanbul_
 
 ## Canonical repository state
 
@@ -14,42 +14,38 @@ _Last updated: 2026-08-27, Europe/Istanbul_
 
 ## Current phase
 
-**Near-final consumer self-service product implementation is GREEN in PR #78; production and real data remain closed.**
+**PR #78 final closure pass is active; production and real data remain closed.**
 
-Current product authority is `docs/PRODUCT_CONTRACT_V2.md`.
+Current product authority: `docs/PRODUCT_CONTRACT_V2.md`.
 
-Frontend exact-head checkpoint:
-
-`41691652070cbc117a943578a49056d49d51e6f0`
-
-PR #78 is **OPEN / DRAFT / UNMERGED**.
-
-All seven canonical workflows are GREEN on that exact head:
-
-- Activation readiness — `33091191102`;
-- V0 minimal PWA — `33091191295`;
-- CI — `33091191358`;
-- Real pilot backend prep — `33091191160`;
-- Stage 1 Phase A code gate — `33091191189`;
-- Self-host migration rehearsal — `33091191164`;
-- Stage 1 self-service acceptance — `33091191129`, successful rerun job `98587435492`.
-
-The first Stage 1 acceptance attempt failed before browser execution because local Supabase could not bind host port `54322`. The same job reran successfully on the same SHA without application-code changes.
+PR #78 remains **OPEN / DRAFT / UNMERGED** on `agent/stage1-self-service-v2`. Live GitHub exact-head/workflow evidence controls; do not reuse the older 2026-08-27 frontend checkpoint as a final-green claim.
 
 Current consumer product facts:
 
-- Türkiye-wide İl / İlçe;
-- seller self-service;
-- phone verification;
-- atomic auto-publication after trusted-photo and required evidence readiness;
-- founder post-moderation/takedown rather than routine pre-approval;
-- Telefon / WhatsApp / Telefon + WhatsApp;
-- lightweight `İlanlarım` seller ownership;
-- no classic username/password account;
-- broad categories and search normalization;
-- near-final responsive consumer UX.
+- Türkiye-wide İl / İlçe self-service;
+- 1–8 trusted photos;
+- broad category + title;
+- condition optional with no silent default;
+- description optional with no filler text;
+- price or explicit **Ücretsiz**;
+- seller display name + one verified public phone;
+- no seller contact-preference selector;
+- buyers receive both **Ara** (`tel:`) and **WhatsApp** (`https://wa.me/`) from that same phone;
+- no three consumer declaration checkboxes;
+- versioned listing-rules evidence replaces fabricated declaration timestamps;
+- bounded 7-day phone-bound signed HttpOnly seller session;
+- phone/challenge/seller rate limiting plus coarse trusted-IP protection;
+- atomic auto-publication;
+- founder post-moderation/takedown;
+- lightweight `İlanlarım`;
+- Vasıta retained for the product/synthetic path;
+- real production vehicle publication fail-closed until EİDS integration is enabled.
 
-Older Çorlu-only, seller-calls-founder, founder-entry, phone-only, WhatsApp-OFF and no-self-service product assumptions are **superseded** as current product truth. They remain historical evidence where retained in dated documents.
+Historical declaration/contact/capability fields may remain for compatibility or evidence, but are not current consumer choices.
+
+The founder's settled business/formalization sequence is:
+
+**APPLICATION COMPLETION → ŞAHIS ŞİRKETİ → KOSGEB → SUPPORT / INVESTMENT → FUNDED PRODUCTION / LEGAL / EİDS / INFRASTRUCTURE**
 
 Hard boundaries remain:
 
@@ -58,12 +54,16 @@ Hard boundaries remain:
 - no real users;
 - production backend/deployment OFF;
 - AWS OFF;
-- paid infrastructure/services OFF;
+- paid recurring infrastructure/services OFF;
+- real SMS OFF;
+- production EİDS OFF;
 - Ads/monetization OFF;
 - no payment/order/reservation/commission/in-app chat;
 - Tarladan untouched.
 
 **REAL DATA COLLECTION remains CLOSED.**
+
+Final PR #78 technical closure requires all seven canonical workflows SUCCESS on one exact SHA. Repository readiness does not itself authorize production, company formation, spending or real-data collection.
 
 ## Dedicated hosted Supabase state
 
