@@ -1,4 +1,4 @@
-import type { PilotContactChannel, PilotListingStatus } from "./pilot-operator-contract";
+import type { PilotListingStatus } from "./pilot-operator-contract";
 
 export type Stage1ModerationListing = {
   id: string;
@@ -7,15 +7,14 @@ export type Stage1ModerationListing = {
   price: number;
   isFree: boolean;
   category: string;
-  condition: string;
+  condition: string | null;
   sellerDisplayName: string;
   status: PilotListingStatus;
-  contactChannel: PilotContactChannel | null;
   contactE164: string | null;
   phoneVerified: boolean;
   publicationInstructionRecorded: boolean;
-  privateSellerDeclarationRecorded: boolean;
-  contentRightsDeclarationRecorded: boolean;
+  listingRulesVersion: string | null;
+  listingRulesAccepted: boolean;
   photoUrls: string[];
   createdAt: string;
   publishedAt: string | null;
