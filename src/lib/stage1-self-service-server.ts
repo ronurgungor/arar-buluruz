@@ -606,11 +606,7 @@ async function startVerification(
   });
 }
 
-async function verifyPhone(
-  form: FormData,
-  clientIp: string,
-  request: Request,
-): Promise<Response> {
+async function verifyPhone(form: FormData, clientIp: string, request: Request): Promise<Response> {
   assertAllowedFields(form, new Set(["action", "phone", "challengeId", "code"]));
   const e164 = stage1E164Schema.parse(requiredString(form, "phone", 8, 16));
   const challengeId = requiredString(form, "challengeId", 36, 36).toLowerCase();
@@ -1212,11 +1208,7 @@ async function patchSellerListing(
   }
 }
 
-async function sellerList(
-  form: FormData,
-  clientIp: string,
-  request: Request,
-): Promise<Response> {
+async function sellerList(form: FormData, clientIp: string, request: Request): Promise<Response> {
   assertAllowedFields(form, new Set(["action", "phone"]));
   const { phone } = await assertSellerSession(form, request);
   const relaxed = usesRelaxedSyntheticLimits(request);
@@ -1234,11 +1226,7 @@ async function sellerList(
   });
 }
 
-async function sellerUpdate(
-  form: FormData,
-  clientIp: string,
-  request: Request,
-): Promise<Response> {
+async function sellerUpdate(form: FormData, clientIp: string, request: Request): Promise<Response> {
   assertAllowedFields(
     form,
     new Set([
@@ -1383,11 +1371,7 @@ async function sellerMarkSold(
   });
 }
 
-async function sellerDelete(
-  form: FormData,
-  clientIp: string,
-  request: Request,
-): Promise<Response> {
+async function sellerDelete(form: FormData, clientIp: string, request: Request): Promise<Response> {
   assertAllowedFields(form, new Set(["action", "phone", "listingId"]));
   const { phone } = await assertSellerSession(form, request);
   const relaxed = usesRelaxedSyntheticLimits(request);
