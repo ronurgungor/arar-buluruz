@@ -9,10 +9,8 @@ import type {
 import {
   STAGE1_CATEGORY_LABELS,
   STAGE1_CONDITION_LABELS,
-  STAGE1_CONTACT_LABELS,
   type Stage1Category,
   type Stage1Condition,
-  type Stage1ContactPreference,
 } from "@/lib/stage1-self-service-contract";
 
 const operatorUiEnabled = import.meta.env.VITE_PILOT_OPERATOR_UI === "enabled";
@@ -193,29 +191,30 @@ function FounderModeration() {
                       {STAGE1_CATEGORY_LABELS[listing.category as Stage1Category] ??
                         listing.category}{" "}
                       ·{" "}
-                      {STAGE1_CONDITION_LABELS[listing.condition as Stage1Condition] ??
-                        listing.condition}
+                      {listing.condition
+                        ? (STAGE1_CONDITION_LABELS[listing.condition as Stage1Condition] ??
+                          listing.condition)
+                        : "Durum belirtilmemiş"}
                     </p>
-                    <p className="mt-3 text-sm leading-relaxed">{listing.description}</p>
+                    {listing.description.trim() && (
+                      <p className="mt-3 text-sm leading-relaxed">{listing.description}</p>
+                    )}
                     <div className="mt-3 rounded-xl bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
                       <strong className="text-foreground">Satıcı:</strong>{" "}
                       {listing.sellerDisplayName}
                       <br />
                       <strong className="text-foreground">İletişim:</strong>{" "}
-                      {listing.contactChannel
-                        ? STAGE1_CONTACT_LABELS[listing.contactChannel as Stage1ContactPreference]
-                        : "Yok"}{" "}
-                      · {listing.contactE164 ?? "Yok"}
+                      {listing.contactE164 ? `Ara + WhatsApp · ${listing.contactE164}` : "Yok"}
                       <br />
                       <strong className="text-foreground">Telefon kontrolü:</strong>{" "}
                       {listing.phoneVerified ? "Tamam" : "Eksik"} ·{" "}
                       <strong className="text-foreground">Yayın talimatı:</strong>{" "}
                       {listing.publicationInstructionRecorded ? "Kayıtlı" : "Eksik"}
                       <br />
-                      <strong className="text-foreground">Özel satıcı beyanı:</strong>{" "}
-                      {listing.privateSellerDeclarationRecorded ? "Kayıtlı" : "Eksik"} ·{" "}
-                      <strong className="text-foreground">İçerik hakları beyanı:</strong>{" "}
-                      {listing.contentRightsDeclarationRecorded ? "Kayıtlı" : "Eksik"}
+                      <strong className="text-foreground">İlan kuralları:</strong>{" "}
+                      {listing.listingRulesAccepted
+                        ? `Kabul edildi · ${listing.listingRulesVersion ?? "sürüm bilinmiyor"}`
+                        : "Eksik"}
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
                       {listing.status === "published" && (
