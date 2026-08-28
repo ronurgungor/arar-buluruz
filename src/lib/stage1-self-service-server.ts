@@ -1062,6 +1062,8 @@ async function fetchSellerRows(
       "publication_instruction_at",
       "private_seller_declaration_at",
       "content_rights_declaration_at",
+      "listing_rules_version",
+      "listing_rules_accepted_at",
       "created_at",
       "updated_at",
       "published_at",
@@ -1124,13 +1126,12 @@ async function signSellerPhoto(config: BackendConfig, objectPath: string): Promi
   return signed.toString();
 }
 
-async function assertSellerCapability(form: FormData): Promise<{
-  phone: string;
-  verified: SellerSessionPayload;
-}> {
+async function assertSellerSession(
+  form: FormData,
+  request: Request,
+): Promise<{ phone: string; verified: SellerSessionPayload }> {
   const phone = stage1E164Schema.parse(requiredString(form, "phone", 8, 16));
-  const capability = requiredString(form, "capability", 20, 4096);
-  return { phone, verified: await verifyCapability(capability, phone) };
+  return { phone, verified: await requireSellerSession(request, phone) };
 }
 
 async function requireOwnedListing(
@@ -1155,10 +1156,10 @@ async function mapSellerListing(
   row: SellerBackendRow,
 ): Promise<Stage1SellerListing> {
   const category = stage1CategorySchema.safeParse(row.category);
-  const condition = stage1ConditionSchema.safeParse(row.item_condition);
-  const contactPreference = stage1ContactPreferenceSchema.safeParse(row.contact_channel);
+  const condition =
+    row.item_condition === null ? null : stage1ConditionSchema.safeParse(row.item_condition);
   const status = sellerStatus(row.status);
-  if (!category.success || !condition.success || !contactPreference.success || !status) {
+  if (!category.success || (condition !== null && !condition.success) || !status) {
     throw new Error("Seller listing violated the classifieds contract.");
   }
   const inventory = await fetchSellerPhotoInventory(config, row.id);
@@ -1175,11 +1176,10 @@ async function mapSellerListing(
     price: Number(row.price_amount),
     isFree: row.price_is_free,
     category: category.data,
-    condition: condition.data,
+    condition: condition?.data ?? null,
     province: row.province,
     district: row.district,
     sellerDisplayName: row.seller_display_name,
-    contactPreference: contactPreference.data,
     status,
     photoUrls,
     createdAt: row.created_at,
@@ -1212,10 +1212,16 @@ async function patchSellerListing(
   }
 }
 
-async function sellerList(form: FormData, clientIp: string): Promise<Response> {
-  assertAllowedFields(form, new Set(["action", "phone", "capability"]));
-  enforceRateLimit(`seller-list:${clientIp}`, 30, 15 * 60 * 1000);
-  const { phone } = await assertSellerCapability(form);
+async function sellerList(
+  form: FormData,
+  clientIp: string,
+  request: Request,
+): Promise<Response> {
+  assertAllowedFields(form, new Set(["action", "phone"]));
+  const { phone } = await assertSellerSession(form, request);
+  const relaxed = usesRelaxedSyntheticLimits(request);
+  enforceRateLimit("seller-list-phone", phone, 60, 15 * 60 * 1000, relaxed);
+  enforceRateLimit("seller-list-ip", clientIp, 180, 15 * 60 * 1000, relaxed);
   const config = readBackendConfig();
   const rows = await fetchSellerRows(config, { phone });
   const listings = await Promise.all(rows.map((row) => mapSellerListing(config, row)));
@@ -1228,13 +1234,16 @@ async function sellerList(form: FormData, clientIp: string): Promise<Response> {
   });
 }
 
-async function sellerUpdate(form: FormData, clientIp: string): Promise<Response> {
+async function sellerUpdate(
+  form: FormData,
+  clientIp: string,
+  request: Request,
+): Promise<Response> {
   assertAllowedFields(
     form,
     new Set([
       "action",
       "phone",
-      "capability",
       "listingId",
       "category",
       "condition",
@@ -1244,11 +1253,13 @@ async function sellerUpdate(form: FormData, clientIp: string): Promise<Response>
       "description",
       "province",
       "district",
-      "contactPreference",
     ]),
   );
-  enforceRateLimit(`seller-update:${clientIp}`, 20, 15 * 60 * 1000);
-  const { phone } = await assertSellerCapability(form);
+  const { phone } = await assertSellerSession(form, request);
+  const relaxed = usesRelaxedSyntheticLimits(request);
+  enforceRateLimit("seller-update-phone", phone, 40, 15 * 60 * 1000, relaxed);
+  enforceRateLimit("seller-update-ip", clientIp, 120, 15 * 60 * 1000, relaxed);
+
   const config = readBackendConfig();
   const listingId = requiredUuid(form);
   const listing = await requireOwnedListing(config, listingId, phone);
@@ -1261,12 +1272,11 @@ async function sellerUpdate(form: FormData, clientIp: string): Promise<Response>
   }
 
   const category = stage1CategorySchema.parse(requiredString(form, "category", 3, 32));
-  const condition = stage1ConditionSchema.parse(requiredString(form, "condition", 3, 32));
-  const contactPreference = stage1ContactPreferenceSchema.parse(
-    requiredString(form, "contactPreference", 5, 20),
-  );
+  assertVehiclePublicationAllowed(category, request);
+  const conditionRaw = optionalString(form, "condition", 32);
+  const condition = conditionRaw ? stage1ConditionSchema.parse(conditionRaw) : null;
   const title = requiredString(form, "title", 3, 120);
-  const description = requiredString(form, "description", 10, 5000);
+  const description = optionalString(form, "description", 5000) ?? "";
   const province = requiredString(form, "province", 2, 64);
   const district = requiredString(form, "district", 2, 64);
   if (!isLocationCity(province) || !getDistrictsForCity(province).includes(district)) {
@@ -1276,15 +1286,13 @@ async function sellerUpdate(form: FormData, clientIp: string): Promise<Response>
     );
   }
   const { price, isFree } = parsePrice(form);
-  const now = new Date().toISOString();
+
   await patchSellerListing(
     config,
     listingId,
     {
       category,
       item_condition: condition,
-      contact_channel: contactPreference,
-      publication_instruction_at: now,
       title,
       description,
       province,
@@ -1302,10 +1310,16 @@ async function sellerUpdate(form: FormData, clientIp: string): Promise<Response>
   });
 }
 
-async function sellerUnpublish(form: FormData, clientIp: string): Promise<Response> {
-  assertAllowedFields(form, new Set(["action", "phone", "capability", "listingId"]));
-  enforceRateLimit(`seller-unpublish:${clientIp}`, 20, 15 * 60 * 1000);
-  const { phone } = await assertSellerCapability(form);
+async function sellerUnpublish(
+  form: FormData,
+  clientIp: string,
+  request: Request,
+): Promise<Response> {
+  assertAllowedFields(form, new Set(["action", "phone", "listingId"]));
+  const { phone } = await assertSellerSession(form, request);
+  const relaxed = usesRelaxedSyntheticLimits(request);
+  enforceRateLimit("seller-unpublish-phone", phone, 40, 15 * 60 * 1000, relaxed);
+  enforceRateLimit("seller-unpublish-ip", clientIp, 120, 15 * 60 * 1000, relaxed);
   const config = readBackendConfig();
   const listingId = requiredUuid(form);
   const listing = await requireOwnedListing(config, listingId, phone);
@@ -1330,10 +1344,16 @@ async function sellerUnpublish(form: FormData, clientIp: string): Promise<Respon
   });
 }
 
-async function sellerMarkSold(form: FormData, clientIp: string): Promise<Response> {
-  assertAllowedFields(form, new Set(["action", "phone", "capability", "listingId"]));
-  enforceRateLimit(`seller-sold:${clientIp}`, 20, 15 * 60 * 1000);
-  const { phone } = await assertSellerCapability(form);
+async function sellerMarkSold(
+  form: FormData,
+  clientIp: string,
+  request: Request,
+): Promise<Response> {
+  assertAllowedFields(form, new Set(["action", "phone", "listingId"]));
+  const { phone } = await assertSellerSession(form, request);
+  const relaxed = usesRelaxedSyntheticLimits(request);
+  enforceRateLimit("seller-sold-phone", phone, 40, 15 * 60 * 1000, relaxed);
+  enforceRateLimit("seller-sold-ip", clientIp, 120, 15 * 60 * 1000, relaxed);
   const config = readBackendConfig();
   const listingId = requiredUuid(form);
   const listing = await requireOwnedListing(config, listingId, phone);
@@ -1363,10 +1383,16 @@ async function sellerMarkSold(form: FormData, clientIp: string): Promise<Respons
   });
 }
 
-async function sellerDelete(form: FormData, clientIp: string): Promise<Response> {
-  assertAllowedFields(form, new Set(["action", "phone", "capability", "listingId"]));
-  enforceRateLimit(`seller-delete:${clientIp}`, 10, 15 * 60 * 1000);
-  const { phone } = await assertSellerCapability(form);
+async function sellerDelete(
+  form: FormData,
+  clientIp: string,
+  request: Request,
+): Promise<Response> {
+  assertAllowedFields(form, new Set(["action", "phone", "listingId"]));
+  const { phone } = await assertSellerSession(form, request);
+  const relaxed = usesRelaxedSyntheticLimits(request);
+  enforceRateLimit("seller-delete-phone", phone, 20, 15 * 60 * 1000, relaxed);
+  enforceRateLimit("seller-delete-ip", clientIp, 60, 15 * 60 * 1000, relaxed);
   const config = readBackendConfig();
   const listingId = requiredUuid(form);
   const listing = await requireOwnedListing(config, listingId, phone);
@@ -1422,16 +1448,22 @@ export async function handleStage1SelfServiceRequest(request: Request): Promise<
     const form = await request.formData();
     const action = form.get("action");
     if (action === "start_verification") return await startVerification(form, clientIp, request);
-    if (action === "verify_phone") return await verifyPhone(form, clientIp);
-    if (action === "submit_listing") return await submitListing(form, clientIp);
-    if (action === "seller_list") return await sellerList(form, clientIp);
-    if (action === "seller_update") return await sellerUpdate(form, clientIp);
-    if (action === "seller_unpublish") return await sellerUnpublish(form, clientIp);
-    if (action === "seller_sold") return await sellerMarkSold(form, clientIp);
-    if (action === "seller_delete") return await sellerDelete(form, clientIp);
+    if (action === "verify_phone") return await verifyPhone(form, clientIp, request);
+    if (action === "submit_listing") return await submitListing(form, clientIp, request);
+    if (action === "seller_list") return await sellerList(form, clientIp, request);
+    if (action === "seller_update") return await sellerUpdate(form, clientIp, request);
+    if (action === "seller_unpublish") return await sellerUnpublish(form, clientIp, request);
+    if (action === "seller_sold") return await sellerMarkSold(form, clientIp, request);
+    if (action === "seller_delete") return await sellerDelete(form, clientIp, request);
     throw new Stage1SubmissionError("INVALID_REQUEST", "Bilinmeyen ilan işlemi.");
   } catch (error) {
     if (error instanceof Stage1SubmissionError) {
+      if (error.code === "RATE_LIMITED" && error.limiterClass) {
+        console.warn("Stage-1 rate limit", {
+          limiterClass: error.limiterClass,
+          retryAfterSeconds: error.retryAfterSeconds,
+        });
+      }
       return jsonResponse(
         {
           ok: false,
