@@ -40,9 +40,7 @@ describe("public seller contact contract", () => {
   });
 
   test("keeps the primary legacy helper deterministic without treating channel as preference", () => {
-    expect(buildPublicSellerContactHref(syntheticLegacyWhatsAppContact)).toBe(
-      "tel:+12025550123",
-    );
+    expect(buildPublicSellerContactHref(syntheticLegacyWhatsAppContact)).toBe("tel:+12025550123");
     expect(getPublicSellerContactLabel(syntheticLegacyWhatsAppContact)).toBe("Ara");
   });
 
