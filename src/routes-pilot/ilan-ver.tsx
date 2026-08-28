@@ -283,8 +283,8 @@ function Stage1ListingWizard() {
             </div>
             <h1 className="mt-5 text-2xl font-extrabold tracking-tight">İlanın yayınlandı</h1>
             <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-              İlanın artık yayında. İstersen hemen görüntüleyebilir veya telefonunu doğrulayarak
-              İlanlarım'dan yönetebilirsin.
+              İlanın artık yayında. İstersen hemen görüntüleyebilir veya İlanlarım'dan
+              yönetebilirsin.
             </p>
             <div className="mt-6 grid gap-2 sm:grid-cols-2">
               <a
@@ -463,7 +463,7 @@ function Stage1ListingWizard() {
             </label>
             <div className="block">
               <label htmlFor="stage1-condition" className="text-sm font-medium">
-                Durum
+                Durum <span className="font-normal text-muted-foreground">(isteğe bağlı)</span>
               </label>
               <div className="relative mt-1">
                 <select
@@ -472,7 +472,7 @@ function Stage1ListingWizard() {
                   onChange={(event) => setCondition(event.target.value as Stage1Condition)}
                   className={selectClass}
                 >
-                  <option value="">Durum seçin</option>
+                  <option value="">Durum belirtme</option>
                   {STAGE1_CONDITIONS.map((value) => (
                     <option key={value} value={value}>
                       {STAGE1_CONDITION_LABELS[value]}
@@ -532,15 +532,16 @@ function Stage1ListingWizard() {
             <div>
               <h2 className="text-lg font-bold">Detaylar ve konum</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Ürünün durumu ve önemli ayrıntıları yazın. Açık adres istemiyoruz.
+                İstersen kısa bir açıklama ekle. Açık adres istemiyoruz.
               </p>
             </div>
             <label className="block">
-              <span className="text-sm font-medium">Açıklama</span>
+              <span className="text-sm font-medium">
+                Açıklama <span className="font-normal text-muted-foreground">(isteğe bağlı)</span>
+              </span>
               <textarea
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
-                minLength={10}
                 maxLength={5000}
                 rows={6}
                 placeholder="Ürünün durumu, ölçüsü, varsa kusurları..."
@@ -596,20 +597,26 @@ function Stage1ListingWizard() {
             <div>
               <h2 className="text-lg font-bold">Satıcı ve iletişim</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                İlanı yayınlamadan önce telefonunu doğrulayacağız. Sonrasında alıcılar seçtiğin
-                yöntemle sana doğrudan ulaşabilir.
+                İlanı yayınlamadan önce telefonunu doğrulayacağız. Doğrulama bir süre hatırlanır;
+                her ilanda yeniden kod istemeyiz.
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-accent/35 p-3 text-sm leading-relaxed text-muted-foreground">
-              İlan oluşturmak için verdiğiniz bilgiler ilanı yayınlamak ve kötüye kullanımı önlemek
-              amacıyla işlenir. Telefonunuz yalnız seçtiğiniz iletişim yöntemlerinde görünür.{" "}
-              <Link
-                to="/gizlilik"
-                className="font-semibold text-primary underline underline-offset-4"
-              >
-                Gizlilik ve Aydınlatma
-              </Link>
+
+            <div className="rounded-2xl border border-border bg-accent/35 p-4 text-sm leading-relaxed">
+              <p className="font-semibold text-foreground">
+                Telefon numaran ilanda herkese açık görünür.
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                Alıcılar aynı numarayla seni arayabilir veya WhatsApp üzerinden yazabilir.{" "}
+                <Link
+                  to="/gizlilik"
+                  className="font-semibold text-primary underline underline-offset-4"
+                >
+                  Gizlilik ve Aydınlatma
+                </Link>
+              </p>
             </div>
+
             <label className="block">
               <span className="text-sm font-medium">İlanda görünecek ad</span>
               <input
@@ -622,6 +629,7 @@ function Stage1ListingWizard() {
                 className={`mt-1 ${fieldClass}`}
               />
             </label>
+
             <label className="block">
               <span className="text-sm font-medium">Telefon</span>
               <input
@@ -637,74 +645,32 @@ function Stage1ListingWizard() {
                 className={`mt-1 ${fieldClass}`}
               />
               <span className="mt-1 block text-xs text-muted-foreground">
-                Tek kullanımlık kodla doğrulayacağız; hesap açman gerekmez.
+                Kod yalnız gerektiğinde istenir; hesap veya şifre gerekmez.
               </span>
             </label>
-            <fieldset>
-              <legend className="text-sm font-medium">İletişim tercihi</legend>
-              <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                {STAGE1_CONTACT_PREFERENCES.map((value) => (
-                  <label
-                    key={value}
-                    className={`flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold ${
-                      contactPreference === value
-                        ? "border-primary bg-primary/5"
-                        : "border-border bg-card"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="contact-preference"
-                      value={value}
-                      checked={contactPreference === value}
-                      onChange={() => setContactPreference(value)}
-                    />
-                    {STAGE1_CONTACT_LABELS[value]}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-            <div className="space-y-3 rounded-2xl border border-border bg-card p-4 text-sm">
-              <div>
-                <p className="font-semibold text-foreground">Yayınlamadan önce kısa onaylar</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  İlanın doğru kişiden geldiğini ve paylaşım hakkını doğrulamak için.
-                </p>
-              </div>
-              <label className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={privateSellerConfirmed}
-                  onChange={(event) => setPrivateSellerConfirmed(event.target.checked)}
-                  className="mt-1"
-                />
-                <span>Özel kişi olarak ara sıra ilan veriyorum; bu ilan kendi eşyam için.</span>
-              </label>
-              <label className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={contentRightsConfirmed}
-                  onChange={(event) => setContentRightsConfirmed(event.target.checked)}
-                  className="mt-1"
-                />
-                <span>
-                  Fotoğraf ve metni paylaşmaya yetkim var; gereksiz üçüncü kişi veya hassas bilgi
-                  eklemedim.
-                </span>
-              </label>
-              <label className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={publicationConfirmed}
-                  onChange={(event) => setPublicationConfirmed(event.target.checked)}
-                  className="mt-1"
-                />
-                <span>
-                  Bu telefon bana ait; ilan yayınlandığında seçtiğim iletişim yöntemleri için kamuya
-                  açık gösterilmesini istiyorum.
-                </span>
-              </label>
+
+            <div className="rounded-2xl border border-border bg-card p-4 text-sm leading-relaxed">
+              <p className="text-foreground">
+                İlanı yayınlayarak{" "}
+                <Link
+                  to="/ilan-kurallari"
+                  className="font-semibold text-primary underline underline-offset-4"
+                >
+                  İlan Kuralları
+                </Link>
+                'nı kabul etmiş olursun.
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                Telefon numaran ilanda herkese açık görünür.{" "}
+                <Link
+                  to="/gizlilik"
+                  className="font-semibold text-primary underline underline-offset-4"
+                >
+                  Gizlilik ve Aydınlatma
+                </Link>
+              </p>
             </div>
+
             <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
               <div className="flex gap-3 p-3">
                 {photos[0] ? (
@@ -730,11 +696,12 @@ function Stage1ListingWizard() {
                     {province || "İl"} / {district || "İlçe"}
                   </p>
                   <p className="mt-1 text-xs font-medium text-foreground">
-                    {STAGE1_CONTACT_LABELS[contactPreference]}
+                    Ara + WhatsApp
                   </p>
                 </div>
               </div>
             </div>
+
             {verificationChallengeId && (
               <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
                 <p className="mb-3 text-sm font-semibold text-foreground">
@@ -763,15 +730,6 @@ function Stage1ListingWizard() {
                 </button>
               </div>
             )}
-            <p className="text-xs text-muted-foreground">
-              İlan Kuralları'nı okuyabilirsiniz:{" "}
-              <Link
-                to="/ilan-kurallari"
-                className="font-semibold text-primary underline underline-offset-4"
-              >
-                İlan Kuralları
-              </Link>
-            </p>
           </section>
         )}
 
