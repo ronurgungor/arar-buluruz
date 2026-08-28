@@ -13,7 +13,7 @@ export type ListingView = {
   price: number;
   isFree?: boolean;
   category?: Stage1Category;
-  condition?: Stage1Condition;
+  condition?: Stage1Condition | null;
   city: string;
   district: string;
   seller: string;
@@ -57,7 +57,7 @@ const LISTING_PHOTO_MAX_BYTES = 8 * 1024 * 1024;
 const publicListingRowSchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(3).max(120),
-  description: z.string().min(10).max(5000),
+  description: z.string().max(5000),
   price_amount: z.union([z.number(), z.string()]).transform((value, context) => {
     const price = typeof value === "number" ? value : Number(value);
     if (!Number.isFinite(price) || price < 0) {
@@ -68,7 +68,7 @@ const publicListingRowSchema = z.object({
   }),
   price_is_free: z.boolean(),
   category: stage1CategorySchema,
-  item_condition: stage1ConditionSchema,
+  item_condition: stage1ConditionSchema.nullable(),
   province: z.string().min(2).max(64),
   district: z.string().min(2).max(64),
   seller_display_name: z.string().min(2).max(80),
