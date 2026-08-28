@@ -718,9 +718,7 @@ try {
   assert(
     expectedUnauthorizedResponses.length === 0,
     `Expected session-required 401 responses did not occur: ${expectedUnauthorizedResponses
-      .map(
-        (expectation) => `${expectation.method} ${expectation.pathname} (${expectation.label})`,
-      )
+      .map((expectation) => `${expectation.method} ${expectation.pathname} (${expectation.label})`)
       .join(" | ")}`,
   );
   assert(assetFailures.length === 0, `CSS/JS asset failures: ${assetFailures.join(" | ")}`);
