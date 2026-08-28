@@ -1,36 +1,41 @@
 # Arar Buluruz — Backlog
 
-_Last updated: 2026-08-27, Europe/Istanbul_
+_Last updated: 2026-08-28, Europe/Istanbul_
 
 Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 
 
-## Current product/frontend checkpoint — 2026-08-27
+## Current PR #78 closure checkpoint — 2026-08-28
 
 Current product authority: `docs/PRODUCT_CONTRACT_V2.md`.
 
-- [x] Supersede Çorlu-only/founder-entry/pre-approval/no-self-service assumptions as current product truth.
-- [x] Implement Türkiye-wide İl / İlçe seller self-service.
-- [x] Preserve 1–8 trusted photo flow, private Storage and signed-photo lifecycle.
-- [x] Support broad categories and explicit condition selection.
-- [x] Implement priced / Ücretsiz behavior without public `₺0` rendering.
-- [x] Support Telefon / WhatsApp / Telefon + WhatsApp.
-- [x] Preserve verified-phone capability isolation and cross-phone denial.
-- [x] Implement atomic auto-publication after required evidence + trusted-photo readiness.
-- [x] Move founder role to post-moderation/takedown for the normal product path.
-- [x] Implement lightweight `/ilanlarim` seller ownership: view/edit/unpublish/sold/delete.
-- [x] Preserve search normalization including `b150` ↔ `b 150`.
-- [x] Complete near-final consumer UX pass on `/ilan-ver`, `/ara`, `/ilan/$id`, `/ilanlarim` and shared navigation.
-- [x] Add responsive no-overflow browser smoke at approximately 360 / 390 / 768 / 1280 px.
-- [x] Close frontend exact-head checkpoint at `41691652070cbc117a943578a49056d49d51e6f0` with all seven canonical workflows GREEN.
-- [x] Resolve Stage 1 acceptance runner collision by same-SHA rerun; no application-code change required.
-- [x] Synchronize canonical docs / Issue #75 / founder machine profile to Product Contract V2.
-- [x] Run narrow security REDTEAM against atomic publication, verified-phone ownership, lifecycle authorization, private photo/storage and service-role boundaries. Dedicated Codex invocation was unavailable in this session; Main Execution completed the narrow repository review and recorded that limitation transparently.
-- [x] Fix the one MATERIAL repository-controlled REDTEAM finding: retry the exact known orphan photo path during whole-submission compensation.
-- [ ] If material code changes occur, rerun all seven canonical workflows on one exact final SHA.
-- [ ] Keep PR #78 DRAFT / UNMERGED and stop for founder/advisor hands-on product review.
+Completed in the current simplification batch:
 
-Production, real data, AWS, paid services, Ads/monetization, payments/orders/reservations/commission, in-app chat, classic Auth/password, native app/Play Store and Tarladan changes remain outside this batch.
+- [x] Keep Türkiye-wide seller self-service and founder post-moderation.
+- [x] Remove seller contact preference from the consumer flow.
+- [x] Derive **Ara + WhatsApp** from one verified public phone.
+- [x] Remove the three consumer declaration checkboxes.
+- [x] Add versioned listing-rules evidence without fabricating legacy declaration timestamps.
+- [x] Make condition optional with no silent default.
+- [x] Make description optional without filler text.
+- [x] Replace JavaScript-readable short capability storage with a bounded 7-day signed HttpOnly seller session.
+- [x] Redesign rate limiting around phone/challenge/seller classes plus coarse trusted-IP protection.
+- [x] Preserve atomic publication, idempotency, compensation, private Storage and signed-photo fail-closed boundaries.
+- [x] Keep Vasıta in the product/synthetic path.
+- [x] Fail closed for real non-loopback vehicle publication until EİDS is enabled.
+- [x] Preserve search normalization including `b150` ↔ `b 150`.
+- [x] Keep PR #78 OPEN / DRAFT / UNMERGED.
+- [x] Synchronize Product Contract V2, active handoff, current state and decision log to the 2026-08-28 founder decisions.
+- [-] Close the three bounded acceptance regressions: V0 BFCache zero-data reset, Stage 1 exact expected-401 evidence, Gate 1 dual-contact rendering/assertions.
+- [-] Synchronize this backlog, README and Issue #75.
+- [ ] Require all seven canonical workflows SUCCESS on one exact SHA.
+- [ ] Stop for independent Advisor/founder hands-on review after exact-head GREEN.
+
+Settled business sequence:
+
+**APPLICATION COMPLETION → ŞAHIS ŞİRKETİ → KOSGEB → SUPPORT / INVESTMENT → FUNDED PRODUCTION / LEGAL / EİDS / INFRASTRUCTURE**
+
+Production, real data, AWS, paid services, real SMS, production EİDS, Ads/monetization, payments/orders/reservations/commission, in-app chat, classic Auth/password, native app/Play Store and Tarladan changes remain outside this batch.
 
 ## Completed foundations
 
