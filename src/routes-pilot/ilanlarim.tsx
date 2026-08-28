@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, ChevronDown, Eye, Trash2 } from "lucide-react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
 import { getDistrictsForCity, locationCities } from "@/data/turkiye-locations";
@@ -8,11 +8,8 @@ import {
   STAGE1_CATEGORY_LABELS,
   STAGE1_CONDITIONS,
   STAGE1_CONDITION_LABELS,
-  STAGE1_CONTACT_LABELS,
-  STAGE1_CONTACT_PREFERENCES,
   type Stage1Category,
   type Stage1Condition,
-  type Stage1ContactPreference,
   type Stage1SubmissionResponse,
 } from "@/lib/stage1-self-service-contract";
 import type {
@@ -44,10 +41,9 @@ export const Route = createFileRoute("/ilanlarim")({
 });
 
 type SellerApiResponse = Stage1SubmissionResponse | Stage1SellerManagementResponse;
-type CachedCapability = { phone: string; token: string; expiresAt: string };
 type EditingListing = Stage1SellerListing & { priceText: string };
 
-const CAPABILITY_STORAGE_KEY = "arar-buluruz:stage1-phone-capability";
+const SELLER_PHONE_STORAGE_KEY = "arar-buluruz:last-seller-phone";
 const E164_PATTERN = /^\+[1-9][0-9]{7,14}$/;
 const fieldClass =
   "h-12 w-full rounded-xl border border-border bg-card px-4 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10";
@@ -71,29 +67,6 @@ async function postSeller(form: FormData): Promise<SellerApiResponse> {
   }
 }
 
-function readCapability(phone: string): string | null {
-  try {
-    const raw = window.sessionStorage.getItem(CAPABILITY_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as CachedCapability;
-    if (parsed.phone !== phone || Date.parse(parsed.expiresAt) <= Date.now()) return null;
-    return parsed.token;
-  } catch {
-    return null;
-  }
-}
-
-function storeCapability(phone: string, token: string, expiresAt: string): void {
-  try {
-    window.sessionStorage.setItem(
-      CAPABILITY_STORAGE_KEY,
-      JSON.stringify({ phone, token, expiresAt } satisfies CachedCapability),
-    );
-  } catch {
-    // Capability persistence is only a convenience; the verified in-memory value still works.
-  }
-}
-
 function formatPrice(listing: Stage1SellerListing): string {
   if (listing.isFree) return "Ücretsiz";
   return new Intl.NumberFormat("tr-TR", {
@@ -113,7 +86,7 @@ const statusLabels: Record<Stage1SellerListing["status"], string> = {
 
 function SellerListings() {
   const [phone, setPhone] = useState("+90");
-  const [capability, setCapability] = useState("");
+  const [hasAccess, setHasAccess] = useState(false);
   const [challengeId, setChallengeId] = useState("");
   const [code, setCode] = useState("");
   const [listings, setListings] = useState<Stage1SellerListing[]>([]);
@@ -128,19 +101,37 @@ function SellerListings() {
     [editing],
   );
 
-  const loadListings = async (activeCapability: string) => {
+  useEffect(() => {
+    try {
+      const remembered = window.localStorage.getItem(SELLER_PHONE_STORAGE_KEY);
+      if (remembered && E164_PATTERN.test(remembered)) setPhone(remembered);
+    } catch {
+      // Remembering the non-secret phone value is optional.
+    }
+  }, []);
+
+  const rememberPhone = () => {
+    try {
+      window.localStorage.setItem(SELLER_PHONE_STORAGE_KEY, phone.trim());
+    } catch {
+      // The HttpOnly seller session remains authoritative even without this convenience value.
+    }
+  };
+
+  const loadListings = async (): Promise<"loaded" | "verification_required" | "failed"> => {
     const form = new FormData();
     form.set("action", "seller_list");
     form.set("phone", phone.trim());
-    form.set("capability", activeCapability);
     const result = await postSeller(form);
     if (result.ok && result.action === "seller_list") {
       setListings(result.listings);
-      setCapability(activeCapability);
-      return true;
+      setHasAccess(true);
+      rememberPhone();
+      return "loaded";
     }
+    if (!result.ok && result.code === "VERIFICATION_REQUIRED") return "verification_required";
     if (!result.ok) setError(result.message);
-    return false;
+    return "failed";
   };
 
   const begin = async () => {
@@ -150,15 +141,14 @@ function SellerListings() {
       setError("Telefon numarasını +90 ile başlayan uluslararası biçimde girin.");
       return;
     }
-    const cached = readCapability(phone.trim());
-    if (cached) {
-      setBusy(true);
-      const loaded = await loadListings(cached);
-      setBusy(false);
-      if (loaded) return;
-    }
 
     setBusy(true);
+    const existing = await loadListings();
+    if (existing === "loaded" || existing === "failed") {
+      setBusy(false);
+      return;
+    }
+
     const form = new FormData();
     form.set("action", "start_verification");
     form.set("phone", phone.trim());
@@ -166,6 +156,7 @@ function SellerListings() {
     if (result.ok && result.action === "verification_started") {
       setChallengeId(result.challengeId);
       setCode("");
+      setError("");
     } else if (!result.ok) {
       setError(result.message);
     }
@@ -186,9 +177,8 @@ function SellerListings() {
     form.set("code", code);
     const result = await postSeller(form);
     if (result.ok && result.action === "phone_verified") {
-      storeCapability(phone.trim(), result.capability, result.capabilityExpiresAt);
       setChallengeId("");
-      await loadListings(result.capability);
+      await loadListings();
     } else if (!result.ok) {
       setError(result.message);
     }
@@ -205,7 +195,6 @@ function SellerListings() {
     const form = new FormData();
     form.set("action", action);
     form.set("phone", phone.trim());
-    form.set("capability", capability);
     form.set("listingId", listingId);
     const result = await postSeller(form);
     if (!result.ok) {
@@ -214,7 +203,7 @@ function SellerListings() {
       return;
     }
     setDeleteConfirmId("");
-    await loadListings(capability);
+    await loadListings();
     setNotice(result.message);
     setBusy(false);
   };
@@ -234,17 +223,15 @@ function SellerListings() {
     const form = new FormData();
     form.set("action", "seller_update");
     form.set("phone", phone.trim());
-    form.set("capability", capability);
     form.set("listingId", editing.id);
     form.set("category", editing.category);
-    form.set("condition", editing.condition);
+    if (editing.condition) form.set("condition", editing.condition);
     form.set("priceMode", editing.isFree ? "free" : "priced");
     form.set("price", editing.isFree ? "0" : editing.priceText.trim());
     form.set("title", editing.title);
     form.set("description", editing.description);
     form.set("province", editing.province);
     form.set("district", editing.district);
-    form.set("contactPreference", editing.contactPreference);
     const result = await postSeller(form);
     if (!result.ok) {
       setError(result.message);
@@ -252,7 +239,7 @@ function SellerListings() {
       return;
     }
     setEditing(null);
-    await loadListings(capability);
+    await loadListings();
     setNotice(result.message);
     setBusy(false);
   };
@@ -268,7 +255,7 @@ function SellerListings() {
           </p>
         </div>
 
-        {!capability && (
+        {!hasAccess && (
           <section className="mt-6 rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
             <div className="mb-4">
               <h2 className="font-bold text-foreground">Telefonunu doğrula</h2>
@@ -284,6 +271,7 @@ function SellerListings() {
                 value={phone}
                 onChange={(event) => {
                   setPhone(event.target.value);
+                  setHasAccess(false);
                   setChallengeId("");
                   setError("");
                 }}
@@ -344,7 +332,7 @@ function SellerListings() {
           </p>
         )}
 
-        {capability && !editing && (
+        {hasAccess && !editing && (
           <section className="mt-6">
             {listings.length === 0 ? (
               <div className="rounded-3xl border border-border bg-card p-7 text-center shadow-sm">
