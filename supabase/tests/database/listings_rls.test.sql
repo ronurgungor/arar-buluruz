@@ -39,9 +39,11 @@ select columns_are(
     'price_is_free',
     'private_seller_declaration_at',
     'content_rights_declaration_at',
-    'sold_at'
+    'sold_at',
+    'listing_rules_version',
+    'listing_rules_accepted_at'
   ],
-  'listings has the approved pilot and seller-contact columns'
+  'listings has the approved classifieds, seller-contact and rules-evidence columns'
 );
 
 select ok(
