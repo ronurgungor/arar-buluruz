@@ -72,7 +72,7 @@ jobs:
 
           grep -F 'Birkaç dakikada yayına hazırla' src/routes-pilot/ilan-ver.tsx
           grep -F 'data-testid="stage1-photo-input"' src/routes-pilot/ilan-ver.tsx
-          grep -F 'phone_whatsapp' src/lib/stage1-self-service-contract.ts
+          grep -F 'contact_channel: "phone_whatsapp"' src/lib/stage1-self-service-server.ts
           grep -F 'PILOT_SELF_SERVICE_ENABLED' src/lib/stage1-self-service-server.ts
           grep -F 'status: "pending"' src/lib/stage1-self-service-server.ts
           grep -F 'claim_listing_submission_key' src/lib/stage1-self-service-server.ts
@@ -85,6 +85,11 @@ jobs:
 
           if git grep -nE 'Kurucuyu ara|Telefonla başvur|seller calls founder|Hedefimiz: ilan vermek her zaman ücretsiz' -- src/routes-pilot src/build-profiles/pilot; then
             echo "Superseded founder-intake/always-free copy remains in the Stage-1 pilot UI."
+            exit 1
+          fi
+
+          if git grep -nE 'İletişim tercihi|privateSellerConfirmed|contentRightsConfirmed|publicationConfirmed' -- src/routes-pilot/ilan-ver.tsx src/routes-pilot/ilanlarim.tsx; then
+            echo "Superseded contact-preference or declaration-checkbox UX remains in consumer source."
             exit 1
           fi
 
