@@ -697,9 +697,7 @@ function Stage1ListingWizard() {
                   <p className="mt-1 truncate text-xs text-muted-foreground">
                     {province || "İl"} / {district || "İlçe"}
                   </p>
-                  <p className="mt-1 text-xs font-medium text-foreground">
-                    Ara + WhatsApp
-                  </p>
+                  <p className="mt-1 text-xs font-medium text-foreground">Ara + WhatsApp</p>
                 </div>
               </div>
             </div>
