@@ -9,13 +9,10 @@ import {
   STAGE1_CATEGORY_LABELS,
   STAGE1_CONDITIONS,
   STAGE1_CONDITION_LABELS,
-  STAGE1_CONTACT_LABELS,
-  STAGE1_CONTACT_PREFERENCES,
   STAGE1_MAX_PHOTOS,
   STAGE1_MAX_TOTAL_UPLOAD_BYTES,
   type Stage1Category,
   type Stage1Condition,
-  type Stage1ContactPreference,
   type Stage1SubmissionResponse,
 } from "@/lib/stage1-self-service-contract";
 
@@ -44,10 +41,7 @@ export const Route = createFileRoute("/ilan-ver")({
 });
 
 type PhotoDraft = { id: string; file: File; previewUrl: string };
-type CachedCapability = { phone: string; token: string; expiresAt: string };
-type CapabilitySubmitResult = "submitted" | "verification_required" | "failed";
-
-const CAPABILITY_STORAGE_KEY = "arar-buluruz:stage1-phone-capability";
+type SessionSubmitResult = "submitted" | "verification_required" | "failed";
 const E164_PATTERN = /^\+[1-9][0-9]{7,14}$/;
 const PRICE_PATTERN = /^\d{1,10}(?:[.,]\d{1,2})?$/;
 const fieldClass =
@@ -69,40 +63,6 @@ async function postSelfService(form: FormData): Promise<Stage1SubmissionResponse
       code: "BACKEND_UNAVAILABLE",
       message: "İlan gönderim servisine ulaşılamadı. Lütfen tekrar deneyin.",
     };
-  }
-}
-
-function readCachedCapability(phone: string): string | null {
-  try {
-    const raw = window.sessionStorage.getItem(CAPABILITY_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as CachedCapability;
-    if (parsed.phone !== phone || Date.parse(parsed.expiresAt) <= Date.now()) {
-      window.sessionStorage.removeItem(CAPABILITY_STORAGE_KEY);
-      return null;
-    }
-    return parsed.token;
-  } catch {
-    return null;
-  }
-}
-
-function storeCapability(phone: string, token: string, expiresAt: string) {
-  try {
-    window.sessionStorage.setItem(
-      CAPABILITY_STORAGE_KEY,
-      JSON.stringify({ phone, token, expiresAt } satisfies CachedCapability),
-    );
-  } catch {
-    // Verification reuse is an optimization only; submission still works without storage.
-  }
-}
-
-function clearStoredCapability() {
-  try {
-    window.sessionStorage.removeItem(CAPABILITY_STORAGE_KEY);
-  } catch {
-    // A new verification can still continue when storage is unavailable.
   }
 }
 
@@ -130,10 +90,6 @@ function Stage1ListingWizard() {
   const [district, setDistrict] = useState("");
   const [sellerDisplayName, setSellerDisplayName] = useState("");
   const [phone, setPhone] = useState("+90");
-  const [contactPreference, setContactPreference] = useState<Stage1ContactPreference>("phone");
-  const [privateSellerConfirmed, setPrivateSellerConfirmed] = useState(false);
-  const [contentRightsConfirmed, setContentRightsConfirmed] = useState(false);
-  const [publicationConfirmed, setPublicationConfirmed] = useState(false);
   const [verificationChallengeId, setVerificationChallengeId] = useState<string | null>(null);
   const [verificationCode, setVerificationCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -210,8 +166,8 @@ function Stage1ListingWizard() {
       return false;
     }
     if (step === 2) {
-      if (!category || !condition) {
-        setError("Kategori ve durum seçin.");
+      if (!category) {
+        setError("Kategori seçin.");
         return false;
       }
       if (title.trim().length < 3) {
@@ -223,25 +179,19 @@ function Stage1ListingWizard() {
         return false;
       }
     }
-    if (step === 3) {
-      if (description.trim().length < 10) {
-        setError("Açıklama en az 10 karakter olmalıdır.");
-        return false;
-      }
-      if (!province || !district) {
-        setError("İl ve ilçe seçin.");
-        return false;
-      }
+    if (step === 3 && (!province || !district)) {
+      setError("İl ve ilçe seçin.");
+      return false;
     }
     return true;
   };
 
-  const buildSubmissionForm = (capability: string) => {
+  const buildSubmissionForm = () => {
     const form = new FormData();
     form.set("action", "submit_listing");
     form.set("category", category);
     form.set("title", title.trim());
-    form.set("condition", condition);
+    if (condition) form.set("condition", condition);
     form.set("priceMode", isFree ? "free" : "priced");
     form.set("price", isFree ? "0" : price.trim());
     form.set("description", description.trim());
@@ -249,28 +199,20 @@ function Stage1ListingWizard() {
     form.set("district", district);
     form.set("sellerDisplayName", sellerDisplayName.trim());
     form.set("phone", phone.trim());
-    form.set("contactPreference", contactPreference);
-    form.set("privateSellerDeclaration", "confirmed");
-    form.set("contentRightsDeclaration", "confirmed");
-    form.set("publicationInstructionConfirmed", "confirmed");
-    form.set("capability", capability);
     form.set("idempotencyKey", idempotencyKeyRef.current);
     for (const photo of photos) form.append("photo", photo.file, photo.file.name);
     return form;
   };
 
-  const submitWithCapability = async (capability: string): Promise<CapabilitySubmitResult> => {
-    const result = await postSelfService(buildSubmissionForm(capability));
+  const submitWithSession = async (): Promise<SessionSubmitResult> => {
+    const result = await postSelfService(buildSubmissionForm());
     if (result.ok && result.action === "submitted") {
       setSuccessId(result.listingId);
       setVerificationChallengeId(null);
       return "submitted";
     }
     if (!result.ok) {
-      if (result.code === "VERIFICATION_REQUIRED") {
-        clearStoredCapability();
-        return "verification_required";
-      }
+      if (result.code === "VERIFICATION_REQUIRED") return "verification_required";
       setError(result.message);
     }
     return "failed";
@@ -295,22 +237,13 @@ function Stage1ListingWizard() {
       setError("Satıcı adı ve telefon numarasını kontrol edin.");
       return;
     }
-    if (!privateSellerConfirmed || !contentRightsConfirmed || !publicationConfirmed) {
-      setError("İlanı göndermek için üç kısa beyanı tamamlayın.");
-      return;
-    }
 
     setBusy(true);
-    const cachedCapability = readCachedCapability(phone.trim());
-    if (cachedCapability) {
-      const result = await submitWithCapability(cachedCapability);
-      if (result === "submitted" || result === "failed") {
-        setBusy(false);
-        return;
-      }
+    const result = await submitWithSession();
+    if (result === "verification_required") {
       clearError();
+      await startVerification();
     }
-    await startVerification();
     setBusy(false);
   };
 
@@ -328,8 +261,7 @@ function Stage1ListingWizard() {
     form.set("code", verificationCode);
     const result = await postSelfService(form);
     if (result.ok && result.action === "phone_verified") {
-      storeCapability(phone.trim(), result.capability, result.capabilityExpiresAt);
-      await submitWithCapability(result.capability);
+      await submitWithSession();
     } else if (!result.ok) {
       setError(result.message);
     }
