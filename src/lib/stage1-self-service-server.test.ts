@@ -471,6 +471,28 @@ describe("Stage 1 self-service server acceptance", () => {
     expect(await replay.json()).toMatchObject({ ok: true, action: "submitted" });
   });
 
+  test("real vehicle publication stays fail closed until EİDS integration is enabled", async () => {
+    const phone = "+12025550180";
+    const cookie = await syntheticSession(phone);
+    const backendBefore = backendCallCount;
+    const response = await handleStage1SelfServiceRequest(
+      requestFor(
+        submissionForm("97000000-0000-4000-8000-000000000080", {
+          phone,
+          category: "vehicle",
+        }),
+        {
+          origin: "https://classifieds.example.test",
+          trustedIp: "198.51.100.80",
+          cookie,
+        },
+      ),
+    );
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({ ok: false, code: "NOT_ENABLED" });
+    expect(backendCallCount).toBe(backendBefore);
+  });
+
   test("claim/photo failures compensate and unknown fields fail before privileged work", async () => {
     const phone = "+12025550184";
     const cookie = await syntheticSession(phone);
