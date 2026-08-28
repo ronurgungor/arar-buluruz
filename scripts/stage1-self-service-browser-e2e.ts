@@ -229,12 +229,13 @@ async function submitListing(
   input: {
     title: string;
     phone: string;
-    contact: "phone" | "whatsapp" | "phone_whatsapp";
     expectVerification: boolean;
     photoSeed: number;
     province: string;
     district: string;
     isFree: boolean;
+    withCondition?: boolean;
+    withDescription?: boolean;
   },
 ): Promise<string> {
   await page.goto(`${publicBaseUrl}/ilan-ver`, { waitUntil: "networkidle" });
@@ -251,7 +252,15 @@ async function submitListing(
 
   await page.getByLabel("Kategori", { exact: true }).selectOption("vehicle");
   await page.getByLabel("Başlık", { exact: true }).fill(input.title);
-  await page.getByLabel("Durum", { exact: true }).selectOption("good");
+  if (input.withCondition !== false) {
+    await page.getByLabel("Durum", { exact: true }).selectOption("good");
+  } else {
+    assert(
+      (await page.getByLabel("Durum", { exact: true }).inputValue()) === "",
+      "Optional condition unexpectedly started with a value.",
+    );
+  }
+
   if (input.isFree) {
     await page.getByLabel("Ücretsiz veriyorum", { exact: true }).check();
     assert(
@@ -263,40 +272,39 @@ async function submitListing(
   }
   await page.getByRole("button", { name: /Devam/ }).click();
 
-  await page
-    .getByLabel("Açıklama", { exact: true })
-    .fill("Sentetik near-final ilan; yalnız otomatik kabul testi verisi içerir.");
+  if (input.withDescription !== false) {
+    await page
+      .getByLabel("Açıklama", { exact: true })
+      .fill("Sentetik ürün kabul testi açıklaması.");
+  } else {
+    assert(
+      (await page.getByLabel("Açıklama", { exact: true }).inputValue()) === "",
+      "Optional description unexpectedly started with content.",
+    );
+  }
   await page.getByLabel("İl", { exact: true }).selectOption(input.province);
   await page.getByLabel("İlçe", { exact: true }).selectOption(input.district);
   await page.getByRole("button", { name: /Devam/ }).click();
 
   await page.getByLabel("İlanda görünecek ad", { exact: true }).fill("Sentetik Satıcı");
   await page.getByLabel("Telefon numarası", { exact: true }).fill(input.phone);
+
+  assert(
+    (await page.getByText("İletişim tercihi", { exact: true }).count()) === 0,
+    "Contact preference selector is still visible.",
+  );
+  assert(
+    (await page.locator('input[type="checkbox"]').count()) === 0,
+    "Obsolete declaration checkbox is still visible in publication step.",
+  );
   await page
-    .getByLabel(
-      input.contact === "phone_whatsapp"
-        ? "Telefon + WhatsApp"
-        : input.contact === "phone"
-          ? "Telefon"
-          : "WhatsApp",
-      { exact: true },
-    )
-    .check();
+    .getByText("Telefon numaran ilanda herkese açık görünür.", { exact: true })
+    .first()
+    .waitFor();
   await page
-    .getByText(/Özel kişi olarak ara sıra ilan veriyorum/)
-    .locator("..")
-    .getByRole("checkbox")
-    .check();
-  await page
-    .getByText(/Fotoğraf ve metni paylaşmaya yetkim var/)
-    .locator("..")
-    .getByRole("checkbox")
-    .check();
-  await page
-    .getByText(/Bu telefon bana ait/)
-    .locator("..")
-    .getByRole("checkbox")
-    .check();
+    .getByText(/İlanı yayınlayarak/)
+    .first()
+    .waitFor();
 
   await page.getByRole("button", { name: "İlanı yayınla" }).click();
   if (input.expectVerification) {
@@ -327,7 +335,7 @@ async function submitListing(
   } else {
     assert(
       (await page.getByLabel("6 haneli doğrulama kodu", { exact: true }).count()) === 0,
-      "Reusable capability unexpectedly requested another verification code.",
+      "Remembered seller session unexpectedly requested another verification code.",
     );
     await page.getByRole("heading", { level: 1, name: "İlanın yayınlandı" }).waitFor();
   }
@@ -343,7 +351,7 @@ async function submitListing(
 async function openOwnerListings(page: Page, phone: string): Promise<void> {
   await page.goto(`${publicBaseUrl}/ilanlarim`, { waitUntil: "networkidle" });
   await page.getByLabel("İlanlarım telefon numarası", { exact: true }).fill(phone);
-  await page.getByRole("button", { name: "Doğrulama kodu gönder" }).click();
+  await page.getByRole("button", { name: "İlanlarımı göster", exact: true }).click();
 }
 
 async function verifyFreshSellerManagement(page: Page, phone: string): Promise<void> {
@@ -420,12 +428,13 @@ try {
   const listingId = await submitListing(ownerPage, {
     title,
     phone: ownerPhone,
-    contact: "phone_whatsapp",
     expectVerification: true,
     photoSeed: 17,
     province: "Tekirdağ",
     district: "Çorlu",
     isFree: true,
+    withCondition: false,
+    withDescription: false,
   });
 
   const publicRows = await anonListingRows(listingId);
@@ -495,22 +504,20 @@ try {
     (await otherSellerPage.getByText(title, { exact: true }).count()) === 0,
     "Another verified phone inferred the owner's listing.",
   );
-  const otherCapability = await otherSellerPage.evaluate(() => {
-    const raw = sessionStorage.getItem("arar-buluruz:stage1-phone-capability");
-    return raw ? ((JSON.parse(raw) as { token?: string }).token ?? "") : "";
-  });
-  assert(otherCapability.length > 20, "Other seller verification capability was not stored.");
   const denied = await otherSellerPage.evaluate(
-    async ({ phone, capability, listingId }) => {
+    async ({ phone, listingId }) => {
       const form = new FormData();
       form.set("action", "seller_unpublish");
       form.set("phone", phone);
-      form.set("capability", capability);
       form.set("listingId", listingId);
-      const response = await fetch("/ilanlarim", { method: "POST", body: form });
+      const response = await fetch("/ilanlarim", {
+        method: "POST",
+        body: form,
+        credentials: "same-origin",
+      });
       return { status: response.status, body: await response.json() };
     },
-    { phone: otherPhone, capability: otherCapability, listingId },
+    { phone: otherPhone, listingId },
   );
   assert(
     denied.status === 403 &&
@@ -582,12 +589,13 @@ try {
   const founderListingId = await submitListing(ownerPage, {
     title: founderTitle,
     phone: ownerPhone,
-    contact: "phone",
     expectVerification: false,
     photoSeed: 29,
     province: "İstanbul",
     district: "Kadıköy",
     isFree: false,
+    withCondition: true,
+    withDescription: true,
   });
   const founderInventory = await privilegedPhotoInventory(founderListingId);
   assert(
