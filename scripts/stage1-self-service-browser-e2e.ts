@@ -30,12 +30,7 @@ type UnauthorizedExpectation = {
 const expectedUnauthorizedResponses: UnauthorizedExpectation[] = [];
 const expectedUnauthorizedConsoleErrors = new Map<Page, number>();
 
-function expectUnauthorizedOnce(
-  page: Page,
-  method: string,
-  pathname: string,
-  label: string,
-): void {
+function expectUnauthorizedOnce(page: Page, method: string, pathname: string, label: string): void {
   expectedUnauthorizedResponses.push({
     page,
     method: method.toUpperCase(),
@@ -44,10 +39,7 @@ function expectUnauthorizedOnce(
   });
 }
 
-function consumeExpectedUnauthorizedResponse(
-  page: Page,
-  response: PlaywrightResponse,
-): boolean {
+function consumeExpectedUnauthorizedResponse(page: Page, response: PlaywrightResponse): boolean {
   if (response.status() !== 401) return false;
 
   const method = response.request().method().toUpperCase();
@@ -727,8 +719,7 @@ try {
     expectedUnauthorizedResponses.length === 0,
     `Expected session-required 401 responses did not occur: ${expectedUnauthorizedResponses
       .map(
-        (expectation) =>
-          `${expectation.method} ${expectation.pathname} (${expectation.label})`,
+        (expectation) => `${expectation.method} ${expectation.pathname} (${expectation.label})`,
       )
       .join(" | ")}`,
   );
