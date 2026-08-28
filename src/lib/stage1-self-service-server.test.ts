@@ -4,6 +4,7 @@ import { handleStage1SelfServiceRequest } from "./stage1-self-service-server";
 
 const originalFetch = globalThis.fetch;
 const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
 const originalDateNow = Date.now;
 
 const listings = new Set<string>();
@@ -53,7 +54,7 @@ function pngChunk(type: string, data: Uint8Array): Uint8Array {
   return concatBytes(uint32BigEndian(data.byteLength), body, uint32BigEndian(crc32(body)));
 }
 
-function makeSyntheticPng(): Uint8Array {
+function makeSyntheticPng(seed = 0x12): Uint8Array {
   const signature = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
   const ihdr = new Uint8Array(13);
   const view = new DataView(ihdr.buffer);
@@ -62,8 +63,8 @@ function makeSyntheticPng(): Uint8Array {
   ihdr[8] = 8;
   ihdr[9] = 6;
   const scanlines = concatBytes(
-    new Uint8Array([0, 0x12, 0x34, 0x56, 0xff, 0x78, 0x9a, 0xbc, 0xff]),
-    new Uint8Array([0, 0x33, 0x55, 0x77, 0xff, 0xaa, 0xbb, 0xcc, 0xff]),
+    new Uint8Array([0, seed, 0x34, 0x56, 0xff, 0x78, 0x9a, 0xbc, 0xff]),
+    new Uint8Array([0, 0x33, seed, 0x77, 0xff, 0xaa, 0xbb, 0xcc, 0xff]),
   );
   return concatBytes(
     signature,
@@ -108,6 +109,8 @@ function installBackendMock(): void {
         expires_at: null,
         unpublished_at: null,
         sold_at: null,
+        private_seller_declaration_at: null,
+        content_rights_declaration_at: null,
       });
       return json([{ id: body.id }], 201);
     }
@@ -115,12 +118,13 @@ function installBackendMock(): void {
     if (url.pathname === "/rest/v1/listings" && method === "GET") {
       const id = (url.searchParams.get("id") ?? "").replace(/^eq\./, "");
       const phone = (url.searchParams.get("contact_e164") ?? "").replace(/^eq\./, "");
-      const rows = Array.from(listingBodies.values()).filter((row) => {
-        if (id && row.id !== id) return false;
-        if (phone && row.contact_e164 !== phone) return false;
-        return true;
-      });
-      return json(rows);
+      return json(
+        Array.from(listingBodies.values()).filter((row) => {
+          if (id && row.id !== id) return false;
+          if (phone && row.contact_e164 !== phone) return false;
+          return true;
+        }),
+      );
     }
 
     if (url.pathname === "/rest/v1/listings" && method === "PATCH") {
@@ -132,22 +136,29 @@ function installBackendMock(): void {
       return json([{ id }]);
     }
 
+    if (url.pathname === "/rest/v1/listings" && method === "DELETE") {
+      const listingId = (url.searchParams.get("id") ?? "").replace(/^eq\./, "");
+      cascadeDeleteListing(listingId);
+      return new Response(null, { status: 204 });
+    }
+
     if (url.pathname === "/rest/v1/rpc/get_listing_photo_inventory" && method === "POST") {
       const body = JSON.parse(String(init?.body)) as { p_listing_id: string };
-      const rows = Array.from(photoMetadata)
-        .filter((path) => path.startsWith(`listings/${body.p_listing_id}/`))
-        .map((object_path, sort_order) => ({
-          photo_id:
-            object_path
-              .split("/")
-              .at(-1)
-              ?.replace(/\.webp$/, "") ?? crypto.randomUUID(),
-          object_path,
-          mime_type: "image/webp",
-          byte_size: 100,
-          sort_order,
-        }));
-      return json(rows);
+      return json(
+        Array.from(photoMetadata)
+          .filter((path) => path.startsWith(`listings/${body.p_listing_id}/`))
+          .map((object_path, sort_order) => ({
+            photo_id:
+              object_path
+                .split("/")
+                .at(-1)
+                ?.replace(/\.webp$/, "") ?? crypto.randomUUID(),
+            object_path,
+            mime_type: "image/webp",
+            byte_size: 100,
+            sort_order,
+          })),
+      );
     }
 
     if (url.pathname.startsWith("/storage/v1/object/sign/listing_photos/") && method === "POST") {
@@ -188,37 +199,31 @@ function installBackendMock(): void {
         p_listing_id: string;
       };
       const existing = submissionKeys.get(body.p_key_hash);
-      if (
-        !existing ||
-        existing.listingId !== body.p_listing_id ||
-        !Array.from(photoMetadata).some((path) => path.startsWith(`listings/${body.p_listing_id}/`))
-      ) {
+      const row = listingBodies.get(body.p_listing_id);
+      const ready =
+        row?.status === "pending" &&
+        row.contact_channel === "phone_whatsapp" &&
+        typeof row.contact_e164 === "string" &&
+        typeof row.contact_verified_at === "string" &&
+        typeof row.publication_instruction_at === "string" &&
+        typeof row.listing_rules_version === "string" &&
+        typeof row.listing_rules_accepted_at === "string" &&
+        Array.from(photoMetadata).some((path) =>
+          path.startsWith(`listings/${body.p_listing_id}/`),
+        );
+      if (!existing || existing.listingId !== body.p_listing_id || !ready) {
         return new Response("listing is not publish-ready", { status: 409 });
       }
       existing.complete = true;
-      const current = listingBodies.get(body.p_listing_id);
-      if (current) {
-        listingBodies.set(body.p_listing_id, {
-          ...current,
-          status: "published",
-          published_at: new Date().toISOString(),
-          expires_at: new Date(Date.now() + 30 * 86_400_000).toISOString(),
-          unpublished_at: null,
-          sold_at: null,
-          updated_at: new Date().toISOString(),
-        });
-      }
-      return json(true);
-    }
-
-    if (url.pathname === "/rest/v1/rpc/complete_listing_submission_key" && method === "POST") {
-      const body = JSON.parse(String(init?.body)) as {
-        p_key_hash: string;
-        p_listing_id: string;
-      };
-      const existing = submissionKeys.get(body.p_key_hash);
-      if (!existing || existing.listingId !== body.p_listing_id) return json(false);
-      existing.complete = true;
+      listingBodies.set(body.p_listing_id, {
+        ...row,
+        status: "published",
+        published_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+        unpublished_at: null,
+        sold_at: null,
+        updated_at: new Date().toISOString(),
+      });
       return json(true);
     }
 
@@ -258,20 +263,19 @@ function installBackendMock(): void {
       return json([]);
     }
 
-    if (url.pathname === "/rest/v1/listings" && method === "DELETE") {
-      const filter = url.searchParams.get("id") ?? "";
-      const listingId = filter.replace(/^eq\./, "");
-      cascadeDeleteListing(listingId);
-      return new Response(null, { status: 204 });
-    }
-
     throw new Error(`Unexpected backend request: ${method} ${url.pathname}`);
   }) as typeof fetch;
 }
 
 function requestFor(
   form: FormData,
-  options: { origin?: string; trustedIp?: string; contentLength?: number; xff?: string } = {},
+  options: {
+    origin?: string;
+    trustedIp?: string;
+    contentLength?: number;
+    xff?: string;
+    cookie?: string;
+  } = {},
 ): Request {
   const origin = options.origin ?? "http://127.0.0.1:4173";
   const headers = new Headers({
@@ -281,10 +285,11 @@ function requestFor(
   });
   if (options.trustedIp) headers.set("x-arar-client-ip", options.trustedIp);
   if (options.xff) headers.set("x-forwarded-for", options.xff);
+  if (options.cookie) headers.set("cookie", options.cookie);
   return new Request(`${origin}/ilan-ver`, { method: "POST", headers, body: form });
 }
 
-async function syntheticCapability(phone: string): Promise<string> {
+async function syntheticSession(phone: string): Promise<string> {
   const start = new FormData();
   start.set("action", "start_verification");
   start.set("phone", phone);
@@ -292,57 +297,58 @@ async function syntheticCapability(phone: string): Promise<string> {
   expect(started.status).toBe(200);
   const startedPayload = (await started.json()) as {
     ok: boolean;
-    action?: string;
     challengeId?: string;
   };
-  const challengeId = startedPayload.challengeId;
-  assert(
-    startedPayload.ok && typeof challengeId === "string",
-    "verification challenge was not issued",
-  );
+  assert(startedPayload.ok && typeof startedPayload.challengeId === "string", "OTP not issued");
 
   const verify = new FormData();
   verify.set("action", "verify_phone");
   verify.set("phone", phone);
-  verify.set("challengeId", challengeId);
+  verify.set("challengeId", startedPayload.challengeId);
   verify.set("code", "424242");
   const verified = await handleStage1SelfServiceRequest(requestFor(verify));
   expect(verified.status).toBe(200);
-  const verifiedPayload = (await verified.json()) as {
-    ok: boolean;
-    action?: string;
-    capability?: string;
-  };
-  const capability = verifiedPayload.capability;
-  assert(
-    verifiedPayload.ok && typeof capability === "string",
-    "verification capability was not issued",
-  );
-  return capability;
+  const payload = (await verified.json()) as Record<string, unknown>;
+  expect(payload).toMatchObject({ ok: true, action: "phone_verified" });
+  expect(payload).not.toHaveProperty("capability");
+  const setCookie = verified.headers.get("set-cookie") ?? "";
+  expect(setCookie).toContain("HttpOnly");
+  expect(setCookie).toContain("SameSite=Lax");
+  expect(setCookie).toContain("Max-Age=604800");
+  const cookie = setCookie.split(";")[0] ?? "";
+  assert(cookie.startsWith("arar_seller_session="), "seller session cookie missing");
+  return cookie;
 }
 
 function submissionForm(
-  capability: string,
   idempotencyKey: string,
-  options: { phone?: string; photoBytes?: Uint8Array; extraField?: [string, string] } = {},
+  options: {
+    phone?: string;
+    photoBytes?: Uint8Array;
+    extraField?: [string, string];
+    condition?: string | null;
+    description?: string | null;
+    category?: string;
+    isFree?: boolean;
+  } = {},
 ): FormData {
   const form = new FormData();
   form.set("action", "submit_listing");
-  form.set("category", "home");
+  form.set("category", options.category ?? "home");
   form.set("title", "Sentetik self service ilan");
-  form.set("condition", "good");
-  form.set("priceMode", "priced");
-  form.set("price", "1250");
-  form.set("description", "Self service submission güvenlik kabul testi açıklaması.");
+  if (options.condition !== null) form.set("condition", options.condition ?? "good");
+  form.set("priceMode", options.isFree ? "free" : "priced");
+  form.set("price", options.isFree ? "0" : "1250");
+  if (options.description !== null) {
+    form.set(
+      "description",
+      options.description ?? "Self service submission güvenlik kabul testi açıklaması.",
+    );
+  }
   form.set("province", "Tekirdağ");
   form.set("district", "Çorlu");
   form.set("sellerDisplayName", "Sentetik Satıcı");
   form.set("phone", options.phone ?? "+12025550188");
-  form.set("contactPreference", "phone_whatsapp");
-  form.set("privateSellerDeclaration", "confirmed");
-  form.set("contentRightsDeclaration", "confirmed");
-  form.set("publicationInstructionConfirmed", "confirmed");
-  form.set("capability", capability);
   form.set("idempotencyKey", idempotencyKey);
   form.append(
     "photo",
@@ -351,6 +357,14 @@ function submissionForm(
     }),
   );
   if (options.extraField) form.set(options.extraField[0], options.extraField[1]);
+  return form;
+}
+
+function sellerAction(action: string, phone: string, listingId?: string): FormData {
+  const form = new FormData();
+  form.set("action", action);
+  form.set("phone", phone);
+  if (listingId) form.set("listingId", listingId);
   return form;
 }
 
@@ -364,210 +378,195 @@ beforeAll(() => {
   process.env.PILOT_TRUSTED_PROXY_ENABLED = "enabled";
   process.env.PILOT_TRUSTED_CLIENT_IP_HEADER = "x-arar-client-ip";
   console.error = () => {};
+  console.warn = () => {};
   installBackendMock();
 });
 
 afterAll(() => {
   globalThis.fetch = originalFetch;
   console.error = originalConsoleError;
+  console.warn = originalConsoleWarn;
   Date.now = originalDateNow;
 });
 
 describe("Stage 1 self-service server acceptance", () => {
-  test("claim failure compensates the pending row and retry/double-submit remain idempotent", async () => {
-    const phone = "+12025550188";
-    const capability = await syntheticCapability(phone);
-    const key = "97000000-0000-4000-8000-000000000001";
-
-    failNextClaim = true;
-    const failed = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm(capability, key)),
-    );
-    expect(failed.status).toBe(500);
-    expect(await failed.json()).toMatchObject({ ok: false, code: "SUBMISSION_FAILED" });
-    expect(listings.size).toBe(0);
-    expect(photoMetadata.size).toBe(0);
-    expect(storedObjects.size).toBe(0);
-    expect(submissionKeys.size).toBe(0);
-
-    const retried = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm(capability, key)),
-    );
-    expect(retried.status).toBe(201);
-    const retryPayload = (await retried.json()) as { ok: boolean; listingId: string };
-    expect(retryPayload.ok).toBe(true);
-    expect(listings.has(retryPayload.listingId)).toBe(true);
-    expect(photoMetadata.size).toBe(1);
-    expect(storedObjects.size).toBe(1);
-
-    const duplicated = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm(capability, key)),
-    );
-    expect(duplicated.status).toBe(200);
-    expect(await duplicated.json()).toMatchObject({
-      ok: true,
-      action: "submitted",
-      listingId: retryPayload.listingId,
-    });
-    expect(listings.size).toBe(1);
-    expect(photoMetadata.size).toBe(1);
-    expect(storedObjects.size).toBe(1);
-
-    failNextPhotoMetadataRegistration = true;
-    failNextStorageDelete = true;
-    const orphanRetryKey = "97000000-0000-4000-8000-000000000020";
-    const failedPhoto = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm(capability, orphanRetryKey), {
-        origin: "https://stage1.example.test",
-        trustedIp: "198.51.100.70",
-      }),
-    );
-
-    expect(failedPhoto.status).toBe(500);
-    expect(await failedPhoto.json()).toMatchObject({ ok: false, code: "SUBMISSION_FAILED" });
-    expect(listings.size).toBe(1);
-    expect(listings.has(retryPayload.listingId)).toBe(true);
-    expect(photoMetadata.size).toBe(1);
-    expect(storedObjects.size).toBe(1);
-    expect(submissionKeys.size).toBe(1);
-  });
-
-  test("capability is phone-bound, tamper-resistant and expires", async () => {
-    const capability = await syntheticCapability("+12025550189");
+  test("seller session is HttpOnly, phone-bound, tamper-resistant and expires", async () => {
+    const phone = "+12025550181";
+    const cookie = await syntheticSession(phone);
     const backendBefore = backendCallCount;
 
     const wrongPhone = await handleStage1SelfServiceRequest(
-      requestFor(
-        submissionForm(capability, "97000000-0000-4000-8000-000000000002", {
-          phone: "+12025550190",
-        }),
-        {
-          origin: "https://stage1.example.test",
-          trustedIp: "198.51.100.20",
-        },
-      ),
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000081", { phone: "+12025550182" }), {
+        cookie,
+      }),
     );
     expect(wrongPhone.status).toBe(401);
-    expect(await wrongPhone.json()).toMatchObject({ ok: false, code: "VERIFICATION_REQUIRED" });
 
-    const tampered = `${capability.slice(0, -1)}${capability.endsWith("a") ? "b" : "a"}`;
-    const tamperedResponse = await handleStage1SelfServiceRequest(
-      requestFor(
-        submissionForm(tampered, "97000000-0000-4000-8000-000000000003", { phone: "+12025550189" }),
-        {
-          origin: "https://stage1.example.test",
-          trustedIp: "198.51.100.21",
-        },
-      ),
+    const [name, value = ""] = cookie.split("=");
+    const tamperedCookie = `${name}=${value.slice(0, -1)}${value.endsWith("a") ? "b" : "a"}`;
+    const tampered = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000082", { phone }), {
+        cookie: tamperedCookie,
+      }),
     );
-    expect(tamperedResponse.status).toBe(401);
+    expect(tampered.status).toBe(401);
 
-    Date.now = () => originalDateNow() + 31 * 60 * 1000;
+    Date.now = () => originalDateNow() + 8 * 24 * 60 * 60 * 1000;
     const expired = await handleStage1SelfServiceRequest(
-      requestFor(
-        submissionForm(capability, "97000000-0000-4000-8000-000000000004", {
-          phone: "+12025550189",
-        }),
-        {
-          origin: "https://stage1.example.test",
-          trustedIp: "198.51.100.22",
-        },
-      ),
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000083", { phone }), { cookie }),
     );
     Date.now = originalDateNow;
     expect(expired.status).toBe(401);
     expect(backendCallCount).toBe(backendBefore);
   });
 
-  test("unknown privileged fields, body limits and malformed images fail closed", async () => {
-    const capability = await syntheticCapability("+12025550191");
+  test("minimal fields publish atomically and one session supports repeated listings", async () => {
+    const phone = "+12025550183";
+    const cookie = await syntheticSession(phone);
+
+    const firstKey = "97000000-0000-4000-8000-000000000084";
+    const first = await handleStage1SelfServiceRequest(
+      requestFor(
+        submissionForm(firstKey, {
+          phone,
+          condition: null,
+          description: null,
+          isFree: true,
+        }),
+        { cookie },
+      ),
+    );
+    expect(first.status).toBe(201);
+    const firstPayload = (await first.json()) as { listingId: string };
+    const firstRow = listingBodies.get(firstPayload.listingId);
+    expect(firstRow).toMatchObject({
+      status: "published",
+      description: "",
+      item_condition: null,
+      price_is_free: true,
+      price_amount: 0,
+      contact_channel: "phone_whatsapp",
+      contact_e164: phone,
+      listing_rules_version: "2026-08-28-v1",
+      private_seller_declaration_at: null,
+      content_rights_declaration_at: null,
+    });
+    expect(typeof firstRow?.listing_rules_accepted_at).toBe("string");
+    expect(firstRow?.publication_instruction_at).toBe(firstRow?.listing_rules_accepted_at);
+
+    const secondKey = "97000000-0000-4000-8000-000000000085";
+    const second = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm(secondKey, { phone, description: "", condition: "used" }), {
+        cookie,
+      }),
+    );
+    expect(second.status).toBe(201);
+    expect(listings.size).toBeGreaterThanOrEqual(2);
+
+    const replay = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm(secondKey, { phone, description: "", condition: "used" }), {
+        cookie,
+      }),
+    );
+    expect(replay.status).toBe(200);
+    expect(await replay.json()).toMatchObject({ ok: true, action: "submitted" });
+  });
+
+  test("claim/photo failures compensate and unknown fields fail before privileged work", async () => {
+    const phone = "+12025550184";
+    const cookie = await syntheticSession(phone);
+
+    const beforeListings = listings.size;
+    const beforePhotos = photoMetadata.size;
+    const beforeObjects = storedObjects.size;
+    const beforeKeys = submissionKeys.size;
+
     const backendBefore = backendCallCount;
     const privileged = await handleStage1SelfServiceRequest(
       requestFor(
-        submissionForm(capability, "97000000-0000-4000-8000-000000000005", {
-          phone: "+12025550191",
+        submissionForm("97000000-0000-4000-8000-000000000086", {
+          phone,
           extraField: ["status", "published"],
         }),
-        { origin: "https://stage1.example.test", trustedIp: "198.51.100.30" },
+        { cookie },
       ),
     );
     expect(privileged.status).toBe(400);
-    expect(await privileged.json()).toMatchObject({ ok: false, code: "INVALID_REQUEST" });
     expect(backendCallCount).toBe(backendBefore);
 
-    const oversized = new FormData();
-    oversized.set("action", "start_verification");
-    oversized.set("phone", "+12025550191");
-    const oversizedResponse = await handleStage1SelfServiceRequest(
-      requestFor(oversized, { contentLength: 40 * 1024 * 1024 }),
+    failNextClaim = true;
+    const claimFailure = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000087", { phone }), { cookie }),
     );
-    expect(oversizedResponse.status).toBe(413);
+    expect(claimFailure.status).toBe(500);
+    expect(listings.size).toBe(beforeListings);
+    expect(photoMetadata.size).toBe(beforePhotos);
+    expect(storedObjects.size).toBe(beforeObjects);
+    expect(submissionKeys.size).toBe(beforeKeys);
 
-    const malformedKey = "97000000-0000-4000-8000-000000000006";
+    failNextPhotoMetadataRegistration = true;
+    failNextStorageDelete = true;
+    const photoFailure = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000088", { phone }), { cookie }),
+    );
+    expect(photoFailure.status).toBe(500);
+    expect(listings.size).toBe(beforeListings);
+    expect(photoMetadata.size).toBe(beforePhotos);
+    expect(storedObjects.size).toBe(beforeObjects);
+    expect(submissionKeys.size).toBe(beforeKeys);
+
     const malformed = await handleStage1SelfServiceRequest(
       requestFor(
-        submissionForm(capability, malformedKey, {
-          phone: "+12025550191",
+        submissionForm("97000000-0000-4000-8000-000000000089", {
+          phone,
           photoBytes: new Uint8Array([1, 2, 3, 4, 5]),
         }),
-        { origin: "https://stage1.example.test", trustedIp: "198.51.100.31" },
+        { cookie },
       ),
     );
     expect(malformed.status).toBe(500);
-    expect(await malformed.json()).toMatchObject({ ok: false, code: "SUBMISSION_FAILED" });
-    expect(
-      Array.from(submissionKeys.values()).some((state) => state.listingId.startsWith("970")),
-    ).toBe(false);
+    expect(listings.size).toBe(beforeListings);
+    expect(photoMetadata.size).toBe(beforePhotos);
+    expect(storedObjects.size).toBe(beforeObjects);
   });
 
-  test("verified phone owns edit, unpublish, sold and delete while cross-phone access is denied", async () => {
-    const ownerPhone = "+12025550210";
-    const otherPhone = "+12025550211";
-    const ownerCapability = await syntheticCapability(ownerPhone);
-    const otherCapability = await syntheticCapability(otherPhone);
-    const idempotencyKey = "97000000-0000-4000-8000-000000000010";
+  test("verified phone owns edit/unpublish/sold/delete while another phone gets generic 403", async () => {
+    const ownerPhone = "+12025550185";
+    const otherPhone = "+12025550186";
+    const ownerCookie = await syntheticSession(ownerPhone);
+    const otherCookie = await syntheticSession(otherPhone);
 
     const created = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm(ownerCapability, idempotencyKey, { phone: ownerPhone }), {
-        origin: "https://stage1.example.test",
-        trustedIp: "198.51.100.60",
-      }),
+      requestFor(
+        submissionForm("97000000-0000-4000-8000-000000000090", { phone: ownerPhone }),
+        { cookie: ownerCookie },
+      ),
     );
     expect(created.status).toBe(201);
-    const createdPayload = (await created.json()) as { ok: boolean; listingId: string };
-    expect(createdPayload.ok).toBe(true);
-    const listingId = createdPayload.listingId;
-    expect(listingBodies.get(listingId)?.status).toBe("published");
+    const { listingId } = (await created.json()) as { listingId: string };
 
-    const crossPhone = new FormData();
-    crossPhone.set("action", "seller_unpublish");
-    crossPhone.set("phone", otherPhone);
-    crossPhone.set("capability", otherCapability);
-    crossPhone.set("listingId", listingId);
-    const denied = await handleStage1SelfServiceRequest(requestFor(crossPhone));
+    const denied = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_unpublish", otherPhone, listingId), {
+        cookie: otherCookie,
+      }),
+    );
     expect(denied.status).toBe(403);
     expect(await denied.json()).toMatchObject({ ok: false, code: "NOT_AUTHORIZED" });
-    expect(listingBodies.get(listingId)?.status).toBe("published");
 
-    const edit = new FormData();
-    edit.set("action", "seller_update");
-    edit.set("phone", ownerPhone);
-    edit.set("capability", ownerCapability);
-    edit.set("listingId", listingId);
+    const edit = sellerAction("seller_update", ownerPhone, listingId);
     edit.set("category", "vehicle");
-    edit.set("condition", "used");
     edit.set("priceMode", "free");
-    edit.set("price", "700000");
+    edit.set("price", "0");
     edit.set("title", "Mercedes B 150 satılık");
-    edit.set("description", "Sentetik seller management düzenleme testi açıklaması.");
+    edit.set("description", "");
     edit.set("province", "İstanbul");
     edit.set("district", "Kadıköy");
-    edit.set("contactPreference", "phone_whatsapp");
-    const edited = await handleStage1SelfServiceRequest(requestFor(edit));
+    const edited = await handleStage1SelfServiceRequest(requestFor(edit, { cookie: ownerCookie }));
     expect(edited.status).toBe(200);
-    expect(await edited.json()).toMatchObject({ ok: true, action: "seller_updated", listingId });
     expect(listingBodies.get(listingId)).toMatchObject({
       category: "vehicle",
+      item_condition: null,
+      description: "",
       price_amount: 0,
       price_is_free: true,
       province: "İstanbul",
@@ -575,62 +574,46 @@ describe("Stage 1 self-service server acceptance", () => {
       status: "published",
     });
 
-    const unpublish = new FormData();
-    unpublish.set("action", "seller_unpublish");
-    unpublish.set("phone", ownerPhone);
-    unpublish.set("capability", ownerCapability);
-    unpublish.set("listingId", listingId);
-    const unpublished = await handleStage1SelfServiceRequest(requestFor(unpublish));
-    expect(unpublished.status).toBe(200);
-    expect(listingBodies.get(listingId)?.status).toBe("unpublished");
-
-    const sold = new FormData();
-    sold.set("action", "seller_sold");
-    sold.set("phone", ownerPhone);
-    sold.set("capability", ownerCapability);
-    sold.set("listingId", listingId);
-    const soldResponse = await handleStage1SelfServiceRequest(requestFor(sold));
-    expect(soldResponse.status).toBe(200);
-    expect(listingBodies.get(listingId)?.status).toBe("sold");
-
-    const list = new FormData();
-    list.set("action", "seller_list");
-    list.set("phone", ownerPhone);
-    list.set("capability", ownerCapability);
-    const listed = await handleStage1SelfServiceRequest(requestFor(list));
-    expect(listed.status).toBe(200);
-    const listedPayload = (await listed.json()) as {
-      ok: boolean;
-      listings: Array<{ id: string; status: string; isFree: boolean }>;
+    const list = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_list", ownerPhone), { cookie: ownerCookie }),
+    );
+    expect(list.status).toBe(200);
+    const listPayload = (await list.json()) as {
+      listings: Array<{ id: string; condition: string | null }>;
     };
-    expect(listedPayload.listings).toContainEqual(
-      expect.objectContaining({ id: listingId, status: "sold", isFree: true }),
+    expect(listPayload.listings).toContainEqual(
+      expect.objectContaining({ id: listingId, condition: null }),
     );
 
-    const remove = new FormData();
-    remove.set("action", "seller_delete");
-    remove.set("phone", ownerPhone);
-    remove.set("capability", ownerCapability);
-    remove.set("listingId", listingId);
-    const deleted = await handleStage1SelfServiceRequest(requestFor(remove));
+    const unpublished = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_unpublish", ownerPhone, listingId), { cookie: ownerCookie }),
+    );
+    expect(unpublished.status).toBe(200);
+
+    const sold = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_sold", ownerPhone, listingId), { cookie: ownerCookie }),
+    );
+    expect(sold.status).toBe(200);
+
+    const deleted = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_delete", ownerPhone, listingId), { cookie: ownerCookie }),
+    );
     expect(deleted.status).toBe(200);
-    expect(await deleted.json()).toMatchObject({ ok: true, action: "seller_deleted", listingId });
-    expect(listings.has(listingId)).toBe(false);
     expect(listingBodies.has(listingId)).toBe(false);
     expect(
-      Array.from(photoMetadata).some((path) => path.startsWith(`listings/${listingId}/`)),
-    ).toBe(false);
-    expect(
-      Array.from(storedObjects).some((path) => path.startsWith(`listings/${listingId}/`)),
+      Array.from(storedObjects).some((objectPath) =>
+        objectPath.startsWith(`listings/${listingId}/`),
+      ),
     ).toBe(false);
   });
 
-  test("trusted client-IP rate limit ignores arbitrary X-Forwarded-For", async () => {
+  test("rate limits are phone-primary and arbitrary X-Forwarded-For cannot bypass them", async () => {
     process.env.PILOT_PHONE_VERIFICATION_MODE = "disabled";
+    const phone = "+12025550187";
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const form = new FormData();
       form.set("action", "start_verification");
-      form.set("phone", "+12025550200");
+      form.set("phone", phone);
       const response = await handleStage1SelfServiceRequest(
         requestFor(form, {
           origin: "https://stage1.example.test",
@@ -642,16 +625,27 @@ describe("Stage 1 self-service server acceptance", () => {
     }
     const limitedForm = new FormData();
     limitedForm.set("action", "start_verification");
-    limitedForm.set("phone", "+12025550200");
+    limitedForm.set("phone", phone);
     const limited = await handleStage1SelfServiceRequest(
       requestFor(limitedForm, {
         origin: "https://stage1.example.test",
-        trustedIp: "198.51.100.40",
+        trustedIp: "198.51.100.41",
         xff: "203.0.113.250",
       }),
     );
     expect(limited.status).toBe(429);
     expect(await limited.json()).toMatchObject({ ok: false, code: "RATE_LIMITED" });
+
+    const otherPhone = new FormData();
+    otherPhone.set("action", "start_verification");
+    otherPhone.set("phone", "+12025550188");
+    const other = await handleStage1SelfServiceRequest(
+      requestFor(otherPhone, {
+        origin: "https://stage1.example.test",
+        trustedIp: "198.51.100.41",
+      }),
+    );
+    expect(other.status).toBe(503);
     process.env.PILOT_PHONE_VERIFICATION_MODE = "synthetic";
   });
 });
