@@ -10,10 +10,7 @@ import {
   TEST_ONLY_CONTACT,
   buildControlledWhatsAppHref,
 } from "@/lib/prototype-contact";
-import {
-  buildPublicSellerContactHref,
-  getPublicSellerContactLabel,
-} from "@/lib/public-seller-contact";
+import { buildPublicSellerContactActions } from "@/lib/public-seller-contact";
 
 export const Route = createFileRoute("/ilan/$id")({
   loader: async ({ params }) => {
@@ -95,8 +92,7 @@ function ListingDetail() {
   }
 
   const publicContact = listing.publicContact;
-  const publicContactHref = publicContact ? buildPublicSellerContactHref(publicContact) : null;
-  const publicContactLabel = publicContact ? getPublicSellerContactLabel(publicContact) : null;
+  const publicContactActions = publicContact ? buildPublicSellerContactActions(publicContact) : [];
 
   const publicContactDisabled = !gate1TestOperationsEnabled;
   const fallbackWhatsAppHref = gate1TestOperationsEnabled
@@ -167,21 +163,24 @@ function ListingDetail() {
         className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
       >
         <div className="mx-auto max-w-2xl px-4 py-3">
-          {publicContact && publicContactHref && publicContactLabel ? (
+          {publicContactActions.length > 0 ? (
             <>
               <p className="mb-2 text-center text-xs text-muted-foreground">
-                {publicContact.channel === "whatsapp"
-                  ? "WhatsApp’a yönlendirileceksiniz; görüşme Arar Buluruz dışında gerçekleşir."
-                  : "Arama cihazınızın telefon uygulaması üzerinden gerçekleşir."}
+                Satıcıyla doğrudan telefon veya WhatsApp üzerinden iletişim kurabilirsiniz.
               </p>
-              <a
-                href={publicContactHref}
-                target={publicContact.channel === "whatsapp" ? "_blank" : undefined}
-                rel={publicContact.channel === "whatsapp" ? "noopener noreferrer" : undefined}
-                className="flex h-12 min-h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
-              >
-                {publicContactLabel}
-              </a>
+              <div className="grid grid-cols-2 gap-2">
+                {publicContactActions.map((action) => (
+                  <a
+                    key={action.kind}
+                    href={action.href}
+                    target={action.kind === "whatsapp" ? "_blank" : undefined}
+                    rel={action.kind === "whatsapp" ? "noopener noreferrer" : undefined}
+                    className="flex h-12 min-h-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90"
+                  >
+                    {action.label}
+                  </a>
+                ))}
+              </div>
             </>
           ) : (
             <>
