@@ -468,6 +468,7 @@ function Stage1ListingWizard() {
               <div className="relative mt-1">
                 <select
                   id="stage1-condition"
+                  aria-label="Durum"
                   value={condition}
                   onChange={(event) => setCondition(event.target.value as Stage1Condition)}
                   className={selectClass}
@@ -540,6 +541,7 @@ function Stage1ListingWizard() {
                 Açıklama <span className="font-normal text-muted-foreground">(isteğe bağlı)</span>
               </span>
               <textarea
+                aria-label="Açıklama"
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 maxLength={5000}
