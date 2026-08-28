@@ -794,14 +794,13 @@ async function createPendingRow(
     price: number;
     isFree: boolean;
     category: string;
-    condition: string;
+    condition: string | null;
     province: string;
     district: string;
     sellerDisplayName: string;
-    contactPreference: string;
     phone: string;
     verifiedAt: string;
-    declarationTime: string;
+    rulesAcceptedAt: string;
   },
 ): Promise<void> {
   const response = await requireOk(
@@ -820,13 +819,13 @@ async function createPendingRow(
         district: input.district,
         seller_display_name: input.sellerDisplayName,
         search_keywords: [],
-        contact_channel: input.contactPreference,
+        contact_channel: "phone_whatsapp",
         contact_e164: input.phone,
         contact_verified_at: input.verifiedAt,
         contact_verification_method: "one_time_code",
-        publication_instruction_at: input.declarationTime,
-        private_seller_declaration_at: input.declarationTime,
-        content_rights_declaration_at: input.declarationTime,
+        publication_instruction_at: input.rulesAcceptedAt,
+        listing_rules_version: LISTING_RULES_VERSION,
+        listing_rules_accepted_at: input.rulesAcceptedAt,
         status: "pending",
       }),
     }),
@@ -838,7 +837,21 @@ async function createPendingRow(
   }
 }
 
-async function submitListing(form: FormData, clientIp: string): Promise<Response> {
+function assertVehiclePublicationAllowed(category: string, request: Request): void {
+  if (category !== "vehicle") return;
+  if (isLoopbackHost(new URL(request.url).hostname)) return;
+  throw new Stage1SubmissionError(
+    "NOT_ENABLED",
+    "Vasıta ilanları için gerekli EİDS doğrulaması production ortamında henüz etkin değil.",
+    503,
+  );
+}
+
+async function submitListing(
+  form: FormData,
+  clientIp: string,
+  request: Request,
+): Promise<Response> {
   assertAllowedFields(
     form,
     new Set([
@@ -853,26 +866,18 @@ async function submitListing(form: FormData, clientIp: string): Promise<Response
       "district",
       "sellerDisplayName",
       "phone",
-      "contactPreference",
-      "privateSellerDeclaration",
-      "contentRightsDeclaration",
-      "publicationInstructionConfirmed",
-      "capability",
       "idempotencyKey",
       "photo",
     ]),
   );
-  enforceRateLimit(`submit:${clientIp}`, 3, 60 * 60 * 1000);
 
   const category = stage1CategorySchema.parse(requiredString(form, "category", 3, 32));
-  const condition = stage1ConditionSchema.parse(requiredString(form, "condition", 3, 32));
+  const conditionRaw = optionalString(form, "condition", 32);
+  const condition = conditionRaw ? stage1ConditionSchema.parse(conditionRaw) : null;
   const title = requiredString(form, "title", 3, 120);
-  const description = requiredString(form, "description", 10, 5000);
+  const description = optionalString(form, "description", 5000) ?? "";
   const sellerDisplayName = requiredString(form, "sellerDisplayName", 2, 80);
   const phone = stage1E164Schema.parse(requiredString(form, "phone", 8, 16));
-  const contactPreference = stage1ContactPreferenceSchema.parse(
-    requiredString(form, "contactPreference", 5, 20),
-  );
   const province = requiredString(form, "province", 2, 64);
   const district = requiredString(form, "district", 2, 64);
   if (!isLocationCity(province) || !getDistrictsForCity(province).includes(district)) {
@@ -881,12 +886,8 @@ async function submitListing(form: FormData, clientIp: string): Promise<Response
       "İl ve ilçe seçimi Türkiye konum kataloğuyla eşleşmiyor.",
     );
   }
-  requiredConfirmation(form, "privateSellerDeclaration");
-  requiredConfirmation(form, "contentRightsDeclaration");
-  requiredConfirmation(form, "publicationInstructionConfirmed");
+  assertVehiclePublicationAllowed(category, request);
 
-  const capability = requiredString(form, "capability", 20, 4096);
-  const verified = await verifyCapability(capability, phone);
   const { price, isFree } = parsePrice(form);
   const photos = readPhotos(form);
   const idempotencyKey = requiredString(form, "idempotencyKey", 36, 36).toLowerCase();
@@ -898,9 +899,11 @@ async function submitListing(form: FormData, clientIp: string): Promise<Response
     throw new Error("Idempotency hash generation failed.");
   }
 
+  const verified = await requireSellerSession(request, phone);
   const config = readBackendConfig();
   const listingId = crypto.randomUUID();
-  const declarationTime = new Date().toISOString();
+  const rulesAcceptedAt = new Date().toISOString();
+
   await createPendingRow(config, {
     listingId,
     title,
@@ -912,10 +915,9 @@ async function submitListing(form: FormData, clientIp: string): Promise<Response
     province,
     district,
     sellerDisplayName,
-    contactPreference,
     phone,
     verifiedAt: verified.verifiedAt,
-    declarationTime,
+    rulesAcceptedAt,
   });
 
   let claim: SubmissionClaim;
@@ -952,6 +954,22 @@ async function submitListing(form: FormData, clientIp: string): Promise<Response
       409,
       5,
     );
+  }
+
+  try {
+    const relaxed = usesRelaxedSyntheticLimits(request);
+    enforceRateLimit("listing-create-seller", phone, 10, 60 * 60 * 1000, relaxed);
+    enforceRateLimit("listing-create-ip", clientIp, 60, 60 * 60 * 1000, relaxed);
+  } catch (cause) {
+    try {
+      await cleanupFailedSubmission(config, listingId, []);
+    } catch (cleanupCause) {
+      throw new AggregateError(
+        [cause, cleanupCause],
+        "Listing velocity limit rejected submission and cleanup was incomplete.",
+      );
+    }
+    throw cause;
   }
 
   const storedPhotos: StoredListingPhotoMetadata[] = [];
