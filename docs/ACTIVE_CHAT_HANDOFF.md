@@ -26,7 +26,19 @@ PR #78: **OPEN / DRAFT / UNMERGED**
 
 Branch: `agent/stage1-self-service-v2`
 
-The current task is the final PR #78 closure pass. Do not open a new product batch. Final closure requires all seven canonical workflows SUCCESS on one exact SHA.
+Technical exact-head acceptance is complete at `382445537668c6f810e689d26f1d9f60c20e05f0`.
+
+All seven canonical workflows are **SUCCESS** on that exact SHA:
+
+- Activation readiness — `33202153552`;
+- V0 minimal PWA — `33202153522`;
+- CI — `33202153564`;
+- Real pilot backend prep — `33202153443`;
+- Stage 1 Phase A code gate — `33202153438`;
+- Self-host migration rehearsal — `33202153428`;
+- Stage 1 self-service acceptance — `33202153469`.
+
+The current task is documentation/PR-metadata closure only. Do not open a new product or implementation batch. Any docs-only head created after this checkpoint must itself re-pass all seven workflows before becoming the final review SHA.
 
 ## Current product truth
 
@@ -82,10 +94,10 @@ Production, real personal data, AWS, recurring paid services, real SMS, live Ads
 
 ## Immediate closure objective
 
-1. fix only bounded repository-controlled regressions/stale acceptance contracts;
-2. synchronize canonical docs and Issue #75;
-3. run all seven canonical workflows on one exact SHA;
-4. keep PR #78 DRAFT / UNMERGED;
-5. stop for independent Advisor/founder review.
+1. synchronize the remaining canonical current-state wording and PR #78 metadata only;
+2. make no application/security behavior change;
+3. rerun all seven canonical workflows on the resulting docs-only exact SHA;
+4. keep PR #78 **OPEN / DRAFT / UNMERGED**;
+5. send the final all-green SHA to independent Codex read-only review, then Advisor/founder review.
 
-If a genuinely difficult architecture/security/concurrency defect appears, preserve Git state and route to Advisor/Codex instead of improvising a redesign.
+If documentation reconciliation exposes a genuine material implementation mismatch, stop and report it rather than changing architecture in this closure pass.
