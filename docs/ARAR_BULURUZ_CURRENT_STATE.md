@@ -14,11 +14,27 @@ _Last updated: 2026-08-28, Europe/Istanbul_
 
 ## Current phase
 
-**PR #78 final closure pass is active; production and real data remain closed.**
+**PR #78 technical exact-head acceptance is GREEN; production and real data remain closed.**
 
 Current product authority: `docs/PRODUCT_CONTRACT_V2.md`.
 
-PR #78 remains **OPEN / DRAFT / UNMERGED** on `agent/stage1-self-service-v2`. Live GitHub exact-head/workflow evidence controls; do not reuse the older 2026-08-27 frontend checkpoint as a final-green claim.
+PR #78 remains **OPEN / DRAFT / UNMERGED** on `agent/stage1-self-service-v2`.
+
+The accepted technical checkpoint is:
+
+`382445537668c6f810e689d26f1d9f60c20e05f0`
+
+All seven canonical workflows completed **SUCCESS** on that exact SHA:
+
+- Activation readiness — `33202153552`;
+- V0 minimal PWA — `33202153522`;
+- CI — `33202153564`;
+- Real pilot backend prep — `33202153443`;
+- Stage 1 Phase A code gate — `33202153438`;
+- Self-host migration rehearsal — `33202153428`;
+- Stage 1 self-service acceptance — `33202153469`.
+
+This is technical repository acceptance only. It does not imply merge, deployment, production activation, real-data authorization, company formation, EİDS integration, real SMS, AWS activation or recurring spend.
 
 Current consumer product facts:
 
@@ -63,7 +79,7 @@ Hard boundaries remain:
 
 **REAL DATA COLLECTION remains CLOSED.**
 
-Final PR #78 technical closure requires all seven canonical workflows SUCCESS on one exact SHA. Repository readiness does not itself authorize production, company formation, spending or real-data collection.
+PR #78 technical exact-head acceptance has been achieved on `382445537668c6f810e689d26f1d9f60c20e05f0`. Documentation-only closure commits move the branch SHA and therefore must independently re-pass all seven canonical workflows before that newer SHA is treated as the final review checkpoint. Repository readiness does not itself authorize production, company formation, spending or real-data collection.
 
 ## Dedicated hosted Supabase state
 
@@ -234,7 +250,7 @@ The final boundary scanner reported:
 
 `supabase/config.toml` remains fail-closed in Git. Auth and Storage are enabled only in controlled test/rehearsal paths; production activation is not implied.
 
-Current canonical migration chain is exactly six migrations:
+Current canonical migration chain is exactly nine migrations:
 
 1. `20260730162000_create_listings.sql`
 2. `20260808211500_prepare_real_corlu_pilot_backend.sql`
@@ -242,6 +258,9 @@ Current canonical migration chain is exactly six migrations:
 4. `20260810210000_prepare_public_seller_contact_contract.sql`
 5. `20260822113000_enable_public_signed_photo_delivery.sql`
 6. `20260823150000_add_operator_photo_inventory.sql`
+7. `20260826181500_prepare_stage1_self_service.sql`
+8. `20260827120000_prepare_near_final_classifieds.sql`
+9. `20260828205000_finalize_product_simplification.sql`
 
 Canonical database/RLS test suites, REST integration, browser E2E, private Storage, signed-photo, backup/restore and application-level verification all pass in the final required workflows.
 
@@ -261,22 +280,29 @@ PR #74 and Issue #72 completion do **not** authorize Lovable Publish/Update, AWS
 
 ## Current consumer product scope
 
-The old controlled Çorlu-only intake model is superseded as the current product contract.
+The old controlled Çorlu-only intake model and the later seller-contact-choice/declaration-checkbox presentation are superseded as the current product contract.
 
 The current product is Türkiye-wide and seller self-service:
 
 - seller creates the listing directly;
 - 1–8 trusted photos;
-- broad category + title + condition;
-- priced or Ücretsiz;
-- description + İl + İlçe;
-- seller display name + verified phone;
-- Telefon / WhatsApp / Telefon + WhatsApp;
-- short required publication/declaration evidence;
+- broad category + required title;
+- optional condition with no silent default;
+- price or explicit **Ücretsiz**;
+- optional description;
+- İl / İlçe;
+- seller display name + one verified public phone;
+- no seller contact-preference selector;
+- buyer receives both **Ara** (`tel:`) and **WhatsApp’tan yaz** (`https://wa.me/`) derived from that same public E.164 phone;
+- no three consumer declaration checkboxes;
+- versioned publication evidence through `listing_rules_version` + `listing_rules_accepted_at`;
+- `publication_instruction_at`, verified-phone state and trusted-photo readiness remain publication prerequisites;
+- bounded 7-day signed, phone-bound HttpOnly remembered-seller session;
 - atomic auto-publication;
 - founder post-moderation/takedown;
 - lightweight phone-verified `İlanlarım` management;
 - buyer search/detail/signed-photo/direct-contact flow;
+- Vasıta retained, while real production vehicle publication remains fail-closed until EİDS is integrated;
 - no classic Auth/password, in-app chat, payment, order, reservation, commission or shipping.
 
 Search continues to normalize compact/spaced queries such as `b150` and `b 150`.
@@ -309,10 +335,10 @@ AWS account/provisioning, pricing/credit eligibility, Istanbul availability/resi
 
 1. keep production, real data, AWS and recurring spend OFF;
 2. preserve the GREEN self-service/backend/security contracts already proved in PR #78;
-3. keep canonical documentation synchronized with `PRODUCT_CONTRACT_V2.md`;
-4. complete the narrow security REDTEAM and fix only material repository-controlled findings;
-5. after any material code fix, require all seven canonical workflows to pass on one exact SHA;
-6. keep PR #78 draft/unmerged until founder/advisor hands-on product review;
+3. complete this documentation/PR-metadata closure without application or security behavior changes;
+4. require all seven canonical workflows to pass again on the resulting docs-only exact SHA;
+5. send that final exact SHA to independent Codex read-only review;
+6. keep PR #78 draft/unmerged pending independent Advisor/founder review;
 7. separately resolve the applicable real-data/legal/production gates before any real seller data or production activation.
 
 Do not add classic Auth/accounts, in-app chat, payments, orders, reservations, commission, ads, recommendation engines, microservices, Kubernetes or speculative observability merely to satisfy this path.
