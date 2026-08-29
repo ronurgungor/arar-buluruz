@@ -24,7 +24,7 @@ GitHub `main` and the exact branch/PR under review remain more authoritative tha
 
 ## Current product boundary
 
-The repository product contract is a **Türkiye-wide seller self-service classifieds experience**. PR #78 is in final closure; production and real-data activation remain OFF.
+The repository product contract is a **Türkiye-wide seller self-service classifieds experience**. PR #78 technical exact-head acceptance is GREEN; production and real-data activation remain OFF.
 
 Current consumer model:
 
@@ -52,7 +52,19 @@ Current consumer model:
 
 Older Çorlu-only, seller-calls-founder, founder-pre-approval, contact-choice, checkbox-declaration and JavaScript-readable capability assumptions remain historical and are superseded where they conflict with `docs/PRODUCT_CONTRACT_V2.md`.
 
-PR #78 remains **OPEN / DRAFT / UNMERGED**. Do not claim final technical closure until all seven canonical workflows succeed on one exact SHA.
+PR #78 remains **OPEN / DRAFT / UNMERGED**.
+
+Technical exact-head acceptance was achieved on `382445537668c6f810e689d26f1d9f60c20e05f0`, with all seven canonical workflows SUCCESS:
+
+- Activation readiness — `33202153552`;
+- V0 minimal PWA — `33202153522`;
+- CI — `33202153564`;
+- Real pilot backend prep — `33202153443`;
+- Stage 1 Phase A code gate — `33202153438`;
+- Self-host migration rehearsal — `33202153428`;
+- Stage 1 self-service acceptance — `33202153469`.
+
+A documentation-only closure commit moves the branch SHA; that newer SHA must independently return 7/7 SUCCESS before it is used as the final Codex/Advisor review checkpoint.
 
 Production activation, real personal data, AWS/paid infrastructure, real SMS, production EİDS, Ads/monetization and Tarladan changes remain closed.
 
