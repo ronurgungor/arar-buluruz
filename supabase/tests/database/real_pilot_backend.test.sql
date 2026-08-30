@@ -86,6 +86,8 @@ insert into public.listings (
   contact_verified_at,
   contact_verification_method,
   publication_instruction_at,
+  private_seller_declaration_at,
+  content_rights_declaration_at,
   status,
   published_at,
   expires_at,
@@ -97,8 +99,8 @@ values
     'Active real-pilot fixture',
     'Synthetic active listing for the real pilot backend preparation test.',
     100,
-    'Tekirdag',
-    'Corlu',
+    'Tekirdağ',
+    'Çorlu',
     'Synthetic Seller',
     array['active'],
     'whatsapp',
@@ -106,6 +108,8 @@ values
     now() - interval '3 hours',
     'whatsapp_same_number',
     now() - interval '2 hours',
+    now() - interval '90 minutes',
+    now() - interval '90 minutes',
     'published',
     now() - interval '1 hour',
     now() + interval '1 day',
@@ -125,6 +129,8 @@ values
     null,
     null,
     null,
+    null,
+    null,
     'pending',
     null,
     null,
@@ -139,6 +145,8 @@ values
     'Çorlu',
     'Synthetic Seller',
     array['rejected'],
+    null,
+    null,
     null,
     null,
     null,
@@ -163,6 +171,8 @@ values
     now() - interval '3 days',
     'manual_callback',
     now() - interval '2 days 12 hours',
+    now() - interval '2 days 11 hours',
+    now() - interval '2 days 11 hours',
     'published',
     now() - interval '2 days',
     now() - interval '1 day',
@@ -177,6 +187,8 @@ values
     'Çorlu',
     'Synthetic Seller',
     array['duplicate'],
+    null,
+    null,
     null,
     null,
     null,
@@ -201,6 +213,8 @@ values
     null,
     null,
     null,
+    null,
+    null,
     'pending',
     null,
     null,
@@ -214,11 +228,11 @@ select is(
     where id = '10000000-0000-4000-8000-000000000001'
   ),
   'Tekirdağ/Çorlu',
-  'legacy synthetic location spelling is normalized to the canonical catalog spelling'
+  'canonical Türkiye catalog spelling is preserved for listing location'
 );
 
-select throws_ok(
-  $$
+select lives_ok(
+  $sql$
     insert into public.listings (
       title,
       description,
@@ -227,17 +241,15 @@ select throws_ok(
       district,
       seller_display_name
     ) values (
-      'Out of pilot scope',
-      'The real Corlu pilot database must reject locations outside the approved pilot scope.',
+      'Türkiye rollout location',
+      'The general classifieds database accepts a normal Türkiye province and district pair.',
       1,
       'İstanbul',
       'Kadıköy',
       'Synthetic Seller'
     )
-  $$,
-  '23514',
-  null,
-  'location outside the Corlu pilot scope is rejected'
+  $sql$,
+  'database no longer carries a Corlu-only product constraint'
 );
 
 set local role anon;

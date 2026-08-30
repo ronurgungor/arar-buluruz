@@ -1,8 +1,62 @@
 # Arar Buluruz — Backlog
 
-_Last updated: 2026-08-09, Europe/Istanbul_
+_Last updated: 2026-08-30, Europe/Istanbul_
 
 Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
+
+## PR #78 post-Codex remediation — 2026-08-30
+
+This section supersedes the older PR #78 closure checkpoint below for current status. Review evidence: `docs/PR78_CODEX_REVIEW_2026-08-30.md`.
+
+- [x] Preserve Codex's independent review of exact `9ce73cb909c56062644aeb6e0090c2477ee1ca96` and its CONDITIONAL PASS (0 BLOCKER / 3 IMPORTANT).
+- [x] Fix publication commit/response ambiguity by reconciling the existing idempotency claim before any destructive compensation.
+- [x] Preserve normal cleanup only when reconciliation proves the same listing remains `claimed`.
+- [x] Skip destructive cleanup when publication outcome cannot be established safely.
+- [x] Remove global 403/404 console suppression from Stage 1 browser acceptance; expected negative 401/403/404 evidence is now exact and consumable.
+- [-] Require all seven canonical workflows SUCCESS on one exact post-remediation SHA.
+- [ ] Stop for final Advisor/founder merge decision after exact-head GREEN. PR #78 remains OPEN / DRAFT / UNMERGED.
+
+Deferred to the production/recovery gate; do not partially implement in PR #78:
+
+- [ ] stale `in_progress` claim plus pending/private-state reconciliation after process termination;
+- [ ] orphan Storage cleanup/recovery tied to the deliberate stale-claim recovery model;
+- [ ] process-local OTP/rate-limit/challenge state;
+- [ ] seller-phone localStorage TTL/clear behavior and explicit logout for shared devices;
+- [ ] proxy-derived HTTPS/host/client-IP semantics;
+- [ ] cross-service hard-delete retry/reconciliation.
+
+
+## Current PR #78 closure checkpoint — 2026-08-28
+
+Current product authority: `docs/PRODUCT_CONTRACT_V2.md`.
+
+Completed in the current simplification batch:
+
+- [x] Keep Türkiye-wide seller self-service and founder post-moderation.
+- [x] Remove seller contact preference from the consumer flow.
+- [x] Derive **Ara + WhatsApp** from one verified public phone.
+- [x] Remove the three consumer declaration checkboxes.
+- [x] Add versioned listing-rules evidence without fabricating legacy declaration timestamps.
+- [x] Make condition optional with no silent default.
+- [x] Make description optional without filler text.
+- [x] Replace JavaScript-readable short capability storage with a bounded 7-day signed HttpOnly seller session.
+- [x] Redesign rate limiting around phone/challenge/seller classes plus coarse trusted-IP protection.
+- [x] Preserve atomic publication, idempotency, compensation, private Storage and signed-photo fail-closed boundaries.
+- [x] Keep Vasıta in the product/synthetic path.
+- [x] Fail closed for real non-loopback vehicle publication until EİDS is enabled.
+- [x] Preserve search normalization including `b150` ↔ `b 150`.
+- [x] Keep PR #78 OPEN / DRAFT / UNMERGED.
+- [x] Synchronize Product Contract V2, active handoff, current state and decision log to the 2026-08-28 founder decisions.
+- [-] Close the three bounded acceptance regressions: V0 BFCache zero-data reset, Stage 1 exact expected-401 evidence, Gate 1 dual-contact rendering/assertions.
+- [-] Synchronize this backlog, README and Issue #75.
+- [ ] Require all seven canonical workflows SUCCESS on one exact SHA.
+- [ ] Stop for independent Advisor/founder hands-on review after exact-head GREEN.
+
+Settled business sequence:
+
+**APPLICATION COMPLETION → ŞAHIS ŞİRKETİ → KOSGEB → SUPPORT / INVESTMENT → FUNDED PRODUCTION / LEGAL / EİDS / INFRASTRUCTURE**
+
+Production, real data, AWS, paid services, real SMS, production EİDS, Ads/monetization, payments/orders/reservations/commission, in-app chat, classic Auth/password, native app/Play Store and Tarladan changes remain outside this batch.
 
 ## Completed foundations
 
@@ -154,7 +208,7 @@ The older “Current gate status” wording below is retained as historical sequ
 - [x] Record initial real supply intent: real users explicitly said their actual listings may be published.
 - [x] Keep this evidence narrow: initial supply intent is validated, but real listing operations, moderation sustainability, seller-contact operations and a functioning supply-demand loop are not yet validated.
 
-### Real Çorlu pilot backend preparation
+### Historical — Real Çorlu pilot backend preparation (superseded as current product framing)
 
 - [x] Prepare the future founder-controlled 5–10 real Çorlu listing backend/data/security foundation through PR #53 without activating it.
 - [x] Merge PR #53 normally as `9376ba60dfc049a4df27ce25255fa5923b2a154e`.
@@ -164,7 +218,7 @@ The older “Current gate status” wording below is retained as historical sequ
 
 ### Documentation sync before independent review
 
-- [-] Synchronize canonical documentation with the post-PR53 repository/public-runtime split, supply-intent evidence and founder zero-spend boundary.
+- [x] Historical post-PR53 documentation synchronization completed; later Product Contract V2 sync supersedes its product assumptions.
 - [ ] Run an independent Claude full-repository review after this documentation sync merges.
 - [ ] Treat Claude findings as advisory only; do not automatically implement recommendations.
 - [ ] Open a separate founder-authorized gate for any implementation resulting from the review.
@@ -188,7 +242,7 @@ Technical readiness, a provider shortlist, a successful future POC or completion
 - [ ] Do not connect the public runtime to the prepared real backend.
 - [ ] Do not enable production Storage/Auth/secrets.
 - [ ] Do not activate public external-sales CTA.
-- [ ] Keep the future real pilot target at 5–10 founder-controlled Çorlu listings until a separate founder real-data/public-activation gate is opened.
+- [ ] Historical constraint superseded by D-025 for product geography/intake. Keep real personal-data/public production activation closed until a separate founder gate.
 
 ## Current gate status — historical/superseded wording
 
@@ -231,7 +285,7 @@ Restore onto a completely empty environment remains mandatory once a production 
 
 ## V0 evaluation boundary
 
-Current evidence now supports product comprehension and initial real seller/supply intent. It does not yet prove real listing operations, accounts, listing management, moderation sustainability, seller-contact operations, external-sales safety or a functioning supply-demand loop.
+Current repository evidence now also proves the synthetic seller self-service, verified-phone ownership, listing management, buyer contact and post-moderation lifecycle technically. It still does not prove real-world seller completion, moderation sustainability, buyer conversion, abuse rates, marketplace liquidity or a functioning supply-demand loop.
 
 ## Operating rules
 

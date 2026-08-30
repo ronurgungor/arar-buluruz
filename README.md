@@ -11,11 +11,12 @@ Current work must begin from the repository, not old chat memory.
 Read in this order:
 
 1. [`docs/ARAR_BULURUZ_CURRENT_STATE.md`](docs/ARAR_BULURUZ_CURRENT_STATE.md)
-2. [`docs/EXECUTION_STRATEGY_2026-08-21.md`](docs/EXECUTION_STRATEGY_2026-08-21.md)
-3. [`docs/AI_CHAT_BOOTSTRAP.md`](docs/AI_CHAT_BOOTSTRAP.md)
-4. [`AGENTS.md`](AGENTS.md)
-5. [`docs/ARAR_BULURUZ_DECISION_LOG.md`](docs/ARAR_BULURUZ_DECISION_LOG.md)
-6. relevant technical contracts and dated evidence
+2. [`docs/PRODUCT_CONTRACT_V2.md`](docs/PRODUCT_CONTRACT_V2.md)
+3. [`docs/EXECUTION_STRATEGY_2026-08-21.md`](docs/EXECUTION_STRATEGY_2026-08-21.md)
+4. [`docs/AI_CHAT_BOOTSTRAP.md`](docs/AI_CHAT_BOOTSTRAP.md)
+5. [`AGENTS.md`](AGENTS.md)
+6. [`docs/ARAR_BULURUZ_DECISION_LOG.md`](docs/ARAR_BULURUZ_DECISION_LOG.md)
+7. relevant technical contracts and dated evidence
 
 Older `PROJECT_MEMORY`, `BACKLOG`, provider and readiness documents remain historical evidence. If their current-status/provider/budget wording conflicts with the current-state/strategy documents above, the newer documents control.
 
@@ -23,20 +24,55 @@ GitHub `main` and the exact branch/PR under review remain more authoritative tha
 
 ## Current product boundary
 
-The first real pilot is intentionally minimal and is **not active yet**.
+The repository product contract is a **Türkiye-wide seller self-service classifieds experience**. PR #78 technical exact-head acceptance is GREEN; production and real-data activation remain OFF.
 
-Target operating model after later gates pass:
+Current consumer model:
 
-- founder-operated Çorlu pilot;
-- rollout **1 listing → review → 3 → review → 5–10**;
-- no seller Auth/accounts by default;
-- no public self-service writes;
-- no payment custody or commission;
-- no chat;
-- no advertising, paid listing or subscription during validation;
-- buyers and sellers communicate outside the platform;
-- exactly one intentionally public seller contact may be shown on an active listing;
-- external-sales/Shopier functionality is out of the first pilot unless separately reopened.
+- seller creates the listing directly;
+- 1–8 trusted photos;
+- broad category + title;
+- condition optional, with no default;
+- description optional;
+- price or Ücretsiz;
+- İl / İlçe;
+- seller display name + one verified public phone;
+- no seller contact-preference selector;
+- buyer receives both **Ara** (`tel:`) and **WhatsApp’tan yaz** (`https://wa.me/`) from that phone;
+- no three declaration checkboxes;
+- versioned listing-rules evidence for publication;
+- bounded 7-day signed HttpOnly seller session to avoid unnecessary repeat OTP;
+- purpose-specific phone/challenge/seller rate limiting plus coarse trusted-IP protection;
+- atomic auto-publication;
+- lightweight `İlanlarım`;
+- founder post-moderation/takedown;
+- search normalization including `b150` ↔ `b 150`;
+- Vasıta retained, with real production vehicle publication fail-closed until EİDS is integrated;
+- no classic username/password account;
+- no in-app chat, platform payment/order/reservation/commission/shipping.
+
+Older Çorlu-only, seller-calls-founder, founder-pre-approval, contact-choice, checkbox-declaration and JavaScript-readable capability assumptions remain historical and are superseded where they conflict with `docs/PRODUCT_CONTRACT_V2.md`.
+
+PR #78 remains **OPEN / DRAFT / UNMERGED**.
+
+Technical exact-head acceptance was achieved on `382445537668c6f810e689d26f1d9f60c20e05f0`, with all seven canonical workflows SUCCESS:
+
+- Activation readiness — `33202153552`;
+- V0 minimal PWA — `33202153522`;
+- CI — `33202153564`;
+- Real pilot backend prep — `33202153443`;
+- Stage 1 Phase A code gate — `33202153438`;
+- Self-host migration rehearsal — `33202153428`;
+- Stage 1 self-service acceptance — `33202153469`.
+
+A documentation-only closure commit moves the branch SHA; that newer SHA must independently return 7/7 SUCCESS before it is used as the final Codex/Advisor review checkpoint.
+
+Production activation, real personal data, AWS/paid infrastructure, real SMS, production EİDS, Ads/monetization and Tarladan changes remain closed.
+
+## Settled business/formalization sequence
+
+**APPLICATION COMPLETION → ŞAHIS ŞİRKETİ → KOSGEB → SUPPORT / INVESTMENT → FUNDED PRODUCTION / LEGAL / EİDS / INFRASTRUCTURE**
+
+Repository/local/synthetic development continues first. Company formation and production-grade spending/legal/EİDS/infrastructure are not pulled forward merely because code is technically ready.
 
 ## Current development/infrastructure sequence
 

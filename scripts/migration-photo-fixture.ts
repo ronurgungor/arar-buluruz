@@ -217,6 +217,8 @@ if (mode === "seed") {
         contact_verified_at: new Date(now - 120_000).toISOString(),
         contact_verification_method: "whatsapp_same_number",
         publication_instruction_at: new Date(now - 60_000).toISOString(),
+        private_seller_declaration_at: new Date(now - 30_000).toISOString(),
+        content_rights_declaration_at: new Date(now - 30_000).toISOString(),
         status: "published",
         published_at: new Date(now).toISOString(),
         expires_at: new Date(now + 86_400_000).toISOString(),

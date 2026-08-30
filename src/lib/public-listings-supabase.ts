@@ -1,10 +1,19 @@
 import { z } from "zod";
 import { publicSellerContactSchema, type PublicSellerContact } from "@/lib/public-seller-contact";
+import {
+  stage1CategorySchema,
+  stage1ConditionSchema,
+  type Stage1Category,
+  type Stage1Condition,
+} from "@/lib/stage1-self-service-contract";
 
 export type ListingView = {
   id: string;
   title: string;
   price: number;
+  isFree?: boolean;
+  category?: Stage1Category;
+  condition?: Stage1Condition | null;
   city: string;
   district: string;
   seller: string;
@@ -48,7 +57,7 @@ const LISTING_PHOTO_MAX_BYTES = 8 * 1024 * 1024;
 const publicListingRowSchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(3).max(120),
-  description: z.string().min(10).max(5000),
+  description: z.string().max(5000),
   price_amount: z.union([z.number(), z.string()]).transform((value, context) => {
     const price = typeof value === "number" ? value : Number(value);
     if (!Number.isFinite(price) || price < 0) {
@@ -57,6 +66,9 @@ const publicListingRowSchema = z.object({
     }
     return price;
   }),
+  price_is_free: z.boolean(),
+  category: stage1CategorySchema,
+  item_condition: stage1ConditionSchema.nullable(),
   province: z.string().min(2).max(64),
   district: z.string().min(2).max(64),
   seller_display_name: z.string().min(2).max(80),
@@ -108,6 +120,9 @@ const PUBLIC_LISTING_COLLECTION_COLUMNS = [
   "title",
   "description",
   "price_amount",
+  "price_is_free",
+  "category",
+  "item_condition",
   "province",
   "district",
   "seller_display_name",
@@ -291,6 +306,9 @@ function mapPublicRow(row: z.infer<typeof publicListingRowSchema>, photos: strin
     id: row.id,
     title: row.title,
     price: row.price_amount,
+    isFree: row.price_is_free,
+    category: row.category,
+    condition: row.item_condition,
     city: row.province,
     district: row.district,
     seller: row.seller_display_name,

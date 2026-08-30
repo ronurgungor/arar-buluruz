@@ -116,7 +116,7 @@ const DISTRICTS_BY_CITY: Readonly<Record<LocationCity, readonly string[]>> = Obj
     city,
     source.split("|").map(toTurkishDisplayName),
   ]),
-) as Record<LocationCity, readonly string[]>;
+) as unknown as Record<LocationCity, readonly string[]>;
 
 export const locationCities: readonly string[] = [
   "Tüm Türkiye",

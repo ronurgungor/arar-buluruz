@@ -31,10 +31,10 @@ for public_marker in \
   'VITE_V0_ERROR_BOUNDARY_TEST' \
   '__v0_error_boundary_probe' \
   'PILOT_OPERATOR_SUPABASE_SERVICE_ROLE_KEY' \
-  'PILOT_OPERATOR_SUPABASE_URL' \
+  'PILOT_SUBMISSION_SUPABASE_SERVICE_ROLE_KEY' \
+  'PILOT_SUBMISSION_CAPABILITY_SECRET' \
   'register_sanitized_listing_photo' \
   'get_listing_photo_inventory' \
-  'Pending ilan ve fotoğrafı kaydet' \
   'Kurucu pilot işlemleri' \
   'V0 test sürümü' \
   'İlanlar örnektir' \
@@ -43,15 +43,19 @@ for public_marker in \
   'Pilot release candidate' \
   'yalnız sentetik test verisi' \
   'gerçek veri girişi kapalıdır' \
-  'Bu geliştirme ortamında' \
-  'https://wa.me/' \
-  'WhatsApp’tan yaz' \
-  'WhatsApp ile başvur'; do
+  'Bu geliştirme ortamında'; do
   if grep -R --binary-files=without-match -F "$public_marker" .output/public >/dev/null 2>&1; then
-    echo "pilot-rc public artifact contains test/demo/privileged/disabled-channel residue: $public_marker" >&2
+    echo "pilot-rc public artifact contains test/demo/privileged residue: $public_marker" >&2
     exit 1
   fi
 done
+
+# WhatsApp is allowed only as a buyer -> seller public listing contact action.
+# The superseded founder/WhatsApp intake path must not return.
+if git grep -nE 'VITE_PILOT_INTAKE_E164|buildPilotIntakeWhatsAppHref|Kurucuyu ara|Telefonla başvur|WhatsApp ile başvur' -- src/routes-pilot src/build-profiles/pilot; then
+  echo "Superseded founder/WhatsApp listing-intake path returned to the Stage-1 pilot graph." >&2
+  exit 1
+fi
 
 if find .output/public/assets -maxdepth 1 -type f -name 'ilan-*.jpg' -print -quit | grep -q .; then
   echo "pilot-rc public artifact contains V0 mock listing image assets." >&2
@@ -62,7 +66,9 @@ fi
 for secret_name in \
   MANAGED_SUPABASE_DB_URL \
   MANAGED_SUPABASE_S3_ACCESS_KEY_ID \
-  MANAGED_SUPABASE_S3_SECRET_ACCESS_KEY; do
+  MANAGED_SUPABASE_S3_SECRET_ACCESS_KEY \
+  PILOT_SUBMISSION_SUPABASE_SERVICE_ROLE_KEY \
+  PILOT_SUBMISSION_CAPABILITY_SECRET; do
   secret_value="${!secret_name:-}"
   if [[ -n "$secret_value" ]] && grep -R --binary-files=without-match -F "$secret_value" .output >/dev/null 2>&1; then
     echo "pilot-rc artifact contains secret value from $secret_name." >&2
@@ -70,4 +76,4 @@ for secret_name in \
   fi
 done
 
-echo "pilot-rc artifact boundary passed: no CI shim, V0/mock/test presentation residue, disabled WhatsApp CTA, privileged marker, or supplied secret leakage."
+echo "pilot-rc artifact boundary passed: no CI shim, V0/mock/test presentation residue, founder-intake path, privileged marker, or supplied secret leakage."

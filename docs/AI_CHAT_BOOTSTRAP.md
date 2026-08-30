@@ -1,6 +1,6 @@
 # Arar Buluruz — New Chat Bootstrap
 
-_Last reviewed: 2026-08-26, Europe/Istanbul_
+_Last reviewed: 2026-08-27, Europe/Istanbul_
 
 ## Purpose
 
@@ -19,12 +19,13 @@ Do not assume room numbers are permanent identities. `Sohbet N` and `Sohbet Dan�
 2. [`AI_OPERATING_MODEL_V2.md`](AI_OPERATING_MODEL_V2.md)
 3. [`ACTIVE_CHAT_HANDOFF.md`](ACTIVE_CHAT_HANDOFF.md)
 4. [`ARAR_BULURUZ_CURRENT_STATE.md`](ARAR_BULURUZ_CURRENT_STATE.md)
-5. exact active branch/PR/issue and executable evidence
-6. [`ARAR_BULURUZ_PROJECT_MEMORY.md`](ARAR_BULURUZ_PROJECT_MEMORY.md)
-7. [`ARAR_BULURUZ_DECISION_LOG.md`](ARAR_BULURUZ_DECISION_LOG.md)
-8. [`ARAR_BULURUZ_BACKLOG.md`](ARAR_BULURUZ_BACKLOG.md) as needed
-9. relevant technical contracts / dated evidence
-10. [`AI_TEAM_CAPABILITIES.md`](AI_TEAM_CAPABILITIES.md) and [`WORK_CODEX_CAPABILITY_PROFILE.md`](WORK_CODEX_CAPABILITY_PROFILE.md) only as historical capability evidence where useful
+5. [`PRODUCT_CONTRACT_V2.md`](PRODUCT_CONTRACT_V2.md)
+6. exact active branch/PR/issue and executable evidence
+7. [`ARAR_BULURUZ_PROJECT_MEMORY.md`](ARAR_BULURUZ_PROJECT_MEMORY.md)
+8. [`ARAR_BULURUZ_DECISION_LOG.md`](ARAR_BULURUZ_DECISION_LOG.md)
+9. [`ARAR_BULURUZ_BACKLOG.md`](ARAR_BULURUZ_BACKLOG.md) as needed
+10. relevant technical contracts / dated evidence
+11. [`AI_TEAM_CAPABILITIES.md`](AI_TEAM_CAPABILITIES.md) and [`WORK_CODEX_CAPABILITY_PROFILE.md`](WORK_CODEX_CAPABILITY_PROFILE.md) only as historical capability evidence where useful
 
 GitHub `main`, exact active branch/PR and executable evidence override summaries and chat memory.
 
@@ -109,31 +110,41 @@ Do not casually rebuild already-proven architecture without a material new reaso
 
 Repository readiness is not the same as live production activation.
 
-## Current pilot direction
+## Current product direction
 
-Use `ACTIVE_CHAT_HANDOFF.md` for the latest exact status.
+Use `PRODUCT_CONTRACT_V2.md` and `ACTIVE_CHAT_HANDOFF.md` for current product truth.
 
-The intended rollout remains deliberately small:
+The current product is a Türkiye-wide consumer classifieds experience with:
 
-**1 real Çorlu listing → review → 3 → review → 5–10.**
+- seller self-service listing creation;
+- 1–8 trusted photos;
+- broad categories;
+- condition selection;
+- priced or Ücretsiz listings;
+- İl / İlçe location;
+- seller display name + phone;
+- Telefon / WhatsApp / Telefon + WhatsApp;
+- provider-neutral phone verification;
+- atomic auto-publication after all required evidence/trusted-photo state is ready;
+- founder post-moderation/takedown;
+- lightweight phone-verified `İlanlarım` ownership;
+- search normalization such as `b150` ↔ `b 150`;
+- near-final consumer UX across mobile/tablet/desktop.
 
-Initial direction:
+No classic username/password account is required.
 
-- founder-operated moderation;
-- no Auth;
-- no seller account/dashboard;
-- no public self-service write;
-- no chat;
-- no platform payment/order/reservation;
-- no commission;
-- ads OFF during initial product validation;
+The following are historical/superseded as current product assumptions:
+
+- Çorlu-only product;
 - seller calls founder;
-- founder creates pending listing through trusted operator path;
-- public seller contact initially phone-only;
-- buyer/seller transaction entirely outside Arar Buluruz;
-- WhatsApp intake/contact/complaint OFF for the current first-pilot direction.
+- founder routinely enters listings;
+- founder pre-approval before ordinary publication;
+- phone-only seller contact;
+- WhatsApp OFF;
+- no public self-service;
+- no seller management surface.
 
-This is a validation model, not a permanent architecture commitment.
+Do not reintroduce those assumptions from older readiness/pilot documents unless the founder explicitly changes the product contract again.
 
 ## Current hard boundaries
 

@@ -1,6 +1,6 @@
 # Arar Buluruz — Decision Log
 
-_Last updated: 2026-08-10, Europe/Istanbul_
+_Last updated: 2026-08-28, Europe/Istanbul_
 
 This is an append-oriented record of consequential product, technical and operating decisions. It preserves **what was decided, why, alternatives rejected and what would cause reconsideration**.
 
@@ -242,18 +242,18 @@ Each new entry should include:
 ## D-023 — Initial real supply intent is validated, but operational marketplace supply is not
 
 - **Date:** 2026-08-09
-- **Status:** Active evidence boundary
+- **Status:** Historical evidence boundary; current product assumptions superseded by D-025
 - **Decision:** Founder-accepted post-publication user feedback establishes that users found the application understandable and that real users explicitly said their own listings may be published. This is sufficient to record **initial real supply intent** as validated.
 - **Rationale:** The prior V0 boundary correctly avoided claiming real supply without evidence; the new user statements are direct evidence of willingness to supply listings.
 - **Limit:** This does not validate real listing intake, listing ownership, seller-contact operations, moderation sustainability, payment/external-sales safety, transaction conversion or a functioning supply-demand loop.
-- **Consequence:** The future first real pilot target may remain 5–10 founder-controlled Çorlu listings, but real personal-data collection and public real-listing activation still require separate founder gates.
+- **Consequence (historical):** At that time the future first real pilot target remained 5–10 founder-controlled Çorlu listings. D-025 later supersedes the Çorlu-only/founder-controlled intake product assumption. Real personal-data collection and public real-listing activation still require separate founder gates.
 - **Review trigger:** Actual controlled pilot operations, measured seller completion/retention, moderation outcomes and buyer behavior.
 
 ## D-024 — Simplified intentionally public seller contact for the initial Çorlu pilot
 
 - **Date:** 2026-08-10
-- **Status:** Founder-selected product/architecture contract; real-data/public activation closed
-- **Decision:** For the founder-operated initial 5–10 listing Çorlu pilot, each publishable listing has exactly one intentionally public seller-contact channel. Default is WhatsApp; the seller may instead select phone. The authoritative contact value is stored once on `public.listings` with verification/publication audit fields. The preparation-only `private.listing_contacts` table is removed rather than duplicated or paired with an anonymous privileged resolver.
+- **Status:** Historical/superseded product contract; public-contact storage/lifecycle principles remain relevant where not replaced by D-025
+- **Decision (historical):** For the founder-operated initial 5–10 listing Çorlu pilot, each publishable listing had one intentionally public seller-contact channel. D-025 supersedes the founder-operated/Çorlu-only/single-choice product framing and now permits Telefon / WhatsApp / Telefon + WhatsApp. The authoritative public-contact storage/lifecycle boundary on `public.listings` remains relevant.
 - **Public exposure:** Active published `contact_channel` and `contact_e164` are deliberately anonymously readable under the same listing RLS lifecycle. A raw PostgREST caller may enumerate those two fields for all active published rows; for this small intentionally-public pilot this is an **accepted public-disclosure consequence**, not a hidden security boundary.
 - **Application minimization:** The normal UI exposes the selected CTA only on listing detail. Collection-card payloads, sitemap and structured/search metadata do not intentionally carry contact. UI omission does not make the contact secret.
 - **Lifecycle:** Draft/pending/rejected are non-public. Expired/unpublished cease normal public retrieval. Contact identity changes reset verification and publication instruction and immediately unpublish a live listing; seller withdrawal of the publication instruction also unpublishes. Reverification + new instruction + explicit republish are required.
@@ -263,3 +263,49 @@ Each new entry should include:
 - **Cost:** No paid messaging/relay/auth service is introduced; recurring production cost authorization remains 0 TL.
 - **Evidence:** `docs/REAL_CORLU_PILOT_SELLER_CONTACT.md`; implementation is prepared under PR #58 and must remain synthetic/local/CI-only until a separate activation gate.
 - **Review trigger:** Material scraping/spam/harassment during real pilot, scale beyond founder-operated listings, need for buyer/seller accounts, verified availability of a phone-number-minimizing WhatsApp identifier, or a separately approved privacy/security architecture change.
+
+
+## D-025 — Türkiye-wide seller self-service with verified-phone atomic auto-publication
+
+- **Date:** 2026-08-27
+- **Status:** Active founder-selected product contract; production/real-data activation closed
+- **Decision:** Arar Buluruz moves from the earlier Çorlu-only founder-intake/pre-approval model to a normal Türkiye-wide consumer classifieds model. Sellers create their own listings directly, verify the listing phone, and the application atomically auto-publishes only after required declaration/publication evidence and trusted-photo state are complete.
+- **Location:** Türkiye-wide İl / İlçe. Çorlu is no longer a product restriction.
+- **Seller ownership:** No classic username/password account is required. `/ilanlarim` uses verified-phone capability isolation so a seller can see and manage only listings associated with the verified phone.
+- **Lifecycle:** Seller can view, edit, unpublish, mark sold and delete authorized listings. Cross-phone mutation remains forbidden. Founder moderation is post-publication takedown/delete, not routine pre-publication entry or approval.
+- **Contact:** Active listing may expose Telefon, WhatsApp or Telefon + WhatsApp according to seller choice. Buyer CTAs preserve exact `tel:` and `https://wa.me/` behavior. In-app chat remains out of scope.
+- **Price:** Ücretsiz is an explicit state; free listings render as `Ücretsiz`, never `₺0`.
+- **Search:** Existing normalization remains, including equivalent matching such as `b150` ↔ `b 150`.
+- **Security invariants preserved:** RLS, service-role/browser separation, verified-phone capability isolation, direct anonymous write denial, private Storage, trusted image sanitization, signed-photo lifecycle, idempotency/race controls, rate limiting, partial-failure cleanup and fail-closed founder takedown are not weakened by the product change.
+- **UX:** Public consumer identity is near-final classifieds UX, not pilot/test/founder/compliance-tool framing. Primary public navigation is Ara / İlan Ver / İlanlarım.
+- **Supersedes:** D-023/D-024 only where they encoded Çorlu-only rollout, founder routine listing entry/pre-approval, phone-only/single-choice contact or no-self-service assumptions. Historical evidence and still-valid security/privacy principles are retained.
+- **Production boundary:** This product decision does not authorize real personal data, production deployment, AWS, paid infrastructure, Ads, monetization, payment/order/reservation/commission, full classic Auth, native app or Tarladan changes.
+- **Executable evidence:** PR #78 exact frontend checkpoint `41691652070cbc117a943578a49056d49d51e6f0`; all seven canonical workflows GREEN, including Stage 1 self-service acceptance run `33091191129` after a same-SHA rerun resolved a transient local port collision.
+- **Canonical product document:** `docs/PRODUCT_CONTRACT_V2.md`.
+- **Review trigger:** Measured real seller/buyer behavior, material abuse/security evidence, monetization, professional sellers, need for classic accounts/chat/payment, or a founder decision to change the product contract.
+
+
+## D-026 — Simplified public-phone, rules-evidence and remembered-seller contract
+
+- **Date:** 2026-08-28
+- **Status:** Active founder-selected product contract; production/real-data activation closed
+- **Decision:** Simplify D-025 without reopening the Türkiye-wide self-service direction. A seller provides one verified public phone; the buyer always receives both **Ara** and **WhatsApp** actions derived from the same E.164 number. The consumer no longer chooses Telefon / WhatsApp / Telefon + WhatsApp.
+- **Publication evidence:** The three consumer declaration checkboxes are superseded. New publication records versioned `listing_rules_version` + `listing_rules_accepted_at`, together with verified-phone/publication/trusted-photo facts. Historical declaration columns remain nullable for history/migration compatibility and must not be fabricated for new rows.
+- **Optional fields:** Condition and description are optional. Condition has no silent database/UI default; empty description is valid and no filler text is invented.
+- **Seller recognition:** Successful verification creates a bounded 7-day signed, phone-bound HttpOnly, SameSite=Lax seller session, Secure on HTTPS. A valid session avoids needless repeat OTP. JavaScript-readable capability/sessionStorage storage is superseded.
+- **Rate limiting:** OTP start is phone-primary plus coarse trusted-IP protection; wrong-code attempts are challenge-bounded; listing velocity is seller-phone-primary plus coarse trusted-IP protection; idempotent replay is resolved before new-listing quota consumption. Synthetic local CI may use explicit relaxed ceilings.
+- **Moderation:** Founder remains post-moderation/takedown, not normal pre-publication approval.
+- **Vasıta/EİDS:** Vasıta remains in the product and synthetic/local test scope. Real production vehicle publication fails closed until required EİDS authorization verification is integrated and separately approved.
+- **Supersedes:** D-025 only where it specified seller contact choice, short consumer declarations, JavaScript-readable verified-phone capability framing, or effectively universal condition/description requirements. D-025's Türkiye-wide self-service, atomic publication, seller ownership, search and preserved security boundaries remain active.
+- **Production boundary:** No production, real personal data, AWS, paid infrastructure, real SMS, Ads, payment/order, production EİDS or Tarladan change is authorized by this decision.
+- **Review trigger:** Measured abuse, seller completion problems, a legal/production EİDS requirement, or a founder decision to change the consumer contract.
+
+## D-027 — Settled company/KOSGEB/funded-production sequence
+
+- **Date:** 2026-08-28
+- **Status:** Active founder business sequence
+- **Decision:** The current settled sequence is **APPLICATION COMPLETION → ŞAHIS ŞİRKETİ → KOSGEB → SUPPORT / INVESTMENT → FUNDED PRODUCTION / LEGAL / EİDS / INFRASTRUCTURE**.
+- **Rationale:** Finish the application and technical product before opening avoidable company/recurring-cost/production work; then formalize the business and use KOSGEB/support/investment to fund production-grade legal, EİDS and infrastructure requirements.
+- **Consequence:** Repository/local/synthetic work may continue. Company formation, paid production infrastructure, production legal/EİDS execution and recurring spend are not pulled forward merely because code is technically ready.
+- **Compatibility:** D-022's zero-spend gate remains compatible. Historical production-provider research remains reference material, not a purchase instruction.
+- **Review trigger:** A material KOSGEB eligibility/timing requirement, a legal deadline that must precede the sequence, or explicit founder revision.

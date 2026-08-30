@@ -18,8 +18,6 @@ type BuildProfile = (typeof buildProfiles)[number];
 const discoveryProfiles = ["closed", "real-content"] as const;
 type DiscoveryProfile = (typeof discoveryProfiles)[number];
 
-const E164_PATTERN = /^\+[1-9][0-9]{7,14}$/;
-
 function failBuildInvariant(message: string): never {
   throw new Error(`[Arar Buluruz build invariant] ${message}`);
 }
@@ -55,13 +53,6 @@ function resolveDiscoveryProfile(): DiscoveryProfile {
     failBuildInvariant(`Unknown VITE_DISCOVERY_PROFILE: ${configuredProfile}`);
   }
   return configuredProfile as DiscoveryProfile;
-}
-
-function requirePilotIntakeContact(): void {
-  const contact = process.env.VITE_PILOT_INTAKE_E164?.trim();
-  if (!contact || !E164_PATTERN.test(contact)) {
-    failBuildInvariant("Pilot release-candidate runtime requires a valid VITE_PILOT_INTAKE_E164.");
-  }
 }
 
 function requireSupabasePublicConfig(): void {
@@ -108,7 +99,7 @@ if (buildProfile === "public-v0") {
     failBuildInvariant("Public V0 must not expose the founder operator UI.");
   }
   if (process.env.VITE_PILOT_INTAKE_E164?.trim()) {
-    failBuildInvariant("Public V0 must not embed a pilot intake contact.");
+    failBuildInvariant("Public V0 must not embed the superseded founder intake contact.");
   }
 
   const errorBoundaryProbeEnabled = process.env.VITE_V0_ERROR_BOUNDARY_TEST === "enabled";
@@ -144,7 +135,6 @@ if (buildProfile === "public-v0") {
       "The public pilot-rc artifact must not expose the local founder operator UI.",
     );
   }
-  requirePilotIntakeContact();
   requireSupabasePublicConfig();
   process.env.VITE_ARAR_PRODUCT_PHASE = "pilot-rc";
   process.env.VITE_PUBLIC_V0_RUNTIME = "disabled";
@@ -173,7 +163,6 @@ if (buildProfile === "public-v0") {
     failBuildInvariant("The gate1-ephemeral-ci profile requires VITE_LISTINGS_SOURCE=supabase.");
   }
   requireSupabasePublicConfig();
-  requirePilotIntakeContact();
 
   process.env.VITE_GATE1_TEST_OPERATIONS ??= "enabled";
   if (process.env.VITE_GATE1_TEST_OPERATIONS !== "enabled") {
@@ -196,7 +185,6 @@ if (buildProfile === "public-v0") {
       failBuildInvariant("Local founder operator UI requires VITE_LISTINGS_SOURCE=supabase.");
     }
     requireSupabasePublicConfig();
-    requirePilotIntakeContact();
     process.env.VITE_ARAR_PRODUCT_PHASE = "pilot-rc";
   } else {
     process.env.VITE_ARAR_PRODUCT_PHASE = "v0";

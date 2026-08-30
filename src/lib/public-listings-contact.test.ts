@@ -18,6 +18,9 @@ const baseRow = {
   title: "Synthetic public contact listing",
   description: "Synthetic listing proving the approved detail-only application contact payload.",
   price_amount: "1250.00",
+  price_is_free: false,
+  category: "home",
+  item_condition: "good",
   province: "Tekirdağ",
   district: "Çorlu",
   seller_display_name: "Synthetic Seller",
@@ -36,7 +39,7 @@ function contactBoundaryFetch(
   listingRow: typeof baseRow | typeof detailRow,
   onListingRequest: (url: URL) => void,
 ): typeof fetch {
-  return async (input) => {
+  return (async (input) => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
     if (url.pathname === "/rest/v1/listings") {
       onListingRequest(url);
@@ -52,7 +55,7 @@ function contactBoundaryFetch(
       });
     }
     throw new Error(`Unexpected URL in seller-contact boundary test: ${url.toString()}`);
-  };
+  }) as typeof fetch;
 }
 
 describe("public listings seller-contact payload boundary", () => {
@@ -96,11 +99,11 @@ describe("public listings seller-contact payload boundary", () => {
   });
 
   test("fails closed if an active detail response lacks the required public contact", async () => {
-    const fetchMock: typeof fetch = async () =>
+    const fetchMock = (async () =>
       new Response(JSON.stringify([baseRow]), {
         status: 200,
         headers: { "content-type": "application/json" },
-      });
+      })) as unknown as typeof fetch;
 
     await expect(fetchPublicListing(baseRow.id, config, fetchMock)).rejects.toBeInstanceOf(
       PublicListingsError,

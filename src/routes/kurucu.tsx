@@ -1,13 +1,17 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ImagePlus, RefreshCw, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { RefreshCw, Trash2 } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
+import type {
+  Stage1ModerationListing,
+  Stage1ModerationResponse,
+} from "@/lib/stage1-moderation-contract";
 import {
-  PILOT_DISTRICT,
-  PILOT_PROVINCE,
-  type PilotOperatorListing,
-  type PilotOperatorResponse,
-} from "@/lib/pilot-operator-contract";
+  STAGE1_CATEGORY_LABELS,
+  STAGE1_CONDITION_LABELS,
+  type Stage1Category,
+  type Stage1Condition,
+} from "@/lib/stage1-self-service-contract";
 
 const operatorUiEnabled = import.meta.env.VITE_PILOT_OPERATOR_UI === "enabled";
 
@@ -18,132 +22,77 @@ export const Route = createFileRoute("/kurucu")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { handlePilotOperatorRequest } = await import("../lib/pilot-operator-server");
-        return handlePilotOperatorRequest(request);
+        const { handleStage1ModerationRequest } = await import("../lib/stage1-moderation-server");
+        return handleStage1ModerationRequest(request);
       },
     },
   },
   head: () => ({
     meta: [
-      { title: "Kurucu pilot işlemleri — Arar Buluruz" },
+      { title: "İlan moderasyonu — Arar Buluruz" },
       { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
     ],
   }),
-  component: FounderPilotOperator,
+  component: FounderModeration,
 });
 
-const fieldClass =
-  "h-12 w-full rounded-xl border border-border bg-card px-4 text-base outline-none focus:border-primary";
-
-async function callOperator(formData: FormData): Promise<PilotOperatorResponse> {
-  let response: Response;
+async function callModeration(form: FormData): Promise<Stage1ModerationResponse> {
   try {
-    response = await fetch("/kurucu", {
+    const response = await fetch("/kurucu", {
       method: "POST",
-      body: formData,
+      body: form,
       credentials: "same-origin",
       headers: { Accept: "application/json" },
     });
+    return (await response.json()) as Stage1ModerationResponse;
   } catch {
-    return {
-      ok: false,
-      code: "BACKEND_UNAVAILABLE",
-      message: "Kurucu işlem servisine ulaşılamadı.",
-    };
-  }
-  try {
-    return (await response.json()) as PilotOperatorResponse;
-  } catch {
-    return {
-      ok: false,
-      code: "OPERATION_FAILED",
-      message: "Kurucu işlem servisi geçerli bir yanıt vermedi.",
-    };
+    return { ok: false, code: "BACKEND_UNAVAILABLE", message: "Moderasyon servisine ulaşılamadı." };
   }
 }
 
-function statusLabel(status: PilotOperatorListing["status"]): string {
-  switch (status) {
-    case "draft":
-      return "Taslak";
-    case "pending":
-      return "İncelemede";
-    case "published":
-      return "Yayında";
-    case "unpublished":
-      return "Yayından kaldırıldı";
-    case "rejected":
-      return "Reddedildi";
-  }
+function statusLabel(status: Stage1ModerationListing["status"]) {
+  if (status === "pending") return "İncelemede";
+  if (status === "published") return "Yayında";
+  if (status === "unpublished") return "Yayından kaldırıldı";
+  if (status === "rejected") return "Reddedildi";
+  if (status === "sold") return "Satıldı";
+  return "Taslak";
 }
 
-function FounderPilotOperator() {
-  const [listings, setListings] = useState<PilotOperatorListing[]>([]);
+function FounderModeration() {
+  const [listings, setListings] = useState<Stage1ModerationListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [contactConfirmed, setContactConfirmed] = useState(false);
-  const [publicationConfirmed, setPublicationConfirmed] = useState(false);
-  const [expiryDays, setExpiryDays] = useState("30");
-  const [photoName, setPhotoName] = useState("");
-  const createFormRef = useRef<HTMLFormElement | null>(null);
 
   const refresh = async () => {
     const form = new FormData();
     form.set("action", "list");
-    const result = await callOperator(form);
-    if (!result.ok) {
+    const result = await callModeration(form);
+    if (result.ok) {
+      setListings(result.listings ?? []);
+      setError("");
+    } else {
       setError(result.message);
-      setLoading(false);
-      return false;
     }
-    setListings(result.listings ?? []);
-    setError("");
     setLoading(false);
-    return true;
   };
 
   useEffect(() => {
     void refresh();
   }, []);
 
-  const runListingAction = async (
-    action: "publish" | "unpublish" | "reject" | "delete",
-    listingId: string,
-  ) => {
+  const runAction = async (action: "unpublish" | "delete", listingId: string) => {
     setBusyId(listingId);
     setMessage("");
     setError("");
     const form = new FormData();
     form.set("action", action);
     form.set("listingId", listingId);
-    if (action === "publish") {
-      form.set("expiresInDays", expiryDays);
-      if (contactConfirmed) form.set("contactControlConfirmed", "confirmed");
-      if (publicationConfirmed) form.set("publicationInstructionConfirmed", "confirmed");
-    }
-    const result = await callOperator(form);
+    const result = await callModeration(form);
     if (result.ok) {
       setMessage(result.message);
-      await refresh();
-    } else {
-      setError(result.message);
-    }
-    setBusyId(null);
-  };
-
-  const submitCreate = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (busyId) return;
-    setBusyId("create");
-    setMessage("");
-    setError("");
-    const result = await callOperator(new FormData(event.currentTarget));
-    if (result.ok) {
-      setMessage(result.message);
-      createFormRef.current?.reset();
-      setPhotoName("");
       await refresh();
     } else {
       setError(result.message);
@@ -154,325 +103,145 @@ function FounderPilotOperator() {
   return (
     <div className="min-h-screen">
       <TopBar />
-      <main className="mx-auto max-w-3xl px-4 pb-16">
-        <div className="mt-6 rounded-2xl border border-border bg-card p-5">
-          <h1 className="text-2xl font-extrabold tracking-tight">Kurucu pilot işlemleri</h1>
+      <main className="mx-auto max-w-4xl px-4 pb-16">
+        <section className="mt-6 rounded-2xl border border-border bg-card p-5">
+          <h1 className="text-2xl font-extrabold tracking-tight">İlan moderasyonu</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Bu yüzey yalnız yerel ve güvenilir founder oturumunda çalışır. Stage 1–3 yalnız özel,
-            ara sıra satış yapan kişilerin kendi kullanılmış kişisel/ev eşyaları içindir. WhatsApp,
-            profesyonel/işletme satıcısı ve yeniden satış için yeni ürün akışı kapalıdır.
+            Satıcı doğrulanmış ilanını doğrudan yayınlar. Bu yerel ve güvenilir yüzey sonradan
+            moderasyon, şikâyet inceleme ve gerektiğinde yayından kaldırma içindir.
           </p>
-          <p className="mt-2 text-sm font-medium text-foreground">
-            Pilot konumu: {PILOT_PROVINCE} / {PILOT_DISTRICT}
-          </p>
-        </div>
-
-        {(message || error) && (
-          <div
-            role={error ? "alert" : "status"}
-            className={`mt-4 rounded-xl border p-3 text-sm ${
-              error
-                ? "border-destructive/40 bg-destructive/5 text-destructive"
-                : "border-border bg-accent/50 text-foreground"
-            }`}
-          >
-            {error || message}
-          </div>
-        )}
-
-        <section className="mt-6">
-          <h2 className="text-lg font-bold">Yeni pending ilan</h2>
-          <form
-            ref={createFormRef}
-            className="mt-3 grid gap-4 rounded-2xl border border-border bg-card p-4 sm:grid-cols-2"
-            onSubmit={submitCreate}
-          >
-            <input type="hidden" name="action" value="create" />
-            <input type="hidden" name="contactChannel" value="phone" />
-
-            <div className="sm:col-span-2 rounded-xl border border-border bg-accent/30 p-3 text-sm">
-              <p className="font-semibold">Oluşturma öncesi zorunlu operasyonel teyitler</p>
-              <div className="mt-3 space-y-3">
-                <label className="flex items-start gap-2">
-                  <input
-                    required
-                    type="checkbox"
-                    name="privacyNoticeDelivered"
-                    value="confirmed"
-                    className="mt-1"
-                  />
-                  <span>
-                    Kişisel veri alınmadan önce Gizlilik ve Aydınlatma metni satıcıya iletildi.
-                  </span>
-                </label>
-                <label className="flex items-start gap-2">
-                  <input
-                    required
-                    type="checkbox"
-                    name="privateSellerDeclaration"
-                    value="confirmed"
-                    className="mt-1"
-                  />
-                  <span>
-                    Satıcı özel kişi olarak ara sıra hareket ediyor; ürün kendi kullanılmış
-                    kişisel/ev eşyasıdır.
-                  </span>
-                </label>
-                <label className="flex items-start gap-2">
-                  <input
-                    required
-                    type="checkbox"
-                    name="contentRightsDeclaration"
-                    value="confirmed"
-                    className="mt-1"
-                  />
-                  <span>
-                    Fotoğraf/metin kullanım yetkisi kontrol edildi; çocuk, üçüncü kişi veya özel
-                    nitelikli veri bulunmuyor.
-                  </span>
-                </label>
-              </div>
-            </div>
-
-            <label className="block sm:col-span-2">
-              <span className="text-sm font-medium">İlanda görünecek ad</span>
-              <input
-                required
-                name="sellerDisplayName"
-                minLength={2}
-                maxLength={80}
-                className={`mt-1 ${fieldClass}`}
-                placeholder="Ad"
-              />
-            </label>
-            <label className="block sm:col-span-2">
-              <span className="text-sm font-medium">Başlık</span>
-              <input
-                required
-                name="title"
-                minLength={3}
-                maxLength={120}
-                className={`mt-1 ${fieldClass}`}
-                placeholder="Kısa ve net ilan başlığı"
-              />
-            </label>
-            <label className="block">
-              <span className="text-sm font-medium">Fiyat (TL)</span>
-              <input
-                required
-                name="price"
-                inputMode="decimal"
-                pattern="[0-9]+([,.][0-9]{1,2})?"
-                className={`mt-1 ${fieldClass}`}
-                placeholder="0"
-              />
-            </label>
-            <div className="block">
-              <span className="text-sm font-medium">İletişim kanalı</span>
-              <div className="mt-1 flex h-12 items-center rounded-xl border border-border bg-muted/40 px-4 text-sm font-semibold">
-                Telefon
-              </div>
-            </div>
-            <div className="block sm:col-span-2">
-              <label htmlFor="operator-contact-e164" className="text-sm font-medium">
-                Satıcı telefonu (E.164)
-              </label>
-              <input
-                id="operator-contact-e164"
-                required
-                name="contactE164"
-                inputMode="tel"
-                pattern="\+[1-9][0-9]{7,14}"
-                className={`mt-1 ${fieldClass}`}
-                placeholder="+905xxxxxxxxx"
-              />
-              <span className="mt-1 block text-xs text-muted-foreground">
-                Numara yalnız ilanla ilgili iletişim için kamuya açılır. Yayın öncesi kontrol ve
-                ayrı yayın talimatı zorunludur.
-              </span>
-            </div>
-            <label className="block sm:col-span-2">
-              <span className="text-sm font-medium">Açıklama</span>
-              <textarea
-                required
-                name="description"
-                minLength={10}
-                maxLength={5000}
-                rows={5}
-                className="mt-1 w-full rounded-xl border border-border bg-card p-4 text-base outline-none focus:border-primary"
-                placeholder="Ürünün durumu ve önemli ayrıntılar"
-              />
-            </label>
-            <label className="block sm:col-span-2">
-              <span className="text-sm font-medium">Fotoğraf</span>
-              <span className="mt-1 flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/40 px-4 text-center hover:bg-muted/60">
-                <ImagePlus aria-hidden className="h-6 w-6 text-muted-foreground" />
-                <span className="mt-2 text-sm font-semibold">
-                  {photoName || "JPEG, PNG veya WebP seç"}
-                </span>
-                <span className="mt-1 text-xs text-muted-foreground">En fazla 8 MB</span>
-                <input
-                  required
-                  data-testid="operator-photo-input"
-                  name="photo"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="sr-only"
-                  onChange={(event) => setPhotoName(event.currentTarget.files?.[0]?.name ?? "")}
-                />
-              </span>
-            </label>
-            <button
-              type="submit"
-              disabled={busyId !== null}
-              className="h-12 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50 sm:col-span-2"
-            >
-              {busyId === "create" ? "Kaydediliyor…" : "Pending ilan ve fotoğrafı kaydet"}
-            </button>
-          </form>
-        </section>
-
-        <section className="mt-8">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-bold">Pilot ilanları</h2>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => {
                 setLoading(true);
                 void refresh();
               }}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border px-4 text-sm font-semibold"
+              className="inline-flex h-11 items-center gap-2 rounded-full border border-border px-4 text-sm font-semibold"
             >
               <RefreshCw aria-hidden className="h-4 w-4" /> Yenile
             </button>
           </div>
+        </section>
 
-          <div className="mt-3 rounded-2xl border border-border bg-card p-4">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <label className="flex items-start gap-2 text-sm sm:col-span-1">
-                <input
-                  type="checkbox"
-                  checked={contactConfirmed}
-                  onChange={(event) => setContactConfirmed(event.target.checked)}
-                  className="mt-1"
-                />
-                <span>Telefon kontrolü tamamlandı</span>
-              </label>
-              <label className="flex items-start gap-2 text-sm sm:col-span-1">
-                <input
-                  type="checkbox"
-                  checked={publicationConfirmed}
-                  onChange={(event) => setPublicationConfirmed(event.target.checked)}
-                  className="mt-1"
-                />
-                <span>
-                  “Numaram ilanla ilgili iletişim için kamuya açık yayımlansın” talimatı teyit
-                  edildi
-                </span>
-              </label>
-              <label className="block text-sm sm:col-span-1">
-                <span className="font-medium">Yayın süresi (gün)</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={90}
-                  value={expiryDays}
-                  onChange={(event) => setExpiryDays(event.target.value)}
-                  className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3"
-                />
-              </label>
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Yayın işlemi en az bir private fotoğraf ve iki ayrı operasyonel teyit olmadan fail
-              closed kalır.
-            </p>
-          </div>
+        {(message || error) && (
+          <p
+            role={error ? "alert" : "status"}
+            className={`mt-4 rounded-xl border p-3 text-sm ${error ? "border-destructive/40 text-destructive" : "border-border bg-accent/40"}`}
+          >
+            {error || message}
+          </p>
+        )}
 
-          {loading ? (
-            <div role="status" className="mt-4 rounded-2xl border border-border p-5 text-sm">
-              İlan envanteri yükleniyor…
-            </div>
-          ) : listings.length === 0 ? (
-            <div role="status" className="mt-4 rounded-2xl border border-border p-5 text-sm">
-              Henüz pilot ilanı yok.
-            </div>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {listings.map((listing) => (
-                <li
-                  key={listing.id}
-                  data-testid={`operator-listing-${listing.id}`}
-                  className="rounded-2xl border border-border bg-card p-4"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-foreground">{listing.title}</h3>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {listing.sellerDisplayName} · {listing.photoCount} fotoğraf · {listing.id}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {listing.contactChannel ?? "iletişim yok"} · {listing.contactE164 ?? "—"}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">
-                      {statusLabel(listing.status)}
-                    </span>
+        {loading ? (
+          <p role="status" className="mt-6 text-sm text-muted-foreground">
+            Moderasyon kuyruğu yükleniyor…
+          </p>
+        ) : (
+          <ul className="mt-6 space-y-4">
+            {listings.map((listing) => (
+              <li
+                key={listing.id}
+                data-testid={`moderation-listing-${listing.id}`}
+                className="rounded-2xl border border-border bg-card p-4"
+              >
+                <div className="grid gap-4 sm:grid-cols-[180px_minmax(0,1fr)]">
+                  <div>
+                    {listing.photoUrls[0] ? (
+                      <img
+                        src={listing.photoUrls[0]}
+                        alt={`${listing.title} moderasyon fotoğrafı`}
+                        className="aspect-[4/3] w-full rounded-xl object-cover"
+                      />
+                    ) : (
+                      <div className="flex aspect-[4/3] items-center justify-center rounded-xl bg-muted text-xs text-muted-foreground">
+                        Fotoğraf yok
+                      </div>
+                    )}
+                    {listing.photoUrls.length > 1 && (
+                      <div className="mt-2 grid grid-cols-3 gap-1">
+                        {listing.photoUrls.slice(1, 4).map((url, index) => (
+                          <img
+                            key={url}
+                            src={url}
+                            alt={`${listing.title} fotoğraf ${index + 2}`}
+                            className="aspect-square rounded-lg object-cover"
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {(listing.status === "pending" || listing.status === "unpublished") && (
-                      <button
-                        type="button"
-                        disabled={busyId !== null || !contactConfirmed || !publicationConfirmed}
-                        onClick={() => void runListingAction("publish", listing.id)}
-                        className="min-h-11 rounded-full bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-40"
-                      >
-                        Yayınla
-                      </button>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h2 className="text-lg font-bold">{listing.title}</h2>
+                      <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">
+                        {statusLabel(listing.status)}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-lg font-extrabold text-primary">
+                      {listing.isFree
+                        ? "Ücretsiz"
+                        : new Intl.NumberFormat("tr-TR", {
+                            style: "currency",
+                            currency: "TRY",
+                            maximumFractionDigits: 0,
+                          }).format(listing.price)}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {STAGE1_CATEGORY_LABELS[listing.category as Stage1Category] ??
+                        listing.category}{" "}
+                      ·{" "}
+                      {listing.condition
+                        ? (STAGE1_CONDITION_LABELS[listing.condition as Stage1Condition] ??
+                          listing.condition)
+                        : "Durum belirtilmemiş"}
+                    </p>
+                    {listing.description.trim() && (
+                      <p className="mt-3 text-sm leading-relaxed">{listing.description}</p>
                     )}
-                    {listing.status === "pending" && (
+                    <div className="mt-3 rounded-xl bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
+                      <strong className="text-foreground">Satıcı:</strong>{" "}
+                      {listing.sellerDisplayName}
+                      <br />
+                      <strong className="text-foreground">İletişim:</strong>{" "}
+                      {listing.contactE164 ? `Ara + WhatsApp · ${listing.contactE164}` : "Yok"}
+                      <br />
+                      <strong className="text-foreground">Telefon kontrolü:</strong>{" "}
+                      {listing.phoneVerified ? "Tamam" : "Eksik"} ·{" "}
+                      <strong className="text-foreground">Yayın talimatı:</strong>{" "}
+                      {listing.publicationInstructionRecorded ? "Kayıtlı" : "Eksik"}
+                      <br />
+                      <strong className="text-foreground">İlan kuralları:</strong>{" "}
+                      {listing.listingRulesAccepted
+                        ? `Kabul edildi · ${listing.listingRulesVersion ?? "sürüm bilinmiyor"}`
+                        : "Eksik"}
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {listing.status === "published" && (
+                        <button
+                          type="button"
+                          disabled={busyId !== null}
+                          onClick={() => void runAction("unpublish", listing.id)}
+                          className="h-11 rounded-full border border-border px-5 text-sm font-semibold disabled:opacity-50"
+                        >
+                          Yayından kaldır
+                        </button>
+                      )}
                       <button
                         type="button"
                         disabled={busyId !== null}
-                        onClick={() => void runListingAction("reject", listing.id)}
-                        className="min-h-11 rounded-full border border-border px-4 text-sm font-semibold disabled:opacity-40"
-                      >
-                        Reddet
-                      </button>
-                    )}
-                    {listing.status === "published" && (
-                      <button
-                        type="button"
-                        disabled={busyId !== null}
-                        onClick={() => void runListingAction("unpublish", listing.id)}
-                        className="min-h-11 rounded-full border border-border px-4 text-sm font-semibold disabled:opacity-40"
-                      >
-                        Yayından kaldır
-                      </button>
-                    )}
-                    {listing.status !== "published" && (
-                      <button
-                        type="button"
-                        disabled={busyId !== null}
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              "Bu ilanı ve ilişkili private Storage objelerini kalıcı olarak silmek istiyor musunuz?",
-                            )
-                          ) {
-                            void runListingAction("delete", listing.id);
-                          }
-                        }}
-                        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-destructive/40 px-4 text-sm font-semibold text-destructive disabled:opacity-40"
+                        onClick={() => void runAction("delete", listing.id)}
+                        className="inline-flex h-11 items-center gap-2 rounded-full border border-destructive/40 px-4 text-sm font-semibold text-destructive disabled:opacity-50"
                       >
                         <Trash2 aria-hidden className="h-4 w-4" /> Sil
                       </button>
-                    )}
+                    </div>
                   </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </main>
     </div>
   );

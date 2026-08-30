@@ -324,12 +324,12 @@ describe("trusted real-pilot photo pipeline", () => {
       },
     );
 
-    expect(uploadedMime).toBe("image/webp");
+    expect(uploadedMime as string | null).toBe("image/webp");
     expect(uploadedBytes).not.toBeNull();
     expect(validateListingPhotoContentSignature("image/webp", uploadedBytes!)).toBeNull();
     expect(Array.from(uploadedBytes!)).not.toEqual(Array.from(input));
     expect(containsAscii(uploadedBytes!, XMP_MARKER)).toBe(false);
-    expect(persisted).toEqual(result);
+    expect(persisted as StoredListingPhotoMetadata | null).toEqual(result);
     expect(result).toEqual({
       listingId,
       photoId,

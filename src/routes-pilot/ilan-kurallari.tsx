@@ -7,7 +7,7 @@ export const Route = createFileRoute("/ilan-kurallari")({
       { title: "İlan Kuralları — Arar Buluruz" },
       {
         name: "description",
-        content: "Arar Buluruz Çorlu doğrulaması özel satıcı ve ilan kuralları.",
+        content: "Arar Buluruz ilan yayınlama ve içerik kuralları.",
       },
       { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
     ],
@@ -19,50 +19,62 @@ function ListingRules() {
   return (
     <PilotPublisherInfoPage
       title="İlan Kuralları"
-      intro="İlk Çorlu doğrulamasında kapsam bilinçli olarak dardır: yalnız özel kişilerin ara sıra kendi kullanılmış kişisel veya ev eşyalarını ilan etmesi desteklenir."
+      intro="İlanın doğru, güvenli ve alıcı için anlaşılır olmalı. İlanı yayınlayarak bu kuralların güncel sürümünü kabul etmiş olursun."
       sections={[
         {
-          title: "Satıcı ve ürün kapsamı",
+          title: "Doğru ilan bilgisi",
           bullets: [
-            "Satıcı özel kişi olarak hareket etmeli ve ara sıra ilan vermelidir.",
-            "İlan yalnız satıcının kendi kullanılmış kişisel veya ev eşyası için verilebilir.",
-            "Profesyonel/işletme satıcıları, düzenli satış yapanlar ve ticari stok bu aşamada desteklenmez.",
-            "Yeniden satış amacıyla alınmış veya üretilmiş yeni ürünler desteklenmez.",
-            "Kapsamdan emin olunmayan ilan yayınlanmaz; önce incelenir.",
+            "Başlık, fiyat/Ücretsiz bilgisi, İl/İlçe ve varsa açıklama gerçeği yansıtmalıdır.",
+            "Yalnız satmaya veya yayımlamaya yetkili olduğunuz ürün, fotoğraf ve metni paylaşın.",
+            "Önemli kusurları, yanıltıcı fiyatı veya ürünün niteliğini gizlemeyin.",
+            "Durum ve açıklama her ilan için zorunlu değildir; ekliyorsanız doğru bilgi verin.",
           ],
         },
         {
-          title: "İlan doğru ve yeterli bilgi vermeli",
+          title: "Kişisel veri ve fotoğraf",
           bullets: [
-            "Başlık ve açıklama ürünü doğru anlatmalı; fiyat ve konum yanıltıcı olmamalıdır.",
-            "Yalnız sahip olduğunuz veya satmaya/yayımlamaya yetkili olduğunuz ürün, fotoğraf ve metni paylaşın.",
-            "Önemli kusurları veya satış şartlarını saklamayın.",
-            "Çocuk, tanınabilir üçüncü kişi, başkasına ait telefon/adres, plaka, kimlik/belge, ödeme bilgisi veya özel nitelikli kişisel veri paylaşmayın.",
-            "Yayınlanacak telefon satıcıya ait olmalı ve yalnız ilanla ilgili iletişim amacıyla kamuya açılmalıdır.",
+            "Açık ev adresi, kimlik/pasaport, banka/ödeme bilgisi veya özel nitelikli kişisel veri eklemeyin.",
+            "Çocuk veya gereksiz tanınabilir üçüncü kişi görüntüsü paylaşmayın.",
+            "Başkasına ait telefon, adres, belge, plaka veya kişisel bilgiyi yetkisiz şekilde yayımlamayın.",
+            "Yüklenen fotoğraf ve metni paylaşmaya hakkınız olmalıdır.",
+          ],
+        },
+        {
+          title: "Telefon ve doğrudan iletişim",
+          paragraphs: [
+            "İlan verirken doğrulanan telefon, ilan aktif olduğu sürece herkese açık görünür. Alıcı için hem Ara hem WhatsApp bağlantısı aynı açık numaradan oluşturulur.",
+            "Telefon bilgisini yalnız ilgili ilan hakkında iletişim amacıyla kullanın; reklam, pazarlama veya ilgisiz iletişim için kullanmayın.",
           ],
         },
         {
           title: "Yayımlanmayacak içerikler",
           bullets: [
-            "Yasa dışı ürün/hizmetler, sahte/taklit ürünler ve hak ihlali oluşturan içerikler.",
-            "Silahlar, patlayıcılar ve benzeri yüksek riskli ürünler.",
-            "Alkol, tütün/nikotin, keyif verici veya uyuşturucu maddeler.",
-            "Reçeteli/kısıtlı ilaçlar, kumar ürün veya hizmetleri, finansal ürün veya yatırım teklifleri.",
-            "Cinsel açıdan açık/adult içerik ve ilk doğrulama kapsamı dışında kalan düzenlemeye tabi veya belirsiz kategoriler.",
-            "Profesyonel satıcı, yeniden satış için yeni ürün veya düzenli ticari satış ilanları.",
+            "Yasa dışı ürün/hizmetler, sahte/taklit ürünler ve açık hak ihlali oluşturan içerikler.",
+            "Silah, patlayıcı ve benzeri yüksek riskli veya ağır biçimde düzenlenen ürünler.",
+            "Alkol, tütün/nikotin, uyuşturucu/keyif verici maddeler ve yasaklı maddeler.",
+            "Reçeteli/kısıtlı ilaç, kumar ürünü/hizmeti, finansal ürün veya yatırım teklifi.",
+            "Cinsel açıdan açık içerik veya açıkça hukuka/ürün güvenliğine aykırı içerik.",
           ],
         },
         {
-          title: "İnceleme ve yayından kaldırma",
+          title: "Vasıta / Araç",
           paragraphs: [
-            "Kurucu her ilanı yayın öncesinde satıcı kapsamı, metin, fotoğraf, telefon ve güvenlik kuralları bakımından manuel inceler. Fotoğrafın teknik olarak temizlenmesi insan incelemesinin yerine geçmez.",
-            "Yanlış telefon, size ait kişisel veri, çocuk/özel nitelikli veri veya açık hukuka aykırılık bildirimi gibi yüksek riskli durumlarda ilan önce yayından kaldırılır, sonra incelenir.",
+            "Vasıta kategorisi ürün deneyimi ve sentetik geliştirme/test kapsamında korunur.",
+            "Gerçek production araç ilanı, gerekli EİDS yetkilendirme doğrulaması devreye alınmadan yayımlanmayacaktır.",
+          ],
+        },
+        {
+          title: "Yayın ve moderasyon",
+          paragraphs: [
+            "Telefon doğrulaması, gerekli alanlar ve güvenli fotoğraf işlemi tamamlandığında ilan teknik kontrollerle otomatik yayımlanabilir. Normal akışta yayın öncesi kurucu onayı yoktur.",
+            "Arar Buluruz ilanı sonradan inceleyebilir, şikâyet üzerine veya kurallara aykırılık halinde yayından kaldırabilir ya da silebilir.",
+            "Yanlış kişiye ait telefon, çocuk görüntüsü, hassas/özel nitelikli veri veya yetkisiz kişisel veri bildirimi gibi yüksek riskli durumlarda ilan önce yayından kaldırılır, sonra incelenir.",
           ],
         },
         {
           title: "Ödeme ve satış",
           paragraphs: [
-            "Arar Buluruz ilk doğrulama döneminde ödeme almaz, sipariş veya rezervasyon oluşturmaz ve komisyon tahsil etmez. Satış koşulları satıcı ve alıcı arasında doğrudan belirlenir.",
+            "Arar Buluruz şu aşamada ödeme almaz, sipariş veya rezervasyon oluşturmaz, komisyon tahsil etmez ve kargo sistemi işletmez. Satış koşulları alıcı ile satıcı arasında doğrudan belirlenir.",
           ],
         },
       ]}

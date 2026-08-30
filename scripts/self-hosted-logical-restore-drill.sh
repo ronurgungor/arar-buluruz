@@ -38,7 +38,9 @@ insert into public.listings (
   contact_e164,
   contact_verified_at,
   contact_verification_method,
-  publication_instruction_at
+  publication_instruction_at,
+  private_seller_declaration_at,
+  content_rights_declaration_at
 ) values (
   '71000000-0000-4000-8000-000000000001',
   'Sentetik Restore İlanı',
@@ -57,7 +59,9 @@ insert into public.listings (
   '+12025550123',
   now() - interval '2 hours',
   'whatsapp_same_number',
-  now() - interval '90 minutes'
+  now() - interval '90 minutes',
+  now() - interval '80 minutes',
+  now() - interval '80 minutes'
 ), (
   '71000000-0000-4000-8000-000000000002',
   'Sentetik Taslak İlan',
@@ -70,6 +74,8 @@ insert into public.listings (
   'draft',
   now() - interval '1 day',
   now() - interval '1 day',
+  null,
+  null,
   null,
   null,
   null,

@@ -1,6 +1,6 @@
 # Arar Buluruz — Current State
 
-_Last updated: 2026-08-24, Europe/Istanbul_
+_Last updated: 2026-08-30, Europe/Istanbul_
 
 ## Canonical repository state
 
@@ -14,26 +14,68 @@ _Last updated: 2026-08-24, Europe/Istanbul_
 
 ## Current phase
 
-**Pre-AWS pilot release-candidate technical execution is complete. Production activation remains closed.**
+**PR #78 post-Codex remediation is active; production and real data remain closed.**
 
-Issue #66 proved provider portability. Issue #72 subsequently proved the application-level hosted synthetic pilot release candidate against the dedicated Arar Buluruz development environment without activating AWS, production or real data.
+Current product authority: `docs/PRODUCT_CONTRACT_V2.md`.
 
-The current strategy authority remains `docs/EXECUTION_STRATEGY_2026-08-21.md` except where this newer current-state file records subsequently completed evidence.
+PR #78 remains **OPEN / DRAFT / UNMERGED** on `agent/stage1-self-service-v2`.
 
-Hard boundaries remain unchanged:
+Codex independently reviewed exact SHA:
 
-- mock/synthetic data only;
+`9ce73cb909c56062644aeb6e0090c2477ee1ca96`
+
+That reviewed SHA had all seven canonical workflows SUCCESS. Codex returned **CONDITIONAL PASS — 0 BLOCKER / 3 IMPORTANT**. Advisor disposition promoted the publication commit/response ambiguity to a merge blocker and required a narrow remediation; the broad 403/404 browser false-green was also required to be fixed. Durable review evidence is in `docs/PR78_CODEX_REVIEW_2026-08-30.md`.
+
+The remediation preserves the existing idempotency/RLS/private-Storage architecture: an ambiguous publication transport failure is reconciled through `claim_listing_submission_key` before destructive cleanup. Confirmed completion resolves as success; confirmed same-listing incomplete claim permits normal cleanup; unknown outcome skips destructive cleanup.
+
+The final post-remediation exact SHA is not accepted until all seven canonical workflows are SUCCESS on that same SHA. PR #78 remains OPEN / DRAFT / UNMERGED pending final Advisor/founder decision.
+
+This is technical repository review/remediation only. It does not imply merge, deployment, production activation, real-data authorization, company formation, EİDS integration, real SMS, AWS activation or recurring spend.
+
+Current consumer product facts:
+
+- Türkiye-wide İl / İlçe self-service;
+- 1–8 trusted photos;
+- broad category + title;
+- condition optional with no silent default;
+- description optional with no filler text;
+- price or explicit **Ücretsiz**;
+- seller display name + one verified public phone;
+- no seller contact-preference selector;
+- buyers receive both **Ara** (`tel:`) and **WhatsApp** (`https://wa.me/`) from that same phone;
+- no three consumer declaration checkboxes;
+- versioned listing-rules evidence replaces fabricated declaration timestamps;
+- bounded 7-day phone-bound signed HttpOnly seller session;
+- phone/challenge/seller rate limiting plus coarse trusted-IP protection;
+- atomic auto-publication;
+- founder post-moderation/takedown;
+- lightweight `İlanlarım`;
+- Vasıta retained for the product/synthetic path;
+- real production vehicle publication fail-closed until EİDS integration is enabled.
+
+Historical declaration/contact/capability fields may remain for compatibility or evidence, but are not current consumer choices.
+
+The founder's settled business/formalization sequence is:
+
+**APPLICATION COMPLETION → ŞAHIS ŞİRKETİ → KOSGEB → SUPPORT / INVESTMENT → FUNDED PRODUCTION / LEGAL / EİDS / INFRASTRUCTURE**
+
+Hard boundaries remain:
+
+- synthetic/mock data only;
 - no real seller/listing/contact/photo/personal data;
 - no real users;
-- production backend OFF;
-- production deployment OFF;
+- production backend/deployment OFF;
 - AWS OFF;
-- paid infrastructure OFF;
-- dedicated Supabase development environment remains Free only;
-- no Auth/account/payment/chat/advertising/monetization scope expansion;
-- existing `tarladan` resources remain untouched and out of scope.
+- paid recurring infrastructure/services OFF;
+- real SMS OFF;
+- production EİDS OFF;
+- Ads/monetization OFF;
+- no payment/order/reservation/commission/in-app chat;
+- Tarladan untouched.
 
 **REAL DATA COLLECTION remains CLOSED.**
+
+PR #78's reviewed pre-remediation head was `9ce73cb909c56062644aeb6e0090c2477ee1ca96`. Post-Codex remediation changes move the branch SHA; the resulting exact head must independently pass all seven canonical workflows before final Advisor merge review. Stale process-claim recovery and the other production/recovery items recorded in `docs/PR78_CODEX_REVIEW_2026-08-30.md` remain deferred. Repository readiness does not itself authorize production, company formation, spending or real-data collection.
 
 ## Dedicated hosted Supabase state
 
@@ -204,7 +246,7 @@ The final boundary scanner reported:
 
 `supabase/config.toml` remains fail-closed in Git. Auth and Storage are enabled only in controlled test/rehearsal paths; production activation is not implied.
 
-Current canonical migration chain is exactly six migrations:
+Current canonical migration chain is exactly nine migrations:
 
 1. `20260730162000_create_listings.sql`
 2. `20260808211500_prepare_real_corlu_pilot_backend.sql`
@@ -212,6 +254,9 @@ Current canonical migration chain is exactly six migrations:
 4. `20260810210000_prepare_public_seller_contact_contract.sql`
 5. `20260822113000_enable_public_signed_photo_delivery.sql`
 6. `20260823150000_add_operator_photo_inventory.sql`
+7. `20260826181500_prepare_stage1_self_service.sql`
+8. `20260827120000_prepare_near_final_classifieds.sql`
+9. `20260828205000_finalize_product_simplification.sql`
 
 Canonical database/RLS test suites, REST integration, browser E2E, private Storage, signed-photo, backup/restore and application-level verification all pass in the final required workflows.
 
@@ -229,17 +274,38 @@ The known public V0 remains synthetic/mock and non-collecting unless a separate 
 
 PR #74 and Issue #72 completion do **not** authorize Lovable Publish/Update, AWS provisioning, production deployment or real-data collection.
 
-## Minimal pilot product scope
+## Current consumer product scope
 
-After all later activation gates pass, the controlled rollout remains:
+The old controlled Çorlu-only intake model and the later seller-contact-choice/declaration-checkbox presentation are superseded as the current product contract.
 
-1. **1 real Çorlu listing**;
-2. review;
-3. **3 listings**;
-4. review;
-5. **5–10 listings**.
+The current product is Türkiye-wide and seller self-service:
 
-Operating model remains founder-operated, with no seller Auth/accounts/dashboard, no public self-service writes, no chat, no payment custody/commission and no advertising/paid listings/subscriptions during validation.
+- seller creates the listing directly;
+- 1–8 trusted photos;
+- broad category + required title;
+- optional condition with no silent default;
+- price or explicit **Ücretsiz**;
+- optional description;
+- İl / İlçe;
+- seller display name + one verified public phone;
+- no seller contact-preference selector;
+- buyer receives both **Ara** (`tel:`) and **WhatsApp’tan yaz** (`https://wa.me/`) derived from that same public E.164 phone;
+- no three consumer declaration checkboxes;
+- versioned publication evidence through `listing_rules_version` + `listing_rules_accepted_at`;
+- `publication_instruction_at`, verified-phone state and trusted-photo readiness remain publication prerequisites;
+- bounded 7-day signed, phone-bound HttpOnly remembered-seller session;
+- atomic auto-publication;
+- founder post-moderation/takedown;
+- lightweight phone-verified `İlanlarım` management;
+- buyer search/detail/signed-photo/direct-contact flow;
+- Vasıta retained, while real production vehicle publication remains fail-closed until EİDS is integrated;
+- no classic Auth/password, in-app chat, payment, order, reservation, commission or shipping.
+
+Search continues to normalize compact/spaced queries such as `b150` and `b 150`.
+
+Free listings display **Ücretsiz**, never `₺0`.
+
+The consumer UI must not present itself as a pilot, Stage 1 test harness, founder intake process or compliance tool.
 
 ## Remaining activation gates
 
@@ -263,16 +329,15 @@ AWS account/provisioning, pricing/credit eligibility, Istanbul availability/resi
 
 ## Shortest safe path from this checkpoint
 
-After Issues #66 and #72 technical completion:
+1. keep production, real data, AWS and recurring spend OFF;
+2. preserve the GREEN self-service/backend/security contracts already proved in PR #78;
+3. complete this documentation/PR-metadata closure without application or security behavior changes;
+4. require all seven canonical workflows to pass again on the resulting docs-only exact SHA;
+5. send that final exact SHA to independent Codex read-only review;
+6. keep PR #78 draft/unmerged pending independent Advisor/founder review;
+7. separately resolve the applicable real-data/legal/production gates before any real seller data or production activation.
 
-1. keep product scope frozen and real data OFF;
-2. keep the dedicated Supabase Free environment synthetic-only and Tarladan untouched;
-3. complete the separate privacy/legal/operational real-data gate;
-4. do not open AWS merely to repeat already-passed release-candidate/portability proofs;
-5. at a later explicit production gate, verify actual infrastructure, residency, TLS/network/secrets/backups and perform the required production backup/restore check;
-6. only after explicit real-data authorization begin the **1 → 3 → 5–10** Çorlu canary.
-
-Do **not** add Auth, accounts, payments, chat, ads, seller dashboards, complex analytics, recommendation engines, microservices, Kubernetes or speculative observability merely to satisfy this path.
+Do not add classic Auth/accounts, in-app chat, payments, orders, reservations, commission, ads, recommendation engines, microservices, Kubernetes or speculative observability merely to satisfy this path.
 
 ## Historical-document rule
 
