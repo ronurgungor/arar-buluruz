@@ -15,8 +15,11 @@ const submissionKeys = new Map<string, { listingId: string; complete: boolean }>
 let failNextClaim = false;
 let failNextPhotoMetadataRegistration = false;
 let failNextStorageDelete = false;
-let nextPublicationBehavior: "normal" | "commit_then_transport_error" | "transport_error_before_commit" =
-  "normal";
+type PublicationBehavior =
+  | "normal"
+  | "commit_then_transport_error"
+  | "transport_error_before_commit";
+let nextPublicationBehavior: PublicationBehavior = "normal";
 let failReconciliationClaimAfterPublicationError = false;
 let publicationTransportErrorOccurred = false;
 let lastPublicationListingId: string | null = null;
