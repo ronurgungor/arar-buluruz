@@ -20,43 +20,74 @@ function assert(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
-type UnauthorizedExpectation = {
+type ExpectedHttpFailureStatus = 401 | 403 | 404;
+
+type HttpFailureExpectation = {
   page: Page;
+  status: ExpectedHttpFailureStatus;
   method: string;
   pathname: string;
   label: string;
 };
 
-const expectedUnauthorizedResponses: UnauthorizedExpectation[] = [];
-const expectedUnauthorizedConsoleErrors = new Map<Page, number>();
+type ConsoleFailureAllowance = {
+  page: Page;
+  status: ExpectedHttpFailureStatus;
+  label: string;
+};
 
-function expectUnauthorizedOnce(page: Page, method: string, pathname: string, label: string): void {
-  expectedUnauthorizedResponses.push({
+const expectedHttpFailureResponses: HttpFailureExpectation[] = [];
+const expectedHttpFailureConsoleErrors: ConsoleFailureAllowance[] = [];
+
+function expectHttpFailureOnce(
+  page: Page,
+  status: ExpectedHttpFailureStatus,
+  method: string,
+  pathname: string,
+  label: string,
+): void {
+  expectedHttpFailureResponses.push({
     page,
+    status,
     method: method.toUpperCase(),
     pathname,
     label,
   });
+  expectedHttpFailureConsoleErrors.push({ page, status, label });
 }
 
-function consumeExpectedUnauthorizedResponse(page: Page, response: PlaywrightResponse): boolean {
-  if (response.status() !== 401) return false;
+function expectUnauthorizedOnce(page: Page, method: string, pathname: string, label: string): void {
+  expectHttpFailureOnce(page, 401, method, pathname, label);
+}
+
+function consumeExpectedHttpFailureResponse(page: Page, response: PlaywrightResponse): boolean {
+  const status = response.status();
+  if (status !== 401 && status !== 403 && status !== 404) return false;
 
   const method = response.request().method().toUpperCase();
   const pathname = new URL(response.url()).pathname;
-  const index = expectedUnauthorizedResponses.findIndex(
+  const index = expectedHttpFailureResponses.findIndex(
     (expectation) =>
       expectation.page === page &&
+      expectation.status === status &&
       expectation.method === method &&
       expectation.pathname === pathname,
   );
   if (index < 0) return false;
 
-  expectedUnauthorizedResponses.splice(index, 1);
-  expectedUnauthorizedConsoleErrors.set(
-    page,
-    (expectedUnauthorizedConsoleErrors.get(page) ?? 0) + 1,
+  expectedHttpFailureResponses.splice(index, 1);
+  return true;
+}
+
+function consumeExpectedHttpFailureConsoleError(
+  page: Page,
+  status: ExpectedHttpFailureStatus,
+): boolean {
+  const index = expectedHttpFailureConsoleErrors.findIndex(
+    (allowance) => allowance.page === page && allowance.status === status,
   );
+  if (index < 0) return false;
+  expectedHttpFailureConsoleErrors.splice(index, 1);
   return true;
 }
 
@@ -257,6 +288,13 @@ async function assertDetailUnavailable(
   listingId: string,
   title: string,
 ): Promise<void> {
+  expectHttpFailureOnce(
+    page,
+    404,
+    "GET",
+    `/ilan/${listingId}`,
+    "inactive listing detail stays hidden",
+  );
   await page.goto(`${publicBaseUrl}/ilan/${listingId}`, { waitUntil: "networkidle" });
   assert(
     (await page.getByRole("heading", { level: 1, name: title }).count()) === 0,
@@ -426,29 +464,21 @@ for (const page of [ownerPage, buyerPage, otherSellerPage, founderPage]) {
   page.on("console", (message) => {
     if (message.type() !== "error") return;
     const text = message.text();
-    // Deliberate negative-path probes assert their 403/404 semantics directly below.
-    if (/^Failed to load resource: the server responded with a status of (?:403|404)/.test(text)) {
-      return;
-    }
-    if (
-      /^Failed to load resource: the server responded with a status of 401 \(Unauthorized\)/.test(
-        text,
-      )
-    ) {
-      const allowance = expectedUnauthorizedConsoleErrors.get(page) ?? 0;
-      if (allowance > 0) {
-        expectedUnauthorizedConsoleErrors.set(page, allowance - 1);
-        return;
-      }
+    const statusMatch = text.match(
+      /^Failed to load resource: the server responded with a status of (401|403|404)\b/,
+    );
+    if (statusMatch) {
+      const status = Number(statusMatch[1]) as ExpectedHttpFailureStatus;
+      if (consumeExpectedHttpFailureConsoleError(page, status)) return;
     }
     runtimeErrors.push(`console: ${text}`);
   });
   page.on("response", (response: PlaywrightResponse) => {
     const url = response.url();
-    if (response.status() === 401) {
-      if (!consumeExpectedUnauthorizedResponse(page, response)) {
+    if (response.status() === 401 || response.status() === 403 || response.status() === 404) {
+      if (!consumeExpectedHttpFailureResponse(page, response)) {
         runtimeErrors.push(
-          `unexpected HTTP 401: ${response.request().method()} ${new URL(url).pathname}`,
+          `unexpected HTTP ${response.status()}: ${response.request().method()} ${new URL(url).pathname}`,
         );
       }
     }
@@ -564,6 +594,13 @@ try {
   assert(
     (await otherSellerPage.getByText(title, { exact: true }).count()) === 0,
     "Another verified phone inferred the owner's listing.",
+  );
+  expectHttpFailureOnce(
+    otherSellerPage,
+    403,
+    "POST",
+    "/ilanlarim",
+    "cross-phone seller mutation is denied",
   );
   const denied = await otherSellerPage.evaluate(
     async ({ phone, listingId }) => {
@@ -716,9 +753,18 @@ try {
     `Browser performed privileged backend mutations: ${privilegedBrowserMutations.join(" | ")}`,
   );
   assert(
-    expectedUnauthorizedResponses.length === 0,
-    `Expected session-required 401 responses did not occur: ${expectedUnauthorizedResponses
-      .map((expectation) => `${expectation.method} ${expectation.pathname} (${expectation.label})`)
+    expectedHttpFailureResponses.length === 0,
+    `Expected negative HTTP responses did not occur: ${expectedHttpFailureResponses
+      .map(
+        (expectation) =>
+          `${expectation.status} ${expectation.method} ${expectation.pathname} (${expectation.label})`,
+      )
+      .join(" | ")}`,
+  );
+  assert(
+    expectedHttpFailureConsoleErrors.length === 0,
+    `Expected negative-path console allowances were not consumed: ${expectedHttpFailureConsoleErrors
+      .map((allowance) => `${allowance.status} (${allowance.label})`)
       .join(" | ")}`,
   );
   assert(assetFailures.length === 0, `CSS/JS asset failures: ${assetFailures.join(" | ")}`);
