@@ -985,7 +985,6 @@ async function submitListing(
       );
       storedPhotos.push(metadata);
     }
-    await completeAndPublishSubmission(config, keyHash, listingId);
   } catch (cause) {
     const orphanedObjectPaths =
       cause instanceof TrustedListingPhotoIngestionError && cause.orphanedObjectPath
@@ -1000,6 +999,49 @@ async function submitListing(
       );
     }
     throw cause;
+  }
+
+  try {
+    await completeAndPublishSubmission(config, keyHash, listingId);
+  } catch (publicationCause) {
+    let reconciliation: SubmissionClaim;
+    try {
+      reconciliation = await claimSubmission(config, keyHash, listingId);
+    } catch (reconciliationCause) {
+      throw new AggregateError(
+        [publicationCause, reconciliationCause],
+        "Atomic publication outcome is unknown; destructive cleanup was skipped.",
+      );
+    }
+
+    if (reconciliation.listing_id === listingId && reconciliation.state === "complete") {
+      return jsonResponse(
+        {
+          ok: true,
+          action: "submitted",
+          listingId,
+          message: "İlanın yayınlandı.",
+        },
+        201,
+      );
+    }
+
+    if (reconciliation.listing_id === listingId && reconciliation.state === "claimed") {
+      try {
+        await cleanupFailedSubmission(config, listingId, storedPhotos);
+      } catch (cleanupCause) {
+        throw new AggregateError(
+          [publicationCause, cleanupCause],
+          "Atomic publication failed and cleanup was incomplete.",
+        );
+      }
+      throw publicationCause;
+    }
+
+    throw new AggregateError(
+      [publicationCause],
+      `Atomic publication outcome is unknown after reconciliation (${reconciliation.state}, ${reconciliation.listing_id}); destructive cleanup was skipped.`,
+    );
   }
 
   return jsonResponse(
