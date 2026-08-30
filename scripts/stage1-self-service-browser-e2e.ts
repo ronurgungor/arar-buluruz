@@ -53,7 +53,6 @@ function expectHttpFailureOnce(
     pathname,
     label,
   });
-  expectedHttpFailureConsoleErrors.push({ page, status, label });
 }
 
 function expectUnauthorizedOnce(page: Page, method: string, pathname: string, label: string): void {
@@ -75,7 +74,12 @@ function consumeExpectedHttpFailureResponse(page: Page, response: PlaywrightResp
   );
   if (index < 0) return false;
 
-  expectedHttpFailureResponses.splice(index, 1);
+  const [expectation] = expectedHttpFailureResponses.splice(index, 1);
+  expectedHttpFailureConsoleErrors.push({
+    page,
+    status,
+    label: expectation?.label ?? `${method} ${pathname}`,
+  });
   return true;
 }
 
