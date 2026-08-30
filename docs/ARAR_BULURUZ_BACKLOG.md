@@ -1,8 +1,29 @@
 # Arar Buluruz — Backlog
 
-_Last updated: 2026-08-28, Europe/Istanbul_
+_Last updated: 2026-08-30, Europe/Istanbul_
 
 Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
+
+## PR #78 post-Codex remediation — 2026-08-30
+
+This section supersedes the older PR #78 closure checkpoint below for current status. Review evidence: `docs/PR78_CODEX_REVIEW_2026-08-30.md`.
+
+- [x] Preserve Codex's independent review of exact `9ce73cb909c56062644aeb6e0090c2477ee1ca96` and its CONDITIONAL PASS (0 BLOCKER / 3 IMPORTANT).
+- [x] Fix publication commit/response ambiguity by reconciling the existing idempotency claim before any destructive compensation.
+- [x] Preserve normal cleanup only when reconciliation proves the same listing remains `claimed`.
+- [x] Skip destructive cleanup when publication outcome cannot be established safely.
+- [x] Remove global 403/404 console suppression from Stage 1 browser acceptance; expected negative 401/403/404 evidence is now exact and consumable.
+- [-] Require all seven canonical workflows SUCCESS on one exact post-remediation SHA.
+- [ ] Stop for final Advisor/founder merge decision after exact-head GREEN. PR #78 remains OPEN / DRAFT / UNMERGED.
+
+Deferred to the production/recovery gate; do not partially implement in PR #78:
+
+- [ ] stale `in_progress` claim plus pending/private-state reconciliation after process termination;
+- [ ] orphan Storage cleanup/recovery tied to the deliberate stale-claim recovery model;
+- [ ] process-local OTP/rate-limit/challenge state;
+- [ ] seller-phone localStorage TTL/clear behavior and explicit logout for shared devices;
+- [ ] proxy-derived HTTPS/host/client-IP semantics;
+- [ ] cross-service hard-delete retry/reconciliation.
 
 
 ## Current PR #78 closure checkpoint — 2026-08-28
