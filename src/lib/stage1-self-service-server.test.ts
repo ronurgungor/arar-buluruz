@@ -631,9 +631,9 @@ describe("Stage 1 self-service server acceptance", () => {
     expect(
       Array.from(storedObjects).some((path) => path.startsWith(`listings/${listingId}/`)),
     ).toBe(false);
-    expect(
-      Array.from(submissionKeys.values()).some((state) => state.listingId === listingId),
-    ).toBe(false);
+    expect(Array.from(submissionKeys.values()).some((state) => state.listingId === listingId)).toBe(
+      false,
+    );
     expect(listingDeleteCallCount).toBe(listingDeletesBefore + 1);
     expect(storageDeleteCallCount).toBe(storageDeletesBefore + 1);
   });
