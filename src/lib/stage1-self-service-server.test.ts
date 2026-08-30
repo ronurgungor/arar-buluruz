@@ -594,6 +594,7 @@ describe("Stage 1 self-service server acceptance", () => {
 
     expect(response.status).toBe(201);
     const payload = (await response.json()) as { listingId: string };
+    assert(lastPublicationListingId !== null, "publication listing identity was not captured");
     expect(payload.listingId).toBe(lastPublicationListingId);
     expect(listingBodies.get(payload.listingId)?.status).toBe("published");
     expect(
