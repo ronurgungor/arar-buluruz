@@ -216,7 +216,6 @@ jobs:
       MANAGED_SUPABASE_S3_REGION: eu-central-1
       MANAGED_SUPABASE_S3_ACCESS_KEY_ID: ${{ secrets.ARAR_SUPABASE_S3_ACCESS_KEY_ID }}
       MANAGED_SUPABASE_S3_SECRET_ACCESS_KEY: ${{ secrets.ARAR_SUPABASE_S3_SECRET_ACCESS_KEY }}
-      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/hosted-rc-browsers
 
     steps:
       - name: Check out repository
@@ -271,6 +270,8 @@ jobs:
           echo "::add-mask::$MANAGED_SUPABASE_S3_SECRET_ACCESS_KEY"
 
       - name: Install Chromium
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/hosted-rc-browsers
         run: bunx playwright install --with-deps chromium
 
       - name: Establish canonical hosted managed baseline
@@ -278,6 +279,8 @@ jobs:
         run: bash scripts/managed-supabase-migration-rehearsal.sh
 
       - name: Run hosted founder journey and pilot-rc artifact proof
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/hosted-rc-browsers
         shell: bash
         run: bash scripts/hosted-synthetic-rc-proof.sh
 
