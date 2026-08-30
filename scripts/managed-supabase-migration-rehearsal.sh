@@ -250,11 +250,29 @@ if [[ "$unexpected_buckets" != "0" ]]; then
   exit 1
 fi
 
+canonical_migration_versions() {
+  local migration_file
+  local filename
+  local versions=""
+  local -a migration_files=("$repo_root"/supabase/migrations/*.sql)
+
+  for migration_file in "${migration_files[@]}"; do
+    filename="${migration_file##*/}"
+    if [[ ! -f "$migration_file" || ! "$filename" =~ ^([0-9]{14})_.+\.sql$ ]]; then
+      echo "Unexpected canonical migration path: $migration_file" >&2
+      return 1
+    fi
+    versions+="${BASH_REMATCH[1]} "
+  done
+
+  printf '%s' "${versions% }"
+}
+
 # Apply exactly the GitHub-canonical migration chain to the dedicated managed Free source.
 PGSSLMODE=require supabase db push --db-url "$MANAGED_SUPABASE_DB_URL" --include-all --yes
 
-expected_versions="20260730162000 20260808211500 20260809220000 20260810210000 20260822113000 20260823150000"
-actual_versions="$(managed_scalar "select string_agg(version, ' ' order by version) from supabase_migrations.schema_migrations where version in ('20260730162000','20260808211500','20260809220000','20260810210000','20260822113000','20260823150000');")"
+expected_versions="$(canonical_migration_versions)"
+actual_versions="$(managed_scalar "select string_agg(version, ' ' order by version) from supabase_migrations.schema_migrations;")"
 if [[ "$actual_versions" != "$expected_versions" ]]; then
   echo "Managed migration history does not match canonical chain: $actual_versions" >&2
   exit 1
