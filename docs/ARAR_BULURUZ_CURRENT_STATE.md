@@ -1,6 +1,6 @@
 # Arar Buluruz — Current State
 
-_Last updated: 2026-08-28, Europe/Istanbul_
+_Last updated: 2026-08-30, Europe/Istanbul_
 
 ## Canonical repository state
 
@@ -14,27 +14,23 @@ _Last updated: 2026-08-28, Europe/Istanbul_
 
 ## Current phase
 
-**PR #78 technical exact-head acceptance is GREEN; production and real data remain closed.**
+**PR #78 post-Codex remediation is active; production and real data remain closed.**
 
 Current product authority: `docs/PRODUCT_CONTRACT_V2.md`.
 
 PR #78 remains **OPEN / DRAFT / UNMERGED** on `agent/stage1-self-service-v2`.
 
-The accepted technical checkpoint is:
+Codex independently reviewed exact SHA:
 
-`382445537668c6f810e689d26f1d9f60c20e05f0`
+`9ce73cb909c56062644aeb6e0090c2477ee1ca96`
 
-All seven canonical workflows completed **SUCCESS** on that exact SHA:
+That reviewed SHA had all seven canonical workflows SUCCESS. Codex returned **CONDITIONAL PASS — 0 BLOCKER / 3 IMPORTANT**. Advisor disposition promoted the publication commit/response ambiguity to a merge blocker and required a narrow remediation; the broad 403/404 browser false-green was also required to be fixed. Durable review evidence is in `docs/PR78_CODEX_REVIEW_2026-08-30.md`.
 
-- Activation readiness — `33202153552`;
-- V0 minimal PWA — `33202153522`;
-- CI — `33202153564`;
-- Real pilot backend prep — `33202153443`;
-- Stage 1 Phase A code gate — `33202153438`;
-- Self-host migration rehearsal — `33202153428`;
-- Stage 1 self-service acceptance — `33202153469`.
+The remediation preserves the existing idempotency/RLS/private-Storage architecture: an ambiguous publication transport failure is reconciled through `claim_listing_submission_key` before destructive cleanup. Confirmed completion resolves as success; confirmed same-listing incomplete claim permits normal cleanup; unknown outcome skips destructive cleanup.
 
-This is technical repository acceptance only. It does not imply merge, deployment, production activation, real-data authorization, company formation, EİDS integration, real SMS, AWS activation or recurring spend.
+The final post-remediation exact SHA is not accepted until all seven canonical workflows are SUCCESS on that same SHA. PR #78 remains OPEN / DRAFT / UNMERGED pending final Advisor/founder decision.
+
+This is technical repository review/remediation only. It does not imply merge, deployment, production activation, real-data authorization, company formation, EİDS integration, real SMS, AWS activation or recurring spend.
 
 Current consumer product facts:
 
@@ -79,7 +75,7 @@ Hard boundaries remain:
 
 **REAL DATA COLLECTION remains CLOSED.**
 
-PR #78 technical exact-head acceptance has been achieved on `382445537668c6f810e689d26f1d9f60c20e05f0`. Documentation-only closure commits move the branch SHA and therefore must independently re-pass all seven canonical workflows before that newer SHA is treated as the final review checkpoint. Repository readiness does not itself authorize production, company formation, spending or real-data collection.
+PR #78's reviewed pre-remediation head was `9ce73cb909c56062644aeb6e0090c2477ee1ca96`. Post-Codex remediation changes move the branch SHA; the resulting exact head must independently pass all seven canonical workflows before final Advisor merge review. Stale process-claim recovery and the other production/recovery items recorded in `docs/PR78_CODEX_REVIEW_2026-08-30.md` remain deferred. Repository readiness does not itself authorize production, company formation, spending or real-data collection.
 
 ## Dedicated hosted Supabase state
 
