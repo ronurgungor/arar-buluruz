@@ -15,6 +15,13 @@ const submissionKeys = new Map<string, { listingId: string; complete: boolean }>
 let failNextClaim = false;
 let failNextPhotoMetadataRegistration = false;
 let failNextStorageDelete = false;
+let nextPublicationBehavior: "normal" | "commit_then_transport_error" | "transport_error_before_commit" =
+  "normal";
+let failReconciliationClaimAfterPublicationError = false;
+let publicationTransportErrorOccurred = false;
+let lastPublicationListingId: string | null = null;
+let listingDeleteCallCount = 0;
+let storageDeleteCallCount = 0;
 let backendCallCount = 0;
 
 function assert(condition: boolean, message: string): asserts condition {
@@ -137,6 +144,7 @@ function installBackendMock(): void {
     }
 
     if (url.pathname === "/rest/v1/listings" && method === "DELETE") {
+      listingDeleteCallCount += 1;
       const listingId = (url.searchParams.get("id") ?? "").replace(/^eq\./, "");
       cascadeDeleteListing(listingId);
       return new Response(null, { status: 204 });
@@ -173,6 +181,11 @@ function installBackendMock(): void {
         failNextClaim = false;
         return new Response("synthetic claim failure", { status: 500 });
       }
+      if (publicationTransportErrorOccurred && failReconciliationClaimAfterPublicationError) {
+        publicationTransportErrorOccurred = false;
+        failReconciliationClaimAfterPublicationError = false;
+        return new Response("synthetic reconciliation failure", { status: 500 });
+      }
       const body = JSON.parse(String(init?.body)) as {
         p_key_hash: string;
         p_listing_id: string;
@@ -182,12 +195,14 @@ function installBackendMock(): void {
         submissionKeys.set(body.p_key_hash, { listingId: body.p_listing_id, complete: false });
         return json([{ listing_id: body.p_listing_id, state: "claimed" }]);
       }
-      return json([
-        {
-          listing_id: existing.listingId,
-          state: existing.complete ? "complete" : "in_progress",
-        },
-      ]);
+      const state =
+        existing.listingId === body.p_listing_id && !existing.complete
+          ? "claimed"
+          : existing.complete
+            ? "complete"
+            : "in_progress";
+      if (publicationTransportErrorOccurred) publicationTransportErrorOccurred = false;
+      return json([{ listing_id: existing.listingId, state }]);
     }
 
     if (
@@ -198,6 +213,13 @@ function installBackendMock(): void {
         p_key_hash: string;
         p_listing_id: string;
       };
+      lastPublicationListingId = body.p_listing_id;
+      const behavior = nextPublicationBehavior;
+      nextPublicationBehavior = "normal";
+      if (behavior === "transport_error_before_commit") {
+        publicationTransportErrorOccurred = true;
+        throw new TypeError("synthetic transport loss before publication commit");
+      }
       const existing = submissionKeys.get(body.p_key_hash);
       const row = listingBodies.get(body.p_listing_id);
       const ready =
@@ -222,6 +244,10 @@ function installBackendMock(): void {
         sold_at: null,
         updated_at: new Date().toISOString(),
       });
+      if (behavior === "commit_then_transport_error") {
+        publicationTransportErrorOccurred = true;
+        throw new TypeError("synthetic transport loss after publication commit");
+      }
       return json(true);
     }
 
@@ -252,6 +278,7 @@ function installBackendMock(): void {
     }
 
     if (url.pathname === "/storage/v1/object/listing_photos" && method === "DELETE") {
+      storageDeleteCallCount += 1;
       if (failNextStorageDelete) {
         failNextStorageDelete = false;
         return new Response("synthetic storage delete failure", { status: 500 });
@@ -549,6 +576,92 @@ describe("Stage 1 self-service server acceptance", () => {
     expect(listings.size).toBe(beforeListings);
     expect(photoMetadata.size).toBe(beforePhotos);
     expect(storedObjects.size).toBe(beforeObjects);
+  });
+
+  test("lost publication response reconciles committed success without destructive compensation", async () => {
+    const phone = "+12025550193";
+    const cookie = await syntheticSession(phone);
+    const listingDeletesBefore = listingDeleteCallCount;
+    const storageDeletesBefore = storageDeleteCallCount;
+
+    nextPublicationBehavior = "commit_then_transport_error";
+    const response = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000093", { phone }), { cookie }),
+    );
+
+    expect(response.status).toBe(201);
+    const payload = (await response.json()) as { listingId: string };
+    expect(payload.listingId).toBe(lastPublicationListingId);
+    expect(listingBodies.get(payload.listingId)?.status).toBe("published");
+    expect(
+      Array.from(photoMetadata).some((path) => path.startsWith(`listings/${payload.listingId}/`)),
+    ).toBe(true);
+    expect(
+      Array.from(storedObjects).some((path) => path.startsWith(`listings/${payload.listingId}/`)),
+    ).toBe(true);
+    expect(
+      Array.from(submissionKeys.values()).find((state) => state.listingId === payload.listingId)
+        ?.complete,
+    ).toBe(true);
+    expect(listingDeleteCallCount).toBe(listingDeletesBefore);
+    expect(storageDeleteCallCount).toBe(storageDeletesBefore);
+  });
+
+  test("proven incomplete publication still performs whole-submission cleanup", async () => {
+    const phone = "+12025550194";
+    const cookie = await syntheticSession(phone);
+    const listingDeletesBefore = listingDeleteCallCount;
+    const storageDeletesBefore = storageDeleteCallCount;
+
+    nextPublicationBehavior = "transport_error_before_commit";
+    const response = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000094", { phone }), { cookie }),
+    );
+
+    expect(response.status).toBe(500);
+    assert(lastPublicationListingId !== null, "publication listing identity was not captured");
+    const listingId = lastPublicationListingId;
+    expect(listingBodies.has(listingId)).toBe(false);
+    expect(
+      Array.from(photoMetadata).some((path) => path.startsWith(`listings/${listingId}/`)),
+    ).toBe(false);
+    expect(
+      Array.from(storedObjects).some((path) => path.startsWith(`listings/${listingId}/`)),
+    ).toBe(false);
+    expect(
+      Array.from(submissionKeys.values()).some((state) => state.listingId === listingId),
+    ).toBe(false);
+    expect(listingDeleteCallCount).toBe(listingDeletesBefore + 1);
+    expect(storageDeleteCallCount).toBe(storageDeletesBefore + 1);
+  });
+
+  test("unknown publication outcome skips destructive cleanup when reconciliation fails", async () => {
+    const phone = "+12025550195";
+    const cookie = await syntheticSession(phone);
+    const listingDeletesBefore = listingDeleteCallCount;
+    const storageDeletesBefore = storageDeleteCallCount;
+
+    nextPublicationBehavior = "commit_then_transport_error";
+    failReconciliationClaimAfterPublicationError = true;
+    const response = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000095", { phone }), { cookie }),
+    );
+
+    expect(response.status).toBe(500);
+    assert(lastPublicationListingId !== null, "publication listing identity was not captured");
+    const listingId = lastPublicationListingId;
+    expect(listingBodies.get(listingId)?.status).toBe("published");
+    expect(
+      Array.from(photoMetadata).some((path) => path.startsWith(`listings/${listingId}/`)),
+    ).toBe(true);
+    expect(
+      Array.from(storedObjects).some((path) => path.startsWith(`listings/${listingId}/`)),
+    ).toBe(true);
+    expect(
+      Array.from(submissionKeys.values()).find((state) => state.listingId === listingId)?.complete,
+    ).toBe(true);
+    expect(listingDeleteCallCount).toBe(listingDeletesBefore);
+    expect(storageDeleteCallCount).toBe(storageDeletesBefore);
   });
 
   test("verified phone owns edit/unpublish/sold/delete while another phone gets generic 403", async () => {
