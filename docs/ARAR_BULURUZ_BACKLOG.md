@@ -16,15 +16,17 @@ Closed:
 
 Next technical work:
 
-- [-] Modernize hosted managed proof in a **separate** branch/PR.
-  - keep canonical migration equality;
-  - keep managed DB/RLS/grant evidence;
-  - keep private Storage and lifecycle signing evidence;
-  - keep backup/restore/rollback/fingerprint consistency;
-  - keep synthetic-only and artifact privilege boundaries;
-  - remove/rewrite obsolete founder-entry/preapproval assertions;
-  - do **not** add a shim signing route merely to make the old journey green;
-  - do **not** add a new service-role secret in this pass.
+- [-] Modernize hosted managed proof in branch `agent/modernize-hosted-managed-proof`.
+  - [x] retire the obsolete founder-entry/preapproval browser journey and localhost privileged shim;
+  - [x] retire the historical PR #74-only hosted proof job from the current workflow graph;
+  - [x] keep canonical migration equality derived from repository filenames;
+  - [x] keep managed DB/RLS/grant and anon-write-denial evidence;
+  - [x] keep private Storage, lifecycle manifest/signing and deterministic fixture evidence;
+  - [x] keep backup/restore/rollback/fingerprint/Storage equality and explicit orphan checks;
+  - [x] keep the public artifact privilege/secret boundary without the stale product browser E2E;
+  - [x] add no shim signing route and no new service-role secret;
+  - [-] require exact-head Managed Supabase workflow SUCCESS plus normal canonical workflow evidence;
+  - [ ] final Advisor review and merge decision.
 
 After hosted-proof modernization:
 
