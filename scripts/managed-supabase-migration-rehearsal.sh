@@ -685,5 +685,17 @@ if [[ "$(managed_scalar "select count(*) from storage.objects where bucket_id <>
   echo "Managed source gained unexpected Storage objects during rehearsal." >&2
   exit 1
 fi
+if [[ "$(managed_scalar "select count(*) from private.listing_photos;")" != "1" ]]; then
+  echo "Managed source photo metadata count drifted after rehearsal." >&2
+  exit 1
+fi
+if [[ "$(managed_scalar "select count(*) from private.listing_photos where listing_id <> '${listing_id}'::uuid or id <> '${photo_id}'::uuid;")" != "0" ]]; then
+  echo "Managed source contains non-canonical private photo metadata after rehearsal." >&2
+  exit 1
+fi
+if [[ "$(managed_scalar "select count(*) from private.listing_photos p left join public.listings l on l.id = p.listing_id where l.id is null;")" != "0" ]]; then
+  echo "Managed source contains orphan private photo metadata after rehearsal." >&2
+  exit 1
+fi
 
-echo "Managed Supabase Free → pinned self-host DB + Storage migration and source rollback rehearsal passed."
+echo "Managed Supabase provider invariants + pinned self-host DB/Storage migration, restore and source rollback proof passed."
