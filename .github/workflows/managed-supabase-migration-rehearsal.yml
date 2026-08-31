@@ -90,8 +90,8 @@ jobs:
             test ! -e "$retired_harness"
           done
 
-          if git grep -nE 'scripts/(hosted-synthetic-rc-proof\.sh|hosted-pilot-operator-browser-e2e\.ts|hosted-rc-transport-shim\.ts|pilot-rc-artifact-e2e\.ts)' -- .; then
-            echo "Retired hosted proof harness still has executable references."
+          if git grep -nE 'scripts/(hosted-synthetic-rc-proof\.sh|hosted-pilot-operator-browser-e2e\.ts|hosted-rc-transport-shim\.ts|pilot-rc-artifact-e2e\.ts)' -- . ':!.github/workflows/managed-supabase-migration-rehearsal.yml'; then
+            echo "Retired hosted proof harness still has references outside the static retirement guard."
             exit 1
           fi
 
