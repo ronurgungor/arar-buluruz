@@ -1,6 +1,6 @@
 # Arar Buluruz — AI Operating Model v2
 
-_Last reviewed: 2026-08-26, Europe/Istanbul_
+_Last reviewed: 2026-08-31, Europe/Istanbul_
 
 ## Purpose
 
@@ -136,6 +136,8 @@ Work is **not the project decision owner**. The advisor evaluates Work's output 
 
 Work usage is also **budgeted**. Do not spend it on ordinary bugs or decisions the advisor can resolve reliably with available tools.
 
+For consequential, uncertain, costly or difficult-to-reverse decisions, the advisor should proactively consider a Work independent second opinion when it can materially reduce decision risk. This is a targeted double-check, not a mandatory ritual.
+
 ### Lovable
 
 Lovable is the **high-throughput frontend/UX implementation specialist**.
@@ -151,6 +153,8 @@ Use it when one bounded prompt can save meaningful time on:
 - other long or tedious frontend blocks.
 
 Lovable credits are limited. Use them for high-value work, not merely to consume credits.
+
+When free or expiring daily Lovable credits are available, actively scan the current backlog for a bounded high-value frontend/UX task instead of letting useful credits expire by default. Do not route backend, security, secrets, migrations or test-infrastructure work to Lovable merely to spend credits.
 
 Lovable does not own backend/security architecture, production data, secrets, Auth/payment decisions or canonical repository truth. Its output must be reviewed before canonical adoption.
 
