@@ -5,14 +5,14 @@ _Last updated: 2026-08-31, Europe/Istanbul_
 ## Canonical repository state
 
 - Repository: `ronurgungor/arar-buluruz`; canonical branch: `main`.
-- Current canonical `main` checkpoint: `1207cf177469d1835abb56d914bd3d80858a0b1a`.
+- Last merged technical checkpoint before this documentation sync: `1207cf177469d1835abb56d914bd3d80858a0b1a`. Live GitHub controls the current `main` SHA.
 - PR #78 — Stage 1 seller self-service: **MERGED / CLOSED**.
   - approved pre-merge head: `834ad8d5e96117bc8793e1de6f6d5054c54eac55`;
   - merge commit: `26ce6c66de8a03d941d90ff7fe267998ad63ba8f`;
   - exact-head seven canonical PR workflows: **SUCCESS**.
 - PR #79 — managed rehearsal workflow parse/config + migration-chain drift: **MERGED / CLOSED**.
   - approved pre-merge head: `83dcaa6c3331af00789576f3e88e86fe7f2e4d89`;
-  - merge commit/current main checkpoint: `1207cf177469d1835abb56d914bd3d80858a0b1a`;
+  - merge commit / pre-docs-sync main checkpoint: `1207cf177469d1835abb56d914bd3d80858a0b1a`;
   - post-merge CI run `33401751662`: **SUCCESS**;
   - post-merge V0 minimal PWA run `33401751621`: **SUCCESS**.
 - PR #79 restored the intended managed-rehearsal trigger contract: `pull_request` + `workflow_dispatch`; no `push` trigger.
