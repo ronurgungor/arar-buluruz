@@ -321,6 +321,89 @@ if [[ "$(wc -c < "$fixture_file" | tr -d ' ')" != "$expected_photo_bytes" ]]; th
   exit 1
 fi
 
+# Prove the actual managed Storage API rejects anonymous direct writes. Use a
+# deterministic non-canonical path so the canonical migration fixture is never
+# targeted. If the security expectation ever breaks, remove only this exact
+# synthetic probe through the already-authorized S3 test channel before failing.
+anon_probe_dir="security-probes"
+anon_probe_name="anon-direct-write-denied.webp"
+anon_probe_path="${anon_probe_dir}/${anon_probe_name}"
+
+anon_storage_write_policies="$(managed_scalar "
+  select count(*)
+  from pg_catalog.pg_policy p
+  join pg_catalog.pg_class c on c.oid = p.polrelid
+  join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'storage'
+    and c.relname = 'objects'
+    and p.polcmd in ('a', 'w', 'd')
+    and (
+      0::oid = any(p.polroles)
+      or (select oid from pg_catalog.pg_roles where rolname = 'anon') = any(p.polroles)
+    );
+")"
+if [[ "$anon_storage_write_policies" != "0" ]]; then
+  echo "Managed Storage exposes an anon/public INSERT, UPDATE or DELETE policy." >&2
+  exit 1
+fi
+
+probe_metadata_count="$(managed_scalar "
+  select count(*)
+  from storage.objects
+  where bucket_id = 'listing_photos'
+    and name = '${anon_probe_path}';
+")"
+probe_s3_listing="$(rclone lsf "source:listing_photos/${anon_probe_dir}" --files-only 2>/dev/null || true)"
+if [[ "$probe_metadata_count" != "0" ]] || grep -Fxq "$anon_probe_name" <<<"$probe_s3_listing"; then
+  echo "Anonymous Storage write probe path is not clean before the negative test." >&2
+  exit 1
+fi
+
+anon_write_status="$(curl --silent --show-error   --output "$work_dir/anon-storage-write.json"   --write-out '%{http_code}'   --request POST   --header "apikey: $MANAGED_SUPABASE_ANON_KEY"   --header "Authorization: Bearer $MANAGED_SUPABASE_ANON_KEY"   --header 'content-type: image/webp'   --header 'x-upsert: false'   --data-binary "@$fixture_file"   "$managed_api_url/storage/v1/object/listing_photos/${anon_probe_path}")"
+
+if [[ "$anon_write_status" -ge 200 && "$anon_write_status" -lt 300 ]]; then
+  rclone deletefile "source:listing_photos/${anon_probe_path}" >/dev/null 2>&1 || true
+
+  probe_cleanup_ok=false
+  for attempt in $(seq 1 10); do
+    probe_metadata_count="$(managed_scalar "
+      select count(*)
+      from storage.objects
+      where bucket_id = 'listing_photos'
+        and name = '${anon_probe_path}';
+    ")"
+    probe_s3_listing="$(rclone lsf "source:listing_photos/${anon_probe_dir}" --files-only 2>/dev/null || true)"
+    if [[ "$probe_metadata_count" == "0" ]] && ! grep -Fxq "$anon_probe_name" <<<"$probe_s3_listing"; then
+      probe_cleanup_ok=true
+      break
+    fi
+    sleep 1
+  done
+
+  if [[ "$probe_cleanup_ok" != "true" ]]; then
+    echo "Anonymous managed Storage write unexpectedly succeeded and exact probe cleanup could not be proven." >&2
+    exit 1
+  fi
+
+  echo "Anonymous managed Storage write unexpectedly succeeded; exact probe was cleaned before failure." >&2
+  exit 1
+fi
+
+probe_metadata_count="$(managed_scalar "
+  select count(*)
+  from storage.objects
+  where bucket_id = 'listing_photos'
+    and name = '${anon_probe_path}';
+")"
+probe_s3_listing="$(rclone lsf "source:listing_photos/${anon_probe_dir}" --files-only 2>/dev/null || true)"
+if [[ "$probe_metadata_count" != "0" ]] || grep -Fxq "$anon_probe_name" <<<"$probe_s3_listing"; then
+  rclone deletefile "source:listing_photos/${anon_probe_path}" >/dev/null 2>&1 || true
+  echo "Anonymous managed Storage write was rejected with HTTP $anon_write_status but left probe residue; exact cleanup attempted." >&2
+  exit 1
+fi
+
+echo "Anonymous managed Storage direct write correctly rejected with HTTP $anon_write_status; probe absent afterward."
+
 # Seed database rows through the existing service_role contract without creating
 # a server API secret. The managed DB connection is postgres; SET ROLE exercises
 # the same DB grants used by the backend role.
