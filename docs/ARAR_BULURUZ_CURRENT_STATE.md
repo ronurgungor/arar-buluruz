@@ -1,40 +1,46 @@
 # Arar Buluruz — Current State
 
-_Last updated: 2026-08-30, Europe/Istanbul_
+_Last updated: 2026-08-31, Europe/Istanbul_
 
 ## Canonical repository state
 
 - Repository: `ronurgungor/arar-buluruz`; canonical branch: `main`.
-- PR #74 — **Prove hosted synthetic pilot release candidate**: **MERGED / CLOSED**.
-- PR #74 verified exact head: `e63ac55a99dcb62fb7e3d55c0ed077aa7213eb20`.
-- PR #74 merge commit: `7242a87559a5091c24b0779219506d3b55ff4c91`.
-- Issue #66 — dedicated managed Supabase Free → pinned self-host migration rehearsal: **CLOSED / COMPLETED**.
-- Issue #72 — pre-AWS pilot release-candidate execution: technical acceptance evidence is complete; this document records that final verified state for closure.
+- Last merged technical checkpoint before this documentation sync: `1207cf177469d1835abb56d914bd3d80858a0b1a`. Live GitHub controls the current `main` SHA.
+- PR #78 — Stage 1 seller self-service: **MERGED / CLOSED**.
+  - approved pre-merge head: `834ad8d5e96117bc8793e1de6f6d5054c54eac55`;
+  - merge commit: `26ce6c66de8a03d941d90ff7fe267998ad63ba8f`;
+  - exact-head seven canonical PR workflows: **SUCCESS**.
+- PR #79 — managed rehearsal workflow parse/config + migration-chain drift: **MERGED / CLOSED**.
+  - approved pre-merge head: `83dcaa6c3331af00789576f3e88e86fe7f2e4d89`;
+  - merge commit / pre-docs-sync main checkpoint: `1207cf177469d1835abb56d914bd3d80858a0b1a`;
+  - post-merge CI run `33401751662`: **SUCCESS**;
+  - post-merge V0 minimal PWA run `33401751621`: **SUCCESS**.
+- PR #79 restored the intended managed-rehearsal trigger contract: `pull_request` + `workflow_dispatch`; no `push` trigger.
 - GitHub `main` is not branch-protected; successful checks are evidence rather than server-enforced merge requirements. Exact-head verification and normal PR/merge discipline remain mandatory.
 
 ## Current phase
 
-**PR #78 post-Codex remediation is active; production and real data remain closed.**
+**Stage 1 technical implementation is merged; production and real data remain closed.**
 
 Current product authority: `docs/PRODUCT_CONTRACT_V2.md`.
 
-PR #78 remains **OPEN / DRAFT / UNMERGED** on `agent/stage1-self-service-v2`.
+The PR #78 remediation closed the two merge-blocking review items:
 
-Codex independently reviewed exact SHA:
+- ambiguous publication commit/response is reconciled before destructive compensation;
+- browser E2E no longer globally suppresses generic 403/404 failures.
 
-`9ce73cb909c56062644aeb6e0090c2477ee1ca96`
+Deferred production/recovery items remain open by design:
 
-That reviewed SHA had all seven canonical workflows SUCCESS. Codex returned **CONDITIONAL PASS — 0 BLOCKER / 3 IMPORTANT**. Advisor disposition promoted the publication commit/response ambiguity to a merge blocker and required a narrow remediation; the broad 403/404 browser false-green was also required to be fixed. Durable review evidence is in `docs/PR78_CODEX_REVIEW_2026-08-30.md`.
-
-The remediation preserves the existing idempotency/RLS/private-Storage architecture: an ambiguous publication transport failure is reconciled through `claim_listing_submission_key` before destructive cleanup. Confirmed completion resolves as success; confirmed same-listing incomplete claim permits normal cleanup; unknown outcome skips destructive cleanup.
-
-The final post-remediation exact SHA is not accepted until all seven canonical workflows are SUCCESS on that same SHA. PR #78 remains OPEN / DRAFT / UNMERGED pending final Advisor/founder decision.
-
-This is technical repository review/remediation only. It does not imply merge, deployment, production activation, real-data authorization, company formation, EİDS integration, real SMS, AWS activation or recurring spend.
+- stale `in_progress` claim plus pending/private-state reconciliation after process termination;
+- orphan Storage cleanup tied to that deliberate recovery model;
+- process-local abuse/rate-limit state;
+- seller-device logout/localStorage hygiene;
+- production proxy-derived HTTPS/host/client-IP semantics;
+- cross-service hard-delete retry/reconciliation.
 
 Current consumer product facts:
 
-- Türkiye-wide İl / İlçe self-service;
+- Türkiye-wide İl / İlçe seller self-service;
 - 1–8 trusted photos;
 - broad category + title;
 - condition optional with no silent default;
@@ -44,29 +50,54 @@ Current consumer product facts:
 - no seller contact-preference selector;
 - buyers receive both **Ara** (`tel:`) and **WhatsApp** (`https://wa.me/`) from that same phone;
 - no three consumer declaration checkboxes;
-- versioned listing-rules evidence replaces fabricated declaration timestamps;
+- versioned listing-rules evidence;
 - bounded 7-day phone-bound signed HttpOnly seller session;
-- phone/challenge/seller rate limiting plus coarse trusted-IP protection;
 - atomic auto-publication;
 - founder post-moderation/takedown;
 - lightweight `İlanlarım`;
 - Vasıta retained for the product/synthetic path;
 - real production vehicle publication fail-closed until EİDS integration is enabled.
 
-Historical declaration/contact/capability fields may remain for compatibility or evidence, but are not current consumer choices.
+## Current business/formalization state
 
-The founder's settled business/formalization sequence is:
+The prior automatic company-first sequence is superseded.
 
-**APPLICATION COMPLETION → ŞAHIS ŞİRKETİ → KOSGEB → SUPPORT / INVESTMENT → FUNDED PRODUCTION / LEGAL / EİDS / INFRASTRUCTURE**
+Current founder plan:
 
-Hard boundaries remain:
+**APPLICATION COMPLETION → GVK MÜKERRER 20/B PERSONAL-DEVELOPER ROUTE WHILE APPLICABLE → MARKET / REVENUE VALIDATION → COMPANY / KOSGEB WHEN REQUIRED OR ADVANTAGEOUS**
+
+Before first taxable revenue, current GVK Mükerrer 20/B eligibility and mechanics must be re-verified. This does not authorize production, real data or waive KVKK/EİDS/platform obligations.
+
+## Hosted managed-proof state
+
+PR #79 closed two infrastructure-test defects:
+
+1. invalid job-level `runner.temp` usage in the managed workflow;
+2. hardcoded six-version migration expectations, now derived from canonical `supabase/migrations/*.sql` and compared against the complete managed migration history.
+
+The managed migration + backup/restore rehearsal itself passes with the current nine-migration chain.
+
+The remaining old hosted browser failure is **not accepted as current Stage 1 product evidence**. It exposed a pre-existing proof drift:
+
+- current moderation signs private photos through the Storage signing route;
+- the old localhost shim does not implement that route;
+- more importantly, the old hosted browser journey still tests the superseded founder-entry/preapproval model.
+
+Accepted evidence strategy is D-029:
+
+- **now:** provider-specific managed proof for migrations, DB/RLS/grants, private Storage/signing, backup/restore/rollback/fingerprint and artifact privilege boundaries;
+- **do not:** add a shim signing route solely to revive the stale journey;
+- **later:** one thin actual-managed-provider current Stage 1 canary when a deliberate server-only service-role credential/gate is justified.
+
+Until that modernization is complete, do not describe the legacy hosted founder-entry browser journey as current Stage 1 acceptance.
+
+## Hard boundaries
 
 - synthetic/mock data only;
 - no real seller/listing/contact/photo/personal data;
-- no real users;
 - production backend/deployment OFF;
 - AWS OFF;
-- paid recurring infrastructure/services OFF;
+- recurring paid infrastructure/services OFF;
 - real SMS OFF;
 - production EİDS OFF;
 - Ads/monetization OFF;
@@ -74,8 +105,6 @@ Hard boundaries remain:
 - Tarladan untouched.
 
 **REAL DATA COLLECTION remains CLOSED.**
-
-PR #78's reviewed pre-remediation head was `9ce73cb909c56062644aeb6e0090c2477ee1ca96`. Post-Codex remediation changes move the branch SHA; the resulting exact head must independently pass all seven canonical workflows before final Advisor merge review. Stale process-claim recovery and the other production/recovery items recorded in `docs/PR78_CODEX_REVIEW_2026-08-30.md` remain deferred. Repository readiness does not itself authorize production, company formation, spending or real-data collection.
 
 ## Dedicated hosted Supabase state
 
@@ -111,7 +140,7 @@ The tested target remains pinned to `self-hosted/v0.8.0` / upstream commit `241b
 
 Portability is therefore **PASS** and is not an open Issue #72 blocker.
 
-## Issue #72 recovery-free exact-head evidence
+## Historical Issue #72 hosted RC evidence — superseded as current product proof
 
 Final recovery-free exact head:
 
@@ -126,7 +155,7 @@ All required workflows on that same head completed **SUCCESS**:
   - hosted exact-head RC job `97531617395` — **SUCCESS**;
   - local synthetic migration/RLS/Storage/operational validation job `97531617660` — **SUCCESS**.
 
-The hosted exact-head proof established the following application lifecycle in the dedicated synthetic project:
+The following was valid historical evidence for the then-current founder-entry product. It is retained for audit history but is superseded as current Stage 1 product acceptance:
 
 1. founder create;
 2. server-side image sanitization;

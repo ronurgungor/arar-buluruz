@@ -1,6 +1,6 @@
 # Arar Buluruz — Product Contract V2
 
-_Last updated: 2026-08-28, Europe/Istanbul_
+_Last updated: 2026-08-31, Europe/Istanbul_
 
 ## Authority
 
@@ -228,13 +228,15 @@ Still OFF unless separately authorized:
 
 Repository readiness does not authorize real-data collection or production.
 
-## Settled business/formalization sequence
+## Current business/formalization sequence
 
-The founder's current settled sequence is:
+The current founder plan is:
 
-**APPLICATION COMPLETION → ŞAHIS ŞİRKETİ → KOSGEB → SUPPORT / INVESTMENT → FUNDED PRODUCTION / LEGAL / EİDS / INFRASTRUCTURE**
+**APPLICATION COMPLETION → GVK MÜKERRER 20/B PERSONAL-DEVELOPER ROUTE WHILE APPLICABLE → MARKET / REVENUE VALIDATION → COMPANY / KOSGEB WHEN REQUIRED OR ADVANTAGEOUS**
 
-This sequence supersedes assumptions that paid production infrastructure, production EİDS/legal execution or monetization should be opened before the application is substantially complete and the company/KOSGEB sequence is reached.
+This replaces the prior assumption that a şahıs şirketi must be opened before the first qualifying application income.
+
+Before the first taxable receipt, the then-current GVK Mükerrer 20/B eligibility and operational requirements must be re-verified. This tax/formalization route does not change the product's KVKK, EİDS, real-data, production, security or infrastructure obligations.
 
 ## Historical supersession note
 
@@ -248,8 +250,8 @@ D-025 and earlier decisions remain historical records. The 2026-08-28 simplifica
 
 It does **not** erase the prior decisions or their evidence. Valid security, privacy, migration and lifecycle principles remain preserved where compatible with this contract.
 
-## PR #78 closure rule
+## Implementation-status pointer
 
-PR #78 remains **OPEN / DRAFT / UNMERGED** until explicitly changed by the founder.
+PR #78 has completed and merged. PR/CI/runtime truth is intentionally not duplicated here.
 
-Do not claim final technical closure until all seven canonical workflows are **SUCCESS on one exact SHA**. Live GitHub workflow evidence controls over older checkpoint text.
+Use live GitHub plus `ARAR_BULURUZ_CURRENT_STATE.md` and `ACTIVE_CHAT_HANDOFF.md` for exact implementation status. This file remains the consumer product contract.

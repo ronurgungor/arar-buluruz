@@ -1,10 +1,60 @@
 # Arar Buluruz — Backlog
 
-_Last updated: 2026-08-30, Europe/Istanbul_
+_Last updated: 2026-08-31, Europe/Istanbul_
 
 Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 
-## PR #78 post-Codex remediation — 2026-08-30
+
+## Current active backlog — 2026-08-31
+
+Closed:
+
+- [x] PR #78 Stage 1 seller self-service merged as `26ce6c66de8a03d941d90ff7fe267998ad63ba8f`.
+- [x] PR #79 managed workflow parse/config + migration-chain drift merged as `1207cf177469d1835abb56d914bd3d80858a0b1a`.
+- [x] Record D-028: GVK Mükerrer 20/B becomes the default initial personal-developer formalization route while applicable; company/KOSGEB is no longer an automatic pre-revenue step.
+- [x] Record D-029: old full hosted founder-entry proof is superseded; provider-specific managed proof is the current target.
+
+Next technical work:
+
+- [-] Modernize hosted managed proof in a **separate** branch/PR.
+  - keep canonical migration equality;
+  - keep managed DB/RLS/grant evidence;
+  - keep private Storage and lifecycle signing evidence;
+  - keep backup/restore/rollback/fingerprint consistency;
+  - keep synthetic-only and artifact privilege boundaries;
+  - remove/rewrite obsolete founder-entry/preapproval assertions;
+  - do **not** add a shim signing route merely to make the old journey green;
+  - do **not** add a new service-role secret in this pass.
+
+After hosted-proof modernization:
+
+- [ ] Route a bounded high-value user-visible frontend/UX polish batch to Lovable when free/expiring credits are available; verify all Lovable output through GitHub/tests before adoption.
+
+Deferred until a deliberate later gate:
+
+- [ ] one thin actual-managed-provider current Stage 1 canary using approved server-only service-role credentials;
+- [ ] stale `in_progress` / pending-state recovery and orphan-reconciliation architecture;
+- [ ] shared/distributed abuse state;
+- [ ] explicit seller logout/shared-device hygiene;
+- [ ] production proxy/TLS/host/client-IP semantics;
+- [ ] cross-service delete reconciliation.
+
+Hard gates remain closed:
+
+- [ ] real personal/seller data;
+- [ ] production activation;
+- [ ] paid recurring production infrastructure;
+- [ ] real SMS;
+- [ ] production EİDS;
+- [ ] Ads/monetization;
+- [ ] payments/orders/reservations/commission;
+- [ ] Tarladan changes.
+
+The GVK Mükerrer 20/B decision changes tax/company sequencing only. It does not open any of these production/legal/data gates.
+
+## Historical PR #78 post-Codex remediation — completed 2026-08-30
+
+### Historical checkpoint
 
 This section supersedes the older PR #78 closure checkpoint below for current status. Review evidence: `docs/PR78_CODEX_REVIEW_2026-08-30.md`.
 
@@ -13,8 +63,8 @@ This section supersedes the older PR #78 closure checkpoint below for current st
 - [x] Preserve normal cleanup only when reconciliation proves the same listing remains `claimed`.
 - [x] Skip destructive cleanup when publication outcome cannot be established safely.
 - [x] Remove global 403/404 console suppression from Stage 1 browser acceptance; expected negative 401/403/404 evidence is now exact and consumable.
-- [-] Require all seven canonical workflows SUCCESS on one exact post-remediation SHA.
-- [ ] Stop for final Advisor/founder merge decision after exact-head GREEN. PR #78 remains OPEN / DRAFT / UNMERGED.
+- [x] Require all seven canonical workflows SUCCESS on one exact post-remediation SHA.
+- [x] Final Advisor/founder merge decision completed; PR #78 merged.
 
 Deferred to the production/recovery gate; do not partially implement in PR #78:
 
@@ -26,7 +76,7 @@ Deferred to the production/recovery gate; do not partially implement in PR #78:
 - [ ] cross-service hard-delete retry/reconciliation.
 
 
-## Current PR #78 closure checkpoint — 2026-08-28
+## Historical PR #78 closure checkpoint — 2026-08-28
 
 Current product authority: `docs/PRODUCT_CONTRACT_V2.md`.
 
@@ -45,14 +95,14 @@ Completed in the current simplification batch:
 - [x] Keep Vasıta in the product/synthetic path.
 - [x] Fail closed for real non-loopback vehicle publication until EİDS is enabled.
 - [x] Preserve search normalization including `b150` ↔ `b 150`.
-- [x] Keep PR #78 OPEN / DRAFT / UNMERGED.
+- [x] At that checkpoint, keep PR #78 OPEN / DRAFT / UNMERGED (historical condition; PR #78 later merged).
 - [x] Synchronize Product Contract V2, active handoff, current state and decision log to the 2026-08-28 founder decisions.
 - [-] Close the three bounded acceptance regressions: V0 BFCache zero-data reset, Stage 1 exact expected-401 evidence, Gate 1 dual-contact rendering/assertions.
 - [-] Synchronize this backlog, README and Issue #75.
 - [ ] Require all seven canonical workflows SUCCESS on one exact SHA.
 - [ ] Stop for independent Advisor/founder hands-on review after exact-head GREEN.
 
-Settled business sequence:
+Historical business sequence (superseded by D-028):
 
 **APPLICATION COMPLETION → ŞAHIS ŞİRKETİ → KOSGEB → SUPPORT / INVESTMENT → FUNDED PRODUCTION / LEGAL / EİDS / INFRASTRUCTURE**
 

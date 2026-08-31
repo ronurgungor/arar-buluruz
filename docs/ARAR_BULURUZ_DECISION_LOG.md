@@ -1,6 +1,6 @@
 # Arar Buluruz — Decision Log
 
-_Last updated: 2026-08-28, Europe/Istanbul_
+_Last updated: 2026-08-31, Europe/Istanbul_
 
 This is an append-oriented record of consequential product, technical and operating decisions. It preserves **what was decided, why, alternatives rejected and what would cause reconsideration**.
 
@@ -303,9 +303,33 @@ Each new entry should include:
 ## D-027 — Settled company/KOSGEB/funded-production sequence
 
 - **Date:** 2026-08-28
-- **Status:** Active founder business sequence
-- **Decision:** The current settled sequence is **APPLICATION COMPLETION → ŞAHIS ŞİRKETİ → KOSGEB → SUPPORT / INVESTMENT → FUNDED PRODUCTION / LEGAL / EİDS / INFRASTRUCTURE**.
+- **Status:** Historical / superseded by D-028
+- **Decision (historical):** The sequence was **APPLICATION COMPLETION → ŞAHIS ŞİRKETİ → KOSGEB → SUPPORT / INVESTMENT → FUNDED PRODUCTION / LEGAL / EİDS / INFRASTRUCTURE**.
 - **Rationale:** Finish the application and technical product before opening avoidable company/recurring-cost/production work; then formalize the business and use KOSGEB/support/investment to fund production-grade legal, EİDS and infrastructure requirements.
-- **Consequence:** Repository/local/synthetic work may continue. Company formation, paid production infrastructure, production legal/EİDS execution and recurring spend are not pulled forward merely because code is technically ready.
+- **Supersession:** D-028 removes the assumption that a şahıs şirketi must be opened before the first qualifying application income.
 - **Compatibility:** D-022's zero-spend gate remains compatible. Historical production-provider research remains reference material, not a purchase instruction.
-- **Review trigger:** A material KOSGEB eligibility/timing requirement, a legal deadline that must precede the sequence, or explicit founder revision.
+
+## D-028 — GVK Mükerrer 20/B before mandatory company formation
+
+- **Date:** 2026-08-31
+- **Status:** Active founder business/formalization decision
+- **Decision:** For Arar Buluruz's initial commercialization, the default plan is to use the **GVK Mükerrer 20/B personal-developer route while applicable**, rather than automatically opening a şahıs şirketi before launch. Company formation and KOSGEB move to a later gate and are used when legally required, economically advantageous or necessary for the next operating stage.
+- **Planning sequence:** **APPLICATION COMPLETION → 20/B-COMPLIANT PERSONAL LAUNCH → MARKET / REVENUE VALIDATION → COMPANY / KOSGEB WHEN REQUIRED OR ADVANTAGEOUS → FUNDED PRODUCTION / LEGAL / EİDS / INFRASTRUCTURE AS APPLICABLE**.
+- **Rationale:** Avoid fixed company cost before the application proves meaningful usage/revenue while preserving a lawful route for qualifying income.
+- **Pre-revenue control:** Before the first taxable receipt, re-verify then-current statutory eligibility, limits/exclusions and required banking/notification/withholding mechanics from current official sources or a competent tax professional. If the application/payment flow falls outside the exemption conditions, stop and reopen the company/tax decision before receiving revenue.
+- **Non-effect:** This tax/formalization decision does **not** waive or activate KVKK, EİDS, consumer/platform, production, real-data, security, SMS, Ads or infrastructure gates.
+- **Supersedes:** D-027 only where it treated şahıs şirketi formation as the mandatory next step before initial qualifying application income.
+- **Review trigger:** Change in GVK Mükerrer 20/B rules/limits, non-qualifying revenue, app-store/payment-flow incompatibility, KOSGEB/company eligibility needs, material revenue scale, hiring/invoicing/contracting needs, or explicit founder revision.
+
+## D-029 — Hosted managed proof: provider-specific core now, thin real-provider canary later
+
+- **Date:** 2026-08-31
+- **Status:** Active technical evidence strategy
+- **Decision:** Do **not** rebuild the full current Stage 1 seller lifecycle through the legacy localhost transport shim. Modernize hosted managed evidence around provider-specific invariants now; add one thin actual-managed-provider Stage 1 canary later only when a deliberate server-only service-role credential/gate is justified.
+- **Now keep/prove:** canonical migration-chain equality; managed DB/RLS/grant semantics; private Storage and lifecycle signing; backup/restore/rollback/fingerprint consistency; synthetic-only data boundary; public artifact/privilege boundary.
+- **Reject:** adding a shim signing route merely to make the stale founder-entry browser journey green, or claiming shim behavior is equivalent to actual managed Supabase API integration.
+- **Historical proof status:** the old hosted founder-entry/preapproval browser journey remains dated evidence but is superseded as current Stage 1 product acceptance after PR #78.
+- **Later canary:** one synthetic current submission → public delivery/signed photo → founder post-moderation takedown path against actual managed provider APIs, without duplicating the entire canonical Stage 1 acceptance suite.
+- **Rationale:** Independent Work review plus Advisor code inspection found that the old hosted proof duplicates already-covered product behavior, encodes superseded founder-entry assumptions and increases false-green/drift risk when extended through the shim.
+- **Related milestone:** PR #79 fixed the workflow parse/config error and migration-chain drift; its remaining red hosted-browser result exposed this pre-existing proof drift rather than a PR #79 product regression.
+- **Review trigger:** a production-like provider integration gate, availability of an explicitly approved server-only service-role secret for the dedicated synthetic project, or evidence that provider-specific behavior is not adequately covered by the narrowed proof.
