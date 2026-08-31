@@ -95,7 +95,7 @@ Completed in the current simplification batch:
 - [x] Keep Vasıta in the product/synthetic path.
 - [x] Fail closed for real non-loopback vehicle publication until EİDS is enabled.
 - [x] Preserve search normalization including `b150` ↔ `b 150`.
-- [x] Keep PR #78 OPEN / DRAFT / UNMERGED.
+- [x] At that checkpoint, keep PR #78 OPEN / DRAFT / UNMERGED (historical condition; PR #78 later merged).
 - [x] Synchronize Product Contract V2, active handoff, current state and decision log to the 2026-08-28 founder decisions.
 - [-] Close the three bounded acceptance regressions: V0 BFCache zero-data reset, Stage 1 exact expected-401 evidence, Gate 1 dual-contact rendering/assertions.
 - [-] Synchronize this backlog, README and Issue #75.
