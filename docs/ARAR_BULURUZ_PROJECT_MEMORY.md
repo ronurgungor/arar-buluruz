@@ -1,6 +1,6 @@
 # Arar Buluruz — Shared Project Memory
 
-_Last reviewed: 2026-08-09, Europe/Istanbul_
+_Last reviewed: 2026-08-31, Europe/Istanbul_
 
 ## Purpose
 
@@ -56,15 +56,16 @@ The published V0 has validated:
 
 It has not validated:
 
-- real listing intake/ownership operations;
-- account management;
-- moderation sustainability;
-- the future seller-contact model;
-- public external-sales safety;
-- a functioning supply-demand loop;
-- production backend reliability.
+- real-world seller completion and repeat usage;
+- moderation sustainability at real volume;
+- buyer contact/conversion;
+- abuse and wrong-person-phone rates;
+- marketplace liquidity / a functioning supply-demand loop;
+- production backend reliability under real traffic.
 
-The future first controlled real-data target remains **5–10 founder-controlled Çorlu listings** when separately authorized.
+Repository tests now validate the **technical** seller self-service, ownership, direct-contact and post-moderation contracts synthetically. They do not validate those behaviors with real users.
+
+The old founder-controlled Çorlu intake target is historical. The current product contract is Türkiye-wide seller self-service. Any first real-data rollout may still be operationally bounded, but its geography/size is a separate activation decision rather than a product-contract restriction.
 
 ## Repository/public-runtime separation
 
