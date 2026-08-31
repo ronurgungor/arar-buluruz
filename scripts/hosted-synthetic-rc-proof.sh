@@ -65,7 +65,25 @@ configure_source_rclone() {
   export RCLONE_CONFIG_SOURCE_FORCE_PATH_STYLE=true
 }
 
-expected_versions="20260730162000 20260808211500 20260809220000 20260810210000 20260822113000 20260823150000"
+canonical_migration_versions() {
+  local migration_file
+  local filename
+  local versions=""
+  local -a migration_files=("$repo_root"/supabase/migrations/*.sql)
+
+  for migration_file in "${migration_files[@]}"; do
+    filename="${migration_file##*/}"
+    if [[ ! -f "$migration_file" || ! "$filename" =~ ^([0-9]{14})_.+\.sql$ ]]; then
+      echo "Unexpected canonical migration path: $migration_file" >&2
+      return 1
+    fi
+    versions+="${BASH_REMATCH[1]} "
+  done
+
+  printf '%s' "${versions% }"
+}
+
+expected_versions="$(canonical_migration_versions)"
 actual_versions="$(managed_scalar "select string_agg(version, ' ' order by version) from supabase_migrations.schema_migrations;")"
 if [[ "$actual_versions" != "$expected_versions" ]]; then
   echo "Hosted managed project migration chain mismatch: $actual_versions" >&2
