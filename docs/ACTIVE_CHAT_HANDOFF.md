@@ -21,6 +21,12 @@ One-writer rule remains active. No force-push/history rewrite. Tarladan remains 
 
 This documentation synchronization is the only active repository-writing scope at this checkpoint. No application/security implementation is being changed here.
 
+Active docs PR:
+
+- branch: `agent/sync-post-pr79-20b-state`
+- PR #80: **OPEN**
+- purpose: post-PR79 state + GVK Mükerrer 20/B + hosted-proof strategy + bootstrap/routing synchronization
+
 ## Live repository checkpoint
 
 Repository: `ronurgungor/arar-buluruz`
