@@ -11,15 +11,8 @@ on:
       - "scripts/materialize-migration-photo-fixture.ts"
       - "scripts/storage-object-backup-restore.sh"
       - "scripts/migration-photo-fixture.ts"
-      - "scripts/hosted-rc-transport-shim.ts"
-      - "scripts/hosted-pilot-operator-browser-e2e.ts"
-      - "scripts/pilot-rc-artifact-e2e.ts"
-      - "scripts/hosted-synthetic-rc-proof.sh"
-      - "src/routes/giris.tsx"
-      - "src/routes/gizlilik.tsx"
-      - "public/offline.html"
-      - "public/sw.js"
-      - "public/manifest.webmanifest"
+      - "scripts/pilot-rc-artifact-boundary-check.sh"
+      - "ops/self-hosted/restore-verification.sql"
       - "vite.config.ts"
       - "ops/self-hosted/**"
       - "supabase/migrations/**"
@@ -59,28 +52,21 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
-      - name: Verify managed rehearsal scripts and secret boundary
+      - name: Verify managed provider proof scripts and secret boundary
         shell: bash
         run: |
           bash -n scripts/managed-supabase-migration-rehearsal.sh
           bash -n scripts/export-managed-application-backup.sh
           bash -n scripts/storage-object-backup-restore.sh
-          bash -n scripts/hosted-synthetic-rc-proof.sh
+          bash -n scripts/pilot-rc-artifact-boundary-check.sh
+
           bun scripts/materialize-migration-photo-fixture.ts "${RUNNER_TEMP}/managed-fixture.webp" > "${RUNNER_TEMP}/managed-fixture.json"
           test "$(wc -c < "${RUNNER_TEMP}/managed-fixture.webp" | tr -d ' ')" = "72"
           test "$(sha256sum "${RUNNER_TEMP}/managed-fixture.webp" | awk '{print $1}')" = "fd89cface8e12174fb1c6e78c0a8b0b26be925820eed38713ff1d921d5f969df"
 
-          bun build scripts/hosted-rc-transport-shim.ts \
+          bun build scripts/migration-photo-fixture.ts \
             --target=bun \
-            --outfile "${RUNNER_TEMP}/hosted-rc-shim.js"
-          bun build scripts/hosted-pilot-operator-browser-e2e.ts \
-            --target=bun \
-            --external playwright \
-            --outfile "${RUNNER_TEMP}/hosted-operator-e2e.js"
-          bun build scripts/pilot-rc-artifact-e2e.ts \
-            --target=bun \
-            --external playwright \
-            --outfile "${RUNNER_TEMP}/pilot-rc-artifact-e2e.js"
+            --outfile "${RUNNER_TEMP}/migration-photo-fixture.js"
 
           test ! -f supabase/.temp/project-ref
           if git grep -nE 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|sb_secret_[A-Za-z0-9_-]{20,}' -- ':!bun.lock' ':!.github/workflows/*.yml'; then
@@ -88,21 +74,26 @@ jobs:
             exit 1
           fi
 
-          grep -Fq 'PGSSLMODE=require' scripts/managed-supabase-migration-rehearsal.sh
-          grep -Fq '127.0.0.1:15432:5432' scripts/managed-supabase-migration-rehearsal.sh
-          grep -Fq '127.0.0.1:18000' scripts/managed-supabase-migration-rehearsal.sh
-          grep -Fq 'db rest imgproxy storage meta studio api-gw' scripts/managed-supabase-migration-rehearsal.sh
-          grep -Fq 'supabase-auth realtime-dev.supabase-realtime supabase-edge-functions supabase-pooler' scripts/managed-supabase-migration-rehearsal.sh
+          grep -Fq 'canonical_migration_versions' scripts/managed-supabase-migration-rehearsal.sh
+          grep -Fq 'ops/self-hosted/restore-verification.sql' scripts/managed-supabase-migration-rehearsal.sh
+          grep -Fq 'Pending managed photo signing unexpectedly succeeded.' scripts/managed-supabase-migration-rehearsal.sh
+          grep -Fq 'verify-source-target' scripts/managed-supabase-migration-rehearsal.sh
+          grep -Fq 'Managed source contains orphan private photo metadata after rehearsal.' scripts/managed-supabase-migration-rehearsal.sh
+          grep -Fq "has_table_privilege('anon', 'public.listings', 'INSERT')" ops/self-hosted/restore-verification.sql
+          grep -Fq 'Public can sign active listing photo objects' ops/self-hosted/restore-verification.sql
 
-          grep -Fq 'rzosrvenlvhijeckmwyc' scripts/hosted-rc-transport-shim.ts
-          grep -Fq 'jlbsoraqnlricbyagxdk' scripts/hosted-rc-transport-shim.ts
-          grep -Fq 'gwgrwwvaiizfsqaacnhf' scripts/hosted-rc-transport-shim.ts
-          grep -Fq 'hostname: "127.0.0.1"' scripts/hosted-rc-transport-shim.ts
-          grep -Fq 'Browser-origin requests are forbidden.' scripts/hosted-rc-transport-shim.ts
-          grep -Fq 'PILOT_OPERATOR_SUPABASE_SERVICE_ROLE_KEY="$shim_token"' scripts/hosted-synthetic-rc-proof.sh
-          ! grep -R -F 'HOSTED_RC_SHIM_TOKEN' src public vite.config.ts
-          ! grep -R -F 'HOSTED_RC_DB_URL' src public vite.config.ts
-          ! grep -R -F 'HOSTED_RC_S3_SECRET_ACCESS_KEY' src public vite.config.ts
+          for retired_harness in \
+            scripts/hosted-synthetic-rc-proof.sh \
+            scripts/hosted-pilot-operator-browser-e2e.ts \
+            scripts/hosted-rc-transport-shim.ts \
+            scripts/pilot-rc-artifact-e2e.ts; do
+            test ! -e "$retired_harness"
+          done
+
+          if git grep -nE 'scripts/(hosted-synthetic-rc-proof\.sh|hosted-pilot-operator-browser-e2e\.ts|hosted-rc-transport-shim\.ts|pilot-rc-artifact-e2e\.ts)' -- .; then
+            echo "Retired hosted proof harness still has executable references."
+            exit 1
+          fi
 
   managed-rehearsal:
     name: Dedicated managed Free → pinned self-host DB + Storage rehearsal
@@ -197,8 +188,8 @@ jobs:
           git diff --check
           git diff --exit-code
 
-  hosted-rc-proof:
-    name: Dedicated hosted synthetic RC + pilot-rc browser proof
+  hosted-managed-proof:
+    name: Dedicated hosted managed provider + portability proof
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     needs: contract-check
     runs-on: ubuntu-24.04
@@ -251,7 +242,7 @@ jobs:
           test "$(bun --version)" = "1.3.14"
           test "$(supabase --version)" = "2.102.0"
 
-      - name: Verify dedicated credentials and hard exclusions
+      - name: Verify dedicated synthetic-only credentials and hard exclusions
         shell: bash
         run: |
           test -n "${MANAGED_SUPABASE_DB_URL:-}"
@@ -269,20 +260,28 @@ jobs:
           echo "::add-mask::$MANAGED_SUPABASE_S3_ACCESS_KEY_ID"
           echo "::add-mask::$MANAGED_SUPABASE_S3_SECRET_ACCESS_KEY"
 
-      - name: Install Chromium
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/hosted-rc-browsers
-        run: bunx playwright install --with-deps chromium
-
-      - name: Establish canonical hosted managed baseline
+      - name: Run managed provider invariants and pinned portability proof
         shell: bash
         run: bash scripts/managed-supabase-migration-rehearsal.sh
 
-      - name: Run hosted founder journey and pilot-rc artifact proof
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/hosted-rc-browsers
+      - name: Build current public pilot artifact without privileged credentials
         shell: bash
-        run: bash scripts/hosted-synthetic-rc-proof.sh
+        run: |
+          rm -rf .output
+          (
+            unset MANAGED_SUPABASE_DB_URL MANAGED_SUPABASE_S3_ACCESS_KEY_ID MANAGED_SUPABASE_S3_SECRET_ACCESS_KEY
+            unset PILOT_OPERATOR_SUPABASE_SERVICE_ROLE_KEY PILOT_SUBMISSION_SUPABASE_SERVICE_ROLE_KEY PILOT_SUBMISSION_CAPABILITY_SECRET
+            ARAR_BUILD_PROFILE=pilot-rc \
+            NITRO_PRESET=node-server \
+            VITE_LISTINGS_SOURCE=supabase \
+            VITE_SUPABASE_URL=https://synthetic.invalid \
+            VITE_SUPABASE_ANON_KEY=synthetic-public-key \
+              bun run build
+          )
+
+      - name: Verify current public artifact privilege boundary
+        shell: bash
+        run: bash scripts/pilot-rc-artifact-boundary-check.sh
 
       - name: Verify repository copy was not polluted
         if: always()
@@ -290,12 +289,3 @@ jobs:
         run: |
           git diff --check
           git diff --exit-code
-
-      - name: Upload hosted RC browser evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: hosted-synthetic-rc-evidence
-          path: test-results/hosted-rc/*.png
-          if-no-files-found: warn
-          retention-days: 7
