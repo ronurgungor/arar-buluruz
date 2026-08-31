@@ -36,7 +36,7 @@ concurrency:
 
 jobs:
   contract-check:
-    name: Managed rehearsal and hosted RC static boundary check
+    name: Managed provider proof static boundary check
     runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
@@ -66,7 +66,7 @@ jobs:
 
           bun build scripts/migration-photo-fixture.ts \
             --target=bun \
-            --outfile "${RUNNER_TEMP}/migration-photo-fixture.js"
+            --outdir "${RUNNER_TEMP}/migration-photo-fixture-build"
 
           test ! -f supabase/.temp/project-ref
           if git grep -nE 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|sb_secret_[A-Za-z0-9_-]{20,}' -- ':!bun.lock' ':!.github/workflows/*.yml'; then
