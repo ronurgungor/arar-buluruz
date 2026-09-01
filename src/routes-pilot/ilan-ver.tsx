@@ -429,7 +429,7 @@ function Stage1ListingWizard() {
                         type="button"
                         onClick={() => removePhoto(photo.id)}
                         aria-label={`${index + 1}. fotoğrafı kaldır`}
-                        className="absolute right-1.5 top-1.5 inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card/90 text-foreground shadow-sm transition-colors hover:bg-accent"
+                        className="absolute right-1.5 top-1.5 inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card/90 text-foreground shadow-sm transition-colors hover:bg-accent"
                       >
                         <X aria-hidden className="h-4 w-4" />
                       </button>
@@ -833,7 +833,7 @@ function Stage1ListingWizard() {
         )}
 
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
-          <div className="mx-auto flex max-w-xl items-center gap-3 px-4 py-3">
+          <div className="mx-auto flex max-w-xl items-center gap-3 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
             {step > 1 && (
               <button
                 type="button"
