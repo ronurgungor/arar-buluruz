@@ -54,12 +54,12 @@ Latest completed milestones:
   - actual managed anonymous Storage direct-write denial is executable evidence.
 - PR #82 — Stage 1 listing UX polish ported from the isolated Lovable UX lab: **MERGED / CLOSED**;
   - approved head: `abdcb3621575e870648519cf7adf6e57020bc33c`;
-  - merge/current main: `27dc75c96ef687e1c585e27fac6521b172e04f31`;
+  - merge commit / pre-PR83 docs-sync branch-base checkpoint: `27dc75c96ef687e1c585e27fac6521b172e04f31`;
   - public-phone disclosure appears exactly once;
   - photo remove target is 44×44;
   - sticky mobile action bar includes bottom safe-area handling.
 
-Post-merge evidence on current main:
+Post-PR82 evidence on the pre-PR83 docs-sync branch-base checkpoint:
 
 - CI run `33489222953`, attempt 3: **SUCCESS**;
   - lint/unit/build: **SUCCESS**;
