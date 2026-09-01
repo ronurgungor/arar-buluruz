@@ -1,20 +1,26 @@
 # Arar Buluruz — Current State
 
-_Last updated: 2026-08-31, Europe/Istanbul_
+_Last updated: 2026-09-01, Europe/Istanbul_
 
 ## Canonical repository state
 
 - Repository: `ronurgungor/arar-buluruz`; canonical branch: `main`.
-- Hosted-proof modernization branch starting checkpoint: `main = 7ca851e805b0d01d66b2533cad94158a4b7f6b4b`. Live GitHub controls the current `main` SHA.\n- PR #80 — post-PR79 state + GVK Mükerrer 20/B synchronization: **MERGED / CLOSED**, merge `7ca851e805b0d01d66b2533cad94158a4b7f6b4b`.
-- PR #78 — Stage 1 seller self-service: **MERGED / CLOSED**.
-  - approved pre-merge head: `834ad8d5e96117bc8793e1de6f6d5054c54eac55`;
-  - merge commit: `26ce6c66de8a03d941d90ff7fe267998ad63ba8f`;
-  - exact-head seven canonical PR workflows: **SUCCESS**.
-- PR #79 — managed rehearsal workflow parse/config + migration-chain drift: **MERGED / CLOSED**.
-  - approved pre-merge head: `83dcaa6c3331af00789576f3e88e86fe7f2e4d89`;
-  - merge commit / pre-docs-sync main checkpoint: `1207cf177469d1835abb56d914bd3d80858a0b1a`;
-  - post-merge CI run `33401751662`: **SUCCESS**;
-  - post-merge V0 minimal PWA run `33401751621`: **SUCCESS**.
+- Current canonical `main`: `27dc75c96ef687e1c585e27fac6521b172e04f31`.
+- Open PRs at this documentation-sync branch start: **none**.
+- PR #78 — Stage 1 seller self-service: **MERGED / CLOSED**, merge `26ce6c66de8a03d941d90ff7fe267998ad63ba8f`.
+- PR #79 — managed workflow parse/config + migration-chain drift: **MERGED / CLOSED**, merge `1207cf177469d1835abb56d914bd3d80858a0b1a`.
+- PR #80 — post-PR79 state + GVK Mükerrer 20/B synchronization: **MERGED / CLOSED**, merge `7ca851e805b0d01d66b2533cad94158a4b7f6b4b`.
+- PR #81 — hosted managed provider-proof modernization: **MERGED / CLOSED**.
+  - approved head: `8ab785fefa80ee4122fc559298859b8281d4094d`;
+  - merge commit: `8bfe6d7a89bbda6ef710aaf313bf24e312ec18eb`;
+  - D-029 provider-specific modernization completed.
+- PR #82 — Stage 1 listing UX polish: **MERGED / CLOSED**.
+  - approved head: `abdcb3621575e870648519cf7adf6e57020bc33c`;
+  - merge commit / current main: `27dc75c96ef687e1c585e27fac6521b172e04f31`.
+- Post-PR82 merge CI run `33489222953`, attempt 3: **SUCCESS**.
+  - lint/unit/build: **SUCCESS**;
+  - Gate 1 local migration/RLS/REST/browser E2E: **SUCCESS**.
+- Post-PR82 merge V0 minimal PWA run `33489222873`: **SUCCESS**.
 - PR #79 restored the intended managed-rehearsal trigger contract: `pull_request` + `workflow_dispatch`; no `push` trigger.
 - GitHub `main` is not branch-protected; successful checks are evidence rather than server-enforced merge requirements. Exact-head verification and normal PR/merge discipline remain mandatory.
 
@@ -23,6 +29,11 @@ _Last updated: 2026-08-31, Europe/Istanbul_
 **Stage 1 technical implementation is merged; production and real data remain closed.**
 
 Current product authority: `docs/PRODUCT_CONTRACT_V2.md`.
+
+Latest completed work:
+
+- PR #81 completed D-029 provider-specific hosted managed-proof modernization.
+- PR #82 completed the approved Stage 1 listing UX polish port from the isolated Lovable UX lab without changing product/backend/security semantics.
 
 The PR #78 remediation closed the two merge-blocking review items:
 
@@ -70,28 +81,27 @@ Before first taxable revenue, current GVK Mükerrer 20/B eligibility and mechani
 
 ## Hosted managed-proof state
 
-D-029 is the active evidence strategy.
+D-029 provider-specific modernization is **completed** through PR #81.
 
-PR #79 already fixed workflow parsing and canonical migration-chain drift. The dedicated managed migration + backup/restore rehearsal passes the canonical migration chain and is the retained provider-specific foundation.
+PR #79 first fixed workflow parsing and canonical migration-chain drift. PR #81 then retired the superseded founder-entry/preapproval hosted browser journey, localhost privileged transport shim, stale product-level pilot artifact E2E and historical PR #74-only hosted job from the current evidence path.
 
-The active modernization branch `agent/modernize-hosted-managed-proof` removes the superseded full founder-entry/preapproval hosted browser harness, its localhost privileged transport shim and the stale product-level pilot artifact browser E2E. The historical PR #74 exact-head hosted job is retired from the current workflow graph.
+The retained provider-specific managed proof is executable and substantive:
 
-The retained managed proof is intentionally narrower but still substantive:
-
-- canonical migration-chain equality from `supabase/migrations/*.sql`;
+- canonical migration-chain equality derived from `supabase/migrations/*.sql`;
 - dedicated synthetic-project and Tarladan hard exclusions;
-- managed DB/RLS/grants and anon direct-write denial;
-- private Storage plus lifecycle-controlled manifest/signing through actual managed provider APIs;
+- managed DB/RLS/grants and anon listing-write denial;
+- actual managed anonymous direct `listing_photos` Storage API write rejection, with probe absence verified afterward;
+- private Storage plus lifecycle-controlled manifest/signing behavior through actual managed provider APIs;
 - deterministic fixture byte/hash verification;
 - DB + Storage backup, pinned self-host restore and source/target fingerprint/Storage equality;
 - rollback/source consistency and explicit orphan metadata/object checks;
 - public pilot artifact privilege/secret-residue boundary.
 
-Current Stage 1 seller lifecycle behavior remains covered by the canonical Stage 1 acceptance workflow, not by a localhost managed-provider shim.
+Current Stage 1 seller lifecycle behavior remains covered by the canonical Stage 1 acceptance workflow rather than duplicated through a provider shim.
 
-No new service-role secret is introduced. A thin actual-managed-provider current Stage 1 canary remains deferred to the later explicit gate described by D-029.
+No new service-role secret was introduced. A thin actual-managed-provider current Stage 1 canary remains intentionally deferred to a later explicit gate.
 
-This modernization is not accepted until the exact branch head passes the relevant managed hosted workflow and independent Advisor review; its PR must remain OPEN / UNMERGED until then.
+PR #81 is **MERGED / CLOSED**; there is no active hosted-proof modernization branch or merge-readiness work remaining.
 
 ## Hard boundaries
 
@@ -256,22 +266,21 @@ The workflow reported:
 
 ## Artifact and privilege boundary
 
-The final hosted proof keeps privileged transport and credentials outside the public artifact/browser boundary.
+PR #81 removed the localhost privileged transport shim from the current managed-provider proof rather than extending it.
 
-Verified constraints include:
+Current verified constraints include:
 
-- workflow-only transport shim bound to localhost and dedicated Arar Buluruz synthetic project only;
-- known Tarladan project refs hard-rejected;
-- privileged DB/S3 credentials not supplied to browser runtime;
+- dedicated Arar Buluruz synthetic project only, with known Tarladan project refs hard-rejected;
+- privileged DB/S3 credentials remain CI/server-side and are not supplied to browser runtime;
 - public pilot artifact contains no privileged endpoint/credential material;
-- no CI shim marker/port in runtime source;
+- retired hosted-shim residue is rejected by the artifact boundary scanner;
 - no V0/mock/test presentation residue in pilot-RC;
 - no service-role credential or supplied secret leakage;
-- repository remained clean after proof (`git diff --check` and `git diff --exit-code`).
+- repository remains clean after proof.
 
-The final boundary scanner reported:
+The current boundary scanner reports:
 
-`pilot-rc artifact boundary passed: no CI shim, V0/mock/test presentation residue, privileged marker, or supplied secret leakage.`
+`pilot-rc artifact privilege boundary passed: no retired hosted shim, V0/mock/test presentation residue, founder-intake path, privileged marker, or supplied secret leakage.`
 
 ## Supabase repository state
 
@@ -358,17 +367,22 @@ Before the first real listing, the separate privacy/legal/operational and produc
 
 AWS account/provisioning, pricing/credit eligibility, Istanbul availability/residency and production network design remain intentionally deferred until an explicit production activation decision. **AWS remains OFF.**
 
-## Shortest safe path from this checkpoint
+## Immediate next objective — Activation Gate Review
 
-1. keep production, real data, AWS and recurring spend OFF;
-2. preserve the GREEN self-service/backend/security contracts already proved in PR #78;
-3. complete this documentation/PR-metadata closure without application or security behavior changes;
-4. require all seven canonical workflows to pass again on the resulting docs-only exact SHA;
-5. send that final exact SHA to independent Codex read-only review;
-6. keep PR #78 draft/unmerged pending independent Advisor/founder review;
-7. separately resolve the applicable real-data/legal/production gates before any real seller data or production activation.
+**Activation Gate Review — determine exactly what remains before the first real listing / real pilot can legally and technically open.**
 
-Do not add classic Auth/accounts, in-app chat, payments, orders, reservations, commission, ads, recommendation engines, microservices, Kubernetes or speculative observability merely to satisfy this path.
+This is a review/decision gate only. It does not authorize activation implementation.
+
+The review should:
+
+1. keep production, real data, AWS, paid recurring services, real SMS, production EİDS and Ads/monetization OFF;
+2. inventory the remaining privacy/legal/operational/production prerequisites against current canonical evidence;
+3. distinguish already-proved technical controls from unresolved prerequisites;
+4. identify the exact BLOCKER / IMPORTANT / CAN WAIT items for the first real listing / real pilot;
+5. produce explicit founder/Advisor go/no-go criteria;
+6. make no production, infrastructure, secret, external-service or real-data mutation during the review.
+
+Do not add classic Auth/accounts, in-app chat, payments, orders, reservations, commission, ads, recommendation engines, microservices, Kubernetes or speculative observability merely to satisfy this review.
 
 ## Historical-document rule
 
