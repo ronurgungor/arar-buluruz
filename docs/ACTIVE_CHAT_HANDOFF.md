@@ -17,19 +17,30 @@ Live GitHub, executable evidence, `docs/ARAR_BULURUZ_CURRENT_STATE.md`, `docs/PR
 
 One-writer rule remains active. No force-push/history rewrite. Tarladan remains untouched.
 
-Current repository-writing scope is documentation synchronization only:
+PR #83 is a temporary documentation-only synchronization scope. Live GitHub determines whether PR #83 is still open or has already merged.
+
+While PR #83 remains open:
 
 - branch: `agent/post-pr81-pr82-state-sync`;
-- no application code, workflow, migration, backend, secret, production or external-service changes;
-- keep this docs-only PR UNMERGED for Advisor review.
+- no application implementation work is permitted;
+- no workflow, migration, backend, secret, production or external-service changes are permitted;
+- keep PR #83 unmerged until final Advisor confirmation.
+
+After PR #83 merges normally:
+
+- repository writer state returns to **idle / no active implementation scope**;
+- do not continue implementation from the docs-sync branch;
+- the next permitted objective is the read-only **Activation Gate Review**.
 
 ## Live repository checkpoint
 
 Repository: `ronurgungor/arar-buluruz`.
 
-Canonical `main` at this docs-sync branch start:
+Pre-PR83 / docs-sync branch-base `main` checkpoint:
 
 `27dc75c96ef687e1c585e27fac6521b172e04f31`
+
+Live GitHub controls the exact current `main` SHA and PR #83 state.
 
 Open PRs at branch start: **none**.
 
