@@ -1,72 +1,96 @@
 # Arar Buluruz — Active Chat Handoff
 
-_Last updated: 2026-08-31, Europe/Istanbul_
+_Last updated: 2026-09-01, Europe/Istanbul_
 
 ## Purpose
 
 Short-lived continuity layer for the current Arar Buluruz work.
 
-Live GitHub, the exact implementation branch/PR, executable evidence, `ARAR_BULURUZ_CURRENT_STATE.md`, `PRODUCT_CONTRACT_V2.md` and the decision log remain authoritative.
+Live GitHub, executable evidence, `docs/ARAR_BULURUZ_CURRENT_STATE.md`, `docs/PRODUCT_CONTRACT_V2.md`, the backlog and the decision log remain authoritative.
 
 ## Roles and writer state
 
 - Founder: final consequential decision owner.
-- Main Execution Chat: primary implementation/debug/CI owner and current writer for this scope.
+- Main Execution Chat: primary implementation/debug/CI owner.
 - Advisor Chat: roadmap, materiality, independent verification and final review.
 - Codex/Work/Lovable remain specialist roles under `AI_OPERATING_MODEL_V2.md`.
 
-One-writer rule is active. No force-push/history rewrite. Tarladan remains untouched.
+One-writer rule remains active. No force-push/history rewrite. Tarladan remains untouched.
 
-Active repository-writing scope:
+Current repository-writing scope is documentation synchronization only:
 
-- branch: `agent/modernize-hosted-managed-proof`;
-- objective: modernize hosted managed evidence under D-029 without changing application/product behavior;
-- no new secret, production activation, real data or manual managed-Supabase mutation outside the existing synthetic CI proof.
+- branch: `agent/post-pr81-pr82-state-sync`;
+- no application code, workflow, migration, backend, secret, production or external-service changes;
+- keep this docs-only PR UNMERGED for Advisor review.
 
 ## Live repository checkpoint
 
 Repository: `ronurgungor/arar-buluruz`.
 
-Canonical `main` at branch start:
+Canonical `main` at this docs-sync branch start:
 
-`7ca851e805b0d01d66b2533cad94158a4b7f6b4b`
+`27dc75c96ef687e1c585e27fac6521b172e04f31`
 
-Recently closed milestones:
+Open PRs at branch start: **none**.
 
-- PR #78 — Stage 1 seller self-service: **MERGED / CLOSED**, merge `26ce6c66de8a03d941d90ff7fe267998ad63ba8f`;
-- PR #79 — managed workflow parse/config + migration-chain drift: **MERGED / CLOSED**, merge `1207cf177469d1835abb56d914bd3d80858a0b1a`;
-- PR #80 — post-PR79 state + GVK Mükerrer 20/B synchronization: **MERGED / CLOSED**, merge/current branch-start main `7ca851e805b0d01d66b2533cad94158a4b7f6b4b`.
+Latest completed milestones:
 
-The earlier PR #80 OPEN wording was historical and is superseded by this live checkpoint.
+- PR #81 — hosted managed provider-proof modernization under D-029: **MERGED / CLOSED**;
+  - approved head: `8ab785fefa80ee4122fc559298859b8281d4094d`;
+  - merge commit: `8bfe6d7a89bbda6ef710aaf313bf24e312ec18eb`;
+  - provider-specific managed proof is complete;
+  - obsolete founder-entry hosted browser harness, localhost privileged shim and stale product-level artifact E2E are retired;
+  - actual managed anonymous Storage direct-write denial is executable evidence.
+- PR #82 — Stage 1 listing UX polish ported from the isolated Lovable UX lab: **MERGED / CLOSED**;
+  - approved head: `abdcb3621575e870648519cf7adf6e57020bc33c`;
+  - merge/current main: `27dc75c96ef687e1c585e27fac6521b172e04f31`;
+  - public-phone disclosure appears exactly once;
+  - photo remove target is 44×44;
+  - sticky mobile action bar includes bottom safe-area handling.
+
+Post-merge evidence on current main:
+
+- CI run `33489222953`, attempt 3: **SUCCESS**;
+  - lint/unit/build: **SUCCESS**;
+  - Gate 1 local migration/RLS/REST/browser E2E: **SUCCESS**.
+- V0 minimal PWA run `33489222873`: **SUCCESS**.
 
 ## Current product truth
 
 Read `docs/PRODUCT_CONTRACT_V2.md`.
 
-Current consumer model remains seller self-service → verified/remembered phone session → trusted photos → atomic auto-publication → public buyer flow, with founder post-moderation/takedown. The old founder-entry/preapproval journey is not current Stage 1 acceptance.
+Current consumer model remains seller self-service → verified/remembered phone session → trusted photos → atomic auto-publication → public buyer flow, with founder post-moderation/takedown.
 
-## Hosted managed-proof modernization
+PR #82 changed presentation/UX only; it did not change backend, security, session, OTP, rate-limit, idempotency, migration or publication semantics.
 
-D-029 controls this implementation.
+## D-029 provider-proof state
 
-This branch retires the obsolete hosted founder-entry browser harness and localhost privileged shim rather than extending them.
+D-029 modernization is **completed** through PR #81.
 
-Provider-specific evidence remains executable through the dedicated synthetic managed project and the pinned portability rehearsal:
+Retained provider-specific evidence covers:
 
-- canonical migration-chain equality derived from `supabase/migrations/*.sql`;
-- dedicated-project/Tarladan exclusions;
-- managed DB/RLS/grant semantics and anon write denial;
-- private `listing_photos` plus lifecycle-controlled manifest/signing;
-- deterministic fixture bytes/hash;
-- DB + Storage backup/restore;
-- pinned self-host target verification;
-- source/target application fingerprint and Storage equality;
-- rollback/source consistency and explicit orphan checks;
-- public pilot artifact privilege/secret boundary.
+- canonical managed migration-chain equality;
+- dedicated synthetic-project/Tarladan hard exclusions;
+- managed DB/RLS/grants and anon listing-write denial;
+- actual managed anonymous `listing_photos` Storage API write rejection;
+- private Storage plus lifecycle-controlled manifest/signing behavior;
+- deterministic fixture byte/hash validation;
+- DB + Storage backup/restore to the pinned self-host target;
+- source/target application and Storage equality;
+- rollback/source consistency and orphan checks;
+- public artifact privilege/secret-residue boundary.
 
-Current Stage 1 seller lifecycle behavior remains owned by the canonical Stage 1 acceptance workflow; it is not duplicated through a managed-provider shim.
+The thin actual-managed-provider current Stage 1 canary remains deliberately deferred to a later explicit gate.
 
-Acceptance of this branch remains pending exact-head workflow evidence and Advisor review. Keep its PR OPEN / UNMERGED.
+## Deferred production/recovery items
+
+These remain deferred by design:
+
+- stale `in_progress` / pending-state recovery and orphan-reconciliation architecture;
+- shared/distributed abuse state;
+- explicit seller logout/shared-device hygiene;
+- production proxy/TLS/host/client-IP semantics;
+- cross-service delete reconciliation.
 
 ## Business/formalization state
 
@@ -74,25 +98,26 @@ Current planning assumption remains:
 
 **APPLICATION COMPLETION → GVK MÜKERRER 20/B PERSONAL-DEVELOPER ROUTE (while applicable) → MARKET/REVENUE VALIDATION → COMPANY / KOSGEB ONLY WHEN REQUIRED OR ADVANTAGEOUS**
 
-Before first taxable revenue, re-verify then-current eligibility/mechanics. This does not open any production/legal/data gate.
+Before first taxable revenue, then-current eligibility/mechanics must be re-verified. This does not open any production/legal/data gate.
 
 ## Hard boundaries
 
 Still closed unless separately authorized:
 
+- real personal/seller/listing/contact/photo data;
 - production/public activation;
-- real personal/seller/listing/photo data;
-- AWS or recurring paid infrastructure;
+- AWS;
+- recurring paid infrastructure/services;
 - real SMS;
 - production EİDS;
 - Ads/monetization;
-- payment/order/reservation/commission;
+- payment/order/reservation/commission/in-app chat;
 - Tarladan changes.
 
-## Immediate next action
+**REAL DATA COLLECTION remains CLOSED.**
 
-1. require focused static/syntax success on the implementation head;
-2. require the managed hosted provider/portability job to execute and succeed, not skip;
-3. verify the normal canonical workflows triggered by the diff;
-4. stop on any new genuine provider/security/data-integrity defect;
-5. leave the PR OPEN / UNMERGED for Advisor final review.
+## Immediate next objective
+
+**Activation Gate Review — determine exactly what remains before the first real listing / real pilot can legally and technically open.**
+
+This next step is a review/decision package only. Do not implement activation work, provision infrastructure, connect production services or collect real data during that review.
