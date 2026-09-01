@@ -36,12 +36,6 @@ jobs:
       - name: Run unit contracts
         run: bun run test:unit
 
-      # TEMPORARY PR validation only; removed after this exact route content is checked.
-      - name: Validate Stage 1 UX formatting and TypeScript
-        run: |
-          bunx prettier --check src/routes-pilot/ilan-ver.tsx
-          bunx tsc --noEmit --pretty false
-
       - name: Verify real-data activation build still fails closed without operator identity
         shell: bash
         run: |
