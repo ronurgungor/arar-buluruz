@@ -5,7 +5,7 @@ _Last updated: 2026-08-31, Europe/Istanbul_
 ## Canonical repository state
 
 - Repository: `ronurgungor/arar-buluruz`; canonical branch: `main`.
-- Last merged technical checkpoint before this documentation sync: `1207cf177469d1835abb56d914bd3d80858a0b1a`. Live GitHub controls the current `main` SHA.
+- Hosted-proof modernization branch starting checkpoint: `main = 7ca851e805b0d01d66b2533cad94158a4b7f6b4b`. Live GitHub controls the current `main` SHA.\n- PR #80 — post-PR79 state + GVK Mükerrer 20/B synchronization: **MERGED / CLOSED**, merge `7ca851e805b0d01d66b2533cad94158a4b7f6b4b`.
 - PR #78 — Stage 1 seller self-service: **MERGED / CLOSED**.
   - approved pre-merge head: `834ad8d5e96117bc8793e1de6f6d5054c54eac55`;
   - merge commit: `26ce6c66de8a03d941d90ff7fe267998ad63ba8f`;
@@ -70,26 +70,28 @@ Before first taxable revenue, current GVK Mükerrer 20/B eligibility and mechani
 
 ## Hosted managed-proof state
 
-PR #79 closed two infrastructure-test defects:
+D-029 is the active evidence strategy.
 
-1. invalid job-level `runner.temp` usage in the managed workflow;
-2. hardcoded six-version migration expectations, now derived from canonical `supabase/migrations/*.sql` and compared against the complete managed migration history.
+PR #79 already fixed workflow parsing and canonical migration-chain drift. The dedicated managed migration + backup/restore rehearsal passes the canonical migration chain and is the retained provider-specific foundation.
 
-The managed migration + backup/restore rehearsal itself passes with the current nine-migration chain.
+The active modernization branch `agent/modernize-hosted-managed-proof` removes the superseded full founder-entry/preapproval hosted browser harness, its localhost privileged transport shim and the stale product-level pilot artifact browser E2E. The historical PR #74 exact-head hosted job is retired from the current workflow graph.
 
-The remaining old hosted browser failure is **not accepted as current Stage 1 product evidence**. It exposed a pre-existing proof drift:
+The retained managed proof is intentionally narrower but still substantive:
 
-- current moderation signs private photos through the Storage signing route;
-- the old localhost shim does not implement that route;
-- more importantly, the old hosted browser journey still tests the superseded founder-entry/preapproval model.
+- canonical migration-chain equality from `supabase/migrations/*.sql`;
+- dedicated synthetic-project and Tarladan hard exclusions;
+- managed DB/RLS/grants and anon direct-write denial;
+- private Storage plus lifecycle-controlled manifest/signing through actual managed provider APIs;
+- deterministic fixture byte/hash verification;
+- DB + Storage backup, pinned self-host restore and source/target fingerprint/Storage equality;
+- rollback/source consistency and explicit orphan metadata/object checks;
+- public pilot artifact privilege/secret-residue boundary.
 
-Accepted evidence strategy is D-029:
+Current Stage 1 seller lifecycle behavior remains covered by the canonical Stage 1 acceptance workflow, not by a localhost managed-provider shim.
 
-- **now:** provider-specific managed proof for migrations, DB/RLS/grants, private Storage/signing, backup/restore/rollback/fingerprint and artifact privilege boundaries;
-- **do not:** add a shim signing route solely to revive the stale journey;
-- **later:** one thin actual-managed-provider current Stage 1 canary when a deliberate server-only service-role credential/gate is justified.
+No new service-role secret is introduced. A thin actual-managed-provider current Stage 1 canary remains deferred to the later explicit gate described by D-029.
 
-Until that modernization is complete, do not describe the legacy hosted founder-entry browser journey as current Stage 1 acceptance.
+This modernization is not accepted until the exact branch head passes the relevant managed hosted workflow and independent Advisor review; its PR must remain OPEN / UNMERGED until then.
 
 ## Hard boundaries
 

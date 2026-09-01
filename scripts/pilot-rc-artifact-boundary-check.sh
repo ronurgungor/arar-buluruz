@@ -11,7 +11,7 @@ grep -R --binary-files=without-match -F -m1 \
   'pilot-rc|listings=supabase|gate1=off|operator=off' .output >/dev/null
 
 if git grep -nE 'HOSTED_RC_|hosted-rc-transport-shim|127\.0\.0\.1:54329' -- src public vite.config.ts; then
-  echo "CI-only hosted transport shim marker reached runtime source." >&2
+  echo "Retired hosted transport shim marker reached runtime source." >&2
   exit 1
 fi
 
@@ -21,7 +21,7 @@ for marker in \
   'Hosted RC localhost transport shim' \
   '127.0.0.1:54329'; do
   if grep -R --binary-files=without-match -F "$marker" .output >/dev/null 2>&1; then
-    echo "CI-only hosted transport shim marker leaked into pilot-rc artifact: $marker" >&2
+    echo "Retired hosted transport shim marker leaked into pilot-rc artifact: $marker" >&2
     exit 1
   fi
 done
@@ -76,4 +76,4 @@ for secret_name in \
   fi
 done
 
-echo "pilot-rc artifact boundary passed: no CI shim, V0/mock/test presentation residue, founder-intake path, privileged marker, or supplied secret leakage."
+echo "pilot-rc artifact privilege boundary passed: no retired hosted shim, V0/mock/test presentation residue, founder-intake path, privileged marker, or supplied secret leakage."
