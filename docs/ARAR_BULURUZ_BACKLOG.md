@@ -1,36 +1,33 @@
 # Arar Buluruz — Backlog
 
-_Last updated: 2026-08-31, Europe/Istanbul_
+_Last updated: 2026-09-01, Europe/Istanbul_
 
 Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 
 
-## Current active backlog — 2026-08-31
+## Current active backlog — 2026-09-01
 
 Closed:
 
 - [x] PR #78 Stage 1 seller self-service merged as `26ce6c66de8a03d941d90ff7fe267998ad63ba8f`.
 - [x] PR #79 managed workflow parse/config + migration-chain drift merged as `1207cf177469d1835abb56d914bd3d80858a0b1a`.
+- [x] PR #80 post-PR79 state + GVK Mükerrer 20/B synchronization merged as `7ca851e805b0d01d66b2533cad94158a4b7f6b4b`.
 - [x] Record D-028: GVK Mükerrer 20/B becomes the default initial personal-developer formalization route while applicable; company/KOSGEB is no longer an automatic pre-revenue step.
-- [x] Record D-029: old full hosted founder-entry proof is superseded; provider-specific managed proof is the current target.
+- [x] Record D-029: old full hosted founder-entry proof is superseded by provider-specific managed proof.
+- [x] Complete D-029 hosted managed provider-proof modernization through PR #81, merge `8bfe6d7a89bbda6ef710aaf313bf24e312ec18eb`.
+- [x] Close the actual managed anonymous `listing_photos` Storage write-denial evidence gap before PR #81 merge.
+- [x] Complete the bounded high-value Lovable Stage 1 listing UX polish through isolated UX lab → reviewed GitHub port → PR #82.
+- [x] Merge PR #82 Stage 1 listing UX polish as `27dc75c96ef687e1c585e27fac6521b172e04f31`.
+- [x] Verify post-PR82 merge CI `33489222953` attempt 3 and V0 minimal PWA `33489222873` are **SUCCESS**.
 
-Next technical work:
+Current next objective:
 
-- [-] Modernize hosted managed proof in branch `agent/modernize-hosted-managed-proof`.
-  - [x] retire the obsolete founder-entry/preapproval browser journey and localhost privileged shim;
-  - [x] retire the historical PR #74-only hosted proof job from the current workflow graph;
-  - [x] keep canonical migration equality derived from repository filenames;
-  - [x] keep managed DB/RLS/grant and anon-write-denial evidence;
-  - [x] keep private Storage, lifecycle manifest/signing and deterministic fixture evidence;
-  - [x] keep backup/restore/rollback/fingerprint/Storage equality and explicit orphan checks;
-  - [x] keep the public artifact privilege/secret boundary without the stale product browser E2E;
-  - [x] add no shim signing route and no new service-role secret;
-  - [-] require exact-head Managed Supabase workflow SUCCESS plus normal canonical workflow evidence;
-  - [ ] final Advisor review and merge decision.
-
-After hosted-proof modernization:
-
-- [ ] Route a bounded high-value user-visible frontend/UX polish batch to Lovable when free/expiring credits are available; verify all Lovable output through GitHub/tests before adoption.
+- [-] **Activation Gate Review — determine exactly what remains before the first real listing / real pilot can legally and technically open.**
+  - [ ] inventory remaining privacy/legal/operational/production prerequisites against current canonical evidence;
+  - [ ] distinguish already-proved technical controls from unresolved prerequisites;
+  - [ ] identify exact BLOCKER / IMPORTANT / CAN WAIT items;
+  - [ ] produce explicit founder/Advisor go/no-go criteria;
+  - [ ] do not implement activation work or mutate production/external services during this review.
 
 Deferred until a deliberate later gate:
 
@@ -45,6 +42,7 @@ Hard gates remain closed:
 
 - [ ] real personal/seller data;
 - [ ] production activation;
+- [ ] AWS provisioning / production infrastructure;
 - [ ] paid recurring production infrastructure;
 - [ ] real SMS;
 - [ ] production EİDS;
