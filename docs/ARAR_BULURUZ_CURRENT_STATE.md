@@ -5,7 +5,7 @@ _Last updated: 2026-09-01, Europe/Istanbul_
 ## Canonical repository state
 
 - Repository: `ronurgungor/arar-buluruz`; canonical branch: `main`.
-- Current canonical `main`: `27dc75c96ef687e1c585e27fac6521b172e04f31`.
+- Pre-PR83 / docs-sync branch-base `main` checkpoint: `27dc75c96ef687e1c585e27fac6521b172e04f31`. Live GitHub controls the exact current `main` SHA.
 - Open PRs at this documentation-sync branch start: **none**.
 - PR #78 — Stage 1 seller self-service: **MERGED / CLOSED**, merge `26ce6c66de8a03d941d90ff7fe267998ad63ba8f`.
 - PR #79 — managed workflow parse/config + migration-chain drift: **MERGED / CLOSED**, merge `1207cf177469d1835abb56d914bd3d80858a0b1a`.
@@ -16,7 +16,7 @@ _Last updated: 2026-09-01, Europe/Istanbul_
   - D-029 provider-specific modernization completed.
 - PR #82 — Stage 1 listing UX polish: **MERGED / CLOSED**.
   - approved head: `abdcb3621575e870648519cf7adf6e57020bc33c`;
-  - merge commit / current main: `27dc75c96ef687e1c585e27fac6521b172e04f31`.
+  - merge commit / pre-PR83 docs-sync branch-base checkpoint: `27dc75c96ef687e1c585e27fac6521b172e04f31`.
 - Post-PR82 merge CI run `33489222953`, attempt 3: **SUCCESS**.
   - lint/unit/build: **SUCCESS**;
   - Gate 1 local migration/RLS/REST/browser E2E: **SUCCESS**.
