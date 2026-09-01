@@ -1,6 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ImagePlus, X } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ImagePlus,
+  Loader2,
+  X,
+} from "lucide-react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
 import { getDistrictsForCity, locationCities } from "@/data/turkiye-locations";
 import { LISTING_PHOTO_ALLOWED_MIME_TYPES, LISTING_PHOTO_MAX_BYTES } from "@/lib/listing-photo";
@@ -47,6 +56,23 @@ const PRICE_PATTERN = /^\d{1,10}(?:[.,]\d{1,2})?$/;
 const fieldClass =
   "h-12 w-full rounded-xl border border-border bg-card px-4 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10";
 const selectClass = `${fieldClass} appearance-none pr-10`;
+const stepTitles = ["Fotoğraflar", "Ürün", "Detaylar ve konum", "Satıcı ve iletişim"] as const;
+
+function RequiredMark() {
+  return (
+    <span aria-hidden className="ml-1 text-xs font-bold text-primary">
+      *
+    </span>
+  );
+}
+
+function OptionalMark() {
+  return (
+    <span aria-hidden className="ml-1 text-xs font-normal text-muted-foreground">
+      (isteğe bağlı)
+    </span>
+  );
+}
 
 async function postSelfService(form: FormData): Promise<Stage1SubmissionResponse> {
   try {
@@ -278,18 +304,18 @@ function Stage1ListingWizard() {
             data-listing-id={successId}
             className="mt-10 rounded-3xl border border-border bg-card p-6 text-center shadow-sm sm:p-8"
           >
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-              <CheckCircle2 aria-hidden className="h-8 w-8 text-primary" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 ring-8 ring-primary/5">
+              <CheckCircle2 aria-hidden className="h-9 w-9 text-primary" />
             </div>
             <h1 className="mt-5 text-2xl font-extrabold tracking-tight">İlanın yayınlandı</h1>
             <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
               İlanın artık yayında. İstersen hemen görüntüleyebilir veya İlanlarım'dan
               yönetebilirsin.
             </p>
-            <div className="mt-6 grid gap-2 sm:grid-cols-2">
+            <div className="mt-7 grid gap-2 sm:grid-cols-2">
               <a
                 href={`/ilan/${successId}`}
-                className="inline-flex min-h-12 items-center justify-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+                className="inline-flex min-h-12 items-center justify-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
               >
                 İlanı görüntüle
               </a>
@@ -300,6 +326,10 @@ function Stage1ListingWizard() {
                 İlanlarım
               </a>
             </div>
+            <p className="mt-5 text-xs text-muted-foreground">
+              İlanını dilediğin zaman İlanlarım sayfasından düzenleyebilir veya yayından
+              kaldırabilirsin.
+            </p>
           </section>
         </main>
       </div>
@@ -309,35 +339,50 @@ function Stage1ListingWizard() {
   return (
     <div className="min-h-screen">
       <PilotTopBar hidePostAction />
-      <main className="mx-auto max-w-xl px-4 pb-20">
-        <div className="mt-5 flex items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-extrabold tracking-tight">İlan Ver</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Birkaç dakikada yayına hazırla</p>
+      <main className="mx-auto max-w-xl px-4 pb-32">
+        <header className="mt-5">
+          <div className="flex items-end justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-extrabold tracking-tight">İlan Ver</h1>
+              <p className="mt-1 truncate text-sm text-muted-foreground">
+                Adım {step}/4 · {stepTitles[step - 1]}
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
+              {step}/4
+            </span>
           </div>
-          <span className="text-sm font-semibold text-primary">{step}/4</span>
-        </div>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
-          <div
-            className="h-full rounded-full bg-primary transition-all"
-            style={{ width: `${step * 25}%` }}
-          />
-        </div>
+          <div className="mt-3 flex gap-1.5" aria-hidden>
+            {[1, 2, 3, 4].map((item) => (
+              <div
+                key={item}
+                className={`h-1.5 flex-1 rounded-full transition-colors ${
+                  item <= step ? "bg-primary" : "bg-muted"
+                }`}
+              />
+            ))}
+          </div>
+        </header>
 
         {error && (
           <p
             role="alert"
-            className="mt-4 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"
+            className="mt-4 flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm font-medium leading-relaxed text-destructive"
           >
-            {error}
+            <AlertTriangle aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="min-w-0">{error}</span>
           </p>
         )}
 
         {step === 1 && (
           <section className="mt-6">
-            <h2 className="text-lg font-bold">Fotoğraflar</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              En az 1, en fazla 8 fotoğraf. İlk fotoğraf kapak olarak görünür.
+            <h2 className="text-lg font-bold">
+              Fotoğraflar
+              <RequiredMark />
+            </h2>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              En az 1, en fazla {STAGE1_MAX_PHOTOS} fotoğraf. İlk fotoğraf kapak olarak görünür;
+              okları kullanarak sırayı değiştirebilirsin.
             </p>
             <input
               ref={fileInputRef}
@@ -350,13 +395,16 @@ function Stage1ListingWizard() {
             />
             <button
               type="button"
+              disabled={photos.length >= STAGE1_MAX_PHOTOS}
               onClick={() => fileInputRef.current?.click()}
-              className="mt-4 flex min-h-28 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card px-4 text-center hover:bg-accent/40"
+              className="mt-4 flex min-h-32 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card px-4 text-center transition-colors hover:border-primary/50 hover:bg-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <ImagePlus aria-hidden className="h-7 w-7 text-primary" />
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                <ImagePlus aria-hidden className="h-6 w-6 text-primary" />
+              </span>
               <span className="mt-2 text-sm font-bold">Fotoğraf ekle</span>
               <span className="mt-1 text-xs text-muted-foreground">
-                Telefonundan veya bilgisayarından seç
+                Telefonundan veya bilgisayarından seç · JPEG, PNG, WebP
               </span>
             </button>
             {photos.length > 0 && (
@@ -364,46 +412,51 @@ function Stage1ListingWizard() {
                 {photos.map((photo, index) => (
                   <li
                     key={photo.id}
-                    className="overflow-hidden rounded-xl border border-border bg-card"
+                    className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"
                   >
-                    <img
-                      src={photo.previewUrl}
-                      alt={`Seçilen fotoğraf ${index + 1}`}
-                      className="aspect-[4/3] w-full object-cover"
-                    />
-                    <div className="p-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="truncate text-xs font-semibold">
-                          {index === 0 ? "Kapak" : `${index + 1}. fotoğraf`}
+                    <div className="relative">
+                      <img
+                        src={photo.previewUrl}
+                        alt={`Seçilen fotoğraf ${index + 1}`}
+                        className="aspect-[4/3] w-full object-cover"
+                      />
+                      {index === 0 && (
+                        <span className="absolute left-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground shadow-sm">
+                          Kapak
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => removePhoto(photo.id)}
-                          aria-label={`${index + 1}. fotoğrafı kaldır`}
-                          className="rounded-full p-2 hover:bg-accent"
-                        >
-                          <X aria-hidden className="h-4 w-4" />
-                        </button>
-                      </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(photo.id)}
+                        aria-label={`${index + 1}. fotoğrafı kaldır`}
+                        className="absolute right-1.5 top-1.5 inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card/90 text-foreground shadow-sm transition-colors hover:bg-accent"
+                      >
+                        <X aria-hidden className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="p-2">
+                      <span className="block truncate text-xs font-semibold text-muted-foreground">
+                        {index === 0 ? "Kapak fotoğrafı" : `${index + 1}. fotoğraf`}
+                      </span>
                       {photos.length > 1 && (
-                        <div className="mt-1 flex gap-1">
+                        <div className="mt-2 flex gap-1.5">
                           <button
                             type="button"
                             disabled={index === 0}
                             onClick={() => movePhoto(index, -1)}
                             aria-label="Fotoğrafı öne al"
-                            className="min-h-9 flex-1 rounded-lg border border-border transition-colors hover:bg-accent disabled:opacity-30"
+                            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border border-border transition-colors hover:bg-accent disabled:opacity-30"
                           >
-                            <ChevronLeft aria-hidden className="mx-auto h-4 w-4" />
+                            <ChevronLeft aria-hidden className="h-4 w-4" />
                           </button>
                           <button
                             type="button"
                             disabled={index === photos.length - 1}
                             onClick={() => movePhoto(index, 1)}
                             aria-label="Fotoğrafı geriye al"
-                            className="min-h-9 flex-1 rounded-lg border border-border transition-colors hover:bg-accent disabled:opacity-30"
+                            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border border-border transition-colors hover:bg-accent disabled:opacity-30"
                           >
-                            <ChevronRight aria-hidden className="mx-auto h-4 w-4" />
+                            <ChevronRight aria-hidden className="h-4 w-4" />
                           </button>
                         </div>
                       )}
@@ -412,193 +465,233 @@ function Stage1ListingWizard() {
                 ))}
               </ol>
             )}
-            <p className="mt-3 text-xs font-medium text-muted-foreground">
+            <p className="mt-3 text-xs font-semibold text-muted-foreground">
               {photos.length}/{STAGE1_MAX_PHOTOS} fotoğraf
             </p>
           </section>
         )}
 
         {step === 2 && (
-          <section className="mt-6 space-y-4">
+          <section className="mt-6 space-y-5">
             <div>
               <h2 className="text-lg font-bold">Ürün</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                 Alıcının ürünü hızlıca anlaması için temel bilgiler yeterli.
               </p>
             </div>
-            <div className="block">
-              <label htmlFor="stage1-category" className="text-sm font-medium">
-                Kategori
-              </label>
-              <div className="relative mt-1">
-                <select
-                  id="stage1-category"
-                  value={category}
-                  onChange={(event) => setCategory(event.target.value as Stage1Category)}
-                  className={selectClass}
-                >
-                  <option value="">Kategori seçin</option>
-                  {STAGE1_CATEGORIES.map((value) => (
-                    <option key={value} value={value}>
-                      {STAGE1_CATEGORY_LABELS[value]}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  aria-hidden
-                  className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                />
+            <div className="space-y-4 rounded-2xl border border-border bg-card p-4">
+              <div className="block">
+                <label htmlFor="stage1-category" className="text-sm font-semibold">
+                  Kategori
+                </label>
+                <RequiredMark />
+                <div className="relative mt-1.5">
+                  <select
+                    id="stage1-category"
+                    aria-label="Kategori"
+                    value={category}
+                    onChange={(event) => setCategory(event.target.value as Stage1Category)}
+                    className={selectClass}
+                  >
+                    <option value="">Kategori seçin</option>
+                    {STAGE1_CATEGORIES.map((value) => (
+                      <option key={value} value={value}>
+                        {STAGE1_CATEGORY_LABELS[value]}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    aria-hidden
+                    className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  />
+                </div>
               </div>
-            </div>
-            <label className="block">
-              <span className="text-sm font-medium">Başlık</span>
-              <input
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                minLength={3}
-                maxLength={120}
-                placeholder="Örn. IKEA çalışma masası"
-                className={`mt-1 ${fieldClass}`}
-              />
-            </label>
-            <div className="block">
-              <label htmlFor="stage1-condition" className="text-sm font-medium">
-                Durum <span className="font-normal text-muted-foreground">(isteğe bağlı)</span>
-              </label>
-              <div className="relative mt-1">
-                <select
-                  id="stage1-condition"
-                  aria-label="Durum"
-                  value={condition}
-                  onChange={(event) => setCondition(event.target.value as Stage1Condition)}
-                  className={selectClass}
-                >
-                  <option value="">Durum belirtme</option>
-                  {STAGE1_CONDITIONS.map((value) => (
-                    <option key={value} value={value}>
-                      {STAGE1_CONDITION_LABELS[value]}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  aria-hidden
-                  className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                />
-              </div>
-            </div>
-            <div>
-              <label htmlFor="stage1-price" className="text-sm font-medium">
-                Fiyat (TL)
-              </label>
-              <div className="relative mt-1">
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground"
-                >
-                  ₺
-                </span>
+              <div className="block">
+                <label htmlFor="stage1-title" className="text-sm font-semibold">
+                  Başlık
+                </label>
+                <RequiredMark />
                 <input
-                  id="stage1-price"
-                  disabled={isFree}
-                  value={price}
-                  onChange={(event) => setPrice(event.target.value)}
-                  inputMode="decimal"
-                  placeholder={isFree ? "" : "Örn. 12.500"}
-                  className={`${fieldClass} pl-9 disabled:bg-muted disabled:text-muted-foreground`}
+                  id="stage1-title"
+                  aria-label="Başlık"
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  minLength={3}
+                  maxLength={120}
+                  placeholder="Örn. IKEA çalışma masası"
+                  className={`mt-1.5 ${fieldClass}`}
                 />
-              </div>
-              {isFree && (
-                <span className="mt-1 block text-xs font-medium text-primary">
-                  Bu ilan Ücretsiz olarak görünecek.
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  En az 3 karakter. Kısa ve net başlıklar daha çok tıklanır.
                 </span>
-              )}
+              </div>
+              <div className="block">
+                <label htmlFor="stage1-condition" className="text-sm font-semibold">
+                  Durum
+                </label>
+                <OptionalMark />
+                <div className="relative mt-1.5">
+                  <select
+                    id="stage1-condition"
+                    aria-label="Durum"
+                    value={condition}
+                    onChange={(event) => setCondition(event.target.value as Stage1Condition)}
+                    className={selectClass}
+                  >
+                    <option value="">Durum belirtme</option>
+                    {STAGE1_CONDITIONS.map((value) => (
+                      <option key={value} value={value}>
+                        {STAGE1_CONDITION_LABELS[value]}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    aria-hidden
+                    className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  />
+                </div>
+              </div>
             </div>
-            <label className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium">
-              <input
-                type="checkbox"
-                checked={isFree}
-                onChange={(event) => {
-                  const checked = event.target.checked;
-                  setIsFree(checked);
-                  if (checked) setPrice("");
-                }}
-              />
-              Ücretsiz veriyorum
-            </label>
+
+            <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+              <div>
+                <label htmlFor="stage1-price" className="text-sm font-semibold">
+                  Fiyat (TL)
+                </label>
+                {!isFree && <RequiredMark />}
+                <div className="relative mt-1.5">
+                  <span
+                    aria-hidden
+                    className={`pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold ${
+                      isFree ? "text-muted-foreground/50" : "text-muted-foreground"
+                    }`}
+                  >
+                    ₺
+                  </span>
+                  <input
+                    id="stage1-price"
+                    aria-label="Fiyat (TL)"
+                    disabled={isFree}
+                    value={price}
+                    onChange={(event) => setPrice(event.target.value)}
+                    inputMode="decimal"
+                    placeholder={isFree ? "Ücretsiz" : "Örn. 12.500"}
+                    className={`${fieldClass} pl-9 disabled:cursor-not-allowed disabled:border-dashed disabled:bg-muted disabled:text-muted-foreground`}
+                  />
+                </div>
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  {isFree
+                    ? "Fiyat alanı kapalı. İlan Ücretsiz olarak yayınlanacak."
+                    : "Sadece rakam yaz; ₺0 yerine Ücretsiz seçeneğini kullan."}
+                </span>
+              </div>
+              <label
+                className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
+                  isFree
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-border bg-background"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  aria-label="Ücretsiz veriyorum"
+                  className="h-5 w-5 shrink-0 accent-primary"
+                  checked={isFree}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setIsFree(checked);
+                    if (checked) setPrice("");
+                  }}
+                />
+                Ücretsiz veriyorum
+              </label>
+            </div>
           </section>
         )}
 
         {step === 3 && (
-          <section className="mt-6 space-y-4">
+          <section className="mt-6 space-y-5">
             <div>
               <h2 className="text-lg font-bold">Detaylar ve konum</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                 İstersen kısa bir açıklama ekle. Açık adres istemiyoruz.
               </p>
             </div>
-            <label className="block">
-              <span className="text-sm font-medium">
-                Açıklama <span className="font-normal text-muted-foreground">(isteğe bağlı)</span>
-              </span>
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <label htmlFor="stage1-description" className="text-sm font-semibold">
+                Açıklama
+              </label>
+              <OptionalMark />
               <textarea
+                id="stage1-description"
                 aria-label="Açıklama"
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 maxLength={5000}
                 rows={6}
                 placeholder="Ürünün durumu, ölçüsü, varsa kusurları..."
-                className="mt-1 w-full rounded-xl border border-border bg-card p-4 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                className="mt-1.5 w-full rounded-xl border border-border bg-background p-4 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
               />
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="text-sm font-medium">İl</span>
-                <select
-                  aria-label="İl"
-                  value={province}
-                  onChange={(event) => {
-                    setProvince(event.target.value);
-                    setDistrict("");
-                  }}
-                  className={`mt-1 ${selectClass}`}
-                >
-                  <option value="">İl seçin</option>
-                  {locationCities.slice(1).map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-sm font-medium">İlçe</span>
-                <select
-                  aria-label="İlçe"
-                  value={district}
-                  disabled={!province}
-                  onChange={(event) => setDistrict(event.target.value)}
-                  className={`mt-1 ${selectClass} disabled:bg-muted`}
-                >
-                  <option value="">İlçe seçin</option>
-                  {getDistrictsForCity(province).map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <span className="mt-1 block text-right text-xs text-muted-foreground">
+                {description.length}/5000
+              </span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Yalnızca il ve ilçe bilgisi alınır; açık adres istemiyoruz.
-            </p>
+
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <p className="text-sm font-semibold">
+                Konum
+                <RequiredMark />
+              </p>
+              <div className="mt-1.5 grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="text-xs font-medium text-muted-foreground">İl</span>
+                  <select
+                    aria-label="İl"
+                    value={province}
+                    onChange={(event) => {
+                      setProvince(event.target.value);
+                      setDistrict("");
+                    }}
+                    className={`mt-1 ${selectClass}`}
+                  >
+                    <option value="">İl seçin</option>
+                    {locationCities.slice(1).map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-xs font-medium text-muted-foreground">İlçe</span>
+                  <select
+                    aria-label="İlçe"
+                    value={district}
+                    disabled={!province}
+                    onChange={(event) => setDistrict(event.target.value)}
+                    className={`mt-1 ${selectClass} disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground`}
+                  >
+                    <option value="">İlçe seçin</option>
+                    {getDistrictsForCity(province).map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                Yalnızca il ve ilçe bilgisi alınır; açık adres istemiyoruz.
+              </p>
+            </div>
           </section>
         )}
 
         {step === 4 && (
-          <section className="mt-6 space-y-4">
+          <section className="mt-6 space-y-5">
             <div>
               <h2 className="text-lg font-bold">Satıcı ve iletişim</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                 İlanı yayınlamadan önce telefonunu doğrulayacağız. Doğrulama bir süre hatırlanır;
                 her ilanda yeniden kod istemeyiz.
               </p>
@@ -619,61 +712,54 @@ function Stage1ListingWizard() {
               </p>
             </div>
 
-            <label className="block">
-              <span className="text-sm font-medium">İlanda görünecek ad</span>
-              <input
-                value={sellerDisplayName}
-                onChange={(event) => setSellerDisplayName(event.target.value)}
-                minLength={2}
-                maxLength={80}
-                autoComplete="name"
-                placeholder="Adınız"
-                className={`mt-1 ${fieldClass}`}
-              />
-            </label>
+            <div className="space-y-4 rounded-2xl border border-border bg-card p-4">
+              <div className="block">
+                <label htmlFor="stage1-seller-name" className="text-sm font-semibold">
+                  İlanda görünecek ad
+                </label>
+                <RequiredMark />
+                <input
+                  id="stage1-seller-name"
+                  aria-label="İlanda görünecek ad"
+                  value={sellerDisplayName}
+                  onChange={(event) => setSellerDisplayName(event.target.value)}
+                  minLength={2}
+                  maxLength={80}
+                  autoComplete="name"
+                  placeholder="Adınız"
+                  className={`mt-1.5 ${fieldClass}`}
+                />
+              </div>
 
-            <label className="block">
-              <span className="text-sm font-medium">Telefon</span>
-              <input
-                aria-label="Telefon numarası"
-                value={phone}
-                onChange={(event) => {
-                  setPhone(event.target.value);
-                  setVerificationChallengeId(null);
-                }}
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="+905xxxxxxxxx"
-                className={`mt-1 ${fieldClass}`}
-              />
-              <span className="mt-1 block text-xs text-muted-foreground">
-                Kod yalnız gerektiğinde istenir; hesap veya şifre gerekmez.
-              </span>
-            </label>
-
-            <div className="rounded-2xl border border-border bg-card p-4 text-sm leading-relaxed">
-              <p className="text-foreground">
-                İlanı yayınlayarak{" "}
-                <Link
-                  to="/ilan-kurallari"
-                  className="font-semibold text-primary underline underline-offset-4"
-                >
-                  İlan Kuralları
-                </Link>
-                'nı kabul etmiş olursun.
-              </p>
-              <p className="mt-1 text-muted-foreground">
-                Telefon numaran ilanda herkese açık görünür.{" "}
-                <Link
-                  to="/gizlilik"
-                  className="font-semibold text-primary underline underline-offset-4"
-                >
-                  Gizlilik ve Aydınlatma
-                </Link>
-              </p>
+              <div className="block">
+                <label htmlFor="stage1-phone" className="text-sm font-semibold">
+                  Telefon
+                </label>
+                <RequiredMark />
+                <input
+                  id="stage1-phone"
+                  aria-label="Telefon numarası"
+                  value={phone}
+                  onChange={(event) => {
+                    setPhone(event.target.value);
+                    setVerificationChallengeId(null);
+                  }}
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder="+905xxxxxxxxx"
+                  className={`mt-1.5 ${fieldClass}`}
+                />
+                <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                  +90 ile başlayan numaranı yaz. Kod yalnız gerektiğinde istenir; hesap veya şifre
+                  gerekmez.
+                </span>
+              </div>
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+              <p className="border-b border-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                İlan önizlemesi
+              </p>
               <div className="flex gap-3 p-3">
                 {photos[0] ? (
                   <img
@@ -684,11 +770,8 @@ function Stage1ListingWizard() {
                 ) : (
                   <div className="h-24 w-28 shrink-0 rounded-xl bg-muted" aria-hidden />
                 )}
-                <div className="min-w-0 flex-1 py-1">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    İlan önizlemesi
-                  </p>
-                  <p className="mt-1 line-clamp-2 font-bold text-foreground">
+                <div className="min-w-0 flex-1 py-0.5">
+                  <p className="line-clamp-2 font-bold text-foreground">
                     {title || "İlan başlığı"}
                   </p>
                   <p className="mt-1 text-lg font-extrabold text-primary">
@@ -702,30 +785,46 @@ function Stage1ListingWizard() {
               </div>
             </div>
 
+            <div className="rounded-2xl border border-border bg-card p-4 text-sm leading-relaxed">
+              <p className="text-foreground">
+                İlanı yayınlayarak{" "}
+                <Link
+                  to="/ilan-kurallari"
+                  className="font-semibold text-primary underline underline-offset-4"
+                >
+                  İlan Kuralları
+                </Link>
+                'nı kabul etmiş olursun.
+              </p>
+            </div>
+
             {verificationChallengeId && (
               <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
-                <p className="mb-3 text-sm font-semibold text-foreground">
-                  Son adım: telefonunu doğrula
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">Son adım</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">Telefonunu doğrula</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  {phone.trim()} numarasına gönderilen 6 haneli kodu gir.
                 </p>
-                <label className="block">
-                  <span className="text-sm font-semibold">6 haneli doğrulama kodu</span>
-                  <input
-                    value={verificationCode}
-                    onChange={(event) =>
-                      setVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))
-                    }
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    placeholder="000000"
-                    className={`mt-2 ${fieldClass}`}
-                  />
-                </label>
+                <input
+                  id="stage1-verification-code"
+                  aria-label="6 haneli doğrulama kodu"
+                  value={verificationCode}
+                  onChange={(event) =>
+                    setVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="000000"
+                  className={`mt-3 ${fieldClass} text-center text-xl font-bold tracking-[0.4em]`}
+                />
                 <button
                   type="button"
                   disabled={busy}
+                  aria-busy={busy}
                   onClick={() => void confirmVerification()}
-                  className="mt-3 h-12 w-full rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
+                  className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-60"
                 >
+                  {busy && <Loader2 aria-hidden className="h-4 w-4 animate-spin" />}
                   {busy ? "Doğrulanıyor…" : "Doğrula ve yayınla"}
                 </button>
               </div>
@@ -733,41 +832,49 @@ function Stage1ListingWizard() {
           </section>
         )}
 
-        <div className="mt-8 flex items-center gap-3">
-          {step > 1 && (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => {
-                clearError();
-                setVerificationChallengeId(null);
-                setStep((current) => current - 1);
-              }}
-              className="inline-flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border border-border px-4 text-sm font-semibold disabled:opacity-50"
-            >
-              <ChevronLeft aria-hidden className="h-4 w-4" /> Geri
-            </button>
-          )}
-          {step < 4 ? (
-            <button
-              type="button"
-              onClick={() => {
-                if (validateCurrentStep()) setStep((current) => current + 1);
-              }}
-              className="ml-auto inline-flex h-12 flex-1 items-center justify-center gap-1 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground"
-            >
-              Devam <ChevronRight aria-hidden className="h-4 w-4" />
-            </button>
-          ) : !verificationChallengeId ? (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void beginFinalSubmit()}
-              className="ml-auto h-12 flex-1 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
-            >
-              {busy ? "Hazırlanıyor…" : "İlanı yayınla"}
-            </button>
-          ) : null}
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur">
+          <div className="mx-auto flex max-w-xl items-center gap-3 px-4 py-3">
+            {step > 1 && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  clearError();
+                  setVerificationChallengeId(null);
+                  setStep((current) => current - 1);
+                }}
+                className="inline-flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border border-border bg-background px-4 text-sm font-semibold transition-colors hover:bg-accent disabled:opacity-50"
+              >
+                <ChevronLeft aria-hidden className="h-4 w-4" /> Geri
+              </button>
+            )}
+            {step < 4 ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (validateCurrentStep()) setStep((current) => current + 1);
+                }}
+                className="ml-auto inline-flex h-12 flex-1 items-center justify-center gap-1 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+              >
+                Devam <ChevronRight aria-hidden className="h-4 w-4" />
+              </button>
+            ) : !verificationChallengeId ? (
+              <button
+                type="button"
+                disabled={busy}
+                aria-busy={busy}
+                onClick={() => void beginFinalSubmit()}
+                className="ml-auto inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-60"
+              >
+                {busy && <Loader2 aria-hidden className="h-4 w-4 animate-spin" />}
+                {busy ? "Hazırlanıyor…" : "İlanı yayınla"}
+              </button>
+            ) : (
+              <p className="ml-auto flex-1 text-center text-xs font-medium text-muted-foreground">
+                Yayınlamak için doğrulama kodunu gir.
+              </p>
+            )}
+          </div>
         </div>
       </main>
     </div>
