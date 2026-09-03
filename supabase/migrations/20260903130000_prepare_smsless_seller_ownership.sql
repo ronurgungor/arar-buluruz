@@ -239,10 +239,10 @@ begin
   where id = v_seller_id;
 
   -- Successful recovery is a security reset: revoke every pre-existing device session.
-  update private.seller_sessions
-  set revoked_at = coalesce(revoked_at, v_now)
-  where seller_id = v_seller_id
-    and revoked_at is null;
+  update private.seller_sessions as ss
+  set revoked_at = coalesce(ss.revoked_at, v_now)
+  where ss.seller_id = v_seller_id
+    and ss.revoked_at is null;
 
   insert into private.seller_sessions (
     seller_id,
