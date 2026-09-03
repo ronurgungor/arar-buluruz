@@ -808,7 +808,6 @@ function Stage1ListingWizard() {
                 </p>
               </div>
             )}
-            )}
           </section>
         )}
 
