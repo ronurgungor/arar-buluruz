@@ -513,7 +513,7 @@ function sellerAction(action: string, listingId?: string): FormData {
 
 beforeAll(() => {
   process.env.PILOT_SELF_SERVICE_ENABLED = "enabled";
-  process.env.PILOT_PHONE_VERIFICATION_MODE = "synthetic";
+  process.env.PILOT_SYNTHETIC_TEST_MODE = "enabled";
   process.env.PILOT_SUBMISSION_SUPABASE_URL = "http://127.0.0.1:54321";
   process.env.PILOT_SUBMISSION_SUPABASE_SERVICE_ROLE_KEY = "synthetic-service-role-key";
   process.env.PILOT_TRUSTED_PROXY_ENABLED = "enabled";
