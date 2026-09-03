@@ -92,7 +92,6 @@ type SellerBackendRow = {
   status: string;
   contact_channel: string | null;
   contact_e164: string | null;
-  contact_verified_at: string | null;
   publication_instruction_at: string | null;
   private_seller_declaration_at: string | null;
   content_rights_declaration_at: string | null;
@@ -255,7 +254,7 @@ function enforceRateLimit(
 function usesRelaxedSyntheticLimits(request: Request): boolean {
   return (
     isLoopbackHost(new URL(request.url).hostname) &&
-    process.env.PILOT_PHONE_VERIFICATION_MODE?.trim() === "synthetic"
+    process.env.PILOT_SYNTHETIC_TEST_MODE?.trim() === "enabled"
   );
 }
 
@@ -1102,7 +1101,6 @@ async function fetchSellerRows(
       "status",
       "contact_channel",
       "contact_e164",
-      "contact_verified_at",
       "publication_instruction_at",
       "private_seller_declaration_at",
       "content_rights_declaration_at",
