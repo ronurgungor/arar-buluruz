@@ -163,8 +163,6 @@ jobs:
           PILOT_SUBMISSION_SUPABASE_URL="$api_url" \
           PILOT_SUBMISSION_SUPABASE_SERVICE_ROLE_KEY="$service_role_key" \
           PILOT_SUBMISSION_CAPABILITY_SECRET="synthetic-stage1-capability-secret-0123456789" \
-          PILOT_PHONE_VERIFICATION_MODE=synthetic \
-          PILOT_SYNTHETIC_VERIFICATION_CODE=424242 \
             bun .output/server/index.mjs >"$RUNNER_TEMP/stage1-public.log" 2>&1 &
           public_pid=$!
 
@@ -207,7 +205,6 @@ jobs:
           BACKEND_ORIGIN="$api_url" \
           BACKEND_ANON_KEY="$anon_key" \
           BACKEND_SERVICE_ROLE_KEY="$service_role_key" \
-          SYNTHETIC_VERIFICATION_CODE=424242 \
             bun scripts/stage1-self-service-browser-e2e.ts
 
           cleanup
