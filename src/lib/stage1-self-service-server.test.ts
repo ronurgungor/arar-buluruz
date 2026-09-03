@@ -140,11 +140,7 @@ function installBackendMock(): void {
     if (url.pathname === "/rest/v1/rpc/resolve_seller_session" && method === "POST") {
       const body = JSON.parse(String(init?.body)) as { p_session_digest: string };
       const session = sessions.get(body.p_session_digest);
-      if (
-        !session ||
-        session.revokedAt !== null ||
-        Date.parse(session.expiresAt) <= Date.now()
-      ) {
+      if (!session || session.revokedAt !== null || Date.parse(session.expiresAt) <= Date.now()) {
         return json([]);
       }
       return json([{ seller_id: session.sellerId, expires_at: session.expiresAt }]);
@@ -240,10 +236,7 @@ function installBackendMock(): void {
       const current = listingBodies.get(id);
       if (!current) return json([]);
       const patch = JSON.parse(String(init?.body)) as Record<string, unknown>;
-      if (
-        Object.hasOwn(patch, "owner_user_id") &&
-        patch.owner_user_id !== current.owner_user_id
-      ) {
+      if (Object.hasOwn(patch, "owner_user_id") && patch.owner_user_id !== current.owner_user_id) {
         return new Response("listing owner_user_id is immutable", { status: 409 });
       }
       listingBodies.set(id, { ...current, ...patch, updated_at: new Date().toISOString() });
@@ -436,7 +429,11 @@ function cookieFromResponse(response: Response): string {
   return cookie;
 }
 
-async function bootstrapSeller(): Promise<{ cookie: string; recoveryCode: string; sellerId: string }> {
+async function bootstrapSeller(): Promise<{
+  cookie: string;
+  recoveryCode: string;
+  sellerId: string;
+}> {
   const before = new Set(sellers.keys());
   const form = new FormData();
   form.set("action", "seller_bootstrap");
@@ -454,7 +451,9 @@ async function bootstrapSeller(): Promise<{ cookie: string; recoveryCode: string
   return { cookie, recoveryCode: payload.recoveryCode, sellerId };
 }
 
-async function recoverSeller(recoveryCode: string): Promise<{ cookie: string; recoveryCode: string }> {
+async function recoverSeller(
+  recoveryCode: string,
+): Promise<{ cookie: string; recoveryCode: string }> {
   const form = new FormData();
   form.set("action", "seller_recover");
   form.set("recoveryCode", recoveryCode);
@@ -641,14 +640,11 @@ describe("Stage 1 SMS-less seller ownership server acceptance", () => {
     for (const category of ["vehicle", "real-estate"]) {
       const backendBefore = backendCallCount;
       const response = await handleStage1SelfServiceRequest(
-        requestFor(
-          submissionForm(crypto.randomUUID(), { category }),
-          {
-            origin: "https://classifieds.example.test",
-            trustedIp: "198.51.100.80",
-            cookie: seller.cookie,
-          },
-        ),
+        requestFor(submissionForm(crypto.randomUUID(), { category }), {
+          origin: "https://classifieds.example.test",
+          trustedIp: "198.51.100.80",
+          cookie: seller.cookie,
+        }),
       );
       expect(response.status).toBe(503);
       expect(await response.json()).toMatchObject({ ok: false, code: "NOT_ENABLED" });
