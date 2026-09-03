@@ -206,7 +206,9 @@ function FounderModeration() {
                       <strong className="text-foreground">İletişim:</strong>{" "}
                       {listing.contactE164 ? `Ara + WhatsApp · ${listing.contactE164}` : "Yok"}
                       <br />
-                      <strong className="text-foreground">Risk bazlı iletişim kontrolü:</strong>{" "}
+                      <strong className="text-foreground">
+                        Risk bazlı iletişim kontrolü:
+                      </strong>{" "}
                       {listing.contactControlRecorded ? "Kayıtlı" : "Bu ilan için kayıt yok"} ·{" "}
                       <strong className="text-foreground">Yayın talimatı:</strong>{" "}
                       {listing.publicationInstructionRecorded ? "Kayıtlı" : "Eksik"}

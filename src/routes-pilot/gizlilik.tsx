@@ -55,8 +55,8 @@ function PrivacyPage() {
             <p className="mt-2 text-muted-foreground">
               İlan oluşturma ve yönetiminde gerekli olduğu ölçüde görünen satıcı adı, kamuya açık
               telefon, ilan başlığı, isteğe bağlı açıklama ve durum bilgisi, fiyat/Ücretsiz bilgisi,
-              İl/İlçe, fotoğraflar, yayın talimatı ve satıcı oturumu ile sınırlı
-              güvenlik/moderasyon kayıtları işlenebilir.
+              İl/İlçe, fotoğraflar, yayın talimatı ve satıcı oturumu ile sınırlı güvenlik/moderasyon
+              kayıtları işlenebilir.
             </p>
             <p className="mt-2 font-medium">
               T.C. kimlik/pasaport, açık ev adresi, banka/ödeme verisi, çocuk verisi, özel nitelikli
