@@ -157,9 +157,7 @@ const serviceHeaders = {
   "content-type": "application/json",
 };
 
-async function anonListingRows(
-  listingId: string,
-): Promise<
+async function anonListingRows(listingId: string): Promise<
   Array<{
     id: string;
     title: string;
@@ -387,15 +385,19 @@ async function submitListing(
     "Obsolete declaration checkbox is still visible in publication step.",
   );
   assert(
-    (await page.getByText("Telefon numaran ilanda herkese açık görünür.", { exact: true }).count()) ===
-      1,
+    (await page
+      .getByText("Telefon numaran ilanda herkese açık görünür.", { exact: true })
+      .count()) === 1,
     "Public-phone disclosure must be visible exactly once.",
   );
   assert(
     (await page.getByText(/doğrulanmış telefon|telefonunu doğrula|doğrulama kodu/i).count()) === 0,
     "Ordinary-goods publication still exposes phone-verification claims.",
   );
-  await page.getByText(/İlanı yayınlayarak/).first().waitFor();
+  await page
+    .getByText(/İlanı yayınlayarak/)
+    .first()
+    .waitFor();
 
   if (input.expectBootstrap) {
     expectUnauthorizedOnce(page, "POST", "/ilan-ver", "initial submission requires seller session");
@@ -407,7 +409,10 @@ async function submitListing(
     const recovery = page.getByTestId("seller-recovery-code");
     await recovery.waitFor();
     recoveryCode = (await recovery.textContent())?.trim() ?? "";
-    assert(/^ABR1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{32}$/.test(recoveryCode), "Recovery code format is invalid.");
+    assert(
+      /^ABR1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{32}$/.test(recoveryCode),
+      "Recovery code format is invalid.",
+    );
 
     let transientFailure = "";
     let stopProbe = false;
@@ -451,16 +456,16 @@ async function openOwnerListings(page: Page): Promise<void> {
   await page.getByRole("heading", { level: 1, name: "İlanlarım" }).waitFor();
 }
 
-async function recoverOwnerListings(
-  page: Page,
-  recoveryCode: string,
-): Promise<string> {
+async function recoverOwnerListings(page: Page, recoveryCode: string): Promise<string> {
   await page.getByLabel("İlanlarım kurtarma kodu", { exact: true }).fill(recoveryCode);
   await page.getByRole("button", { name: "Kurtarma koduyla erişimi geri al" }).click();
   const rotated = page.getByTestId("rotated-seller-recovery-code");
   await rotated.waitFor();
   const nextCode = (await rotated.textContent())?.trim() ?? "";
-  assert(/^ABR1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{32}$/.test(nextCode), "Rotated recovery code format is invalid.");
+  assert(
+    /^ABR1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{32}$/.test(nextCode),
+    "Rotated recovery code format is invalid.",
+  );
   return nextCode;
 }
 
@@ -676,7 +681,11 @@ try {
   const afterLogout = await ownerPage.evaluate(async () => {
     const form = new FormData();
     form.set("action", "seller_list");
-    const response = await fetch("/ilanlarim", { method: "POST", body: form, credentials: "same-origin" });
+    const response = await fetch("/ilanlarim", {
+      method: "POST",
+      body: form,
+      credentials: "same-origin",
+    });
     return response.status;
   });
   assert(afterLogout === 401, `Revoked logout session unexpectedly authorized: ${afterLogout}`);
