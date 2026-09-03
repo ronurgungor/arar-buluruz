@@ -375,9 +375,9 @@ function SellerListings() {
               </div>
             )}
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              Telefon numarası satıcı yönetim yetkisi değildir. Başarılı kurtarma eski kodu ve önceki
-              cihaz oturumlarını iptal eder. Sonuç belirsiz kalırsa önceden kaydettiğin yeni kodla
-              güvenli biçimde doğrulama yapılabilir.
+              Telefon numarası satıcı yönetim yetkisi değildir. Başarılı kurtarma eski kodu ve
+              önceki cihaz oturumlarını iptal eder. Sonuç belirsiz kalırsa önceden kaydettiğin yeni
+              kodla güvenli biçimde doğrulama yapılabilir.
             </p>
           </section>
         )}

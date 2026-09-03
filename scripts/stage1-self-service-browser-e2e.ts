@@ -475,7 +475,10 @@ async function recoverOwnerListings(page: Page, recoveryCode: string): Promise<s
   const rotated = page.getByTestId("rotated-seller-recovery-code");
   await rotated.waitFor();
   const nextCode = (await rotated.textContent())?.trim() ?? "";
-  assert(nextCode === candidateCode, "Server recovery did not preserve the pre-generated candidate.");
+  assert(
+    nextCode === candidateCode,
+    "Server recovery did not preserve the pre-generated candidate.",
+  );
   return nextCode;
 }
 

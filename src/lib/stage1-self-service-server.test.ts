@@ -639,7 +639,9 @@ describe("Stage 1 SMS-less seller ownership server acceptance", () => {
     expect(oldSession.status).toBe(401);
 
     const replayResponse = await handleStage1SelfServiceRequest(
-      requestFor(recoveryForm(seller.recoveryCode, createSellerRecoveryCode())),
+      requestFor(
+        recoveryForm(seller.recoveryCode, createSellerRecoveryCode()),
+      ),
     );
     expect(replayResponse.status).toBe(401);
     expect(await replayResponse.json()).toMatchObject({ ok: false, code: "RECOVERY_FAILED" });
