@@ -273,8 +273,8 @@ function SellerListings() {
               {busy ? "Kontrol ediliyor…" : "Kurtarma koduyla erişimi geri al"}
             </button>
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              Telefon numarası satıcı yönetim yetkisi değildir. Kurtarma başarılı olduğunda eski
-              kod ve diğer cihaz oturumları iptal edilir; yeni bir kurtarma kodu verilir.
+              Telefon numarası satıcı yönetim yetkisi değildir. Kurtarma başarılı olduğunda eski kod
+              ve diğer cihaz oturumları iptal edilir; yeni bir kurtarma kodu verilir.
             </p>
           </section>
         )}
