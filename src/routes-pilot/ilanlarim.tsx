@@ -32,7 +32,7 @@ export const Route = createFileRoute("/ilanlarim")({
       { title: "İlanlarım — Arar Buluruz" },
       {
         name: "description",
-        content: "Telefonunu doğrula; ilanlarını gör, düzenle veya yayından kaldır.",
+        content: "Güvenli satıcı oturumunla ilanlarını gör, düzenle veya yayından kaldır.",
       },
       { name: "robots", content: "noindex, nofollow, noarchive, nosnippet" },
     ],
@@ -43,7 +43,6 @@ export const Route = createFileRoute("/ilanlarim")({
 type SellerApiResponse = Stage1SubmissionResponse | Stage1SellerManagementResponse;
 type EditingListing = Stage1SellerListing & { priceText: string };
 
-const SELLER_PHONE_STORAGE_KEY = "arar-buluruz:last-seller-phone";
 const E164_PATTERN = /^\+[1-9][0-9]{7,14}$/;
 const fieldClass =
   "h-12 w-full rounded-xl border border-border bg-card px-4 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10";
@@ -85,14 +84,13 @@ const statusLabels: Record<Stage1SellerListing["status"], string> = {
 };
 
 function SellerListings() {
-  const [phone, setPhone] = useState("+90");
   const [hasAccess, setHasAccess] = useState(false);
-  const [challengeId, setChallengeId] = useState("");
-  const [code, setCode] = useState("");
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [rotatedRecoveryCode, setRotatedRecoveryCode] = useState("");
   const [listings, setListings] = useState<Stage1SellerListing[]>([]);
   const [editing, setEditing] = useState<EditingListing | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -101,84 +99,69 @@ function SellerListings() {
     [editing],
   );
 
-  useEffect(() => {
-    try {
-      const remembered = window.localStorage.getItem(SELLER_PHONE_STORAGE_KEY);
-      if (remembered && E164_PATTERN.test(remembered)) setPhone(remembered);
-    } catch {
-      // Remembering the non-secret phone value is optional.
-    }
-  }, []);
-
-  const rememberPhone = () => {
-    try {
-      window.localStorage.setItem(SELLER_PHONE_STORAGE_KEY, phone.trim());
-    } catch {
-      // The HttpOnly seller session remains authoritative even without this convenience value.
-    }
-  };
-
-  const loadListings = async (): Promise<"loaded" | "verification_required" | "failed"> => {
+  const loadListings = async (): Promise<"loaded" | "session_required" | "failed"> => {
     const form = new FormData();
     form.set("action", "seller_list");
-    form.set("phone", phone.trim());
     const result = await postSeller(form);
     if (result.ok && result.action === "seller_list") {
       setListings(result.listings);
       setHasAccess(true);
-      rememberPhone();
       return "loaded";
     }
-    if (!result.ok && result.code === "VERIFICATION_REQUIRED") return "verification_required";
+    if (!result.ok && result.code === "SESSION_REQUIRED") {
+      setHasAccess(false);
+      setListings([]);
+      return "session_required";
+    }
     if (!result.ok) setError(result.message);
     return "failed";
   };
 
-  const begin = async () => {
+  useEffect(() => {
+    void (async () => {
+      setBusy(true);
+      await loadListings();
+      setBusy(false);
+    })();
+  }, []);
+
+  const recover = async () => {
     setError("");
     setNotice("");
-    if (!E164_PATTERN.test(phone.trim())) {
-      setError("Telefon numarasını +90 ile başlayan uluslararası biçimde girin.");
+    if (recoveryCode.trim().length < 10) {
+      setError("Kurtarma kodunu eksiksiz girin.");
       return;
     }
-
     setBusy(true);
-    const existing = await loadListings();
-    if (existing === "loaded" || existing === "failed") {
-      setBusy(false);
-      return;
-    }
-
     const form = new FormData();
-    form.set("action", "start_verification");
-    form.set("phone", phone.trim());
+    form.set("action", "seller_recover");
+    form.set("recoveryCode", recoveryCode.trim());
     const result = await postSeller(form);
-    if (result.ok && result.action === "verification_started") {
-      setChallengeId(result.challengeId);
-      setCode("");
-      setError("");
+    if (result.ok && result.action === "seller_recovered") {
+      setRotatedRecoveryCode(result.recoveryCode);
+      setRecoveryCode("");
+      await loadListings();
+      setNotice(result.message);
     } else if (!result.ok) {
       setError(result.message);
     }
     setBusy(false);
   };
 
-  const verify = async () => {
-    if (!challengeId || !/^\d{6}$/.test(code)) {
-      setError("6 haneli doğrulama kodunu girin.");
-      return;
-    }
+  const logout = async () => {
     setBusy(true);
     setError("");
+    setNotice("");
     const form = new FormData();
-    form.set("action", "verify_phone");
-    form.set("phone", phone.trim());
-    form.set("challengeId", challengeId);
-    form.set("code", code);
+    form.set("action", "seller_logout");
     const result = await postSeller(form);
-    if (result.ok && result.action === "phone_verified") {
-      setChallengeId("");
-      await loadListings();
+    if (result.ok && result.action === "seller_logged_out") {
+      setHasAccess(false);
+      setListings([]);
+      setEditing(null);
+      setDeleteConfirmId("");
+      setRotatedRecoveryCode("");
+      setNotice(result.message);
     } else if (!result.ok) {
       setError(result.message);
     }
@@ -194,7 +177,6 @@ function SellerListings() {
     setNotice("");
     const form = new FormData();
     form.set("action", action);
-    form.set("phone", phone.trim());
     form.set("listingId", listingId);
     const result = await postSeller(form);
     if (!result.ok) {
@@ -218,11 +200,14 @@ function SellerListings() {
       setError("Geçerli bir fiyat girin veya Ücretsiz seçeneğini işaretleyin.");
       return;
     }
+    if (!E164_PATTERN.test(editing.contactPhone.trim())) {
+      setError("Telefon numarasını +90 ile başlayan uluslararası biçimde girin.");
+      return;
+    }
     setBusy(true);
     setError("");
     const form = new FormData();
     form.set("action", "seller_update");
-    form.set("phone", phone.trim());
     form.set("listingId", editing.id);
     form.set("category", editing.category);
     if (editing.condition) form.set("condition", editing.condition);
@@ -232,6 +217,7 @@ function SellerListings() {
     form.set("description", editing.description);
     form.set("province", editing.province);
     form.set("district", editing.district);
+    form.set("contactPhone", editing.contactPhone.trim());
     const result = await postSeller(form);
     if (!result.ok) {
       setError(result.message);
@@ -251,67 +237,45 @@ function SellerListings() {
         <div className="mt-6">
           <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">İlanlarım</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            İlan verdiğin telefonu doğrula; yayınlarını tek yerden yönet.
+            Bu cihazdaki güvenli satıcı oturumuyla ilanlarını tek yerden yönet.
           </p>
         </div>
 
         {!hasAccess && (
           <section className="mt-6 rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
             <div className="mb-4">
-              <h2 className="font-bold text-foreground">Telefonunla devam et</h2>
+              <h2 className="font-bold text-foreground">Kurtarma koduyla devam et</h2>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                Hesap veya şifre gerekmez. Bu cihazda doğrulaman hâlâ geçerliyse kod istemeden
-                ilanlarını gösteririz.
+                Geçerli cihaz oturumun varsa ilanların otomatik yüklenir. Çerez kaybolduysa ilk
+                satıcı erişiminde sana verilen kurtarma kodunu kullan.
               </p>
             </div>
             <label className="block">
-              <span className="text-sm font-medium">İlan verdiğin telefon</span>
+              <span className="text-sm font-medium">Kurtarma kodu</span>
               <input
-                aria-label="İlanlarım telefon numarası"
-                value={phone}
+                aria-label="İlanlarım kurtarma kodu"
+                value={recoveryCode}
                 onChange={(event) => {
-                  setPhone(event.target.value);
-                  setHasAccess(false);
-                  setChallengeId("");
+                  setRecoveryCode(event.target.value);
                   setError("");
                 }}
-                inputMode="tel"
-                autoComplete="tel"
+                autoComplete="off"
+                spellCheck={false}
                 className={`mt-1 ${fieldClass}`}
               />
             </label>
-            {!challengeId ? (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void begin()}
-                className="mt-3 h-12 w-full rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
-              >
-                {busy ? "Kontrol ediliyor…" : "İlanlarımı göster"}
-              </button>
-            ) : (
-              <div className="mt-4">
-                <label className="block">
-                  <span className="text-sm font-medium">6 haneli doğrulama kodu</span>
-                  <input
-                    aria-label="İlanlarım doğrulama kodu"
-                    value={code}
-                    onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    className={`mt-1 ${fieldClass}`}
-                  />
-                </label>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void verify()}
-                  className="mt-3 h-12 w-full rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
-                >
-                  {busy ? "Doğrulanıyor…" : "Doğrula ve ilanlarımı göster"}
-                </button>
-              </div>
-            )}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void recover()}
+              className="mt-3 h-12 w-full rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
+            >
+              {busy ? "Kontrol ediliyor…" : "Kurtarma koduyla erişimi geri al"}
+            </button>
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+              Telefon numarası satıcı yönetim yetkisi değildir. Kurtarma başarılı olduğunda eski
+              kod ve diğer cihaz oturumları iptal edilir; yeni bir kurtarma kodu verilir.
+            </p>
           </section>
         )}
 
@@ -332,11 +296,39 @@ function SellerListings() {
           </p>
         )}
 
+        {hasAccess && rotatedRecoveryCode && (
+          <section className="mt-4 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+            <p className="text-sm font-bold">Yeni kurtarma kodun — yalnızca bir kez gösterilir</p>
+            <code
+              data-testid="rotated-seller-recovery-code"
+              className="mt-2 block break-all rounded-xl border border-border bg-background p-3 text-sm font-bold"
+            >
+              {rotatedRecoveryCode}
+            </code>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Eski kurtarma kodu artık kullanılamaz. Bu yeni kodu güvenli bir yerde sakla.
+            </p>
+          </section>
+        )}
+
+        {hasAccess && !editing && (
+          <div className="mt-5 flex justify-end">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void logout()}
+              className="min-h-11 rounded-full border border-border px-4 text-sm font-semibold"
+            >
+              Bu cihazdan çıkış yap
+            </button>
+          </div>
+        )}
+
         {hasAccess && !editing && (
           <section className="mt-6">
             {listings.length === 0 ? (
               <div className="rounded-3xl border border-border bg-card p-7 text-center shadow-sm">
-                <p className="font-bold">Bu telefonla yönetilen ilan bulunamadı.</p>
+                <p className="font-bold">Bu satıcıya ait ilan bulunamadı.</p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Yeni bir ilan yayınladığında burada görünecek.
                 </p>
@@ -564,6 +556,20 @@ function SellerListings() {
                 onChange={(event) => setEditing({ ...editing, description: event.target.value })}
                 className="mt-1 w-full rounded-xl border border-border bg-card p-4 text-base outline-none focus:border-primary"
               />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium">İlanda görünen telefon</span>
+              <input
+                aria-label="İlanlarım telefon"
+                value={editing.contactPhone}
+                onChange={(event) => setEditing({ ...editing, contactPhone: event.target.value })}
+                inputMode="tel"
+                autoComplete="tel"
+                className={`mt-1 ${fieldClass}`}
+              />
+              <span className="mt-1 block text-xs text-muted-foreground">
+                Bu alan yalnız public Ara + WhatsApp iletişimidir; satıcı sahipliğini değiştirmez.
+              </span>
             </label>
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
