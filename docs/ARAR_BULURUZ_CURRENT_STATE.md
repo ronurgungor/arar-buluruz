@@ -1,8 +1,119 @@
 # Arar Buluruz — Current State
 
-_Last updated: 2026-09-01, Europe/Istanbul_
+_Last updated: 2026-09-03, Europe/Istanbul_
 
-## Canonical repository state
+## Canonical repository checkpoint
+
+- Repository: `ronurgungor/arar-buluruz`.
+- Canonical branch: `main`.
+- Live `main` at this synchronization: `47956ef9f4e91cd6dd033d988c9c115bb1f128b7`.
+- Active branch: `agent/smsless-seller-ownership-phase1`.
+- Pre-final-documentation branch checkpoint: `64124531296857b2a67ada154da72c2fe265f488`.
+- At that checkpoint the branch is 27 commits ahead / 0 behind `main`; open PRs: none.
+- This documentation commit necessarily advances the feature SHA; live GitHub is authoritative for the exact final head.
+
+One-writer discipline remains active. No rebase/amend/squash/force-push of pushed history.
+
+## Current phase
+
+**SMSless seller ownership Phase 1 is implementation-complete pending final exact-head workflow proof and PR review. Production and real data remain closed.**
+
+The current product authority is `docs/PRODUCT_CONTRACT_V2.md`.
+
+## 2026-09-03 founder/Advisor decision
+
+Current seller identity/authorization truth:
+
+- ordinary-goods SMS OTP is removed as a product requirement;
+- seller identity is a pseudonymous UUID;
+- `listings.owner_user_id` is the listing ownership link;
+- the browser receives a server-backed opaque HttpOnly session cookie;
+- only token digests are persisted;
+- seller recovery uses a rotating high-entropy recovery code with digest-only persistence;
+- public phone is contact data, not verified identity or authorization;
+- phone equality does not establish ownership and phone edits do not transfer ownership;
+- manual line/WhatsApp verification is risk-triggered only;
+- no general e-Devlet login;
+- passkey/email/OAuth/password are deferred;
+- Vasıta **and Emlak** real production publication fail closed without production EİDS integration.
+
+## Security semantics reconfirmed on the feature implementation
+
+Current implementation/tests establish:
+
+- seller A/B isolation resolves session `seller_id` and requires `owner_user_id = seller_id`;
+- `owner_user_id` is immutable after listing creation;
+- phone/contact changes do not modify owner ownership;
+- historical rows are deliberately not backfilled from `contact_e164`;
+- recovery rotation/revocation/replacement occurs in one database function transaction;
+- consumed recovery credentials cannot be replayed;
+- successful recovery revokes every pre-existing session for that seller;
+- logout revokes the current server-side session and then clears the cookie;
+- database rows store recovery/session digests, not plaintext tokens;
+- browser acceptance rejects phone/localStorage fallback and proves stale copied sessions fail;
+- anonymous role cannot inspect private seller/session state or execute seller-session/recovery RPCs;
+- current self-service and exceptional founder publication both fail closed for real-production Vasıta and Emlak without EİDS;
+- established RLS, private Storage, trusted-photo, signed-photo, idempotency, atomic-publication and takedown controls remain in the canonical validation paths.
+
+## Migration state
+
+The canonical migration chain now contains ten migrations. The new Phase 1 migration is:
+
+`supabase/migrations/20260903130000_prepare_smsless_seller_ownership.sql`
+
+It adds private pseudonymous seller identities, revocable server-side seller sessions, rotating recovery digests and nullable `public.listings.owner_user_id`. It explicitly forbids deriving historical ownership from public-phone equality and keeps legacy phone-verification columns only as historical/risk-control evidence.
+
+No production migration has been applied by this repository work. The managed provider rehearsal remains synthetic-only and must run through its approved PR workflow gate.
+
+## Exact-head workflow state
+
+Before the final stale-reference/documentation changes, exact head `c83fff4b261d7ba9e2ed1f5e14ac70af387c62d7` had SUCCESS evidence for:
+
+- CI;
+- Stage 1 self-service acceptance;
+- Activation readiness;
+- V0 minimal PWA;
+- Real pilot backend prep;
+- Self-host migration rehearsal.
+
+Those runs are historical evidence for `c83fff4...`, not acceptance for the final branch head. After the final documentation/stale-reference commit, all canonical workflows must be obtained on the **same exact final SHA**. Managed Supabase migration rehearsal is required on the PR head through its allowed trigger/gate.
+
+## Public runtime versus repository
+
+The existing public V0 and repository capability remain separate facts.
+
+Closed unless explicitly authorized:
+
+- production/public activation;
+- real personal/seller/listing/contact/photo data;
+- AWS / production infrastructure;
+- secrets or environment mutation;
+- paid recurring services;
+- real SMS;
+- production EİDS calls;
+- Ads/monetization;
+- payments/orders/reservations/commission;
+- Publish/Update;
+- Tarladan changes.
+
+**REAL DATA COLLECTION remains CLOSED.**
+
+## Immediate next action
+
+1. Commit the canonical documentation synchronization.
+2. Obtain all required canonical workflow results on that exact SHA.
+3. Only if the branch remains clean and required checks are green, open a PR to `main` without merging it.
+4. Obtain the Managed Supabase migration rehearsal and all other canonical workflows on that same exact PR head.
+5. Stop for the independent Codex security review and Advisor/founder merge decision.
+
+No production or external-service activation is part of these steps.
+
+
+## Historical 2026-09-01 state snapshot — retained for audit
+
+> This appendix preserves the previous snapshot as historical evidence. Any verified-phone, OTP, phone-bound ownership/session, founder-entry, or vehicle-only EİDS wording below is **not current product authority** after D-030.
+
+### Canonical repository state
 
 - Repository: `ronurgungor/arar-buluruz`; canonical branch: `main`.
 - Pre-PR83 / docs-sync branch-base `main` checkpoint: `27dc75c96ef687e1c585e27fac6521b172e04f31`. Live GitHub controls the exact current `main` SHA.
@@ -24,7 +135,7 @@ _Last updated: 2026-09-01, Europe/Istanbul_
 - PR #79 restored the intended managed-rehearsal trigger contract: `pull_request` + `workflow_dispatch`; no `push` trigger.
 - GitHub `main` is not branch-protected; successful checks are evidence rather than server-enforced merge requirements. Exact-head verification and normal PR/merge discipline remain mandatory.
 
-## Current phase
+### Current phase
 
 **Stage 1 technical implementation is merged; production and real data remain closed.**
 
@@ -69,7 +180,7 @@ Current consumer product facts:
 - Vasıta retained for the product/synthetic path;
 - real production vehicle publication fail-closed until EİDS integration is enabled.
 
-## Current business/formalization state
+### Current business/formalization state
 
 The prior automatic company-first sequence is superseded.
 
@@ -79,7 +190,7 @@ Current founder plan:
 
 Before first taxable revenue, current GVK Mükerrer 20/B eligibility and mechanics must be re-verified. This does not authorize production, real data or waive KVKK/EİDS/platform obligations.
 
-## Hosted managed-proof state
+### Hosted managed-proof state
 
 D-029 provider-specific modernization is **completed** through PR #81.
 
@@ -103,7 +214,7 @@ No new service-role secret was introduced. A thin actual-managed-provider curren
 
 PR #81 is **MERGED / CLOSED**; there is no active hosted-proof modernization branch or merge-readiness work remaining.
 
-## Hard boundaries
+### Hard boundaries
 
 - synthetic/mock data only;
 - no real seller/listing/contact/photo/personal data;
@@ -118,7 +229,7 @@ PR #81 is **MERGED / CLOSED**; there is no active hosted-proof modernization bra
 
 **REAL DATA COLLECTION remains CLOSED.**
 
-## Dedicated hosted Supabase state
+### Dedicated hosted Supabase state
 
 The approved isolated hosted-development environment is:
 
@@ -131,7 +242,7 @@ The approved isolated hosted-development environment is:
 
 The hosted proof hard-rejects both known Tarladan project refs before any live mutation. The dedicated project is not production and its successful use does not authorize real data or production activation.
 
-## Issue #66 portability state
+### Issue #66 portability state
 
 The managed Supabase Free → pinned self-host DB + Storage migration and rollback rehearsal is complete.
 
@@ -152,7 +263,7 @@ The tested target remains pinned to `self-hosted/v0.8.0` / upstream commit `241b
 
 Portability is therefore **PASS** and is not an open Issue #72 blocker.
 
-## Historical Issue #72 hosted RC evidence — superseded as current product proof
+### Historical Issue #72 hosted RC evidence — superseded as current product proof
 
 Final recovery-free exact head:
 
@@ -185,7 +296,7 @@ The browser proof explicitly reported:
 
 `Hosted founder create/photo/publish/public/contact/unpublish/delete + reject/delete browser journey passed.`
 
-## Final DB / Storage cleanup consistency
+### Final DB / Storage cleanup consistency
 
 The hosted RC proof returned the dedicated environment to its canonical fixture state after the founder journeys.
 
@@ -205,7 +316,7 @@ The workflow reported:
 
 No recovery script or recovery workflow hook is present in the final recovery-free exact head.
 
-## Pilot release-candidate artifact proof
+### Pilot release-candidate artifact proof
 
 The real `pilot-rc` production artifact was built and browser-tested, rather than treating a source fixture or directly opened fallback file as release evidence.
 
@@ -233,7 +344,7 @@ Final pilot manifest evidence:
 
 The signed private photo decoded successfully in Chromium (`complete=true`, non-zero natural dimensions, no decode error).
 
-### Real offline navigation evidence
+#### Real offline navigation evidence
 
 The offline proof verified an installed and controlling service worker before navigation:
 
@@ -264,7 +375,7 @@ The workflow reported:
 
 `pilot-rc production artifact desktop/mobile/PWA/offline/navigation/fail-closed proof passed.`
 
-## Artifact and privilege boundary
+### Artifact and privilege boundary
 
 PR #81 removed the localhost privileged transport shim from the current managed-provider proof rather than extending it.
 
@@ -282,7 +393,7 @@ The current boundary scanner reports:
 
 `pilot-rc artifact privilege boundary passed: no retired hosted shim, V0/mock/test presentation residue, founder-intake path, privileged marker, or supplied secret leakage.`
 
-## Supabase repository state
+### Supabase repository state
 
 `supabase/config.toml` remains fail-closed in Git. Auth and Storage are enabled only in controlled test/rehearsal paths; production activation is not implied.
 
@@ -300,7 +411,7 @@ Current canonical migration chain is exactly nine migrations:
 
 Canonical database/RLS test suites, REST integration, browser E2E, private Storage, signed-photo, backup/restore and application-level verification all pass in the final required workflows.
 
-## Public runtime vs repository
+### Public runtime vs repository
 
 Repository readiness and the already-published public V0 remain separate states.
 
@@ -314,7 +425,7 @@ The known public V0 remains synthetic/mock and non-collecting unless a separate 
 
 PR #74 and Issue #72 completion do **not** authorize Lovable Publish/Update, AWS provisioning, production deployment or real-data collection.
 
-## Current consumer product scope
+### Current consumer product scope
 
 The old controlled Çorlu-only intake model and the later seller-contact-choice/declaration-checkbox presentation are superseded as the current product contract.
 
@@ -347,7 +458,7 @@ Free listings display **Ücretsiz**, never `₺0`.
 
 The consumer UI must not present itself as a pilot, Stage 1 test harness, founder intake process or compliance tool.
 
-## Remaining activation gates
+### Remaining activation gates
 
 The technical pre-AWS release-candidate proof is complete, but it is not legal or operational authorization for real data.
 
@@ -367,7 +478,7 @@ Before the first real listing, the separate privacy/legal/operational and produc
 
 AWS account/provisioning, pricing/credit eligibility, Istanbul availability/residency and production network design remain intentionally deferred until an explicit production activation decision. **AWS remains OFF.**
 
-## Immediate next objective — Activation Gate Review
+### Immediate next objective — Activation Gate Review
 
 **Activation Gate Review — determine exactly what remains before the first real listing / real pilot can legally and technically open.**
 
@@ -384,6 +495,6 @@ The review should:
 
 Do not add classic Auth/accounts, in-app chat, payments, orders, reservations, commission, ads, recommendation engines, microservices, Kubernetes or speculative observability merely to satisfy this review.
 
-## Historical-document rule
+### Historical-document rule
 
 Older project-memory, backlog, provider and readiness documents remain historical evidence. Where their current-status wording conflicts with this file or a later canonical GitHub change, this current-state file and GitHub `main` control. The exact PR/commit under review remains authoritative for implementation facts.

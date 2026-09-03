@@ -1,134 +1,93 @@
 # Arar Buluruz — Active Chat Handoff
 
-_Last updated: 2026-09-01, Europe/Istanbul_
+_Last updated: 2026-09-03, Europe/Istanbul_
 
 ## Purpose
 
-Short-lived continuity layer for the current Arar Buluruz work.
+Short-lived continuity layer for the active SMSless seller ownership Phase 1 closure. Live GitHub and executable evidence remain authoritative.
 
-Live GitHub, executable evidence, `docs/ARAR_BULURUZ_CURRENT_STATE.md`, `docs/PRODUCT_CONTRACT_V2.md`, the backlog and the decision log remain authoritative.
-
-## Roles and writer state
+## Writer and repository state
 
 - Founder: final consequential decision owner.
-- Main Execution Chat: primary implementation/debug/CI owner.
-- Advisor Chat: roadmap, materiality, independent verification and final review.
-- Codex/Work/Lovable remain specialist roles under `AI_OPERATING_MODEL_V2.md`.
+- Main Execution Chat: active repository writer for this bounded Phase 1 closure.
+- Advisor Chat: roadmap/materiality/final review.
+- Repository: `ronurgungor/arar-buluruz`.
+- Canonical `main` at startup: `47956ef9f4e91cd6dd033d988c9c115bb1f128b7`.
+- Active branch: `agent/smsless-seller-ownership-phase1`.
+- Pre-final-documentation branch checkpoint: `64124531296857b2a67ada154da72c2fe265f488`.
+- At that checkpoint: 27 ahead / 0 behind `main`; open PRs: none.
+- This documentation commit advances the branch; live GitHub controls the exact current head.
 
-One-writer rule remains active. No force-push/history rewrite. Tarladan remains untouched.
+No new branch. No rebase/amend/squash/force-push. Tarladan untouched.
 
-PR #83 is a temporary documentation-only synchronization scope. Live GitHub determines whether PR #83 is still open or has already merged.
+## Current founder/Advisor product truth — D-030
 
-While PR #83 remains open:
+- Ordinary-goods SMS OTP is no longer a product requirement.
+- Seller ownership identity is a pseudonymous UUID.
+- Listings bind ownership through `seller_id → listings.owner_user_id`.
+- Seller access uses a server-side revocable opaque HttpOnly cookie session.
+- Seller recovery uses a rotating high-entropy recovery code; only selector/digest are persisted.
+- Public phone is contact data, not verified identity or authorization.
+- Equal phones do not imply the same seller; phone change does not transfer ownership.
+- Manual line/WhatsApp verification is risk-triggered only.
+- No general e-Devlet login.
+- Passkey/email/OAuth/password are deferred.
+- Vasıta **and Emlak** require EİDS before real production publication.
 
-- branch: `agent/post-pr81-pr82-state-sync`;
-- no application implementation work is permitted;
-- no workflow, migration, backend, secret, production or external-service changes are permitted;
-- keep PR #83 unmerged until final Advisor confirmation.
+## Security evidence already implemented
 
-After PR #83 merges normally:
+- Session and recovery plaintext are not stored in DB.
+- Browser E2E rejects seller-phone localStorage fallback.
+- Recovery atomically rotates, revokes old sessions and rejects replay.
+- Logout revokes the server-side session.
+- Owner UUID is immutable.
+- Historical rows are not ownership-backfilled from contact equality.
+- Anon cannot inspect private seller/session state or execute session/recovery RPCs.
+- Normal self-service and exceptional founder publication fail closed for production Vasıta/Emlak without EİDS.
+- RLS, private Storage, trusted-photo/signed-photo, idempotency, atomic publication and takedown controls remain in their canonical tests/workflows.
 
-- repository writer state returns to **idle / no active implementation scope**;
-- do not continue implementation from the docs-sync branch;
-- the next permitted objective is the read-only **Activation Gate Review**.
+## Stale-reference sweep
 
-## Live repository checkpoint
+Current/shipping paths have been corrected for ordinary-goods OTP, verified-phone identity/authorization, phone-equality ownership and phone-bound session assumptions.
 
-Repository: `ronurgungor/arar-buluruz`.
+Historical dated evidence and superseded decision records intentionally retain their original terminology, but D-030 and the current canonical documents mark those semantics as historical.
 
-Pre-PR83 / docs-sync branch-base `main` checkpoint:
+## Workflow checkpoint
 
-`27dc75c96ef687e1c585e27fac6521b172e04f31`
+Exact head `c83fff4b261d7ba9e2ed1f5e14ac70af387c62d7` previously had SUCCESS for:
 
-Live GitHub controls the exact current `main` SHA and PR #83 state.
+- CI;
+- Stage 1 self-service acceptance;
+- Activation readiness;
+- V0 minimal PWA;
+- Real pilot backend prep;
+- Self-host migration rehearsal.
 
-Open PRs at branch start: **none**.
+Those are not sufficient for the final Phase 1 head after stale-reference/docs changes.
 
-Latest completed milestones:
+## Immediate next action
 
-- PR #81 — hosted managed provider-proof modernization under D-029: **MERGED / CLOSED**;
-  - approved head: `8ab785fefa80ee4122fc559298859b8281d4094d`;
-  - merge commit: `8bfe6d7a89bbda6ef710aaf313bf24e312ec18eb`;
-  - provider-specific managed proof is complete;
-  - obsolete founder-entry hosted browser harness, localhost privileged shim and stale product-level artifact E2E are retired;
-  - actual managed anonymous Storage direct-write denial is executable evidence.
-- PR #82 — Stage 1 listing UX polish ported from the isolated Lovable UX lab: **MERGED / CLOSED**;
-  - approved head: `abdcb3621575e870648519cf7adf6e57020bc33c`;
-  - merge commit / pre-PR83 docs-sync branch-base checkpoint: `27dc75c96ef687e1c585e27fac6521b172e04f31`;
-  - public-phone disclosure appears exactly once;
-  - photo remove target is 44×44;
-  - sticky mobile action bar includes bottom safe-area handling.
-
-Post-PR82 evidence on the pre-PR83 docs-sync branch-base checkpoint:
-
-- CI run `33489222953`, attempt 3: **SUCCESS**;
-  - lint/unit/build: **SUCCESS**;
-  - Gate 1 local migration/RLS/REST/browser E2E: **SUCCESS**.
-- V0 minimal PWA run `33489222873`: **SUCCESS**.
-
-## Current product truth
-
-Read `docs/PRODUCT_CONTRACT_V2.md`.
-
-Current consumer model remains seller self-service → verified/remembered phone session → trusted photos → atomic auto-publication → public buyer flow, with founder post-moderation/takedown.
-
-PR #82 changed presentation/UX only; it did not change backend, security, session, OTP, rate-limit, idempotency, migration or publication semantics.
-
-## D-029 provider-proof state
-
-D-029 modernization is **completed** through PR #81.
-
-Retained provider-specific evidence covers:
-
-- canonical managed migration-chain equality;
-- dedicated synthetic-project/Tarladan hard exclusions;
-- managed DB/RLS/grants and anon listing-write denial;
-- actual managed anonymous `listing_photos` Storage API write rejection;
-- private Storage plus lifecycle-controlled manifest/signing behavior;
-- deterministic fixture byte/hash validation;
-- DB + Storage backup/restore to the pinned self-host target;
-- source/target application and Storage equality;
-- rollback/source consistency and orphan checks;
-- public artifact privilege/secret-residue boundary.
-
-The thin actual-managed-provider current Stage 1 canary remains deliberately deferred to a later explicit gate.
-
-## Deferred production/recovery items
-
-These remain deferred by design:
-
-- stale `in_progress` / pending-state recovery and orphan-reconciliation architecture;
-- shared/distributed abuse state;
-- explicit seller logout/shared-device hygiene;
-- production proxy/TLS/host/client-IP semantics;
-- cross-service delete reconciliation.
-
-## Business/formalization state
-
-Current planning assumption remains:
-
-**APPLICATION COMPLETION → GVK MÜKERRER 20/B PERSONAL-DEVELOPER ROUTE (while applicable) → MARKET/REVENUE VALIDATION → COMPANY / KOSGEB ONLY WHEN REQUIRED OR ADVANTAGEOUS**
-
-Before first taxable revenue, then-current eligibility/mechanics must be re-verified. This does not open any production/legal/data gate.
+1. Verify the new exact branch SHA and clean/ahead-behind/PR state.
+2. Obtain all required canonical workflows on that **same exact SHA**.
+3. Only with required checks GREEN, open one PR to `main`; **do not merge**.
+4. Allow/trigger Managed Supabase migration rehearsal as its PR gate requires.
+5. Require every canonical workflow GREEN on that same exact PR head.
+6. Stop and report exact SHA, PR number, changed files, security/migration summary, stale-sweep result, workflow IDs/results and remaining materiality.
+7. Independent Codex exact-head security review happens after this stop and before Advisor merge decision.
 
 ## Hard boundaries
 
-Still closed unless separately authorized:
+Remain closed:
 
-- real personal/seller/listing/contact/photo data;
 - production/public activation;
-- AWS;
-- recurring paid infrastructure/services;
+- real personal/seller/listing/contact/photo data;
+- AWS/production infrastructure;
+- secrets/env mutation;
+- paid services;
 - real SMS;
-- production EİDS;
+- production EİDS calls;
 - Ads/monetization;
-- payment/order/reservation/commission/in-app chat;
-- Tarladan changes.
-
-**REAL DATA COLLECTION remains CLOSED.**
-
-## Immediate next objective
-
-**Activation Gate Review — determine exactly what remains before the first real listing / real pilot can legally and technically open.**
-
-This next step is a review/decision package only. Do not implement activation work, provision infrastructure, connect production services or collect real data during that review.
+- payments/orders/reservations/commission;
+- Publish/Update;
+- Tarladan changes;
+- history rewrite.

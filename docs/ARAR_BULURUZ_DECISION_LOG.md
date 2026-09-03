@@ -1,6 +1,6 @@
 # Arar Buluruz — Decision Log
 
-_Last updated: 2026-08-31, Europe/Istanbul_
+_Last updated: 2026-09-03, Europe/Istanbul_
 
 This is an append-oriented record of consequential product, technical and operating decisions. It preserves **what was decided, why, alternatives rejected and what would cause reconsideration**.
 
@@ -268,7 +268,7 @@ Each new entry should include:
 ## D-025 — Türkiye-wide seller self-service with verified-phone atomic auto-publication
 
 - **Date:** 2026-08-27
-- **Status:** Active founder-selected product contract; production/real-data activation closed
+- **Status:** Historical / active only where not superseded by D-026 or D-030
 - **Decision:** Arar Buluruz moves from the earlier Çorlu-only founder-intake/pre-approval model to a normal Türkiye-wide consumer classifieds model. Sellers create their own listings directly, verify the listing phone, and the application atomically auto-publishes only after required declaration/publication evidence and trusted-photo state are complete.
 - **Location:** Türkiye-wide İl / İlçe. Çorlu is no longer a product restriction.
 - **Seller ownership:** No classic username/password account is required. `/ilanlarim` uses verified-phone capability isolation so a seller can see and manage only listings associated with the verified phone.
@@ -288,7 +288,7 @@ Each new entry should include:
 ## D-026 — Simplified public-phone, rules-evidence and remembered-seller contract
 
 - **Date:** 2026-08-28
-- **Status:** Active founder-selected product contract; production/real-data activation closed
+- **Status:** Historical / active only where not superseded by D-030
 - **Decision:** Simplify D-025 without reopening the Türkiye-wide self-service direction. A seller provides one verified public phone; the buyer always receives both **Ara** and **WhatsApp** actions derived from the same E.164 number. The consumer no longer chooses Telefon / WhatsApp / Telefon + WhatsApp.
 - **Publication evidence:** The three consumer declaration checkboxes are superseded. New publication records versioned `listing_rules_version` + `listing_rules_accepted_at`, together with verified-phone/publication/trusted-photo facts. Historical declaration columns remain nullable for history/migration compatibility and must not be fabricated for new rows.
 - **Optional fields:** Condition and description are optional. Condition has no silent database/UI default; empty description is valid and no filler text is invented.
@@ -333,3 +333,19 @@ Each new entry should include:
 - **Rationale:** Independent Work review plus Advisor code inspection found that the old hosted proof duplicates already-covered product behavior, encodes superseded founder-entry assumptions and increases false-green/drift risk when extended through the shim.
 - **Related milestone:** PR #79 fixed the workflow parse/config error and migration-chain drift; its remaining red hosted-browser result exposed this pre-existing proof drift rather than a PR #79 product regression.
 - **Review trigger:** a production-like provider integration gate, availability of an explicitly approved server-only service-role secret for the dedicated synthetic project, or evidence that provider-specific behavior is not adequately covered by the narrowed proof.
+
+## D-030 — SMSless pseudonymous seller ownership and recovery
+
+- **Date:** 2026-09-03
+- **Status:** Active founder/Advisor product + security decision; production/real-data activation closed
+- **Decision:** Remove ordinary-goods SMS OTP and verified-phone ownership from the current product contract. A seller is represented by a pseudonymous UUID, owns listings through `listings.owner_user_id`, uses a server-side revocable opaque HttpOnly session, and can recover through a rotating one-time high-entropy recovery credential.
+- **Phone semantics:** The listing phone is intentionally public contact data only. It is not verified identity or authorization identity. Equal phones do not merge sellers; changing a phone does not transfer listing ownership. Historical rows must not be ownership-backfilled from phone equality.
+- **Recovery/session semantics:** Persist only SHA-256 digests of opaque session/recovery secrets. Successful recovery atomically rotates recovery material, revokes all prior sessions and creates the replacement session. Consumed recovery replay fails. Logout revokes the server-side session.
+- **Risk verification:** Manual line-control or WhatsApp-control verification may be requested only when risk triggers justify it. Legacy verification columns remain optional historical/risk-control evidence and are not ordinary-goods authorization prerequisites.
+- **Identity alternatives:** No general e-Devlet login. Passkey, email, OAuth and password authentication remain deferred until product/abuse evidence justifies their cost and complexity.
+- **EİDS:** Vasıta / Araç and Emlak remain in taxonomy/synthetic development, but **both** must fail closed before real production publication until required EİDS authorization verification is integrated and separately approved.
+- **Preserved invariants:** RLS/grants, direct-anon-write denial, private Storage, trusted image sanitization, signed-photo lifecycle, idempotency/race handling, atomic publication, ambiguity reconciliation, orphan safeguards and fail-closed takedown remain unchanged.
+- **Supersedes:** D-025 and D-026 only where they made phone verification, phone equality, OTP or a phone-bound session part of current seller ownership/authorization. Their historical record remains intentionally preserved.
+- **Production boundary:** This decision authorizes repository-only implementation and synthetic verification. Production/public activation, real data, AWS/production infrastructure, secrets/env mutation, paid services, real SMS, production EİDS calls, Ads/monetization, payments/orders/reservations/commission, Publish/Update and Tarladan changes remain OFF.
+- **Evidence:** `supabase/migrations/20260903130000_prepare_smsless_seller_ownership.sql`, `supabase/tests/database/smsless_seller_ownership.test.sql`, Stage 1 server/browser security tests and the exact-head workflows for the Phase 1 PR.
+- **Review trigger:** Material abuse/account-recovery failure, need for stronger account portability, professional sellers, evidence supporting passkey/email/OAuth/password, production EİDS integration, or an explicit founder revision.
