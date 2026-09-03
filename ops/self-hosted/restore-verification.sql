@@ -95,6 +95,11 @@ begin
        'anon',
        'public.recover_seller_identity(text,text,text,text,text,timestamptz)',
        'EXECUTE'
+     )
+     or has_function_privilege(
+       'anon',
+       'public.reconcile_seller_recovery(text,text,text,timestamptz)',
+       'EXECUTE'
      ) then
     raise exception 'anonymous role can invoke seller session/recovery functions';
   end if;

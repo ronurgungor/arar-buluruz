@@ -121,10 +121,19 @@ function readConfig(): BackendConfig {
   return { baseUrl: url.toString().replace(/\/+$/, ""), serviceRoleKey };
 }
 
-function assertEidsPublicationAllowed(config: BackendConfig, category: string): void {
+function assertEidsPublicationAllowed(
+  config: BackendConfig,
+  category: string,
+  request: Request,
+): void {
   if (category !== "vehicle" && category !== "real-estate") return;
-  const hostname = new URL(config.baseUrl).hostname;
-  if (isLoopbackHost(hostname)) return;
+  if (
+    process.env.PILOT_SYNTHETIC_TEST_MODE === "enabled" &&
+    isLoopbackHost(new URL(request.url).hostname) &&
+    isLoopbackHost(new URL(config.baseUrl).hostname)
+  ) {
+    return;
+  }
   throw new ModerationError(
     "INVALID_STATE",
     "Vasıta ve emlak ilanları için gerekli EİDS yetkilendirmesi production ortamında henüz etkin değil.",
@@ -276,7 +285,7 @@ async function patchListing(
     throw new Error(`${context} did not mutate exactly one listing.`);
 }
 
-async function publish(config: BackendConfig, form: FormData): Promise<string> {
+async function publish(config: BackendConfig, form: FormData, request: Request): Promise<string> {
   const id = requiredUuid(form);
   const listing = await fetchListing(config, id);
   if (!listing || (listing.status !== "pending" && listing.status !== "unpublished")) {
@@ -285,7 +294,7 @@ async function publish(config: BackendConfig, form: FormData): Promise<string> {
       "Yalnız incelemedeki veya yayından kaldırılmış ilan yayınlanabilir.",
     );
   }
-  assertEidsPublicationAllowed(config, listing.category);
+  assertEidsPublicationAllowed(config, listing.category, request);
   if (!listing.publication_instruction_at) {
     throw new ModerationError(
       "INVALID_STATE",
@@ -396,7 +405,7 @@ export async function handleStage1ModerationRequest(request: Request): Promise<R
       return jsonResponse({
         ok: true,
         message: "İlan yayınlandı.",
-        listingId: await publish(config, form),
+        listingId: await publish(config, form, request),
       });
     if (action === "reject")
       return jsonResponse({

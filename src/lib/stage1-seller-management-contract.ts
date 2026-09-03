@@ -37,8 +37,7 @@ export type Stage1SellerManagementResponse =
     }
   | {
       ok: true;
-      action: "seller_recovered";
-      recoveryCode: string;
+      action: "seller_recovered" | "seller_recovery_reconciled";
       sessionExpiresAt: string;
       message: string;
     }
@@ -59,6 +58,8 @@ export type Stage1SellerManagementResponse =
         | "NOT_ENABLED"
         | "SESSION_REQUIRED"
         | "RECOVERY_FAILED"
+        | "RECOVERY_NOT_COMMITTED"
+        | "LOGOUT_PARTIAL"
         | "NOT_AUTHORIZED"
         | "INVALID_REQUEST"
         | "RATE_LIMITED"

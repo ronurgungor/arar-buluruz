@@ -8,7 +8,9 @@ const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 function randomBase64Url(byteLength: number): string {
   const bytes = new Uint8Array(byteLength);
   crypto.getRandomValues(bytes);
-  return Buffer.from(bytes).toString("base64url");
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/u, "");
 }
 
 export async function sha256Hex(value: string): Promise<string> {
@@ -26,10 +28,15 @@ export type SellerRecoveryCredential = {
   digest: string;
 };
 
-export async function createSellerRecoveryCredential(): Promise<SellerRecoveryCredential> {
+export function createSellerRecoveryCode(): string {
   const selector = randomBase64Url(STAGE1_RECOVERY_SELECTOR_BYTES);
   const secret = randomBase64Url(STAGE1_RECOVERY_SECRET_BYTES);
-  const code = `${STAGE1_RECOVERY_PREFIX}.${selector}.${secret}`;
+  return `${STAGE1_RECOVERY_PREFIX}.${selector}.${secret}`;
+}
+
+export async function createSellerRecoveryCredential(): Promise<SellerRecoveryCredential> {
+  const code = createSellerRecoveryCode();
+  const selector = code.split(".")[1] ?? "";
   return { code, selector, digest: await sha256Hex(code) };
 }
 

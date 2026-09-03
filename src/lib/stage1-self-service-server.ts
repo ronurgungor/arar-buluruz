@@ -587,10 +587,12 @@ async function sellerRecover(
   clientIp: string,
   request: Request,
 ): Promise<Response> {
-  assertAllowedFields(form, new Set(["action", "recoveryCode"]));
+  assertAllowedFields(form, new Set(["action", "recoveryCode", "replacementRecoveryCode"]));
   const rawCode = requiredString(form, "recoveryCode", 10, 160);
+  const replacementRawCode = requiredString(form, "replacementRecoveryCode", 10, 160);
   const parsed = await parseSellerRecoveryCode(rawCode);
-  if (!parsed) {
+  const replacement = await parseSellerRecoveryCode(replacementRawCode);
+  if (!parsed || !replacement || replacement.digest === parsed.digest) {
     throw new Stage1SubmissionError("RECOVERY_FAILED", "Kurtarma kodu geçersiz.", 401);
   }
   const relaxed = usesRelaxedSyntheticLimits(request);
@@ -598,7 +600,6 @@ async function sellerRecover(
   enforceRateLimit("seller-recovery-ip", clientIp, 40, 60 * 60 * 1000, relaxed);
 
   const config = readBackendConfig();
-  const replacementRecovery = await createSellerRecoveryCredential();
   const sessionToken = createOpaqueSellerSessionToken();
   const sessionDigest = await sha256Hex(sessionToken);
   const expiresAt = sessionExpiry();
@@ -609,8 +610,8 @@ async function sellerRecover(
       body: JSON.stringify({
         p_recovery_selector: parsed.selector,
         p_recovery_digest: parsed.digest,
-        p_new_recovery_selector: replacementRecovery.selector,
-        p_new_recovery_digest: replacementRecovery.digest,
+        p_new_recovery_selector: replacement.selector,
+        p_new_recovery_digest: replacement.digest,
         p_new_session_digest: sessionDigest,
         p_new_session_expires_at: expiresAt,
       }),
@@ -637,9 +638,74 @@ async function sellerRecover(
     {
       ok: true,
       action: "seller_recovered",
-      recoveryCode: replacementRecovery.code,
       sessionExpiresAt: rows[0].session_expires_at,
-      message: "Erişim geri kazanıldı. Yeni kurtarma kodunu güvenli bir yerde sakla.",
+      message: "Erişim geri kazanıldı. Tarayıcında oluşturduğun yeni kurtarma kodunu saklamaya devam et.",
+    },
+    200,
+    { "Set-Cookie": sellerSessionCookie(sessionToken) },
+  );
+}
+
+async function sellerReconcileRecovery(
+  form: FormData,
+  clientIp: string,
+  request: Request,
+): Promise<Response> {
+  assertAllowedFields(form, new Set(["action", "recoveryCode"]));
+  const rawCode = requiredString(form, "recoveryCode", 10, 160);
+  const parsed = await parseSellerRecoveryCode(rawCode);
+  if (!parsed) {
+    throw new Stage1SubmissionError("RECOVERY_FAILED", "Kurtarma kodu geçersiz.", 401);
+  }
+  const relaxed = usesRelaxedSyntheticLimits(request);
+  enforceRateLimit(
+    "seller-recovery-reconcile-selector",
+    parsed.selector,
+    8,
+    60 * 60 * 1000,
+    relaxed,
+  );
+  enforceRateLimit("seller-recovery-reconcile-ip", clientIp, 40, 60 * 60 * 1000, relaxed);
+
+  const config = readBackendConfig();
+  const sessionToken = createOpaqueSellerSessionToken();
+  const sessionDigest = await sha256Hex(sessionToken);
+  const expiresAt = sessionExpiry();
+  const response = await requireOk(
+    await fetch(`${config.baseUrl}/rest/v1/rpc/reconcile_seller_recovery`, {
+      method: "POST",
+      headers: serviceHeaders(config),
+      body: JSON.stringify({
+        p_recovery_selector: parsed.selector,
+        p_recovery_digest: parsed.digest,
+        p_new_session_digest: sessionDigest,
+        p_new_session_expires_at: expiresAt,
+      }),
+    }),
+    "seller recovery reconciliation",
+  );
+  const rows = (await response.json()) as Array<{
+    seller_id?: string;
+    session_expires_at?: string;
+  }>;
+  if (
+    rows.length !== 1 ||
+    !rows[0]?.seller_id ||
+    !UUID_PATTERN.test(rows[0].seller_id) ||
+    typeof rows[0].session_expires_at !== "string"
+  ) {
+    throw new Stage1SubmissionError(
+      "RECOVERY_NOT_COMMITTED",
+      "Yeni kurtarma kodu sunucuda etkinleşmemiş. Eski kurtarma kodun hâlâ kullanılabilir.",
+      409,
+    );
+  }
+  return jsonResponse(
+    {
+      ok: true,
+      action: "seller_recovery_reconciled",
+      sessionExpiresAt: rows[0].session_expires_at,
+      message: "Yeni kurtarma kodunun etkin olduğu doğrulandı ve bu cihaz için yeni oturum açıldı.",
     },
     200,
     { "Set-Cookie": sellerSessionCookie(sessionToken) },
@@ -650,15 +716,28 @@ async function sellerLogout(form: FormData, request: Request): Promise<Response>
   assertAllowedFields(form, new Set(["action"]));
   const token = readCookie(request, SELLER_SESSION_COOKIE);
   if (token && isOpaqueSessionToken(token)) {
-    const config = readBackendConfig();
-    await requireOk(
-      await fetch(`${config.baseUrl}/rest/v1/rpc/revoke_seller_session`, {
-        method: "POST",
-        headers: serviceHeaders(config),
-        body: JSON.stringify({ p_session_digest: await sha256Hex(token) }),
-      }),
-      "seller session revoke",
-    );
+    try {
+      const config = readBackendConfig();
+      await requireOk(
+        await fetch(`${config.baseUrl}/rest/v1/rpc/revoke_seller_session`, {
+          method: "POST",
+          headers: serviceHeaders(config),
+          body: JSON.stringify({ p_session_digest: await sha256Hex(token) }),
+        }),
+        "seller session revoke",
+      );
+    } catch {
+      return jsonResponse(
+        {
+          ok: false,
+          code: "LOGOUT_PARTIAL",
+          message:
+            "Bu cihazdaki oturum çerezi temizlendi ancak sunucu oturumunun iptali doğrulanamadı.",
+        },
+        503,
+        { "Set-Cookie": clearSellerSessionCookie() },
+      );
+    }
   }
   return jsonResponse(
     { ok: true, action: "seller_logged_out", message: "Bu cihazdaki satıcı oturumu kapatıldı." },
@@ -843,6 +922,7 @@ function assertEidsPublicationAllowed(
 ): void {
   if (category !== "vehicle" && category !== "real-estate") return;
   if (
+    process.env.PILOT_SYNTHETIC_TEST_MODE === "enabled" &&
     isLoopbackHost(new URL(request.url).hostname) &&
     isLoopbackHost(new URL(config.baseUrl).hostname)
   ) {
@@ -1486,6 +1566,8 @@ export async function handleStage1SelfServiceRequest(request: Request): Promise<
     const action = form.get("action");
     if (action === "seller_bootstrap") return await sellerBootstrap(form, clientIp, request);
     if (action === "seller_recover") return await sellerRecover(form, clientIp, request);
+    if (action === "seller_reconcile_recovery")
+      return await sellerReconcileRecovery(form, clientIp, request);
     if (action === "seller_logout") return await sellerLogout(form, request);
     if (action === "submit_listing") return await submitListing(form, clientIp, request);
     if (action === "seller_list") return await sellerList(form, clientIp, request);
