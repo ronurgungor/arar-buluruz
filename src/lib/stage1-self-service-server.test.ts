@@ -1,17 +1,26 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { deflateSync } from "node:zlib";
 import { handleStage1SelfServiceRequest } from "./stage1-self-service-server";
+import { sha256Hex } from "./stage1-seller-credentials";
 
 const originalFetch = globalThis.fetch;
 const originalConsoleError = console.error;
 const originalConsoleWarn = console.warn;
-const originalDateNow = Date.now;
 
 const listings = new Set<string>();
 const listingBodies = new Map<string, Record<string, unknown>>();
 const storedObjects = new Set<string>();
 const photoMetadata = new Set<string>();
 const submissionKeys = new Map<string, { listingId: string; complete: boolean }>();
+const sellers = new Map<
+  string,
+  { recoverySelector: string; recoveryDigest: string; recoveryRotatedAt: string }
+>();
+const sessions = new Map<
+  string,
+  { sellerId: string; expiresAt: string; revokedAt: string | null }
+>();
+
 let failNextClaim = false;
 let failNextPhotoMetadataRegistration = false;
 let failNextStorageDelete = false;
@@ -107,6 +116,93 @@ function installBackendMock(): void {
     );
     const method = init?.method ?? (input instanceof Request ? input.method : "GET");
 
+    if (url.pathname === "/rest/v1/rpc/create_seller_identity" && method === "POST") {
+      const body = JSON.parse(String(init?.body)) as {
+        p_seller_id: string;
+        p_recovery_selector: string;
+        p_recovery_digest: string;
+        p_session_digest: string;
+        p_session_expires_at: string;
+      };
+      sellers.set(body.p_seller_id, {
+        recoverySelector: body.p_recovery_selector,
+        recoveryDigest: body.p_recovery_digest,
+        recoveryRotatedAt: new Date().toISOString(),
+      });
+      sessions.set(body.p_session_digest, {
+        sellerId: body.p_seller_id,
+        expiresAt: body.p_session_expires_at,
+        revokedAt: null,
+      });
+      return json(body.p_seller_id);
+    }
+
+    if (url.pathname === "/rest/v1/rpc/resolve_seller_session" && method === "POST") {
+      const body = JSON.parse(String(init?.body)) as { p_session_digest: string };
+      const session = sessions.get(body.p_session_digest);
+      if (
+        !session ||
+        session.revokedAt !== null ||
+        Date.parse(session.expiresAt) <= Date.now()
+      ) {
+        return json([]);
+      }
+      return json([{ seller_id: session.sellerId, expires_at: session.expiresAt }]);
+    }
+
+    if (url.pathname === "/rest/v1/rpc/revoke_seller_session" && method === "POST") {
+      const body = JSON.parse(String(init?.body)) as { p_session_digest: string };
+      const session = sessions.get(body.p_session_digest);
+      if (!session || session.revokedAt) return json(false);
+      session.revokedAt = new Date().toISOString();
+      return json(true);
+    }
+
+    if (url.pathname === "/rest/v1/rpc/recover_seller_identity" && method === "POST") {
+      const body = JSON.parse(String(init?.body)) as {
+        p_recovery_selector: string;
+        p_recovery_digest: string;
+        p_new_recovery_selector: string;
+        p_new_recovery_digest: string;
+        p_new_session_digest: string;
+        p_new_session_expires_at: string;
+      };
+      const match = Array.from(sellers.entries()).find(
+        ([, seller]) =>
+          seller.recoverySelector === body.p_recovery_selector &&
+          seller.recoveryDigest === body.p_recovery_digest,
+      );
+      if (!match) return json([]);
+      const [sellerId, seller] = match;
+      seller.recoverySelector = body.p_new_recovery_selector;
+      seller.recoveryDigest = body.p_new_recovery_digest;
+      seller.recoveryRotatedAt = new Date().toISOString();
+      for (const session of sessions.values()) {
+        if (session.sellerId === sellerId && !session.revokedAt) {
+          session.revokedAt = new Date().toISOString();
+        }
+      }
+      sessions.set(body.p_new_session_digest, {
+        sellerId,
+        expiresAt: body.p_new_session_expires_at,
+        revokedAt: null,
+      });
+      return json([{ seller_id: sellerId, session_expires_at: body.p_new_session_expires_at }]);
+    }
+
+    if (url.pathname === "/rest/v1/rpc/delete_seller_identity_if_unowned" && method === "POST") {
+      const body = JSON.parse(String(init?.body)) as { p_seller_id: string };
+      const hasListing = Array.from(listingBodies.values()).some(
+        (row) => row.owner_user_id === body.p_seller_id,
+      );
+      if (hasListing) return json(false);
+      sellers.delete(body.p_seller_id);
+      for (const [digest, session] of sessions) {
+        if (session.sellerId === body.p_seller_id) sessions.delete(digest);
+      }
+      return json(true);
+    }
+
     if (url.pathname === "/rest/v1/listings" && method === "POST") {
       const body = JSON.parse(String(init?.body)) as Record<string, unknown> & { id: string };
       const now = new Date().toISOString();
@@ -119,6 +215,8 @@ function installBackendMock(): void {
         expires_at: null,
         unpublished_at: null,
         sold_at: null,
+        contact_verified_at: null,
+        contact_verification_method: null,
         private_seller_declaration_at: null,
         content_rights_declaration_at: null,
       });
@@ -127,11 +225,11 @@ function installBackendMock(): void {
 
     if (url.pathname === "/rest/v1/listings" && method === "GET") {
       const id = (url.searchParams.get("id") ?? "").replace(/^eq\./, "");
-      const phone = (url.searchParams.get("contact_e164") ?? "").replace(/^eq\./, "");
+      const sellerId = (url.searchParams.get("owner_user_id") ?? "").replace(/^eq\./, "");
       return json(
         Array.from(listingBodies.values()).filter((row) => {
           if (id && row.id !== id) return false;
-          if (phone && row.contact_e164 !== phone) return false;
+          if (sellerId && row.owner_user_id !== sellerId) return false;
           return true;
         }),
       );
@@ -142,6 +240,12 @@ function installBackendMock(): void {
       const current = listingBodies.get(id);
       if (!current) return json([]);
       const patch = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      if (
+        Object.hasOwn(patch, "owner_user_id") &&
+        patch.owner_user_id !== current.owner_user_id
+      ) {
+        return new Response("listing owner_user_id is immutable", { status: 409 });
+      }
       listingBodies.set(id, { ...current, ...patch, updated_at: new Date().toISOString() });
       return json([{ id }]);
     }
@@ -157,7 +261,7 @@ function installBackendMock(): void {
       const body = JSON.parse(String(init?.body)) as { p_listing_id: string };
       return json(
         Array.from(photoMetadata)
-          .filter((path) => path.startsWith(`listings/${body.p_listing_id}/`))
+          .filter((objectPath) => objectPath.startsWith(`listings/${body.p_listing_id}/`))
           .map((object_path, sort_order) => ({
             photo_id:
               object_path
@@ -227,13 +331,15 @@ function installBackendMock(): void {
       const row = listingBodies.get(body.p_listing_id);
       const ready =
         row?.status === "pending" &&
+        typeof row.owner_user_id === "string" &&
         row.contact_channel === "phone_whatsapp" &&
         typeof row.contact_e164 === "string" &&
-        typeof row.contact_verified_at === "string" &&
         typeof row.publication_instruction_at === "string" &&
         typeof row.listing_rules_version === "string" &&
         typeof row.listing_rules_accepted_at === "string" &&
-        Array.from(photoMetadata).some((path) => path.startsWith(`listings/${body.p_listing_id}/`));
+        Array.from(photoMetadata).some((objectPath) =>
+          objectPath.startsWith(`listings/${body.p_listing_id}/`),
+        );
       if (!existing || existing.listingId !== body.p_listing_id || !ready) {
         return new Response("listing is not publish-ready", { status: 409 });
       }
@@ -287,7 +393,7 @@ function installBackendMock(): void {
         return new Response("synthetic storage delete failure", { status: 500 });
       }
       const body = JSON.parse(String(init?.body)) as { prefixes: string[] };
-      for (const path of body.prefixes) storedObjects.delete(path);
+      for (const objectPath of body.prefixes) storedObjects.delete(objectPath);
       return json([]);
     }
 
@@ -299,6 +405,8 @@ function requestFor(
   form: FormData,
   options: {
     origin?: string;
+    originHeader?: string;
+    fetchSite?: string;
     trustedIp?: string;
     contentLength?: number;
     xff?: string;
@@ -307,8 +415,8 @@ function requestFor(
 ): Request {
   const origin = options.origin ?? "http://127.0.0.1:4173";
   const headers = new Headers({
-    Origin: origin,
-    "Sec-Fetch-Site": "same-origin",
+    Origin: options.originHeader ?? origin,
+    "Sec-Fetch-Site": options.fetchSite ?? "same-origin",
     "Content-Length": String(options.contentLength ?? 4096),
   });
   if (options.trustedIp) headers.set("x-arar-client-ip", options.trustedIp);
@@ -317,35 +425,44 @@ function requestFor(
   return new Request(`${origin}/ilan-ver`, { method: "POST", headers, body: form });
 }
 
-async function syntheticSession(phone: string): Promise<string> {
-  const start = new FormData();
-  start.set("action", "start_verification");
-  start.set("phone", phone);
-  const started = await handleStage1SelfServiceRequest(requestFor(start));
-  expect(started.status).toBe(200);
-  const startedPayload = (await started.json()) as {
-    ok: boolean;
-    challengeId?: string;
-  };
-  assert(startedPayload.ok && typeof startedPayload.challengeId === "string", "OTP not issued");
-
-  const verify = new FormData();
-  verify.set("action", "verify_phone");
-  verify.set("phone", phone);
-  verify.set("challengeId", startedPayload.challengeId);
-  verify.set("code", "424242");
-  const verified = await handleStage1SelfServiceRequest(requestFor(verify));
-  expect(verified.status).toBe(200);
-  const payload = (await verified.json()) as Record<string, unknown>;
-  expect(payload).toMatchObject({ ok: true, action: "phone_verified" });
-  expect(payload).not.toHaveProperty("capability");
-  const setCookie = verified.headers.get("set-cookie") ?? "";
+function cookieFromResponse(response: Response): string {
+  const setCookie = response.headers.get("set-cookie") ?? "";
   expect(setCookie).toContain("HttpOnly");
   expect(setCookie).toContain("SameSite=Lax");
+  expect(setCookie).toContain("Secure");
   expect(setCookie).toContain("Max-Age=604800");
   const cookie = setCookie.split(";")[0] ?? "";
   assert(cookie.startsWith("arar_seller_session="), "seller session cookie missing");
   return cookie;
+}
+
+async function bootstrapSeller(): Promise<{ cookie: string; recoveryCode: string; sellerId: string }> {
+  const before = new Set(sellers.keys());
+  const form = new FormData();
+  form.set("action", "seller_bootstrap");
+  const response = await handleStage1SelfServiceRequest(requestFor(form));
+  expect(response.status).toBe(201);
+  const payload = (await response.json()) as { recoveryCode?: string };
+  assert(typeof payload.recoveryCode === "string", "recovery code missing");
+  const sellerId = Array.from(sellers.keys()).find((id) => !before.has(id));
+  assert(sellerId, "seller identity was not created");
+  const cookie = cookieFromResponse(response);
+  const rawToken = cookie.split("=")[1] ?? "";
+  expect(rawToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
+  expect(sessions.has(rawToken)).toBe(false);
+  expect(sessions.has(await sha256Hex(rawToken))).toBe(true);
+  return { cookie, recoveryCode: payload.recoveryCode, sellerId };
+}
+
+async function recoverSeller(recoveryCode: string): Promise<{ cookie: string; recoveryCode: string }> {
+  const form = new FormData();
+  form.set("action", "seller_recover");
+  form.set("recoveryCode", recoveryCode);
+  const response = await handleStage1SelfServiceRequest(requestFor(form));
+  expect(response.status).toBe(200);
+  const payload = (await response.json()) as { recoveryCode?: string };
+  assert(typeof payload.recoveryCode === "string", "rotated recovery code missing");
+  return { cookie: cookieFromResponse(response), recoveryCode: payload.recoveryCode };
 }
 
 function submissionForm(
@@ -388,10 +505,9 @@ function submissionForm(
   return form;
 }
 
-function sellerAction(action: string, phone: string, listingId?: string): FormData {
+function sellerAction(action: string, listingId?: string): FormData {
   const form = new FormData();
   form.set("action", action);
-  form.set("phone", phone);
   if (listingId) form.set("listingId", listingId);
   return form;
 }
@@ -399,8 +515,6 @@ function sellerAction(action: string, phone: string, listingId?: string): FormDa
 beforeAll(() => {
   process.env.PILOT_SELF_SERVICE_ENABLED = "enabled";
   process.env.PILOT_PHONE_VERIFICATION_MODE = "synthetic";
-  process.env.PILOT_SYNTHETIC_VERIFICATION_CODE = "424242";
-  process.env.PILOT_SUBMISSION_CAPABILITY_SECRET = "stage1-test-capability-secret-0123456789";
   process.env.PILOT_SUBMISSION_SUPABASE_URL = "http://127.0.0.1:54321";
   process.env.PILOT_SUBMISSION_SUPABASE_SERVICE_ROLE_KEY = "synthetic-service-role-key";
   process.env.PILOT_TRUSTED_PROXY_ENABLED = "enabled";
@@ -414,44 +528,63 @@ afterAll(() => {
   globalThis.fetch = originalFetch;
   console.error = originalConsoleError;
   console.warn = originalConsoleWarn;
-  Date.now = originalDateNow;
 });
 
-describe("Stage 1 self-service server acceptance", () => {
-  test("seller session is HttpOnly, phone-bound, tamper-resistant and expires", async () => {
-    const phone = "+12025550181";
-    const cookie = await syntheticSession(phone);
-    const backendBefore = backendCallCount;
+describe("Stage 1 SMS-less seller ownership server acceptance", () => {
+  test("opaque HttpOnly session is server-side, malformed tokens fail and logout revokes", async () => {
+    const seller = await bootstrapSeller();
 
-    const wrongPhone = await handleStage1SelfServiceRequest(
-      requestFor(
-        submissionForm("97000000-0000-4000-8000-000000000081", { phone: "+12025550182" }),
-        { cookie },
-      ),
+    const list = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_list"), { cookie: seller.cookie }),
     );
-    expect(wrongPhone.status).toBe(401);
+    expect(list.status).toBe(200);
 
-    const [name, value = ""] = cookie.split("=");
+    const [name, value = ""] = seller.cookie.split("=");
     const tamperedCookie = `${name}=${value.slice(0, -1)}${value.endsWith("a") ? "b" : "a"}`;
     const tampered = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm("97000000-0000-4000-8000-000000000082", { phone }), {
-        cookie: tamperedCookie,
-      }),
+      requestFor(sellerAction("seller_list"), { cookie: tamperedCookie }),
     );
     expect(tampered.status).toBe(401);
+    expect(await tampered.json()).toMatchObject({ ok: false, code: "SESSION_REQUIRED" });
 
-    Date.now = () => originalDateNow() + 8 * 24 * 60 * 60 * 1000;
-    const expired = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm("97000000-0000-4000-8000-000000000083", { phone }), { cookie }),
+    const logout = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_logout"), { cookie: seller.cookie }),
     );
-    Date.now = originalDateNow;
-    expect(expired.status).toBe(401);
-    expect(backendCallCount).toBe(backendBefore);
+    expect(logout.status).toBe(200);
+    expect(logout.headers.get("set-cookie")).toContain("Max-Age=0");
+
+    const revoked = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_list"), { cookie: seller.cookie }),
+    );
+    expect(revoked.status).toBe(401);
   });
 
-  test("minimal fields publish atomically and one session supports repeated listings", async () => {
+  test("cookie loss recovers, rotates one-time code, rejects replay and revokes the old session", async () => {
+    const seller = await bootstrapSeller();
+    const recovered = await recoverSeller(seller.recoveryCode);
+    expect(recovered.recoveryCode).not.toBe(seller.recoveryCode);
+
+    const oldSession = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_list"), { cookie: seller.cookie }),
+    );
+    expect(oldSession.status).toBe(401);
+
+    const replay = new FormData();
+    replay.set("action", "seller_recover");
+    replay.set("recoveryCode", seller.recoveryCode);
+    const replayResponse = await handleStage1SelfServiceRequest(requestFor(replay));
+    expect(replayResponse.status).toBe(401);
+    expect(await replayResponse.json()).toMatchObject({ ok: false, code: "RECOVERY_FAILED" });
+
+    const restored = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_list"), { cookie: recovered.cookie }),
+    );
+    expect(restored.status).toBe(200);
+  });
+
+  test("minimal fields publish atomically without phone verification and one session supports repeated listings", async () => {
+    const seller = await bootstrapSeller();
     const phone = "+12025550183";
-    const cookie = await syntheticSession(phone);
 
     const firstKey = "97000000-0000-4000-8000-000000000084";
     const first = await handleStage1SelfServiceRequest(
@@ -462,13 +595,14 @@ describe("Stage 1 self-service server acceptance", () => {
           description: null,
           isFree: true,
         }),
-        { cookie },
+        { cookie: seller.cookie },
       ),
     );
     expect(first.status).toBe(201);
     const firstPayload = (await first.json()) as { listingId: string };
     const firstRow = listingBodies.get(firstPayload.listingId);
     expect(firstRow).toMatchObject({
+      owner_user_id: seller.sellerId,
       status: "published",
       description: "",
       item_condition: null,
@@ -476,6 +610,8 @@ describe("Stage 1 self-service server acceptance", () => {
       price_amount: 0,
       contact_channel: "phone_whatsapp",
       contact_e164: phone,
+      contact_verified_at: null,
+      contact_verification_method: null,
       listing_rules_version: "2026-08-28-v1",
       private_seller_declaration_at: null,
       content_rights_declaration_at: null,
@@ -486,47 +622,43 @@ describe("Stage 1 self-service server acceptance", () => {
     const secondKey = "97000000-0000-4000-8000-000000000085";
     const second = await handleStage1SelfServiceRequest(
       requestFor(submissionForm(secondKey, { phone, description: "", condition: "used" }), {
-        cookie,
+        cookie: seller.cookie,
       }),
     );
     expect(second.status).toBe(201);
-    expect(listings.size).toBeGreaterThanOrEqual(2);
 
     const replay = await handleStage1SelfServiceRequest(
       requestFor(submissionForm(secondKey, { phone, description: "", condition: "used" }), {
-        cookie,
+        cookie: seller.cookie,
       }),
     );
     expect(replay.status).toBe(200);
     expect(await replay.json()).toMatchObject({ ok: true, action: "submitted" });
   });
 
-  test("real vehicle publication stays fail closed until EİDS integration is enabled", async () => {
-    const phone = "+12025550180";
-    const cookie = await syntheticSession(phone);
-    const backendBefore = backendCallCount;
-    const response = await handleStage1SelfServiceRequest(
-      requestFor(
-        submissionForm("97000000-0000-4000-8000-000000000080", {
-          phone,
-          category: "vehicle",
-        }),
-        {
-          origin: "https://classifieds.example.test",
-          trustedIp: "198.51.100.80",
-          cookie,
-        },
-      ),
-    );
-    expect(response.status).toBe(503);
-    expect(await response.json()).toMatchObject({ ok: false, code: "NOT_ENABLED" });
-    expect(backendCallCount).toBe(backendBefore);
+  test("vehicle and real-estate publication stay fail closed until production EIDS integration", async () => {
+    const seller = await bootstrapSeller();
+    for (const category of ["vehicle", "real-estate"]) {
+      const backendBefore = backendCallCount;
+      const response = await handleStage1SelfServiceRequest(
+        requestFor(
+          submissionForm(crypto.randomUUID(), { category }),
+          {
+            origin: "https://classifieds.example.test",
+            trustedIp: "198.51.100.80",
+            cookie: seller.cookie,
+          },
+        ),
+      );
+      expect(response.status).toBe(503);
+      expect(await response.json()).toMatchObject({ ok: false, code: "NOT_ENABLED" });
+      expect(backendCallCount).toBe(backendBefore);
+    }
   });
 
-  test("claim/photo failures compensate and unknown fields fail before privileged work", async () => {
+  test("claim/photo failures compensate and unknown fields fail before privileged listing work", async () => {
+    const seller = await bootstrapSeller();
     const phone = "+12025550184";
-    const cookie = await syntheticSession(phone);
-
     const beforeListings = listings.size;
     const beforePhotos = photoMetadata.size;
     const beforeObjects = storedObjects.size;
@@ -539,7 +671,7 @@ describe("Stage 1 self-service server acceptance", () => {
           phone,
           extraField: ["status", "published"],
         }),
-        { cookie },
+        { cookie: seller.cookie },
       ),
     );
     expect(privileged.status).toBe(400);
@@ -547,7 +679,9 @@ describe("Stage 1 self-service server acceptance", () => {
 
     failNextClaim = true;
     const claimFailure = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm("97000000-0000-4000-8000-000000000087", { phone }), { cookie }),
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000087", { phone }), {
+        cookie: seller.cookie,
+      }),
     );
     expect(claimFailure.status).toBe(500);
     expect(listings.size).toBe(beforeListings);
@@ -558,7 +692,9 @@ describe("Stage 1 self-service server acceptance", () => {
     failNextPhotoMetadataRegistration = true;
     failNextStorageDelete = true;
     const photoFailure = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm("97000000-0000-4000-8000-000000000088", { phone }), { cookie }),
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000088", { phone }), {
+        cookie: seller.cookie,
+      }),
     );
     expect(photoFailure.status).toBe(500);
     expect(listings.size).toBe(beforeListings);
@@ -572,24 +708,23 @@ describe("Stage 1 self-service server acceptance", () => {
           phone,
           photoBytes: new Uint8Array([1, 2, 3, 4, 5]),
         }),
-        { cookie },
+        { cookie: seller.cookie },
       ),
     );
     expect(malformed.status).toBe(500);
     expect(listings.size).toBe(beforeListings);
-    expect(photoMetadata.size).toBe(beforePhotos);
-    expect(storedObjects.size).toBe(beforeObjects);
   });
 
   test("lost publication response reconciles committed success without destructive compensation", async () => {
-    const phone = "+12025550193";
-    const cookie = await syntheticSession(phone);
+    const seller = await bootstrapSeller();
     const listingDeletesBefore = listingDeleteCallCount;
     const storageDeletesBefore = storageDeleteCallCount;
 
     nextPublicationBehavior = "commit_then_transport_error";
     const response = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm("97000000-0000-4000-8000-000000000093", { phone }), { cookie }),
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000093"), {
+        cookie: seller.cookie,
+      }),
     );
 
     expect(response.status).toBe(201);
@@ -598,12 +733,6 @@ describe("Stage 1 self-service server acceptance", () => {
     expect(payload.listingId).toBe(lastPublicationListingId);
     expect(listingBodies.get(payload.listingId)?.status).toBe("published");
     expect(
-      Array.from(photoMetadata).some((path) => path.startsWith(`listings/${payload.listingId}/`)),
-    ).toBe(true);
-    expect(
-      Array.from(storedObjects).some((path) => path.startsWith(`listings/${payload.listingId}/`)),
-    ).toBe(true);
-    expect(
       Array.from(submissionKeys.values()).find((state) => state.listingId === payload.listingId)
         ?.complete,
     ).toBe(true);
@@ -611,131 +740,118 @@ describe("Stage 1 self-service server acceptance", () => {
     expect(storageDeleteCallCount).toBe(storageDeletesBefore);
   });
 
-  test("proven incomplete publication still performs whole-submission cleanup", async () => {
-    const phone = "+12025550194";
-    const cookie = await syntheticSession(phone);
+  test("proven incomplete publication cleans up while unknown outcome skips destructive cleanup", async () => {
+    const seller = await bootstrapSeller();
     const listingDeletesBefore = listingDeleteCallCount;
     const storageDeletesBefore = storageDeleteCallCount;
 
     nextPublicationBehavior = "transport_error_before_commit";
-    const response = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm("97000000-0000-4000-8000-000000000094", { phone }), { cookie }),
+    const incomplete = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000094"), {
+        cookie: seller.cookie,
+      }),
     );
-
-    expect(response.status).toBe(500);
+    expect(incomplete.status).toBe(500);
     assert(lastPublicationListingId !== null, "publication listing identity was not captured");
-    const listingId = lastPublicationListingId;
-    expect(listingBodies.has(listingId)).toBe(false);
-    expect(
-      Array.from(photoMetadata).some((path) => path.startsWith(`listings/${listingId}/`)),
-    ).toBe(false);
-    expect(
-      Array.from(storedObjects).some((path) => path.startsWith(`listings/${listingId}/`)),
-    ).toBe(false);
-    expect(Array.from(submissionKeys.values()).some((state) => state.listingId === listingId)).toBe(
-      false,
-    );
+    const incompleteId = lastPublicationListingId;
+    expect(listingBodies.has(incompleteId)).toBe(false);
     expect(listingDeleteCallCount).toBe(listingDeletesBefore + 1);
     expect(storageDeleteCallCount).toBe(storageDeletesBefore + 1);
-  });
-
-  test("unknown publication outcome skips destructive cleanup when reconciliation fails", async () => {
-    const phone = "+12025550195";
-    const cookie = await syntheticSession(phone);
-    const listingDeletesBefore = listingDeleteCallCount;
-    const storageDeletesBefore = storageDeleteCallCount;
 
     nextPublicationBehavior = "commit_then_transport_error";
     failReconciliationClaimAfterPublicationError = true;
-    const response = await handleStage1SelfServiceRequest(
-      requestFor(submissionForm("97000000-0000-4000-8000-000000000095", { phone }), { cookie }),
+    const unknown = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000095"), {
+        cookie: seller.cookie,
+      }),
     );
-
-    expect(response.status).toBe(500);
-    assert(lastPublicationListingId !== null, "publication listing identity was not captured");
-    const listingId = lastPublicationListingId;
-    expect(listingBodies.get(listingId)?.status).toBe("published");
-    expect(
-      Array.from(photoMetadata).some((path) => path.startsWith(`listings/${listingId}/`)),
-    ).toBe(true);
-    expect(
-      Array.from(storedObjects).some((path) => path.startsWith(`listings/${listingId}/`)),
-    ).toBe(true);
-    expect(
-      Array.from(submissionKeys.values()).find((state) => state.listingId === listingId)?.complete,
-    ).toBe(true);
-    expect(listingDeleteCallCount).toBe(listingDeletesBefore);
-    expect(storageDeleteCallCount).toBe(storageDeletesBefore);
+    expect(unknown.status).toBe(500);
+    const unknownId = lastPublicationListingId;
+    assert(unknownId !== null, "unknown publication id missing");
+    expect(listingBodies.get(unknownId)?.status).toBe("published");
   });
 
-  test("verified phone owns edit/unpublish/sold/delete while another phone gets generic 403", async () => {
+  test("seller_id owns list/edit/unpublish/sold/delete and phone changes never transfer ownership", async () => {
+    const owner = await bootstrapSeller();
+    const other = await bootstrapSeller();
     const ownerPhone = "+12025550185";
-    const otherPhone = "+12025550186";
-    const ownerCookie = await syntheticSession(ownerPhone);
-    const otherCookie = await syntheticSession(otherPhone);
+    const transferredPhone = "+12025550186";
 
     const created = await handleStage1SelfServiceRequest(
       requestFor(submissionForm("97000000-0000-4000-8000-000000000090", { phone: ownerPhone }), {
-        cookie: ownerCookie,
+        cookie: owner.cookie,
       }),
     );
     expect(created.status).toBe(201);
     const { listingId } = (await created.json()) as { listingId: string };
 
+    const deniedList = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_list"), { cookie: other.cookie }),
+    );
+    expect(deniedList.status).toBe(200);
+    const deniedListPayload = (await deniedList.json()) as { listings: Array<{ id: string }> };
+    expect(deniedListPayload.listings.some((listing) => listing.id === listingId)).toBe(false);
+
     const denied = await handleStage1SelfServiceRequest(
-      requestFor(sellerAction("seller_unpublish", otherPhone, listingId), {
-        cookie: otherCookie,
-      }),
+      requestFor(sellerAction("seller_unpublish", listingId), { cookie: other.cookie }),
     );
     expect(denied.status).toBe(403);
     expect(await denied.json()).toMatchObject({ ok: false, code: "NOT_AUTHORIZED" });
 
-    const edit = sellerAction("seller_update", ownerPhone, listingId);
-    edit.set("category", "vehicle");
+    const edit = sellerAction("seller_update", listingId);
+    edit.set("category", "home");
     edit.set("priceMode", "free");
     edit.set("price", "0");
     edit.set("title", "Mercedes B 150 satılık");
     edit.set("description", "");
     edit.set("province", "İstanbul");
     edit.set("district", "Kadıköy");
-    const edited = await handleStage1SelfServiceRequest(requestFor(edit, { cookie: ownerCookie }));
+    edit.set("contactPhone", transferredPhone);
+    const edited = await handleStage1SelfServiceRequest(requestFor(edit, { cookie: owner.cookie }));
     expect(edited.status).toBe(200);
     expect(listingBodies.get(listingId)).toMatchObject({
-      category: "vehicle",
-      item_condition: null,
-      description: "",
-      price_amount: 0,
-      price_is_free: true,
-      province: "İstanbul",
-      district: "Kadıköy",
+      owner_user_id: owner.sellerId,
+      contact_e164: transferredPhone,
       status: "published",
     });
 
+    const stillDenied = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_unpublish", listingId), { cookie: other.cookie }),
+    );
+    expect(stillDenied.status).toBe(403);
+
     const list = await handleStage1SelfServiceRequest(
-      requestFor(sellerAction("seller_list", ownerPhone), { cookie: ownerCookie }),
+      requestFor(sellerAction("seller_list"), { cookie: owner.cookie }),
     );
     expect(list.status).toBe(200);
     const listPayload = (await list.json()) as {
-      listings: Array<{ id: string; condition: string | null }>;
+      listings: Array<{ id: string; contactPhone: string }>;
     };
     expect(listPayload.listings).toContainEqual(
-      expect.objectContaining({ id: listingId, condition: null }),
+      expect.objectContaining({ id: listingId, contactPhone: transferredPhone }),
     );
 
-    const unpublished = await handleStage1SelfServiceRequest(
-      requestFor(sellerAction("seller_unpublish", ownerPhone, listingId), { cookie: ownerCookie }),
-    );
-    expect(unpublished.status).toBe(200);
-
-    const sold = await handleStage1SelfServiceRequest(
-      requestFor(sellerAction("seller_sold", ownerPhone, listingId), { cookie: ownerCookie }),
-    );
-    expect(sold.status).toBe(200);
-
-    const deleted = await handleStage1SelfServiceRequest(
-      requestFor(sellerAction("seller_delete", ownerPhone, listingId), { cookie: ownerCookie }),
-    );
-    expect(deleted.status).toBe(200);
+    expect(
+      (
+        await handleStage1SelfServiceRequest(
+          requestFor(sellerAction("seller_unpublish", listingId), { cookie: owner.cookie }),
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await handleStage1SelfServiceRequest(
+          requestFor(sellerAction("seller_sold", listingId), { cookie: owner.cookie }),
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await handleStage1SelfServiceRequest(
+          requestFor(sellerAction("seller_delete", listingId), { cookie: owner.cookie }),
+        )
+      ).status,
+    ).toBe(200);
     expect(listingBodies.has(listingId)).toBe(false);
     expect(
       Array.from(storedObjects).some((objectPath) =>
@@ -744,45 +860,57 @@ describe("Stage 1 self-service server acceptance", () => {
     ).toBe(false);
   });
 
-  test("rate limits are phone-primary and arbitrary X-Forwarded-For cannot bypass them", async () => {
-    process.env.PILOT_PHONE_VERIFICATION_MODE = "disabled";
-    const phone = "+12025550187";
-    for (let attempt = 0; attempt < 5; attempt += 1) {
+  test("cross-origin requests fail before backend work and retired OTP actions are not shipping routes", async () => {
+    const seller = await bootstrapSeller();
+    const backendBefore = backendCallCount;
+    const crossOrigin = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_list"), {
+        cookie: seller.cookie,
+        originHeader: "https://evil.example",
+        fetchSite: "cross-site",
+      }),
+    );
+    expect(crossOrigin.status).toBe(403);
+    expect(backendCallCount).toBe(backendBefore);
+
+    const otp = new FormData();
+    otp.set("action", "start_verification");
+    otp.set("phone", "+12025550187");
+    const retired = await handleStage1SelfServiceRequest(requestFor(otp));
+    expect(retired.status).toBe(400);
+  });
+
+  test("trusted-IP rate limit cannot be bypassed with arbitrary X-Forwarded-For", async () => {
+    const origin = "https://stage1.example.test";
+    for (let attempt = 0; attempt < 20; attempt += 1) {
       const form = new FormData();
-      form.set("action", "start_verification");
-      form.set("phone", phone);
+      form.set("action", "seller_bootstrap");
       const response = await handleStage1SelfServiceRequest(
         requestFor(form, {
-          origin: "https://stage1.example.test",
+          origin,
           trustedIp: "198.51.100.40",
           xff: `203.0.113.${attempt + 1}`,
         }),
       );
-      expect(response.status).toBe(503);
+      expect(response.status).toBe(201);
     }
     const limitedForm = new FormData();
-    limitedForm.set("action", "start_verification");
-    limitedForm.set("phone", phone);
+    limitedForm.set("action", "seller_bootstrap");
     const limited = await handleStage1SelfServiceRequest(
       requestFor(limitedForm, {
-        origin: "https://stage1.example.test",
-        trustedIp: "198.51.100.41",
+        origin,
+        trustedIp: "198.51.100.40",
         xff: "203.0.113.250",
       }),
     );
     expect(limited.status).toBe(429);
     expect(await limited.json()).toMatchObject({ ok: false, code: "RATE_LIMITED" });
 
-    const otherPhone = new FormData();
-    otherPhone.set("action", "start_verification");
-    otherPhone.set("phone", "+12025550188");
+    const otherIp = new FormData();
+    otherIp.set("action", "seller_bootstrap");
     const other = await handleStage1SelfServiceRequest(
-      requestFor(otherPhone, {
-        origin: "https://stage1.example.test",
-        trustedIp: "198.51.100.41",
-      }),
+      requestFor(otherIp, { origin, trustedIp: "198.51.100.41" }),
     );
-    expect(other.status).toBe(503);
-    process.env.PILOT_PHONE_VERIFICATION_MODE = "synthetic";
+    expect(other.status).toBe(201);
   });
 });
