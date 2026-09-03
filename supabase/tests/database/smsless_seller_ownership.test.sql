@@ -36,6 +36,22 @@ select ok(
   ),
   'service role may execute atomic recovery rotation'
 );
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.reconcile_seller_recovery(text,text,text,timestamptz)',
+    'EXECUTE'
+  ),
+  'anon cannot reconcile seller recovery'
+);
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.reconcile_seller_recovery(text,text,text,timestamptz)',
+    'EXECUTE'
+  ),
+  'service role may reconcile an ambiguous committed recovery'
+);
 
 select is(
   public.create_seller_identity(
@@ -156,23 +172,64 @@ select is(
 );
 
 select results_eq(
-  $$
+  $
     select seller_id
     from public.resolve_seller_session(repeat('6', 64))
-  $$,
-  $$
+  $,
+  $
     values ('96300000-0000-4000-8000-000000000001'::uuid)
-  $$,
+  $,
   'replacement recovery session is active'
 );
 
-select is(
-  public.revoke_seller_session(repeat('6', 64)),
-  true,
-  'current device session can be revoked server-side'
+select results_eq(
+  $
+    select seller_id
+    from public.reconcile_seller_recovery(
+      'CCCCCCCCCCCCCCCC',
+      repeat('5', 64),
+      repeat('9', 64),
+      now() + interval '7 days'
+    )
+  $,
+  $
+    values ('96300000-0000-4000-8000-000000000001'::uuid)
+  $,
+  'committed candidate recovery credential can reconcile an ambiguous response'
 );
 select is(
   (select count(*)::integer from public.resolve_seller_session(repeat('6', 64))),
+  0,
+  'reconciliation revokes the possibly undelivered replacement session'
+);
+select results_eq(
+  $
+    select seller_id
+    from public.resolve_seller_session(repeat('9', 64))
+  $,
+  $
+    values ('96300000-0000-4000-8000-000000000001'::uuid)
+  $,
+  'reconciliation establishes the fresh browser session'
+);
+select is(
+  (
+    select count(*)::integer
+    from private.seller_sessions
+    where seller_id = '96300000-0000-4000-8000-000000000001'
+      and revoked_at is null
+  ),
+  1,
+  'recovery and reconciliation leave exactly one active seller session'
+);
+
+select is(
+  public.revoke_seller_session(repeat('9', 64)),
+  true,
+  'current reconciled device session can be revoked server-side'
+);
+select is(
+  (select count(*)::integer from public.resolve_seller_session(repeat('9', 64))),
   0,
   'revoked session no longer authorizes'
 );

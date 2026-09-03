@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { deflateSync } from "node:zlib";
 import { handleStage1SelfServiceRequest } from "./stage1-self-service-server";
-import { sha256Hex } from "./stage1-seller-credentials";
+import { createSellerRecoveryCode, sha256Hex } from "./stage1-seller-credentials";
 
 const originalFetch = globalThis.fetch;
 const originalConsoleError = console.error;
@@ -24,6 +24,9 @@ const sessions = new Map<
 let failNextClaim = false;
 let failNextPhotoMetadataRegistration = false;
 let failNextStorageDelete = false;
+let failNextSessionRevoke = false;
+type RecoveryBehavior = "normal" | "commit_then_transport_error" | "transport_error_before_commit";
+let nextRecoveryBehavior: RecoveryBehavior = "normal";
 type PublicationBehavior =
   | "normal"
   | "commit_then_transport_error"
@@ -147,6 +150,10 @@ function installBackendMock(): void {
     }
 
     if (url.pathname === "/rest/v1/rpc/revoke_seller_session" && method === "POST") {
+      if (failNextSessionRevoke) {
+        failNextSessionRevoke = false;
+        return new Response("synthetic revoke failure", { status: 503 });
+      }
       const body = JSON.parse(String(init?.body)) as { p_session_digest: string };
       const session = sessions.get(body.p_session_digest);
       if (!session || session.revokedAt) return json(false);
@@ -163,6 +170,10 @@ function installBackendMock(): void {
         p_new_session_digest: string;
         p_new_session_expires_at: string;
       };
+      if (nextRecoveryBehavior === "transport_error_before_commit") {
+        nextRecoveryBehavior = "normal";
+        throw new TypeError("synthetic recovery transport failure before commit");
+      }
       const match = Array.from(sellers.entries()).find(
         ([, seller]) =>
           seller.recoverySelector === body.p_recovery_selector &&
@@ -173,6 +184,37 @@ function installBackendMock(): void {
       seller.recoverySelector = body.p_new_recovery_selector;
       seller.recoveryDigest = body.p_new_recovery_digest;
       seller.recoveryRotatedAt = new Date().toISOString();
+      for (const session of sessions.values()) {
+        if (session.sellerId === sellerId && !session.revokedAt) {
+          session.revokedAt = new Date().toISOString();
+        }
+      }
+      sessions.set(body.p_new_session_digest, {
+        sellerId,
+        expiresAt: body.p_new_session_expires_at,
+        revokedAt: null,
+      });
+      if (nextRecoveryBehavior === "commit_then_transport_error") {
+        nextRecoveryBehavior = "normal";
+        throw new TypeError("synthetic recovery transport failure after commit");
+      }
+      return json([{ seller_id: sellerId, session_expires_at: body.p_new_session_expires_at }]);
+    }
+
+    if (url.pathname === "/rest/v1/rpc/reconcile_seller_recovery" && method === "POST") {
+      const body = JSON.parse(String(init?.body)) as {
+        p_recovery_selector: string;
+        p_recovery_digest: string;
+        p_new_session_digest: string;
+        p_new_session_expires_at: string;
+      };
+      const match = Array.from(sellers.entries()).find(
+        ([, seller]) =>
+          seller.recoverySelector === body.p_recovery_selector &&
+          seller.recoveryDigest === body.p_recovery_digest,
+      );
+      if (!match) return json([]);
+      const [sellerId] = match;
       for (const session of sessions.values()) {
         if (session.sellerId === sellerId && !session.revokedAt) {
           session.revokedAt = new Date().toISOString();
@@ -451,17 +493,31 @@ async function bootstrapSeller(): Promise<{
   return { cookie, recoveryCode: payload.recoveryCode, sellerId };
 }
 
-async function recoverSeller(
-  recoveryCode: string,
-): Promise<{ cookie: string; recoveryCode: string }> {
+function recoveryForm(recoveryCode: string, replacementRecoveryCode: string): FormData {
   const form = new FormData();
   form.set("action", "seller_recover");
   form.set("recoveryCode", recoveryCode);
-  const response = await handleStage1SelfServiceRequest(requestFor(form));
+  form.set("replacementRecoveryCode", replacementRecoveryCode);
+  return form;
+}
+
+function reconciliationForm(recoveryCode: string): FormData {
+  const form = new FormData();
+  form.set("action", "seller_reconcile_recovery");
+  form.set("recoveryCode", recoveryCode);
+  return form;
+}
+
+async function recoverSeller(
+  recoveryCode: string,
+  replacementRecoveryCode = createSellerRecoveryCode(),
+): Promise<{ cookie: string; recoveryCode: string }> {
+  const response = await handleStage1SelfServiceRequest(
+    requestFor(recoveryForm(recoveryCode, replacementRecoveryCode)),
+  );
   expect(response.status).toBe(200);
-  const payload = (await response.json()) as { recoveryCode?: string };
-  assert(typeof payload.recoveryCode === "string", "rotated recovery code missing");
-  return { cookie: cookieFromResponse(response), recoveryCode: payload.recoveryCode };
+  expect(await response.json()).toMatchObject({ ok: true, action: "seller_recovered" });
+  return { cookie: cookieFromResponse(response), recoveryCode: replacementRecoveryCode };
 }
 
 function submissionForm(
@@ -558,6 +614,20 @@ describe("Stage 1 SMS-less seller ownership server acceptance", () => {
     expect(revoked.status).toBe(401);
   });
 
+  test("logout clears the browser cookie even when server-side revoke cannot be confirmed", async () => {
+    const seller = await bootstrapSeller();
+    failNextSessionRevoke = true;
+    const logout = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_logout"), { cookie: seller.cookie }),
+    );
+    expect(logout.status).toBe(503);
+    expect(logout.headers.get("set-cookie")).toContain("Max-Age=0");
+    expect(await logout.json()).toMatchObject({ ok: false, code: "LOGOUT_PARTIAL" });
+
+    const rawToken = seller.cookie.split("=")[1] ?? "";
+    expect(sessions.get(await sha256Hex(rawToken))?.revokedAt).toBeNull();
+  });
+
   test("cookie loss recovers, rotates one-time code, rejects replay and revokes the old session", async () => {
     const seller = await bootstrapSeller();
     const recovered = await recoverSeller(seller.recoveryCode);
@@ -568,10 +638,9 @@ describe("Stage 1 SMS-less seller ownership server acceptance", () => {
     );
     expect(oldSession.status).toBe(401);
 
-    const replay = new FormData();
-    replay.set("action", "seller_recover");
-    replay.set("recoveryCode", seller.recoveryCode);
-    const replayResponse = await handleStage1SelfServiceRequest(requestFor(replay));
+    const replayResponse = await handleStage1SelfServiceRequest(
+      requestFor(recoveryForm(seller.recoveryCode, createSellerRecoveryCode())),
+    );
     expect(replayResponse.status).toBe(401);
     expect(await replayResponse.json()).toMatchObject({ ok: false, code: "RECOVERY_FAILED" });
 
@@ -579,6 +648,89 @@ describe("Stage 1 SMS-less seller ownership server acceptance", () => {
       requestFor(sellerAction("seller_list"), { cookie: recovered.cookie }),
     );
     expect(restored.status).toBe(200);
+  });
+
+  test("committed recovery survives response loss through the pre-generated candidate", async () => {
+    const seller = await bootstrapSeller();
+    const candidate = createSellerRecoveryCode();
+    nextRecoveryBehavior = "commit_then_transport_error";
+
+    const ambiguous = await handleStage1SelfServiceRequest(
+      requestFor(recoveryForm(seller.recoveryCode, candidate)),
+    );
+    expect(ambiguous.status).toBe(500);
+
+    const oldSession = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_list"), { cookie: seller.cookie }),
+    );
+    expect(oldSession.status).toBe(401);
+
+    const oldReplay = await handleStage1SelfServiceRequest(
+      requestFor(recoveryForm(seller.recoveryCode, createSellerRecoveryCode())),
+    );
+    expect(oldReplay.status).toBe(401);
+    expect(await oldReplay.json()).toMatchObject({ ok: false, code: "RECOVERY_FAILED" });
+
+    const reconciled = await handleStage1SelfServiceRequest(
+      requestFor(reconciliationForm(candidate)),
+    );
+    expect(reconciled.status).toBe(200);
+    expect(await reconciled.json()).toMatchObject({
+      ok: true,
+      action: "seller_recovery_reconciled",
+    });
+    const reconciledCookie = cookieFromResponse(reconciled);
+    const restored = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_list"), { cookie: reconciledCookie }),
+    );
+    expect(restored.status).toBe(200);
+    expect(
+      Array.from(sessions.values()).filter(
+        (session) => session.sellerId === seller.sellerId && session.revokedAt === null,
+      ),
+    ).toHaveLength(1);
+  });
+
+  test("uncommitted recovery leaves the old credential usable", async () => {
+    const seller = await bootstrapSeller();
+    const candidate = createSellerRecoveryCode();
+    nextRecoveryBehavior = "transport_error_before_commit";
+
+    const ambiguous = await handleStage1SelfServiceRequest(
+      requestFor(recoveryForm(seller.recoveryCode, candidate)),
+    );
+    expect(ambiguous.status).toBe(500);
+
+    const reconciliation = await handleStage1SelfServiceRequest(
+      requestFor(reconciliationForm(candidate)),
+    );
+    expect(reconciliation.status).toBe(409);
+    expect(await reconciliation.json()).toMatchObject({
+      ok: false,
+      code: "RECOVERY_NOT_COMMITTED",
+    });
+
+    const recovered = await recoverSeller(seller.recoveryCode);
+    const restored = await handleStage1SelfServiceRequest(
+      requestFor(sellerAction("seller_list"), { cookie: recovered.cookie }),
+    );
+    expect(restored.status).toBe(200);
+  });
+
+  test("concurrent or replayed recovery creates only one successful active replacement session", async () => {
+    const seller = await bootstrapSeller();
+    const candidate = createSellerRecoveryCode();
+    const [first, second] = await Promise.all([
+      handleStage1SelfServiceRequest(requestFor(recoveryForm(seller.recoveryCode, candidate))),
+      handleStage1SelfServiceRequest(requestFor(recoveryForm(seller.recoveryCode, candidate))),
+    ]);
+    expect([first.status, second.status].sort()).toEqual([200, 401]);
+    expect(
+      Array.from(sessions.values()).filter(
+        (session) => session.sellerId === seller.sellerId && session.revokedAt === null,
+      ),
+    ).toHaveLength(1);
+    expect(sellers.has(seller.sellerId)).toBe(true);
   });
 
   test("minimal fields publish atomically without phone verification and one session supports repeated listings", async () => {
@@ -637,6 +789,25 @@ describe("Stage 1 SMS-less seller ownership server acceptance", () => {
 
   test("vehicle and real-estate publication stay fail closed until production EIDS integration", async () => {
     const seller = await bootstrapSeller();
+
+    const priorMode = process.env.PILOT_SYNTHETIC_TEST_MODE;
+    process.env.PILOT_SYNTHETIC_TEST_MODE = "disabled";
+    try {
+      for (const category of ["vehicle", "real-estate"]) {
+        const backendBefore = backendCallCount;
+        const response = await handleStage1SelfServiceRequest(
+          requestFor(submissionForm(crypto.randomUUID(), { category }), {
+            cookie: seller.cookie,
+          }),
+        );
+        expect(response.status).toBe(503);
+        expect(await response.json()).toMatchObject({ ok: false, code: "NOT_ENABLED" });
+        expect(backendCallCount).toBe(backendBefore);
+      }
+    } finally {
+      process.env.PILOT_SYNTHETIC_TEST_MODE = priorMode;
+    }
+
     for (const category of ["vehicle", "real-estate"]) {
       const backendBefore = backendCallCount;
       const response = await handleStage1SelfServiceRequest(
