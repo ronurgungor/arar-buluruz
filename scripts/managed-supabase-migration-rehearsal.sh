@@ -130,7 +130,9 @@ application_fingerprint() {
     select md5(
       coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from public.listings x), '[]') || E'\\n' ||
       coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from private.listing_photos x), '[]') || E'\\n' ||
-      coalesce((select jsonb_agg(to_jsonb(x) order by x.listing_id)::text from private.listing_external_sales_links x), '[]')
+      coalesce((select jsonb_agg(to_jsonb(x) order by x.listing_id)::text from private.listing_external_sales_links x), '[]') || E'\\n' ||
+      coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from private.sellers x), '[]') || E'\\n' ||
+      coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from private.seller_sessions x), '[]')
     );
   "
 }
@@ -758,6 +760,12 @@ PY
 
 if [[ "$(managed_scalar "select count(*) from auth.users;")" != "0" ]]; then
   echo "Managed source gained Auth users during rehearsal." >&2
+  exit 1
+fi
+
+if [[ "$(managed_scalar "select count(*) from private.sellers;")" != "0" ]] \
+  || [[ "$(managed_scalar "select count(*) from private.seller_sessions;")" != "0" ]]; then
+  echo "Managed source gained seller identity/session rows during provider rehearsal." >&2
   exit 1
 fi
 if [[ "$(managed_scalar "select count(*) from public.listings where id <> '${listing_id}'::uuid;")" != "0" ]]; then
