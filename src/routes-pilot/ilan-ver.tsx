@@ -279,7 +279,9 @@ function Stage1ListingWizard() {
     const result = await submitWithSession();
     if (result !== "submitted") {
       if (result === "session_required") {
-        setError("Satıcı oturumu kullanılamıyor. Kurtarma kodunu İlanlarım sayfasında kullanabilirsin.");
+        setError(
+          "Satıcı oturumu kullanılamıyor. Kurtarma kodunu İlanlarım sayfasında kullanabilirsin.",
+        );
       }
       setRecoveryAcknowledged(false);
     }
