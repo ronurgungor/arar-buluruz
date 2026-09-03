@@ -175,10 +175,10 @@ select results_eq(
   $$
     select seller_id
     from public.resolve_seller_session(repeat('6', 64))
-  $,
+  $$,
   $$
     values ('96300000-0000-4000-8000-000000000001'::uuid)
-  $,
+  $$,
   'replacement recovery session is active'
 );
 
@@ -191,10 +191,10 @@ select results_eq(
       repeat('9', 64),
       now() + interval '7 days'
     )
-  $,
+  $$,
   $$
     values ('96300000-0000-4000-8000-000000000001'::uuid)
-  $,
+  $$,
   'committed candidate recovery credential can reconcile an ambiguous response'
 );
 select is(
@@ -206,10 +206,10 @@ select results_eq(
   $$
     select seller_id
     from public.resolve_seller_session(repeat('9', 64))
-  $,
+  $$,
   $$
     values ('96300000-0000-4000-8000-000000000001'::uuid)
-  $,
+  $$,
   'reconciliation establishes the fresh browser session'
 );
 select is(
