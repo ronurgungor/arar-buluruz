@@ -29,7 +29,7 @@ Current seller identity/authorization truth:
 - `listings.owner_user_id` is the listing ownership link;
 - the browser receives a server-backed opaque HttpOnly session cookie;
 - only token digests are persisted;
-- seller recovery uses a rotating high-entropy recovery code with digest-only persistence;
+- seller recovery uses a rotating high-entropy recovery code with digest-only persistence; replacement recovery credentials are browser-generated and shown before irreversible rotation;
 - public phone is contact data, not verified identity or authorization;
 - phone equality does not establish ownership and phone edits do not transfer ownership;
 - manual line/WhatsApp verification is risk-triggered only;
@@ -45,25 +45,33 @@ Current implementation/tests establish:
 - `owner_user_id` is immutable after listing creation;
 - phone/contact changes do not modify owner ownership;
 - historical rows are deliberately not backfilled from `contact_e164`;
-- recovery rotation/revocation/replacement occurs in one database function transaction;
-- consumed recovery credentials cannot be replayed;
+- recovery rotation/revocation/replacement occurs in one database function transaction using the browser's pre-generated candidate;
+- ambiguous recovery response loss is reconcilable with that candidate; if no commit occurred, the old credential remains usable;
+- consumed old recovery credentials cannot be replayed after committed rotation;
 - successful recovery revokes every pre-existing session for that seller;
-- logout revokes the current server-side session and then clears the cookie;
+- every logout attempt clears the browser cookie; an unconfirmed server revoke returns `LOGOUT_PARTIAL` instead of claiming logout completed;
 - database rows store recovery/session digests, not plaintext tokens;
 - browser acceptance rejects phone/localStorage fallback and proves stale copied sessions fail;
-- anonymous role cannot inspect private seller/session state or execute seller-session/recovery RPCs;
-- current self-service and exceptional founder publication both fail closed for real-production Vasıta and Emlak without EİDS; synthetic bypass requires a loopback backend, and self-service additionally requires a loopback request;
+- anonymous role cannot inspect private seller/session state or execute seller-session/recovery/reconciliation RPCs;
+- current self-service and exceptional founder publication both fail closed for real-production Vasıta and Emlak without EİDS; synthetic bypass additionally requires explicit default-off `PILOT_SYNTHETIC_TEST_MODE=enabled` plus the applicable loopback request/backend conditions;
 - established RLS, private Storage, trusted-photo, signed-photo, idempotency, atomic-publication and takedown controls remain in the canonical validation paths.
 
 ## Migration state
 
-The canonical migration chain now contains ten migrations. The new Phase 1 migration is:
+The canonical migration chain now contains eleven migrations. Phase 1 seller ownership uses:
 
-`supabase/migrations/20260903130000_prepare_smsless_seller_ownership.sql`
+- `supabase/migrations/20260903130000_prepare_smsless_seller_ownership.sql`;
+- `supabase/migrations/20260903193000_reconcile_seller_recovery.sql`.
 
-It adds private pseudonymous seller identities, revocable server-side seller sessions, rotating recovery digests and nullable `public.listings.owner_user_id`. It explicitly forbids deriving historical ownership from public-phone equality and keeps legacy phone-verification columns only as historical/risk-control evidence.
+The first adds private pseudonymous seller identities, revocable server-side seller sessions, rotating recovery digests and nullable `public.listings.owner_user_id`. It explicitly forbids deriving historical ownership from public-phone equality and keeps legacy phone-verification columns only as historical/risk-control evidence. The second adds service-role-only recovery reconciliation for ambiguous response loss without persisting plaintext recovery material.
 
 No production migration has been applied by this repository work. The managed provider rehearsal remains synthetic-only and must run through its approved PR workflow gate.
+
+## PR #84 security-remediation focused evidence
+
+Accepted Codex/Advisor remediation is implemented on the same branch. Focused Stage 1 run `33798081542` on exact implementation head `4705144b08f7d58b06d204e436cc42821418f521` completed **SUCCESS**, including lint/unit contracts, migration rebuild, pgTAP/RLS/trusted-photo probes and the canonical browser journey.
+
+The final documentation commit advances the head, so this focused run is implementation evidence rather than the final seven-workflow merge gate.
 
 ## Exact-head workflow state
 

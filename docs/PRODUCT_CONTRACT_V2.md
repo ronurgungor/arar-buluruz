@@ -29,10 +29,12 @@ The seller session is server-side and revocable:
 - the cookie is HttpOnly, SameSite=Lax and Secure on HTTPS;
 - current maximum lifetime is seven days;
 - only a SHA-256 token digest is persisted server-side;
-- logout revokes the server-side session before clearing the browser cookie;
+- every logout attempt clears the browser cookie; successful server revocation completes logout, while an unconfirmed revoke returns explicit partial-failure semantics and must not claim server logout completed;
 - expired, malformed, unknown or revoked sessions fail closed.
 
-Initial seller creation also returns a high-entropy rotating recovery code for the seller to save. Plaintext recovery material is transiently shown to the seller but is not persisted in the database, logs, localStorage/sessionStorage or URL. The database keeps only a non-secret selector and digest. Successful recovery atomically consumes/rotates the credential, revokes all prior seller sessions and creates a replacement session. Replay of the consumed code fails.
+Initial seller creation also returns a high-entropy rotating recovery code for the seller to save. Plaintext recovery material is transiently shown to the seller but is not persisted in the database, logs, localStorage/sessionStorage or URL. The database keeps only a non-secret selector and digest.
+
+For recovery rotation, the browser generates the replacement credential with Web Crypto and shows it to the seller **before** any irreversible server mutation. The server validates the candidate format, hashes it and passes only selector/digest state into the atomic recovery transaction. Successful recovery consumes the old credential, installs the pre-generated candidate, revokes prior seller sessions and creates a replacement session. If the transport outcome is ambiguous, the saved candidate can be reconciled safely: if the candidate committed it can establish a fresh session; if it did not commit, the old credential remains usable. Replay of the old credential after a committed rotation fails.
 
 Manual line-control or WhatsApp-control verification is **risk-triggered only**. Any retained `contact_verified_at` / verification-method fields are historical or risk-control evidence; they are not ordinary-goods authorization prerequisites.
 
@@ -102,7 +104,7 @@ Vasıta / Araç and Emlak remain available in product taxonomy and synthetic/loc
 
 **Real production publication for both Vasıta and Emlak must fail closed until the required EİDS authorization verification is actually integrated and separately approved.**
 
-No repository preparation or synthetic test is permission to call production EİDS.
+No repository preparation or synthetic test is permission to call production EİDS. The only synthetic Vasıta/Emlak bypass is default-off and requires **both** explicit `PILOT_SYNTHETIC_TEST_MODE=enabled` and the applicable loopback request/backend conditions. Loopback alone is never sufficient.
 
 ## Search and presentation
 

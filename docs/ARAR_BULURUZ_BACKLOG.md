@@ -12,13 +12,15 @@ Completed on the active branch:
 - [x] Add `listings.owner_user_id` without phone-equality backfill.
 - [x] Add server-side revocable opaque HttpOnly seller sessions with digest-only persistence.
 - [x] Add rotating recovery credentials; atomic consume/rotate/revoke; replay rejection.
-- [x] Make logout revoke the server-side session.
+- [x] Make replacement recovery response-loss reconcilable with a browser-generated pre-commit candidate; keep old credential usable when no commit occurred.
+- [x] Clear the browser session cookie on every logout attempt and return partial failure when server revoke cannot be confirmed.
 - [x] Prove seller A/B isolation through `seller_id → owner_user_id`.
 - [x] Prove phone change cannot transfer ownership.
 - [x] Remove seller-phone localStorage fallback and stale phone-bound session semantics.
 - [x] Retire ordinary-goods OTP actions from current shipping routes.
 - [x] Keep public phone as contact data and manual line/WhatsApp control as risk-triggered only.
 - [x] Fail closed for **both Vasıta and Emlak** real-production publication without EİDS.
+- [x] Require explicit default-off `PILOT_SYNTHETIC_TEST_MODE=enabled` plus applicable loopback request/backend conditions for any synthetic Vasıta/Emlak bypass.
 - [x] Preserve RLS/Storage/trusted-photo/idempotency/atomic-publication/takedown invariants.
 - [x] Complete repository-wide current/shipping stale-reference sweep, retaining clearly historical evidence.
 - [x] Synchronize Product Contract V2, Current State, Decision Log, Backlog and Active Chat Handoff to D-030.
@@ -26,11 +28,11 @@ Completed on the active branch:
 Active final gate:
 
 - [-] Obtain all canonical workflows GREEN on one exact final branch/PR SHA.
-- [ ] Open PR to `main` only after the final branch head is clean and required non-PR checks are green.
-- [ ] Do **not** merge the PR.
+- [x] PR #84 is open to `main`.
+- [x] Keep PR #84 **unmerged** during remediation and second security review.
 - [ ] Run/obtain Managed Supabase migration rehearsal through the approved PR trigger and keep it synthetic-only.
 - [ ] Require the full canonical workflow set GREEN on that same exact PR head.
-- [ ] Stop for independent Codex exact-head security review, then Advisor/founder merge decision.
+- [ ] Stop for the **second Codex exact-head security review**, then Advisor/founder merge decision.
 
 Deferred until evidence or a separate gate justifies them:
 

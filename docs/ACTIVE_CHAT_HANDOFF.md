@@ -26,7 +26,7 @@ No new branch. No rebase/amend/squash/force-push. Tarladan untouched.
 - Seller ownership identity is a pseudonymous UUID.
 - Listings bind ownership through `seller_id → listings.owner_user_id`.
 - Seller access uses a server-side revocable opaque HttpOnly cookie session.
-- Seller recovery uses a rotating high-entropy recovery code; only selector/digest are persisted.
+- Seller recovery uses a rotating high-entropy recovery code; only selector/digest are persisted. Replacement candidates are browser-generated and displayed before irreversible rotation.
 - Public phone is contact data, not verified identity or authorization.
 - Equal phones do not imply the same seller; phone change does not transfer ownership.
 - Manual line/WhatsApp verification is risk-triggered only.
@@ -38,12 +38,12 @@ No new branch. No rebase/amend/squash/force-push. Tarladan untouched.
 
 - Session and recovery plaintext are not stored in DB.
 - Browser E2E rejects seller-phone localStorage fallback.
-- Recovery atomically rotates, revokes old sessions and rejects replay.
-- Logout revokes the server-side session.
+- Recovery atomically installs the browser's pre-generated candidate, revokes old sessions and rejects consumed-old replay; ambiguous response loss can be reconciled with the saved candidate, while no-commit leaves the old credential usable.
+- Every logout attempt clears the browser cookie; an unconfirmed backend revoke returns partial failure rather than claiming server logout completed.
 - Owner UUID is immutable.
 - Historical rows are not ownership-backfilled from contact equality.
-- Anon cannot inspect private seller/session state or execute session/recovery RPCs.
-- Normal self-service and exceptional founder publication fail closed for production Vasıta/Emlak without EİDS; synthetic bypass requires a loopback backend, and self-service also requires a loopback request.
+- Anon cannot inspect private seller/session state or execute session/recovery/reconciliation RPCs.
+- Normal self-service and exceptional founder publication fail closed for production Vasıta/Emlak without EİDS; synthetic bypass additionally requires explicit default-off `PILOT_SYNTHETIC_TEST_MODE=enabled` plus applicable loopback request/backend conditions.
 - RLS, private Storage, trusted-photo/signed-photo, idempotency, atomic publication and takedown controls remain in their canonical tests/workflows.
 
 ## Stale-reference sweep
@@ -51,6 +51,14 @@ No new branch. No rebase/amend/squash/force-push. Tarladan untouched.
 Current/shipping paths have been corrected for ordinary-goods OTP, verified-phone identity/authorization, phone-equality ownership and phone-bound session assumptions.
 
 Historical dated evidence and superseded decision records intentionally retain their original terminology, but D-030 and the current canonical documents mark those semantics as historical.
+
+## PR #84 security-remediation checkpoint
+
+- Accepted Codex/Advisor findings only were remediated; the deferred transactional in-flight mutation/revocation redesign remains out of scope.
+- Focused Stage 1 run `33798081542` on implementation head `4705144b08f7d58b06d204e436cc42821418f521` is **SUCCESS** across lint/unit, DB/RLS/trusted-photo and canonical browser regression coverage.
+- Current/shipping UI sweep found no remaining verified-phone ownership/authorization claims after the `ilan-kurallari.tsx` correction. Historical and negative-regression terminology remains intentionally preserved.
+- Final seven canonical workflows must be GREEN on the exact head created by this documentation refresh.
+- PR #84 must remain unmerged pending the second Codex exact-head security review.
 
 ## Workflow checkpoint
 
