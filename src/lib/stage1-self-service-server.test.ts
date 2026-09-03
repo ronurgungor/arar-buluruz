@@ -650,6 +650,24 @@ describe("Stage 1 SMS-less seller ownership server acceptance", () => {
       expect(await response.json()).toMatchObject({ ok: false, code: "NOT_ENABLED" });
       expect(backendCallCount).toBe(backendBefore);
     }
+
+    const priorUrl = process.env.PILOT_SUBMISSION_SUPABASE_URL;
+    process.env.PILOT_SUBMISSION_SUPABASE_URL = "https://synthetic.example";
+    try {
+      for (const category of ["vehicle", "real-estate"]) {
+        const backendBefore = backendCallCount;
+        const response = await handleStage1SelfServiceRequest(
+          requestFor(submissionForm(crypto.randomUUID(), { category }), {
+            cookie: seller.cookie,
+          }),
+        );
+        expect(response.status).toBe(503);
+        expect(await response.json()).toMatchObject({ ok: false, code: "NOT_ENABLED" });
+        expect(backendCallCount).toBe(backendBefore);
+      }
+    } finally {
+      process.env.PILOT_SUBMISSION_SUPABASE_URL = priorUrl;
+    }
   });
 
   test("claim/photo failures compensate and unknown fields fail before privileged listing work", async () => {

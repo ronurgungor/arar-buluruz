@@ -836,9 +836,18 @@ async function createPendingRow(
   }
 }
 
-function assertEidsPublicationAllowed(category: string, request: Request): void {
+function assertEidsPublicationAllowed(
+  category: string,
+  request: Request,
+  config: BackendConfig,
+): void {
   if (category !== "vehicle" && category !== "real-estate") return;
-  if (isLoopbackHost(new URL(request.url).hostname)) return;
+  if (
+    isLoopbackHost(new URL(request.url).hostname) &&
+    isLoopbackHost(new URL(config.baseUrl).hostname)
+  ) {
+    return;
+  }
   throw new Stage1SubmissionError(
     "NOT_ENABLED",
     "Vasıta ve emlak ilanları için gerekli EİDS yetkilendirmesi production ortamında henüz etkin değil.",
@@ -885,8 +894,6 @@ async function submitListing(
       "İl ve ilçe seçimi Türkiye konum kataloğuyla eşleşmiyor.",
     );
   }
-  assertEidsPublicationAllowed(category, request);
-
   const { price, isFree } = parsePrice(form);
   const photos = readPhotos(form);
   const idempotencyKey = requiredString(form, "idempotencyKey", 36, 36).toLowerCase();
@@ -899,6 +906,7 @@ async function submitListing(
   }
 
   const config = readBackendConfig();
+  assertEidsPublicationAllowed(category, request, config);
   const sellerSession = await resolveSellerSession(config, request);
   const listingId = crypto.randomUUID();
   const rulesAcceptedAt = new Date().toISOString();
@@ -1298,7 +1306,7 @@ async function sellerUpdate(form: FormData, clientIp: string, request: Request):
   }
 
   const category = stage1CategorySchema.parse(requiredString(form, "category", 3, 32));
-  assertEidsPublicationAllowed(category, request);
+  assertEidsPublicationAllowed(category, request, config);
   const conditionRaw = optionalString(form, "condition", 32);
   const condition = conditionRaw ? stage1ConditionSchema.parse(conditionRaw) : null;
   const title = requiredString(form, "title", 3, 120);
