@@ -42,7 +42,7 @@ function ListingRules() {
         {
           title: "Telefon ve doğrudan iletişim",
           paragraphs: [
-            "İlan verirken doğrulanan telefon, ilan aktif olduğu sürece herkese açık görünür. Alıcı için hem Ara hem WhatsApp bağlantısı aynı açık numaradan oluşturulur.",
+            "İlanda yayımlanmasını istediğiniz telefon, ilan aktif olduğu sürece herkese açık görünür. Alıcı için Ara ve WhatsApp bağlantıları bu numaradan oluşturulur.",
             "Telefon bilgisini yalnız ilgili ilan hakkında iletişim amacıyla kullanın; reklam, pazarlama veya ilgisiz iletişim için kullanmayın.",
           ],
         },

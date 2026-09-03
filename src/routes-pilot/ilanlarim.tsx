@@ -16,6 +16,7 @@ import type {
   Stage1SellerListing,
   Stage1SellerManagementResponse,
 } from "@/lib/stage1-seller-management-contract";
+import { createSellerRecoveryCode } from "@/lib/stage1-seller-credentials";
 
 export const Route = createFileRoute("/ilanlarim")({
   server: {
@@ -86,6 +87,8 @@ const statusLabels: Record<Stage1SellerListing["status"], string> = {
 function SellerListings() {
   const [hasAccess, setHasAccess] = useState(false);
   const [recoveryCode, setRecoveryCode] = useState("");
+  const [candidateRecoveryCode, setCandidateRecoveryCode] = useState("");
+  const [recoveryAmbiguous, setRecoveryAmbiguous] = useState(false);
   const [rotatedRecoveryCode, setRotatedRecoveryCode] = useState("");
   const [listings, setListings] = useState<Stage1SellerListing[]>([]);
   const [editing, setEditing] = useState<EditingListing | null>(null);
@@ -125,27 +128,85 @@ function SellerListings() {
     })();
   }, []);
 
-  const recover = async () => {
+  const prepareRecovery = () => {
     setError("");
     setNotice("");
     if (recoveryCode.trim().length < 10) {
       setError("Kurtarma kodunu eksiksiz girin.");
       return;
     }
+    setCandidateRecoveryCode(createSellerRecoveryCode());
+    setRecoveryAmbiguous(false);
+  };
+
+  const commitRecovery = async () => {
+    if (!candidateRecoveryCode) {
+      setError("Önce yeni kurtarma kodunu oluşturup güvenli bir yere kaydedin.");
+      return;
+    }
     setBusy(true);
+    setError("");
+    setNotice("");
     const form = new FormData();
     form.set("action", "seller_recover");
     form.set("recoveryCode", recoveryCode.trim());
+    form.set("replacementRecoveryCode", candidateRecoveryCode);
     const result = await postSeller(form);
     if (result.ok && result.action === "seller_recovered") {
-      setRotatedRecoveryCode(result.recoveryCode);
+      setRotatedRecoveryCode(candidateRecoveryCode);
+      setCandidateRecoveryCode("");
+      setRecoveryAmbiguous(false);
       setRecoveryCode("");
       await loadListings();
       setNotice(result.message);
+    } else if (
+      !result.ok &&
+      (result.code === "BACKEND_UNAVAILABLE" || result.code === "SUBMISSION_FAILED")
+    ) {
+      setRecoveryAmbiguous(true);
+      setError(
+        "Kurtarma sonucunun sunucuya kaydedilip kaydedilmediği doğrulanamadı. Yeni kodu saklayın ve aşağıdaki doğrulama adımını kullanın.",
+      );
     } else if (!result.ok) {
       setError(result.message);
     }
     setBusy(false);
+  };
+
+  const reconcileRecovery = async () => {
+    if (!candidateRecoveryCode) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    const form = new FormData();
+    form.set("action", "seller_reconcile_recovery");
+    form.set("recoveryCode", candidateRecoveryCode);
+    const result = await postSeller(form);
+    if (result.ok && result.action === "seller_recovery_reconciled") {
+      setRotatedRecoveryCode(candidateRecoveryCode);
+      setCandidateRecoveryCode("");
+      setRecoveryAmbiguous(false);
+      setRecoveryCode("");
+      await loadListings();
+      setNotice(result.message);
+    } else if (!result.ok && result.code === "RECOVERY_NOT_COMMITTED") {
+      setRecoveryAmbiguous(false);
+      setError(result.message);
+    } else if (!result.ok) {
+      setRecoveryAmbiguous(true);
+      setError(result.message);
+    }
+    setBusy(false);
+  };
+
+  const clearLocalSellerAccess = () => {
+    setHasAccess(false);
+    setListings([]);
+    setEditing(null);
+    setDeleteConfirmId("");
+    setCandidateRecoveryCode("");
+    setRecoveryAmbiguous(false);
+    setRotatedRecoveryCode("");
   };
 
   const logout = async () => {
@@ -156,12 +217,11 @@ function SellerListings() {
     form.set("action", "seller_logout");
     const result = await postSeller(form);
     if (result.ok && result.action === "seller_logged_out") {
-      setHasAccess(false);
-      setListings([]);
-      setEditing(null);
-      setDeleteConfirmId("");
-      setRotatedRecoveryCode("");
+      clearLocalSellerAccess();
       setNotice(result.message);
+    } else if (!result.ok && result.code === "LOGOUT_PARTIAL") {
+      clearLocalSellerAccess();
+      setError(result.message);
     } else if (!result.ok) {
       setError(result.message);
     }
@@ -257,6 +317,8 @@ function SellerListings() {
                 value={recoveryCode}
                 onChange={(event) => {
                   setRecoveryCode(event.target.value);
+                  setCandidateRecoveryCode("");
+                  setRecoveryAmbiguous(false);
                   setError("");
                 }}
                 autoComplete="off"
@@ -264,17 +326,58 @@ function SellerListings() {
                 className={`mt-1 ${fieldClass}`}
               />
             </label>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void recover()}
-              className="mt-3 h-12 w-full rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
-            >
-              {busy ? "Kontrol ediliyor…" : "Kurtarma koduyla erişimi geri al"}
-            </button>
+            {candidateRecoveryCode && (
+              <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">
+                  Yeni kurtarma kodun — sunucu değişikliğinden önce kaydet
+                </p>
+                <p className="mt-1 text-sm leading-relaxed">
+                  Bu kod tarayıcında Web Crypto ile oluşturuldu. Aşağıdaki tamamla düğmesine
+                  basmadan önce güvenli bir yere kaydet.
+                </p>
+                <code
+                  data-testid="candidate-seller-recovery-code"
+                  className="mt-3 block break-all rounded-xl border border-border bg-background p-3 text-sm font-bold"
+                >
+                  {candidateRecoveryCode}
+                </code>
+              </div>
+            )}
+            {!candidateRecoveryCode ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={prepareRecovery}
+                className="mt-3 h-12 w-full rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
+              >
+                Kurtarmayı hazırla
+              </button>
+            ) : (
+              <div className="mt-3 grid gap-2">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void commitRecovery()}
+                  className="h-12 w-full rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
+                >
+                  {busy ? "Kontrol ediliyor…" : "Yeni kodu kaydettim, erişimi kurtar"}
+                </button>
+                {recoveryAmbiguous && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void reconcileRecovery()}
+                    className="h-12 w-full rounded-full border border-border px-5 text-sm font-semibold disabled:opacity-50"
+                  >
+                    Yeni kodun etkinleşip etkinleşmediğini denetle
+                  </button>
+                )}
+              </div>
+            )}
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              Telefon numarası satıcı yönetim yetkisi değildir. Kurtarma başarılı olduğunda eski kod
-              ve diğer cihaz oturumları iptal edilir; yeni bir kurtarma kodu verilir.
+              Telefon numarası satıcı yönetim yetkisi değildir. Başarılı kurtarma eski kodu ve önceki
+              cihaz oturumlarını iptal eder. Sonuç belirsiz kalırsa önceden kaydettiğin yeni kodla
+              güvenli biçimde doğrulama yapılabilir.
             </p>
           </section>
         )}
@@ -306,7 +409,8 @@ function SellerListings() {
               {rotatedRecoveryCode}
             </code>
             <p className="mt-2 text-xs text-muted-foreground">
-              Eski kurtarma kodu artık kullanılamaz. Bu yeni kodu güvenli bir yerde sakla.
+              Eski kurtarma kodu artık kullanılamaz. Bu kod işlemden önce tarayıcında oluşturuldu;
+              güvenli bir yerde saklamaya devam et.
             </p>
           </section>
         )}

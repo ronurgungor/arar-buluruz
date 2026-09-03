@@ -163,6 +163,7 @@ jobs:
           NITRO_HOST=127.0.0.1 \
           NITRO_PORT=4173 \
           PILOT_SELF_SERVICE_ENABLED=enabled \
+          PILOT_SYNTHETIC_TEST_MODE=enabled \
           PILOT_SUBMISSION_SUPABASE_URL="$api_url" \
           PILOT_SUBMISSION_SUPABASE_SERVICE_ROLE_KEY="$service_role_key" \
           PILOT_SUBMISSION_CAPABILITY_SECRET="synthetic-stage1-capability-secret-0123456789" \
@@ -174,6 +175,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY="$anon_key" \
           VITE_PILOT_OPERATOR_UI=enabled \
           PILOT_OPERATOR_ENABLED=enabled \
+          PILOT_SYNTHETIC_TEST_MODE=enabled \
           PILOT_OPERATOR_SUPABASE_URL="$api_url" \
           PILOT_OPERATOR_SUPABASE_SERVICE_ROLE_KEY="$service_role_key" \
             bun --bun vite dev --host 127.0.0.1 --port 4175 --strictPort \

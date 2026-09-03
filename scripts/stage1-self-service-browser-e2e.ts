@@ -458,14 +458,24 @@ async function openOwnerListings(page: Page): Promise<void> {
 
 async function recoverOwnerListings(page: Page, recoveryCode: string): Promise<string> {
   await page.getByLabel("İlanlarım kurtarma kodu", { exact: true }).fill(recoveryCode);
-  await page.getByRole("button", { name: "Kurtarma koduyla erişimi geri al" }).click();
+  await page.getByRole("button", { name: "Kurtarmayı hazırla" }).click();
+  const candidate = page.getByTestId("candidate-seller-recovery-code");
+  await candidate.waitFor();
+  const candidateCode = (await candidate.textContent())?.trim() ?? "";
+  assert(
+    /^ABR1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{32}$/.test(candidateCode),
+    "Pre-commit recovery candidate format is invalid.",
+  );
+  assert(
+    (await page.getByTestId("rotated-seller-recovery-code").count()) === 0,
+    "Recovery rotated before the pre-generated candidate was acknowledged.",
+  );
+
+  await page.getByRole("button", { name: "Yeni kodu kaydettim, erişimi kurtar" }).click();
   const rotated = page.getByTestId("rotated-seller-recovery-code");
   await rotated.waitFor();
   const nextCode = (await rotated.textContent())?.trim() ?? "";
-  assert(
-    /^ABR1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{32}$/.test(nextCode),
-    "Rotated recovery code format is invalid.",
-  );
+  assert(nextCode === candidateCode, "Server recovery did not preserve the pre-generated candidate.");
   return nextCode;
 }
 
@@ -656,9 +666,17 @@ try {
   // Consumed recovery code cannot be replayed.
   expectUnauthorizedOnce(ownerPage, "POST", "/ilanlarim", "recovery replay is rejected");
   const replay = await ownerPage.evaluate(async (code) => {
+    const randomPart = (byteLength: number) => {
+      const bytes = new Uint8Array(byteLength);
+      crypto.getRandomValues(bytes);
+      let binary = "";
+      for (const byte of bytes) binary += String.fromCharCode(byte);
+      return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/u, "");
+    };
     const form = new FormData();
     form.set("action", "seller_recover");
     form.set("recoveryCode", code);
+    form.set("replacementRecoveryCode", `ABR1.${randomPart(12)}.${randomPart(24)}`);
     const response = await fetch("/ilanlarim", {
       method: "POST",
       body: form,
