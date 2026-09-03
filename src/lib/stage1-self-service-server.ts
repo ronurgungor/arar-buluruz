@@ -495,7 +495,10 @@ async function createSellerIdentity(config: BackendConfig): Promise<{
   return { sellerId, sessionToken, sessionExpiresAt, recoveryCode: recovery.code };
 }
 
-async function resolveSellerSession(config: BackendConfig, request: Request): Promise<SellerSession> {
+async function resolveSellerSession(
+  config: BackendConfig,
+  request: Request,
+): Promise<SellerSession> {
   const token = readCookie(request, SELLER_SESSION_COOKIE);
   if (!token || !isOpaqueSessionToken(token)) {
     throw new Stage1SubmissionError(
@@ -558,7 +561,13 @@ async function sellerBootstrap(
     }
   }
 
-  enforceRateLimit("seller-bootstrap-ip", clientIp, 20, 60 * 60 * 1000, usesRelaxedSyntheticLimits(request));
+  enforceRateLimit(
+    "seller-bootstrap-ip",
+    clientIp,
+    20,
+    60 * 60 * 1000,
+    usesRelaxedSyntheticLimits(request),
+  );
   const config = readBackendConfig();
   const created = await createSellerIdentity(config);
   return jsonResponse(
@@ -609,7 +618,10 @@ async function sellerRecover(
     }),
     "seller recovery",
   );
-  const rows = (await response.json()) as Array<{ seller_id?: string; session_expires_at?: string }>;
+  const rows = (await response.json()) as Array<{
+    seller_id?: string;
+    session_expires_at?: string;
+  }>;
   if (
     rows.length !== 1 ||
     !rows[0]?.seller_id ||
