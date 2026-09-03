@@ -639,7 +639,8 @@ async function sellerRecover(
       ok: true,
       action: "seller_recovered",
       sessionExpiresAt: rows[0].session_expires_at,
-      message: "Erişim geri kazanıldı. Tarayıcında oluşturduğun yeni kurtarma kodunu saklamaya devam et.",
+      message:
+        "Erişim geri kazanıldı. Tarayıcında oluşturduğun yeni kurtarma kodunu saklamaya devam et.",
     },
     200,
     { "Set-Cookie": sellerSessionCookie(sessionToken) },
