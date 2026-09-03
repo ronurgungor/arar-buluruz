@@ -91,11 +91,17 @@ select ok(
   'service role may invoke constrained atomic publication'
 );
 
+insert into private.sellers (id, recovery_selector, recovery_digest)
+values (
+  '96200000-0000-4000-8000-000000000001',
+  'AAAAAAAAAAAAAAAA',
+  repeat('1', 64)
+);
+
 insert into public.listings (
   id, title, description, price_amount, price_is_free, category, item_condition,
-  province, district, seller_display_name, contact_channel, contact_e164,
-  contact_verified_at, contact_verification_method, publication_instruction_at,
-  listing_rules_version, listing_rules_accepted_at,
+  province, district, seller_display_name, owner_user_id, contact_channel, contact_e164,
+  publication_instruction_at, listing_rules_version, listing_rules_accepted_at,
   private_seller_declaration_at, content_rights_declaration_at, status
 )
 values (
@@ -109,10 +115,9 @@ values (
   'Tekirdağ',
   'Çorlu',
   'Synthetic Seller',
+  '96200000-0000-4000-8000-000000000001',
   'phone_whatsapp',
   '+12025550188',
-  now() - interval '2 minutes',
-  'one_time_code',
   now() - interval '1 minute',
   '2026-08-28-v1',
   now() - interval '1 minute',
@@ -196,15 +201,14 @@ select results_eq(
     where id = '96000000-0000-4000-8000-000000000001'
   $$,
   $$ values ('phone_whatsapp'::text, '+12025550188'::text) $$,
-  'published self-service row exposes one verified phone with derived dual-contact metadata'
+  'published self-service row exposes one public phone with derived dual-contact metadata'
 );
 reset role;
 
 insert into public.listings (
   id, title, description, price_amount, price_is_free, category, item_condition,
-  province, district, seller_display_name, contact_channel, contact_e164,
-  contact_verified_at, contact_verification_method, publication_instruction_at,
-  listing_rules_version, listing_rules_accepted_at, status
+  province, district, seller_display_name, owner_user_id, contact_channel, contact_e164,
+  publication_instruction_at, listing_rules_version, listing_rules_accepted_at, status
 )
 values (
   '96000000-0000-4000-8000-000000000004',
@@ -217,10 +221,9 @@ values (
   'İstanbul',
   'Kadıköy',
   'Synthetic Seller',
+  '96200000-0000-4000-8000-000000000001',
   'phone_whatsapp',
   '+12025550191',
-  now() - interval '2 minutes',
-  'one_time_code',
   now() - interval '1 minute',
   '2026-08-28-v1',
   now() - interval '1 minute',
