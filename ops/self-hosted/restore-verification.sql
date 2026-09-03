@@ -33,6 +33,21 @@ begin
 
   if not exists (
     select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'listings'
+      and column_name = 'owner_user_id'
+  ) then
+    raise exception 'pseudonymous seller ownership column is missing from public.listings';
+  end if;
+
+  if to_regclass('private.sellers') is null
+     or to_regclass('private.seller_sessions') is null then
+    raise exception 'private seller identity/session tables are missing';
+  end if;
+
+  if not exists (
+    select 1
     from pg_catalog.pg_class c
     join pg_catalog.pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'public' and c.relname = 'listings' and c.relrowsecurity
@@ -67,6 +82,21 @@ begin
      or has_table_privilege('anon', 'public.listings', 'UPDATE')
      or has_table_privilege('anon', 'public.listings', 'DELETE') then
     raise exception 'anon unexpectedly has a listings write privilege';
+  end if;
+
+  if has_column_privilege('anon', 'public.listings', 'owner_user_id', 'SELECT')
+     or has_table_privilege('anon', 'private.sellers', 'SELECT')
+     or has_table_privilege('anon', 'private.seller_sessions', 'SELECT') then
+    raise exception 'anonymous role can inspect seller ownership/session state';
+  end if;
+
+  if has_function_privilege('anon', 'public.resolve_seller_session(text)', 'EXECUTE')
+     or has_function_privilege(
+       'anon',
+       'public.recover_seller_identity(text,text,text,text,text,timestamptz)',
+       'EXECUTE'
+     ) then
+    raise exception 'anonymous role can invoke seller session/recovery functions';
   end if;
 
   if not has_column_privilege('anon', 'public.listings', 'contact_channel', 'SELECT')
@@ -123,8 +153,6 @@ begin
      or anonymous_policy_qual !~* 'unpublished_at\s+IS\s+NULL'
      or anonymous_policy_qual !~* 'contact_channel\s+IS\s+NOT\s+NULL'
      or anonymous_policy_qual !~* 'contact_e164\s+IS\s+NOT\s+NULL'
-     or anonymous_policy_qual !~* 'contact_verified_at\s+IS\s+NOT\s+NULL'
-     or anonymous_policy_qual !~* 'contact_verification_method\s+IS\s+NOT\s+NULL'
      or anonymous_policy_qual !~* 'publication_instruction_at\s+IS\s+NOT\s+NULL'
   then
     raise exception 'canonical anonymous listings policy does not preserve the required active-published/contact-readiness predicate: %', anonymous_policy_qual;
@@ -137,12 +165,10 @@ begin
       and (
         contact_channel is null
         or contact_e164 is null
-        or contact_verified_at is null
-        or contact_verification_method is null
         or publication_instruction_at is null
       )
   ) then
-    raise exception 'published listing exists without complete seller-contact readiness';
+    raise exception 'published listing exists without complete public-contact publication readiness';
   end if;
 
   -- Photo delivery is part of the first real-pilot scope. The restored target must
