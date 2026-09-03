@@ -121,6 +121,16 @@ function readConfig(): BackendConfig {
   return { baseUrl: url.toString().replace(/\/+$/, ""), serviceRoleKey };
 }
 
+function assertEidsPublicationAllowed(config: BackendConfig, category: string): void {
+  if (category !== "vehicle" && category !== "real-estate") return;
+  const hostname = new URL(config.baseUrl).hostname;
+  if (isLoopbackHost(hostname)) return;
+  throw new ModerationError(
+    "INVALID_STATE",
+    "Vasıta ve emlak ilanları için gerekli EİDS yetkilendirmesi production ortamında henüz etkin değil.",
+  );
+}
+
 function headers(config: BackendConfig, contentType = "application/json"): HeadersInit {
   return {
     apikey: config.serviceRoleKey,
@@ -231,7 +241,7 @@ async function listListings(config: BackendConfig): Promise<Stage1ModerationList
         sellerDisplayName: row.seller_display_name,
         status: row.status,
         contactE164: row.contact_e164,
-        phoneVerified: row.contact_verified_at !== null,
+        contactControlRecorded: row.contact_verified_at !== null,
         publicationInstructionRecorded: row.publication_instruction_at !== null,
         listingRulesVersion: row.listing_rules_version,
         listingRulesAccepted: row.listing_rules_accepted_at !== null,
@@ -275,9 +285,7 @@ async function publish(config: BackendConfig, form: FormData): Promise<string> {
       "Yalnız incelemedeki veya yayından kaldırılmış ilan yayınlanabilir.",
     );
   }
-  if (!listing.contact_verified_at) {
-    throw new ModerationError("INVALID_STATE", "Telefon kontrolü tamamlanmamış.");
-  }
+  assertEidsPublicationAllowed(config, listing.category);
   if (!listing.publication_instruction_at) {
     throw new ModerationError(
       "INVALID_STATE",

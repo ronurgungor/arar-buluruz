@@ -53,9 +53,9 @@ function PrivacyPage() {
           <section>
             <h2 className="font-semibold">Hangi bilgiler işlenir?</h2>
             <p className="mt-2 text-muted-foreground">
-              İlan oluşturma ve yönetiminde gerekli olduğu ölçüde görünen satıcı adı, doğrulanmış
+              İlan oluşturma ve yönetiminde gerekli olduğu ölçüde görünen satıcı adı, kamuya açık
               telefon, ilan başlığı, isteğe bağlı açıklama ve durum bilgisi, fiyat/Ücretsiz bilgisi,
-              İl/İlçe, fotoğraflar, telefon doğrulama ve yayın talimatı kayıtları ile sınırlı
+              İl/İlçe, fotoğraflar, yayın talimatı ve satıcı oturumu ile sınırlı
               güvenlik/moderasyon kayıtları işlenebilir.
             </p>
             <p className="mt-2 font-medium">
@@ -67,19 +67,21 @@ function PrivacyPage() {
           <section>
             <h2 className="font-semibold">Telefon neden herkese açık?</h2>
             <p className="mt-2 text-muted-foreground">
-              Yayındaki ilanın doğrulanmış telefonu, alıcının satıcıya doğrudan ulaşabilmesi için
-              ilan aktif olduğu sürece herkese açık görünür. Aynı numaradan <strong>Ara</strong> ve
+              Yayındaki ilanın satıcının yayımlanmasını istediği telefonu, alıcının satıcıya
+              doğrudan ulaşabilmesi için ilan aktif olduğu sürece herkese açık görünür. Aynı
+              numaradan <strong>Ara</strong> ve
               <strong> WhatsApp</strong> bağlantıları oluşturulur. Arar Buluruz bu iletişimi kendi
               içinde mesajlaşma sistemine dönüştürmez.
             </p>
           </section>
 
           <section>
-            <h2 className="font-semibold">Yayın ve doğrulama</h2>
+            <h2 className="font-semibold">Yayın ve satıcı oturumu</h2>
             <p className="mt-2 text-muted-foreground">
-              Satıcı ilanı kendisi oluşturur. Telefon doğrulandıktan, zorunlu alanlar ve güvenli
-              fotoğraf işlemi tamamlandıktan sonra ilan teknik kontrollerle otomatik yayımlanabilir.
-              Yayın öncesi kurucu onayı normal akışın parçası değildir.
+              Satıcı ilanı kendisi oluşturur. Geçerli satıcı oturumu, zorunlu alanlar ve güvenli
+              fotoğraf işlemi tamamlandığında ilan teknik kontrollerle otomatik yayımlanabilir.
+              Telefon, satıcı kimliği veya yönetim yetkisi değildir. Yayın öncesi kurucu onayı
+              normal akışın parçası değildir.
             </p>
             <p className="mt-2 text-muted-foreground">
               İlanı yayınlama işlemi, ekranda bağlantısı verilen güncel İlan Kuralları'nın kabulü ve
@@ -100,7 +102,7 @@ function PrivacyPage() {
             <h2 className="font-semibold">Kimlerle paylaşılır?</h2>
             <p className="mt-2 text-muted-foreground">
               Aktif ilanın başlığı, fiyatı, İl/İlçesi, satıcı görünen adı, seçilmiş içerik alanları,
-              güvenli fotoğrafları ve doğrulanmış telefonu site ziyaretçilerine açıklanır. Diğer
+              güvenli fotoğrafları ve kamuya açık telefonu site ziyaretçilerine açıklanır. Diğer
               veriler yalnız hizmeti güvenli işletmek, yasal yükümlülükleri yerine getirmek ve
               başvuru/şikâyetleri yönetmek için gerekli olduğu ölçüde işlenir.
             </p>

@@ -35,19 +35,21 @@ Current consumer model:
 - description optional;
 - price or Ücretsiz;
 - İl / İlçe;
-- seller display name + one verified public phone;
+- seller display name + one public phone;
 - no seller contact-preference selector;
 - buyer receives both **Ara** (`tel:`) and **WhatsApp’tan yaz** (`https://wa.me/`) from that phone;
+- public phone is contact data, not seller identity or authorization;
+- manual line/WhatsApp control is risk-triggered only;
 - no three declaration checkboxes;
 - versioned listing-rules evidence for publication;
-- bounded 7-day signed HttpOnly seller session to avoid unnecessary repeat OTP;
-- purpose-specific phone/challenge/seller rate limiting plus coarse trusted-IP protection;
+- pseudonymous seller UUID + server-side opaque HttpOnly session + rotating recovery code;
+- purpose-specific seller/recovery abuse controls plus coarse trusted-IP protection;
 - atomic auto-publication;
 - lightweight `İlanlarım`;
 - founder post-moderation/takedown;
 - search normalization including `b150` ↔ `b 150`;
-- Vasıta retained, with real production vehicle publication fail-closed until EİDS is integrated;
-- no classic username/password account;
+- Vasıta and Emlak retained, with real production publication fail-closed until EİDS is integrated;
+- no general e-Devlet login; passkey/email/OAuth/password are deferred;
 - no in-app chat, platform payment/order/reservation/commission/shipping.
 
 Older Çorlu-only, seller-calls-founder, founder-pre-approval, contact-choice, checkbox-declaration and JavaScript-readable capability assumptions remain historical and are superseded where they conflict with `docs/PRODUCT_CONTRACT_V2.md`.

@@ -107,8 +107,8 @@ function FounderModeration() {
         <section className="mt-6 rounded-2xl border border-border bg-card p-5">
           <h1 className="text-2xl font-extrabold tracking-tight">İlan moderasyonu</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Satıcı doğrulanmış ilanını doğrudan yayınlar. Bu yerel ve güvenilir yüzey sonradan
-            moderasyon, şikâyet inceleme ve gerektiğinde yayından kaldırma içindir.
+            Satıcı ilanını geçerli satıcı oturumuyla doğrudan yayınlar. Bu yerel ve güvenilir yüzey
+            sonradan moderasyon, şikâyet inceleme ve gerektiğinde yayından kaldırma içindir.
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button
@@ -206,8 +206,8 @@ function FounderModeration() {
                       <strong className="text-foreground">İletişim:</strong>{" "}
                       {listing.contactE164 ? `Ara + WhatsApp · ${listing.contactE164}` : "Yok"}
                       <br />
-                      <strong className="text-foreground">Telefon kontrolü:</strong>{" "}
-                      {listing.phoneVerified ? "Tamam" : "Eksik"} ·{" "}
+                      <strong className="text-foreground">Risk bazlı iletişim kontrolü:</strong>{" "}
+                      {listing.contactControlRecorded ? "Kayıtlı" : "Bu ilan için kayıt yok"} ·{" "}
                       <strong className="text-foreground">Yayın talimatı:</strong>{" "}
                       {listing.publicationInstructionRecorded ? "Kayıtlı" : "Eksik"}
                       <br />
