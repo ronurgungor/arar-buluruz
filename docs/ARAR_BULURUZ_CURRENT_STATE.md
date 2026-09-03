@@ -8,9 +8,9 @@ _Last updated: 2026-09-03, Europe/Istanbul_
 - Canonical branch: `main`.
 - Live `main` at this synchronization: `47956ef9f4e91cd6dd033d988c9c115bb1f128b7`.
 - Active branch: `agent/smsless-seller-ownership-phase1`.
-- Pre-final-documentation branch checkpoint: `64124531296857b2a67ada154da72c2fe265f488`.
-- At that checkpoint the branch is 27 commits ahead / 0 behind `main`; open PRs: none.
-- This documentation commit necessarily advances the feature SHA; live GitHub is authoritative for the exact final head.
+- Latest implementation checkpoint immediately before this final documentation refresh: `966387b4e4244e960a644b2f4f03a55283199f86`.
+- At that checkpoint the branch is 30 commits ahead / 0 behind `main`; open PRs: none.
+- This final documentation commit necessarily advances the feature SHA; live GitHub is authoritative for the exact final head.
 
 One-writer discipline remains active. No rebase/amend/squash/force-push of pushed history.
 
@@ -52,7 +52,7 @@ Current implementation/tests establish:
 - database rows store recovery/session digests, not plaintext tokens;
 - browser acceptance rejects phone/localStorage fallback and proves stale copied sessions fail;
 - anonymous role cannot inspect private seller/session state or execute seller-session/recovery RPCs;
-- current self-service and exceptional founder publication both fail closed for real-production Vasıta and Emlak without EİDS;
+- current self-service and exceptional founder publication both fail closed for real-production Vasıta and Emlak without EİDS; synthetic bypass requires a loopback backend, and self-service additionally requires a loopback request;
 - established RLS, private Storage, trusted-photo, signed-photo, idempotency, atomic-publication and takedown controls remain in the canonical validation paths.
 
 ## Migration state
@@ -100,11 +100,10 @@ Closed unless explicitly authorized:
 
 ## Immediate next action
 
-1. Commit the canonical documentation synchronization.
-2. Obtain all required canonical workflow results on that exact SHA.
-3. Only if the branch remains clean and required checks are green, open a PR to `main` without merging it.
-4. Obtain the Managed Supabase migration rehearsal and all other canonical workflows on that same exact PR head.
-5. Stop for the independent Codex security review and Advisor/founder merge decision.
+1. Obtain all required canonical workflow results on the exact final branch SHA.
+2. Only if the branch remains clean and required checks are green, open a PR to `main` without merging it.
+3. Obtain the Managed Supabase migration rehearsal and all other canonical workflows on that same exact PR head.
+4. Stop for the independent Codex security review and Advisor/founder merge decision.
 
 No production or external-service activation is part of these steps.
 

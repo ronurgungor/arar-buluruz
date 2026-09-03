@@ -14,9 +14,9 @@ Short-lived continuity layer for the active SMSless seller ownership Phase 1 clo
 - Repository: `ronurgungor/arar-buluruz`.
 - Canonical `main` at startup: `47956ef9f4e91cd6dd033d988c9c115bb1f128b7`.
 - Active branch: `agent/smsless-seller-ownership-phase1`.
-- Pre-final-documentation branch checkpoint: `64124531296857b2a67ada154da72c2fe265f488`.
-- At that checkpoint: 27 ahead / 0 behind `main`; open PRs: none.
-- This documentation commit advances the branch; live GitHub controls the exact current head.
+- Latest implementation checkpoint immediately before this final documentation refresh: `966387b4e4244e960a644b2f4f03a55283199f86`.
+- At that checkpoint: 30 ahead / 0 behind `main`; open PRs: none.
+- This final documentation commit advances the branch; live GitHub controls the exact current head.
 
 No new branch. No rebase/amend/squash/force-push. Tarladan untouched.
 
@@ -43,7 +43,7 @@ No new branch. No rebase/amend/squash/force-push. Tarladan untouched.
 - Owner UUID is immutable.
 - Historical rows are not ownership-backfilled from contact equality.
 - Anon cannot inspect private seller/session state or execute session/recovery RPCs.
-- Normal self-service and exceptional founder publication fail closed for production Vasıta/Emlak without EİDS.
+- Normal self-service and exceptional founder publication fail closed for production Vasıta/Emlak without EİDS; synthetic bypass requires a loopback backend, and self-service also requires a loopback request.
 - RLS, private Storage, trusted-photo/signed-photo, idempotency, atomic publication and takedown controls remain in their canonical tests/workflows.
 
 ## Stale-reference sweep
