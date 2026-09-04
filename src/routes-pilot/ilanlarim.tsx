@@ -88,6 +88,7 @@ function SellerListings() {
   const [hasAccess, setHasAccess] = useState(false);
   const [recoveryCode, setRecoveryCode] = useState("");
   const [candidateRecoveryCode, setCandidateRecoveryCode] = useState("");
+  const [reconciliationReplacementCode, setReconciliationReplacementCode] = useState("");
   const [recoveryAmbiguous, setRecoveryAmbiguous] = useState(false);
   const [rotatedRecoveryCode, setRotatedRecoveryCode] = useState("");
   const [listings, setListings] = useState<Stage1SellerListing[]>([]);
@@ -136,6 +137,7 @@ function SellerListings() {
       return;
     }
     setCandidateRecoveryCode(createSellerRecoveryCode());
+    setReconciliationReplacementCode("");
     setRecoveryAmbiguous(false);
   };
 
@@ -155,6 +157,7 @@ function SellerListings() {
     if (result.ok && result.action === "seller_recovered") {
       setRotatedRecoveryCode(candidateRecoveryCode);
       setCandidateRecoveryCode("");
+      setReconciliationReplacementCode("");
       setRecoveryAmbiguous(false);
       setRecoveryCode("");
       await loadListings();
@@ -163,9 +166,10 @@ function SellerListings() {
       !result.ok &&
       (result.code === "BACKEND_UNAVAILABLE" || result.code === "SUBMISSION_FAILED")
     ) {
+      setReconciliationReplacementCode(createSellerRecoveryCode());
       setRecoveryAmbiguous(true);
       setError(
-        "Kurtarma sonucunun sunucuya kaydedilip kaydedilmediği doğrulanamadı. Yeni kodu saklayın ve aşağıdaki doğrulama adımını kullanın.",
+        "İlk kurtarma sonucunun sunucuya kaydedilip kaydedilmediği doğrulanamadı. Aşağıdaki ikinci yeni kodu da kaydedin; doğrulama B kodunu tek kullanımlık biçimde C koduna döndürecektir.",
       );
     } else if (!result.ok) {
       setError(result.message);
@@ -174,17 +178,22 @@ function SellerListings() {
   };
 
   const reconcileRecovery = async () => {
-    if (!candidateRecoveryCode) return;
+    if (!candidateRecoveryCode || !reconciliationReplacementCode) {
+      setError("Belirsiz kurtarmayı doğrulamadan önce yeni replacement kodunu kaydedin.");
+      return;
+    }
     setBusy(true);
     setError("");
     setNotice("");
     const form = new FormData();
     form.set("action", "seller_reconcile_recovery");
     form.set("recoveryCode", candidateRecoveryCode);
+    form.set("replacementRecoveryCode", reconciliationReplacementCode);
     const result = await postSeller(form);
     if (result.ok && result.action === "seller_recovery_reconciled") {
-      setRotatedRecoveryCode(candidateRecoveryCode);
+      setRotatedRecoveryCode(reconciliationReplacementCode);
       setCandidateRecoveryCode("");
+      setReconciliationReplacementCode("");
       setRecoveryAmbiguous(false);
       setRecoveryCode("");
       await loadListings();
@@ -205,6 +214,7 @@ function SellerListings() {
     setEditing(null);
     setDeleteConfirmId("");
     setCandidateRecoveryCode("");
+    setReconciliationReplacementCode("");
     setRecoveryAmbiguous(false);
     setRotatedRecoveryCode("");
   };
@@ -318,6 +328,7 @@ function SellerListings() {
                 onChange={(event) => {
                   setRecoveryCode(event.target.value);
                   setCandidateRecoveryCode("");
+                  setReconciliationReplacementCode("");
                   setRecoveryAmbiguous(false);
                   setError("");
                 }}
@@ -343,6 +354,24 @@ function SellerListings() {
                 </code>
               </div>
             )}
+            {recoveryAmbiguous && reconciliationReplacementCode && (
+              <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">
+                  Belirsiz sonucu doğrulamak için ikinci yeni kod — önce kaydet
+                </p>
+                <p className="mt-1 text-sm leading-relaxed">
+                  İlk aday B gerçekten etkinleştiyse doğrulama B kodunu tüketip bu C koduna
+                  döndürecek. Aşağıdaki doğrulama düğmesine basmadan önce C kodunu güvenli bir yere
+                  kaydet.
+                </p>
+                <code
+                  data-testid="reconciliation-candidate-seller-recovery-code"
+                  className="mt-3 block break-all rounded-xl border border-border bg-background p-3 text-sm font-bold"
+                >
+                  {reconciliationReplacementCode}
+                </code>
+              </div>
+            )}
             {!candidateRecoveryCode ? (
               <button
                 type="button"
@@ -354,30 +383,33 @@ function SellerListings() {
               </button>
             ) : (
               <div className="mt-3 grid gap-2">
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void commitRecovery()}
-                  className="h-12 w-full rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
-                >
-                  {busy ? "Kontrol ediliyor…" : "Yeni kodu kaydettim, erişimi kurtar"}
-                </button>
-                {recoveryAmbiguous && (
+                {!recoveryAmbiguous && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void commitRecovery()}
+                    className="h-12 w-full rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50"
+                  >
+                    {busy ? "Kontrol ediliyor…" : "Yeni kodu kaydettim, erişimi kurtar"}
+                  </button>
+                )}
+                {recoveryAmbiguous && reconciliationReplacementCode && (
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => void reconcileRecovery()}
                     className="h-12 w-full rounded-full border border-border px-5 text-sm font-semibold disabled:opacity-50"
                   >
-                    Yeni kodun etkinleşip etkinleşmediğini denetle
+                    İkinci yeni kodu kaydettim, belirsiz sonucu doğrula
                   </button>
                 )}
               </div>
             )}
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
               Telefon numarası satıcı yönetim yetkisi değildir. Başarılı kurtarma eski kodu ve
-              önceki cihaz oturumlarını iptal eder. Sonuç belirsiz kalırsa önceden kaydettiğin yeni
-              kodla güvenli biçimde doğrulama yapılabilir.
+              önceki cihaz oturumlarını iptal eder. Sonuç belirsiz kalırsa kaydettiğin B adayı,
+              doğrulama sırasında yine önceden gösterilen yeni C koduna tek kullanımlık olarak
+              döndürülür.
             </p>
           </section>
         )}
