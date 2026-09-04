@@ -29,6 +29,22 @@ select ok(
   'anon cannot resolve seller sessions'
 );
 select ok(
+  not has_function_privilege(
+    'anon',
+    'public.recover_seller_identity(text,text,text,text,text,timestamptz)',
+    'EXECUTE'
+  ),
+  'anon cannot execute privileged recovery rotation'
+);
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.recover_seller_identity(text,text,text,text,text,timestamptz)',
+    'EXECUTE'
+  ),
+  'authenticated cannot execute privileged recovery rotation'
+);
+select ok(
   has_function_privilege(
     'service_role',
     'public.recover_seller_identity(text,text,text,text,text,timestamptz)',
@@ -36,21 +52,26 @@ select ok(
   ),
   'service role may execute atomic recovery rotation'
 );
-select ok(
-  not has_function_privilege(
-    'anon',
-    'public.reconcile_seller_recovery(text,text,text,timestamptz)',
-    'EXECUTE'
-  ),
-  'anon cannot reconcile seller recovery'
+select is(
+  to_regprocedure('public.reconcile_seller_recovery(text,text,text,timestamptz)'),
+  null::regprocedure,
+  'obsolete non-rotating recovery reconciliation RPC is absent'
 );
 select ok(
-  has_function_privilege(
-    'service_role',
-    'public.reconcile_seller_recovery(text,text,text,timestamptz)',
-    'EXECUTE'
+  not exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'private'
+      and table_name in ('sellers', 'seller_sessions')
+      and column_name in (
+        'recovery_code',
+        'recovery_secret',
+        'recovery_token',
+        'session_token',
+        'token'
+      )
   ),
-  'service role may reconcile an ambiguous committed recovery'
+  'private seller/session schema persists no plaintext recovery or session credential column'
 );
 
 select is(
@@ -131,6 +152,7 @@ select results_eq(
   'phone change does not transfer seller ownership'
 );
 
+-- Original recovery A -> browser-pre-generated B.
 select results_eq(
   $$
     select seller_id
@@ -146,31 +168,28 @@ select results_eq(
   $$
     values ('96300000-0000-4000-8000-000000000001'::uuid)
   $$,
-  'valid recovery credential atomically rotates and creates a replacement session'
+  'valid recovery credential A atomically rotates to candidate B'
 );
-
 select is(
   (select count(*)::integer from public.resolve_seller_session(repeat('4', 64))),
   0,
-  'recovery revokes the previous device session'
+  'A to B recovery revokes the previous device session'
 );
-
 select is(
   (
     select count(*)::integer
     from public.recover_seller_identity(
       'BBBBBBBBBBBBBBBB',
       repeat('3', 64),
-      'DDDDDDDDDDDDDDDD',
-      repeat('7', 64),
+      'EEEEEEEEEEEEEEEE',
       repeat('8', 64),
+      repeat('a', 64),
       now() + interval '7 days'
     )
   ),
   0,
-  'consumed recovery credential cannot be replayed'
+  'consumed A recovery credential cannot be replayed'
 );
-
 select results_eq(
   $$
     select seller_id
@@ -179,15 +198,18 @@ select results_eq(
   $$
     values ('96300000-0000-4000-8000-000000000001'::uuid)
   $$,
-  'replacement recovery session is active'
+  'possibly undelivered B recovery session is initially active'
 );
 
+-- Ambiguous-response reconciliation is B -> pre-generated C through the same atomic primitive.
 select results_eq(
   $$
     select seller_id
-    from public.reconcile_seller_recovery(
+    from public.recover_seller_identity(
       'CCCCCCCCCCCCCCCC',
       repeat('5', 64),
+      'DDDDDDDDDDDDDDDD',
+      repeat('7', 64),
       repeat('9', 64),
       now() + interval '7 days'
     )
@@ -195,12 +217,38 @@ select results_eq(
   $$
     values ('96300000-0000-4000-8000-000000000001'::uuid)
   $$,
-  'committed candidate recovery credential can reconcile an ambiguous response'
+  'ambiguous committed candidate B atomically reconciles by rotating to C'
 );
 select is(
   (select count(*)::integer from public.resolve_seller_session(repeat('6', 64))),
   0,
-  'reconciliation revokes the possibly undelivered replacement session'
+  'B to C reconciliation revokes the possibly undelivered B session'
+);
+select is(
+  (
+    select count(*)::integer
+    from public.recover_seller_identity(
+      'CCCCCCCCCCCCCCCC',
+      repeat('5', 64),
+      'FFFFFFFFFFFFFFFF',
+      repeat('b', 64),
+      repeat('c', 64),
+      now() + interval '7 days'
+    )
+  ),
+  0,
+  'successfully reconciled B credential cannot be replayed'
+);
+select results_eq(
+  $$
+    select recovery_selector, recovery_digest
+    from private.sellers
+    where id = '96300000-0000-4000-8000-000000000001'
+  $$,
+  $$
+    values ('DDDDDDDDDDDDDDDD'::text, repeat('7', 64)::text)
+  $$,
+  'C is the resulting current recovery credential digest state'
 );
 select results_eq(
   $$
@@ -210,7 +258,7 @@ select results_eq(
   $$
     values ('96300000-0000-4000-8000-000000000001'::uuid)
   $$,
-  'reconciliation establishes the fresh browser session'
+  'B to C reconciliation establishes the fresh browser session'
 );
 select is(
   (
@@ -220,7 +268,7 @@ select is(
       and revoked_at is null
   ),
   1,
-  'recovery and reconciliation leave exactly one active seller session'
+  'recovery reconciliation leaves exactly one active seller session'
 );
 
 select is(
