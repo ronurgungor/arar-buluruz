@@ -48,7 +48,8 @@ try {
   await page.reload({ waitUntil: "networkidle" });
   await page.getByLabel("İlanlarım kurtarma kodu", { exact: true }).fill(codeA);
   await page.getByRole("button", { name: "Kurtarmayı hazırla" }).click();
-  const codeB = (await page.getByTestId("candidate-seller-recovery-code").textContent())?.trim() ?? "";
+  const codeB =
+    (await page.getByTestId("candidate-seller-recovery-code").textContent())?.trim() ?? "";
   assert(/^ABR1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{32}$/.test(codeB), "candidate B missing");
 
   const committed = await postRecovery(codeA, codeB);
@@ -93,7 +94,8 @@ try {
   await page
     .getByRole("button", { name: "İkinci yeni kodu kaydettim, belirsiz sonucu doğrula" })
     .click();
-  const finalCode = (await page.getByTestId("rotated-seller-recovery-code").textContent())?.trim() ?? "";
+  const finalCode =
+    (await page.getByTestId("rotated-seller-recovery-code").textContent())?.trim() ?? "";
   assert(finalCode === codeC, "B to C reconciliation did not make C current");
   assert(reconcileCalls === 1, `expected one reconciliation request, got ${reconcileCalls}`);
   assert(!routeError, routeError);
