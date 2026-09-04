@@ -1,7 +1,11 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { deflateSync } from "node:zlib";
 import { handleStage1SelfServiceRequest } from "./stage1-self-service-server";
-import { createSellerRecoveryCode, sha256Hex } from "./stage1-seller-credentials";
+import {
+  createSellerRecoveryCode,
+  parseSellerRecoveryCode,
+  sha256Hex,
+} from "./stage1-seller-credentials";
 
 const originalFetch = globalThis.fetch;
 const originalConsoleError = console.error;
@@ -198,33 +202,6 @@ function installBackendMock(): void {
         nextRecoveryBehavior = "normal";
         throw new TypeError("synthetic recovery transport failure after commit");
       }
-      return json([{ seller_id: sellerId, session_expires_at: body.p_new_session_expires_at }]);
-    }
-
-    if (url.pathname === "/rest/v1/rpc/reconcile_seller_recovery" && method === "POST") {
-      const body = JSON.parse(String(init?.body)) as {
-        p_recovery_selector: string;
-        p_recovery_digest: string;
-        p_new_session_digest: string;
-        p_new_session_expires_at: string;
-      };
-      const match = Array.from(sellers.entries()).find(
-        ([, seller]) =>
-          seller.recoverySelector === body.p_recovery_selector &&
-          seller.recoveryDigest === body.p_recovery_digest,
-      );
-      if (!match) return json([]);
-      const [sellerId] = match;
-      for (const session of sessions.values()) {
-        if (session.sellerId === sellerId && !session.revokedAt) {
-          session.revokedAt = new Date().toISOString();
-        }
-      }
-      sessions.set(body.p_new_session_digest, {
-        sellerId,
-        expiresAt: body.p_new_session_expires_at,
-        revokedAt: null,
-      });
       return json([{ seller_id: sellerId, session_expires_at: body.p_new_session_expires_at }]);
     }
 
@@ -501,10 +478,11 @@ function recoveryForm(recoveryCode: string, replacementRecoveryCode: string): Fo
   return form;
 }
 
-function reconciliationForm(recoveryCode: string): FormData {
+function reconciliationForm(recoveryCode: string, replacementRecoveryCode: string): FormData {
   const form = new FormData();
   form.set("action", "seller_reconcile_recovery");
   form.set("recoveryCode", recoveryCode);
+  form.set("replacementRecoveryCode", replacementRecoveryCode);
   return form;
 }
 
@@ -650,35 +628,48 @@ describe("Stage 1 SMS-less seller ownership server acceptance", () => {
     expect(restored.status).toBe(200);
   });
 
-  test("committed recovery survives response loss through the pre-generated candidate", async () => {
+  test("committed ambiguous A to B reconciles by rotating B to pre-generated C", async () => {
     const seller = await bootstrapSeller();
-    const candidate = createSellerRecoveryCode();
+    const candidateB = createSellerRecoveryCode();
+    const parsedB = await parseSellerRecoveryCode(candidateB);
+    assert(parsedB !== null, "candidate B did not parse");
     nextRecoveryBehavior = "commit_then_transport_error";
 
     const ambiguous = await handleStage1SelfServiceRequest(
-      requestFor(recoveryForm(seller.recoveryCode, candidate)),
+      requestFor(recoveryForm(seller.recoveryCode, candidateB)),
     );
     expect(ambiguous.status).toBe(500);
 
-    const oldSession = await handleStage1SelfServiceRequest(
-      requestFor(sellerAction("seller_list"), { cookie: seller.cookie }),
+    const activeAfterAmbiguousCommit = Array.from(sessions.entries()).filter(
+      ([, session]) => session.sellerId === seller.sellerId && session.revokedAt === null,
     );
-    expect(oldSession.status).toBe(401);
+    expect(activeAfterAmbiguousCommit).toHaveLength(1);
+    const undeliveredSessionDigest = activeAfterAmbiguousCommit[0]?.[0] ?? "";
 
-    const oldReplay = await handleStage1SelfServiceRequest(
-      requestFor(recoveryForm(seller.recoveryCode, createSellerRecoveryCode())),
-    );
-    expect(oldReplay.status).toBe(401);
-    expect(await oldReplay.json()).toMatchObject({ ok: false, code: "RECOVERY_FAILED" });
-
+    const candidateC = createSellerRecoveryCode();
+    const parsedC = await parseSellerRecoveryCode(candidateC);
+    assert(parsedC !== null, "candidate C did not parse");
     const reconciled = await handleStage1SelfServiceRequest(
-      requestFor(reconciliationForm(candidate)),
+      requestFor(reconciliationForm(candidateB, candidateC)),
     );
     expect(reconciled.status).toBe(200);
     expect(await reconciled.json()).toMatchObject({
       ok: true,
       action: "seller_recovery_reconciled",
     });
+
+    expect(sellers.get(seller.sellerId)).toMatchObject({
+      recoverySelector: parsedC.selector,
+      recoveryDigest: parsedC.digest,
+    });
+    expect(sessions.get(undeliveredSessionDigest)?.revokedAt).not.toBeNull();
+
+    const replayB = await handleStage1SelfServiceRequest(
+      requestFor(recoveryForm(candidateB, createSellerRecoveryCode())),
+    );
+    expect(replayB.status).toBe(401);
+    expect(await replayB.json()).toMatchObject({ ok: false, code: "RECOVERY_FAILED" });
+
     const reconciledCookie = cookieFromResponse(reconciled);
     const restored = await handleStage1SelfServiceRequest(
       requestFor(sellerAction("seller_list"), { cookie: reconciledCookie }),
@@ -691,24 +682,24 @@ describe("Stage 1 SMS-less seller ownership server acceptance", () => {
     ).toHaveLength(1);
   });
 
-  test("uncommitted recovery leaves the old credential usable", async () => {
+  test("uncommitted A to B does not falsely treat B as committed", async () => {
     const seller = await bootstrapSeller();
-    const candidate = createSellerRecoveryCode();
+    const candidateB = createSellerRecoveryCode();
     nextRecoveryBehavior = "transport_error_before_commit";
 
     const ambiguous = await handleStage1SelfServiceRequest(
-      requestFor(recoveryForm(seller.recoveryCode, candidate)),
+      requestFor(recoveryForm(seller.recoveryCode, candidateB)),
     );
     expect(ambiguous.status).toBe(500);
 
+    const candidateC = createSellerRecoveryCode();
     const reconciliation = await handleStage1SelfServiceRequest(
-      requestFor(reconciliationForm(candidate)),
+      requestFor(reconciliationForm(candidateB, candidateC)),
     );
     expect(reconciliation.status).toBe(409);
-    expect(await reconciliation.json()).toMatchObject({
-      ok: false,
-      code: "RECOVERY_NOT_COMMITTED",
-    });
+    const payload = (await reconciliation.json()) as { code?: string; message?: string };
+    expect(payload).toMatchObject({ code: "RECOVERY_NOT_COMMITTED" });
+    expect(payload.message ?? "").not.toContain("hâlâ kullanılabilir");
 
     const recovered = await recoverSeller(seller.recoveryCode);
     const restored = await handleStage1SelfServiceRequest(
@@ -731,6 +722,49 @@ describe("Stage 1 SMS-less seller ownership server acceptance", () => {
       ),
     ).toHaveLength(1);
     expect(sellers.has(seller.sellerId)).toBe(true);
+  });
+
+  test("recovery IP limiter rejects unique-selector abuse before allocating the blocked selector bucket", async () => {
+    const origin = "https://recovery-rate.example.test";
+    const limitedIp = "198.51.100.90";
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const response = await handleStage1SelfServiceRequest(
+        requestFor(recoveryForm(createSellerRecoveryCode(), createSellerRecoveryCode()), {
+          origin,
+          trustedIp: limitedIp,
+        }),
+      );
+      expect(response.status).toBe(401);
+    }
+
+    const blockedRecoveryCode = createSellerRecoveryCode();
+    const backendBeforeBlocked = backendCallCount;
+    const blocked = await handleStage1SelfServiceRequest(
+      requestFor(recoveryForm(blockedRecoveryCode, createSellerRecoveryCode()), {
+        origin,
+        trustedIp: limitedIp,
+      }),
+    );
+    expect(blocked.status).toBe(429);
+    expect(backendCallCount).toBe(backendBeforeBlocked);
+
+    const secondIp = "198.51.100.91";
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const response = await handleStage1SelfServiceRequest(
+        requestFor(recoveryForm(blockedRecoveryCode, createSellerRecoveryCode()), {
+          origin,
+          trustedIp: secondIp,
+        }),
+      );
+      expect(response.status).toBe(401);
+    }
+    const selectorLimited = await handleStage1SelfServiceRequest(
+      requestFor(recoveryForm(blockedRecoveryCode, createSellerRecoveryCode()), {
+        origin,
+        trustedIp: secondIp,
+      }),
+    );
+    expect(selectorLimited.status).toBe(429);
   });
 
   test("minimal fields publish atomically without phone verification and one session supports repeated listings", async () => {
