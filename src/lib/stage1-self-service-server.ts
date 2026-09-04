@@ -35,6 +35,8 @@ const PRICE_PATTERN = /^\d{1,10}(?:[.,]\d{1,2})?$/;
 const MAX_REQUEST_BYTES = STAGE1_MAX_TOTAL_UPLOAD_BYTES + 2 * 1024 * 1024;
 const SELLER_SESSION_COOKIE = "arar_seller_session";
 const LISTING_RULES_VERSION = "2026-08-28-v1";
+const RATE_BUCKET_MAX_ENTRIES = 4096;
+const RATE_BUCKET_SWEEP_INTERVAL = 64;
 
 class Stage1SubmissionError extends Error {
   readonly code:
@@ -114,6 +116,7 @@ type SellerPhotoRow = {
 };
 
 const rateBuckets = new Map<string, RateBucket>();
+let rateBucketOperationsSinceSweep = 0;
 
 function jsonResponse(
   payload: Stage1ApiResponse,
@@ -222,6 +225,12 @@ function resolveTrustedClientIp(request: Request): string {
   return value;
 }
 
+function sweepExpiredRateBuckets(now: number): void {
+  for (const [bucketKey, bucket] of rateBuckets) {
+    if (bucket.resetAt <= now) rateBuckets.delete(bucketKey);
+  }
+}
+
 function enforceRateLimit(
   limiterClass: string,
   key: string,
@@ -231,9 +240,29 @@ function enforceRateLimit(
 ): void {
   const effectiveLimit = relaxed ? Math.max(limit * 10, limit + 20) : limit;
   const now = Date.now();
+  rateBucketOperationsSinceSweep += 1;
+  if (
+    rateBucketOperationsSinceSweep >= RATE_BUCKET_SWEEP_INTERVAL ||
+    rateBuckets.size >= RATE_BUCKET_MAX_ENTRIES
+  ) {
+    sweepExpiredRateBuckets(now);
+    rateBucketOperationsSinceSweep = 0;
+  }
+
   const bucketKey = `${limiterClass}:${key}`;
   const current = rateBuckets.get(bucketKey);
   if (!current || current.resetAt <= now) {
+    if (current) rateBuckets.delete(bucketKey);
+    if (rateBuckets.size >= RATE_BUCKET_MAX_ENTRIES) {
+      throw new Stage1SubmissionError(
+        "RATE_LIMITED",
+        "Çok fazla istek gönderildi. Lütfen kısa bir süre sonra tekrar deneyin.",
+        429,
+        60,
+        undefined,
+        limiterClass,
+      );
+    }
     rateBuckets.set(bucketKey, { count: 1, resetAt: now + windowMs });
     return;
   }
@@ -596,8 +625,8 @@ async function sellerRecover(
     throw new Stage1SubmissionError("RECOVERY_FAILED", "Kurtarma kodu geçersiz.", 401);
   }
   const relaxed = usesRelaxedSyntheticLimits(request);
-  enforceRateLimit("seller-recovery-selector", parsed.selector, 8, 60 * 60 * 1000, relaxed);
   enforceRateLimit("seller-recovery-ip", clientIp, 40, 60 * 60 * 1000, relaxed);
+  enforceRateLimit("seller-recovery-selector", parsed.selector, 8, 60 * 60 * 1000, relaxed);
 
   const config = readBackendConfig();
   const sessionToken = createOpaqueSellerSessionToken();
@@ -652,13 +681,16 @@ async function sellerReconcileRecovery(
   clientIp: string,
   request: Request,
 ): Promise<Response> {
-  assertAllowedFields(form, new Set(["action", "recoveryCode"]));
+  assertAllowedFields(form, new Set(["action", "recoveryCode", "replacementRecoveryCode"]));
   const rawCode = requiredString(form, "recoveryCode", 10, 160);
+  const replacementRawCode = requiredString(form, "replacementRecoveryCode", 10, 160);
   const parsed = await parseSellerRecoveryCode(rawCode);
-  if (!parsed) {
+  const replacement = await parseSellerRecoveryCode(replacementRawCode);
+  if (!parsed || !replacement || replacement.digest === parsed.digest) {
     throw new Stage1SubmissionError("RECOVERY_FAILED", "Kurtarma kodu geçersiz.", 401);
   }
   const relaxed = usesRelaxedSyntheticLimits(request);
+  enforceRateLimit("seller-recovery-reconcile-ip", clientIp, 40, 60 * 60 * 1000, relaxed);
   enforceRateLimit(
     "seller-recovery-reconcile-selector",
     parsed.selector,
@@ -666,24 +698,25 @@ async function sellerReconcileRecovery(
     60 * 60 * 1000,
     relaxed,
   );
-  enforceRateLimit("seller-recovery-reconcile-ip", clientIp, 40, 60 * 60 * 1000, relaxed);
 
   const config = readBackendConfig();
   const sessionToken = createOpaqueSellerSessionToken();
   const sessionDigest = await sha256Hex(sessionToken);
   const expiresAt = sessionExpiry();
   const response = await requireOk(
-    await fetch(`${config.baseUrl}/rest/v1/rpc/reconcile_seller_recovery`, {
+    await fetch(`${config.baseUrl}/rest/v1/rpc/recover_seller_identity`, {
       method: "POST",
       headers: serviceHeaders(config),
       body: JSON.stringify({
         p_recovery_selector: parsed.selector,
         p_recovery_digest: parsed.digest,
+        p_new_recovery_selector: replacement.selector,
+        p_new_recovery_digest: replacement.digest,
         p_new_session_digest: sessionDigest,
         p_new_session_expires_at: expiresAt,
       }),
     }),
-    "seller recovery reconciliation",
+    "seller recovery reconciliation rotation",
   );
   const rows = (await response.json()) as Array<{
     seller_id?: string;
@@ -697,7 +730,7 @@ async function sellerReconcileRecovery(
   ) {
     throw new Stage1SubmissionError(
       "RECOVERY_NOT_COMMITTED",
-      "Yeni kurtarma kodu sunucuda etkinleşmemiş. Eski kurtarma kodun hâlâ kullanılabilir.",
+      "Belirsiz kurtarma sonucu doğrulanamadı. İlk denemenin sonucu veya kurtarma durumu değişmiş olabilir; önceki kodun hâlâ geçerli olduğunu varsaymayın.",
       409,
     );
   }
@@ -706,7 +739,8 @@ async function sellerReconcileRecovery(
       ok: true,
       action: "seller_recovery_reconciled",
       sessionExpiresAt: rows[0].session_expires_at,
-      message: "Yeni kurtarma kodunun etkin olduğu doğrulandı ve bu cihaz için yeni oturum açıldı.",
+      message:
+        "Belirsiz kurtarma güvenli biçimde yeniden döndürüldü. Tarayıcında oluşturduğun en yeni kurtarma kodunu sakla.",
     },
     200,
     { "Set-Cookie": sellerSessionCookie(sessionToken) },
