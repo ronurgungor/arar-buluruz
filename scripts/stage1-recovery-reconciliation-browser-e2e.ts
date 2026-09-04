@@ -116,7 +116,10 @@ try {
   await rotated.waitFor();
   const finalCode = (await rotated.textContent())?.trim() ?? "";
   assert(finalCode === expectedC, "Successful B to C reconciliation did not make C current in UI.");
-  assert(reconciliationRequests === 1, `Expected one reconciliation request, got ${reconciliationRequests}.`);
+  assert(
+    reconciliationRequests === 1,
+    `Expected one reconciliation request, got ${reconciliationRequests}.`,
+  );
   assert(!routeAssertionError, routeAssertionError);
 
   const replay = await page.evaluate(
