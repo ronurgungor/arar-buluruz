@@ -1,24 +1,25 @@
 # Arar Buluruz — Active Chat Handoff
 
-_Last updated: 2026-09-03, Europe/Istanbul_
+_Last updated: 2026-09-04, Europe/Istanbul_
 
 ## Purpose
 
-Short-lived continuity layer for the active SMSless seller ownership Phase 1 closure. Live GitHub and executable evidence remain authoritative.
+Short-lived continuity layer for the final PR #84 closure. Live GitHub and executable exact-head evidence remain authoritative.
 
 ## Writer and repository state
 
 - Founder: final consequential decision owner.
-- Main Execution Chat: active repository writer for this bounded Phase 1 closure.
+- Main Execution Chat: repository writer for this bounded documentation-only closure.
 - Advisor Chat: roadmap/materiality/final review.
 - Repository: `ronurgungor/arar-buluruz`.
-- Canonical `main` at startup: `47956ef9f4e91cd6dd033d988c9c115bb1f128b7`.
+- Canonical `main`: `47956ef9f4e91cd6dd033d988c9c115bb1f128b7`.
 - Active branch: `agent/smsless-seller-ownership-phase1`.
-- Latest implementation checkpoint immediately before this final documentation refresh: `966387b4e4244e960a644b2f4f03a55283199f86`.
-- At that checkpoint: 30 ahead / 0 behind `main`; open PRs: none.
-- This final documentation commit advances the branch; live GitHub controls the exact current head.
+- Advisor-reviewed security implementation head immediately before this docs-only sync: `e841cf688b8cafb97d0508d0c1afec9e96446670`.
+- At that checkpoint: 52 commits ahead / 0 behind `main`.
+- PR #84: **OPEN / UNMERGED**.
+- The commit containing this handoff is the final docs-only synchronization head. A Git commit cannot embed its own SHA without changing that SHA; resolve the exact current/final head from the live PR/GitHub and bind all post-sync workflow evidence to that one SHA.
 
-No new branch. No rebase/amend/squash/force-push. Tarladan untouched.
+No new branch. No rebase/amend/squash/force-push. No security/application/database/workflow/dependency/runtime behavior changes in this sync. Tarladan untouched.
 
 ## Current founder/Advisor product truth — D-030
 
@@ -26,7 +27,7 @@ No new branch. No rebase/amend/squash/force-push. Tarladan untouched.
 - Seller ownership identity is a pseudonymous UUID.
 - Listings bind ownership through `seller_id → listings.owner_user_id`.
 - Seller access uses a server-side revocable opaque HttpOnly cookie session.
-- Seller recovery uses a rotating high-entropy recovery code; only selector/digest are persisted. Replacement candidates are browser-generated and displayed before irreversible rotation.
+- Seller recovery uses a rotating one-time high-entropy recovery credential; only selector/digest state is persisted.
 - Public phone is contact data, not verified identity or authorization.
 - Equal phones do not imply the same seller; phone change does not transfer ownership.
 - Manual line/WhatsApp verification is risk-triggered only.
@@ -34,54 +35,90 @@ No new branch. No rebase/amend/squash/force-push. Tarladan untouched.
 - Passkey/email/OAuth/password are deferred.
 - Vasıta **and Emlak** require EİDS before real production publication.
 
-## Security evidence already implemented
+## Final recovery-security semantics
 
-- Session and recovery plaintext are not stored in DB.
-- Browser E2E rejects seller-phone localStorage fallback.
-- Recovery atomically installs the browser's pre-generated candidate, revokes old sessions and rejects consumed-old replay; ambiguous response loss can be reconciled with the saved candidate, while no-commit leaves the old credential usable.
-- Every logout attempt clears the browser cookie; an unconfirmed backend revoke returns partial failure rather than claiming server logout completed.
-- Owner UUID is immutable.
-- Historical rows are not ownership-backfilled from contact equality.
-- Anon cannot inspect private seller/session state or execute session/recovery/reconciliation RPCs.
-- Normal self-service and exceptional founder publication fail closed for production Vasıta/Emlak without EİDS; synthetic bypass additionally requires explicit default-off `PILOT_SYNTHETIC_TEST_MODE=enabled` plus applicable loopback request/backend conditions.
-- RLS, private Storage, trusted-photo/signed-photo, idempotency, atomic publication and takedown controls remain in their canonical tests/workflows.
+The second Codex exact-head review identified a BLOCKER in the then-current non-rotating recovery reconciliation path. Advisor accepted the finding. The second remediation closes it without adding a persistent pending-recovery state machine.
 
-## Stale-reference sweep
+Ambiguous recovery now works as follows:
 
-Current/shipping paths have been corrected for ordinary-goods OTP, verified-phone identity/authorization, phone-equality ownership and phone-bound session assumptions.
+1. normal recovery attempts atomic `A → B` through `recover_seller_identity(...)`;
+2. if the browser cannot determine the response outcome, it generates and displays replacement candidate **C before any reconciliation mutation**;
+3. reconciliation attempts `B → C` through the same atomic `recover_seller_identity(...)` primitive;
+4. if `A → B` committed, `B → C` succeeds, B is consumed, C becomes current, pre-existing seller sessions are revoked and a fresh browser session is created;
+5. if `A → B` did not commit, `B → C` fails; the application does **not** claim that A is definitely still valid because concurrent rotation cannot be excluded;
+6. a successfully used/reconciled B cannot be replayed.
 
-Historical dated evidence and superseded decision records intentionally retain their original terminology, but D-030 and the current canonical documents mark those semantics as historical.
+Plaintext recovery/session credentials are not persisted. The browser possesses/displays replacement C before irreversible reconciliation rotation.
 
-## PR #84 security-remediation checkpoint
+## Migration and privilege state
 
-- Accepted Codex/Advisor findings only were remediated; the deferred transactional in-flight mutation/revocation redesign remains out of scope.
-- Focused Stage 1 run `33798081542` on implementation head `4705144b08f7d58b06d204e436cc42821418f521` is **SUCCESS** across lint/unit, DB/RLS/trusted-photo and canonical browser regression coverage.
-- Current/shipping UI sweep found no remaining verified-phone ownership/authorization claims after the `ilan-kurallari.tsx` correction. Historical and negative-regression terminology remains intentionally preserved.
-- Final seven canonical workflows must be GREEN on the exact head created by this documentation refresh.
-- PR #84 must remain unmerged pending the second Codex exact-head security review.
+The canonical migration chain contains **12 migrations**.
 
-## Workflow checkpoint
+Relevant Phase 1 migrations:
 
-Exact head `c83fff4b261d7ba9e2ed1f5e14ac70af387c62d7` previously had SUCCESS for:
+- `20260903130000_prepare_smsless_seller_ownership.sql` — pseudonymous seller identity, opaque seller sessions and rotating recovery digest foundation;
+- `20260903193000_reconcile_seller_recovery.sql` — historical append-only migration that introduced the first reconciliation RPC;
+- `20260904070000_retire_nonrotating_recovery_reconciliation.sql` — append-only remediation that revokes/drops the unsafe non-rotating `reconcile_seller_recovery(...)` RPC from the final schema and preserves explicit recovery privilege boundaries.
 
-- CI;
-- Stage 1 self-service acceptance;
-- Activation readiness;
-- V0 minimal PWA;
-- Real pilot backend prep;
-- Self-host migration rehearsal.
+Final schema truth:
 
-Those are not sufficient for the final Phase 1 head after stale-reference/docs changes.
+- obsolete `reconcile_seller_recovery(...)` is absent;
+- `recover_seller_identity(...)` remains privileged/service-role-only;
+- `public`, `anon` and `authenticated` cannot execute privileged seller recovery RPCs.
+
+No existing migration history was rewritten.
+
+## Rate-limit closure
+
+The second Codex review also identified process-memory recovery rate-limit growth as IMPORTANT. Advisor accepted it and the second remediation closed it with bounded local hardening only:
+
+- trusted-IP limiting runs before attacker-controlled recovery selector bucket allocation;
+- expired process-local buckets are swept periodically;
+- the in-process bucket map has a fixed upper bound and fails closed rather than growing indefinitely;
+- no Redis, distributed limiter dependency or broad production architecture was introduced.
+
+Shared/distributed abuse state remains a separate deferred production concern.
+
+## Exact-head evidence before this docs-only sync
+
+Advisor-reviewed security head:
+
+`e841cf688b8cafb97d0508d0c1afec9e96446670`
+
+Focused/canonical Stage 1 security run:
+
+- Stage 1 self-service acceptance — `33848314033` — **SUCCESS**; includes lint/unit, 12-migration rebuild, pgTAP/RLS/trusted-photo probes and the rotating-recovery browser regression.
+
+All seven canonical workflows on that same `e841cf6...` head were **SUCCESS**:
+
+- CI — `33848313993` — SUCCESS;
+- Stage 1 self-service acceptance — `33848314033` — SUCCESS;
+- Activation readiness — `33848313967` — SUCCESS;
+- V0 minimal PWA — `33848313970` — SUCCESS;
+- Real pilot backend prep — `33848313977` — SUCCESS;
+- Self-host migration rehearsal — `33848313963` — SUCCESS;
+- Managed Supabase migration rehearsal — `33848313976` — SUCCESS.
+
+This 7/7 set is immutable evidence for `e841cf6...`; because the present docs-only commit advances the branch, the same seven canonical workflows must also be GREEN on the new exact docs-only head before the next review.
+
+## Review state
+
+- First security remediation: closed before the second Codex review.
+- Second Codex exact-head review: completed; it found the non-rotating reconciliation BLOCKER and process-memory rate-limit IMPORTANT.
+- Advisor disposition: both findings accepted.
+- Second remediation: both findings closed on `e841cf6...`; Advisor independently inspected that exact head and found no new blocker in the 8-file remediation.
+- Remaining pre-merge security gate: **one final narrow Codex exact-head recovery-security closure review after this docs-only sync is 7/7 GREEN**.
+- PR #84 must remain OPEN / UNMERGED until that review and the later Advisor/founder merge decision.
 
 ## Immediate next action
 
-1. Verify the new exact branch SHA and clean/ahead-behind/PR state.
-2. Obtain all required canonical workflows on that **same exact SHA**.
-3. Only with required checks GREEN, open one PR to `main`; **do not merge**.
-4. Allow/trigger Managed Supabase migration rehearsal as its PR gate requires.
-5. Require every canonical workflow GREEN on that same exact PR head.
-6. Stop and report exact SHA, PR number, changed files, security/migration summary, stale-sweep result, workflow IDs/results and remaining materiality.
-7. Independent Codex exact-head security review happens after this stop and before Advisor merge decision.
+1. Verify this synchronization changed documentation files only relative to `e841cf6...`.
+2. Resolve the new exact PR head and verify `main` remains unchanged.
+3. Require all seven canonical workflows SUCCESS on that same new exact head.
+4. Keep PR #84 OPEN / UNMERGED.
+5. Stop for the final narrow Codex exact-head recovery-security closure review.
+
+No security implementation, migration, runtime, production, real-data or external-service activation work belongs in this step.
 
 ## Hard boundaries
 

@@ -1,6 +1,6 @@
 # Arar Buluruz — Product Contract V2
 
-_Last updated: 2026-09-03, Europe/Istanbul_
+_Last updated: 2026-09-04, Europe/Istanbul_
 
 ## Authority
 
@@ -34,7 +34,7 @@ The seller session is server-side and revocable:
 
 Initial seller creation also returns a high-entropy rotating recovery code for the seller to save. Plaintext recovery material is transiently shown to the seller but is not persisted in the database, logs, localStorage/sessionStorage or URL. The database keeps only a non-secret selector and digest.
 
-For recovery rotation, the browser generates the replacement credential with Web Crypto and shows it to the seller **before** any irreversible server mutation. The server validates the candidate format, hashes it and passes only selector/digest state into the atomic recovery transaction. Successful recovery consumes the old credential, installs the pre-generated candidate, revokes prior seller sessions and creates a replacement session. If the transport outcome is ambiguous, the saved candidate can be reconciled safely: if the candidate committed it can establish a fresh session; if it did not commit, the old credential remains usable. Replay of the old credential after a committed rotation fails.
+For a normal recovery rotation, the browser generates replacement candidate **B** with Web Crypto and shows it to the seller **before** the irreversible `A → B` atomic recovery mutation. The server validates/hashes the credentials and uses the privileged atomic `recover_seller_identity(...)` primitive, which consumes A, installs B, revokes prior seller sessions and creates a replacement session. If the response to `A → B` is ambiguous, the browser must generate and display a second replacement candidate **C before any reconciliation mutation**. Reconciliation then attempts `B → C` through the same atomic primitive. If `A → B` committed, B is current, `B → C` succeeds, B is consumed and C becomes current; replay of B fails. If `A → B` did not commit, `B → C` fails. That failure must not be presented as proof that A is definitely still valid, because a concurrent rotation cannot be excluded.
 
 Manual line-control or WhatsApp-control verification is **risk-triggered only**. Any retained `contact_verified_at` / verification-method fields are historical or risk-control evidence; they are not ordinary-goods authorization prerequisites.
 

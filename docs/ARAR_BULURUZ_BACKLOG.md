@@ -1,38 +1,49 @@
 # Arar Buluruz — Backlog
 
-_Last updated: 2026-09-03, Europe/Istanbul_
+_Last updated: 2026-09-04, Europe/Istanbul_
 
 Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 
-## Current active backlog — SMSless seller ownership Phase 1
+## Current active backlog — PR #84 final closure
 
 Completed on the active branch:
 
 - [x] Replace ordinary-goods OTP/verified-phone ownership with pseudonymous seller UUID ownership.
 - [x] Add `listings.owner_user_id` without phone-equality backfill.
 - [x] Add server-side revocable opaque HttpOnly seller sessions with digest-only persistence.
-- [x] Add rotating recovery credentials; atomic consume/rotate/revoke; replay rejection.
-- [x] Make replacement recovery response-loss reconcilable with a browser-generated pre-commit candidate; keep old credential usable when no commit occurred.
-- [x] Clear the browser session cookie on every logout attempt and return partial failure when server revoke cannot be confirmed.
-- [x] Prove seller A/B isolation through `seller_id → owner_user_id`.
-- [x] Prove phone change cannot transfer ownership.
-- [x] Remove seller-phone localStorage fallback and stale phone-bound session semantics.
-- [x] Retire ordinary-goods OTP actions from current shipping routes.
+- [x] Add rotating one-time recovery credentials and atomic `recover_seller_identity(...)` consume/rotate/session-revocation behavior.
+- [x] Close the first PR #84 security remediation without history rewrite or production activation.
+- [x] Complete the second Codex exact-head security review; it identified the non-rotating reconciliation BLOCKER and process-memory recovery rate-limit IMPORTANT.
+- [x] Record Advisor acceptance of both second-review findings.
+- [x] Replace ambiguous non-rotating reconciliation with `A → B`, browser pre-generation/display of C, then atomic `B → C` reconciliation through `recover_seller_identity(...)`.
+- [x] Prove successful `B → C` consumes B, makes C current, revokes pre-existing sessions and rejects B replay.
+- [x] Ensure no-commit `B → C` failure does not claim A is definitely still valid.
+- [x] Preserve recovery/session digest-only persistence and browser possession/display of replacement C before irreversible reconciliation mutation.
+- [x] Add append-only migration `20260904070000_retire_nonrotating_recovery_reconciliation.sql` and retire/drop obsolete `reconcile_seller_recovery(...)` from the final schema.
+- [x] Keep `recover_seller_identity(...)` privileged/service-role-only and deny `public` / `anon` / `authenticated` execution.
+- [x] Canonical migration chain is **12 migrations**; no migration history rewritten.
+- [x] Apply trusted-IP recovery limiting before attacker-controlled selector bucket allocation.
+- [x] Bound/sweep process-local rate-limit buckets without Redis/distributed-abuse redesign.
+- [x] Clear the browser session cookie on every logout attempt and return `LOGOUT_PARTIAL` when server revoke cannot be confirmed.
+- [x] Prove seller A/B isolation through `seller_id → owner_user_id` and phone-change non-transfer semantics.
+- [x] Retire ordinary-goods OTP actions/current phone-bound ownership semantics while preserving historical evidence.
 - [x] Keep public phone as contact data and manual line/WhatsApp control as risk-triggered only.
 - [x] Fail closed for **both Vasıta and Emlak** real-production publication without EİDS.
-- [x] Require explicit default-off `PILOT_SYNTHETIC_TEST_MODE=enabled` plus applicable loopback request/backend conditions for any synthetic Vasıta/Emlak bypass.
-- [x] Preserve RLS/Storage/trusted-photo/idempotency/atomic-publication/takedown invariants.
-- [x] Complete repository-wide current/shipping stale-reference sweep, retaining clearly historical evidence.
-- [x] Synchronize Product Contract V2, Current State, Decision Log, Backlog and Active Chat Handoff to D-030.
+- [x] Require explicit default-off `PILOT_SYNTHETIC_TEST_MODE=enabled` plus applicable loopback request/backend conditions for synthetic Vasıta/Emlak bypass.
+- [x] Preserve RLS/private-Storage/trusted-photo/signed-photo/idempotency/atomic-publication/takedown invariants.
+- [x] Focused/canonical Stage 1 exact-head run `33848314033` on `e841cf688b8cafb97d0508d0c1afec9e96446670` is SUCCESS.
+- [x] All seven canonical workflows on `e841cf688b8cafb97d0508d0c1afec9e96446670` are SUCCESS: CI `33848313993`; Stage 1 `33848314033`; Activation `33848313967`; V0 `33848313970`; Real pilot `33848313977`; Self-host `33848313963`; Managed `33848313976`.
+- [x] Advisor independently inspected the 8-file second remediation on `e841cf6...`; both accepted findings are CLOSED and no new security blocker was found.
+- [x] PR #84 is OPEN to `main` and remains **UNMERGED**.
 
 Active final gate:
 
-- [-] Obtain all canonical workflows GREEN on one exact final branch/PR SHA.
-- [x] PR #84 is open to `main`.
-- [x] Keep PR #84 **unmerged** during remediation and second security review.
-- [ ] Run/obtain Managed Supabase migration rehearsal through the approved PR trigger and keep it synthetic-only.
-- [ ] Require the full canonical workflow set GREEN on that same exact PR head.
-- [ ] Stop for the **second Codex exact-head security review**, then Advisor/founder merge decision.
+- [-] Complete this canonical **docs-only** truth synchronization; no security/application/database behavior change.
+- [ ] Verify `e841cf6... → docs-sync head` contains documentation files only and no code, SQL migration, workflow, dependency or runtime file.
+- [ ] Require all seven canonical workflows GREEN on the same new docs-only exact head.
+- [ ] Keep PR #84 OPEN / UNMERGED.
+- [ ] Run one **final narrow Codex exact-head recovery-security closure review** on that new 7/7-GREEN head.
+- [ ] Only after that review, return to Advisor/founder for the merge decision; do not merge in the current gate.
 
 Deferred until evidence or a separate gate justifies them:
 
