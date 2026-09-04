@@ -18,6 +18,7 @@ export type Stage1SellerListing = {
   province: string;
   district: string;
   sellerDisplayName: string;
+  contactPhone: string;
   status: Stage1SellerListingStatus;
   photoUrls: string[];
   createdAt: string;
@@ -36,6 +37,17 @@ export type Stage1SellerManagementResponse =
     }
   | {
       ok: true;
+      action: "seller_recovered" | "seller_recovery_reconciled";
+      sessionExpiresAt: string;
+      message: string;
+    }
+  | {
+      ok: true;
+      action: "seller_logged_out";
+      message: string;
+    }
+  | {
+      ok: true;
       action: "seller_updated" | "seller_unpublished" | "seller_sold" | "seller_deleted";
       listingId: string;
       message: string;
@@ -44,7 +56,10 @@ export type Stage1SellerManagementResponse =
       ok: false;
       code:
         | "NOT_ENABLED"
-        | "VERIFICATION_REQUIRED"
+        | "SESSION_REQUIRED"
+        | "RECOVERY_FAILED"
+        | "RECOVERY_NOT_COMMITTED"
+        | "LOGOUT_PARTIAL"
         | "NOT_AUTHORIZED"
         | "INVALID_REQUEST"
         | "RATE_LIMITED"

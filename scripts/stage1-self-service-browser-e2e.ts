@@ -8,7 +8,6 @@ const founderBaseUrl = process.env.FOUNDER_BASE_URL ?? "http://127.0.0.1:4175";
 const backendOrigin = process.env.BACKEND_ORIGIN;
 const anonKey = process.env.BACKEND_ANON_KEY;
 const serviceRoleKey = process.env.BACKEND_SERVICE_ROLE_KEY;
-const verificationCode = process.env.SYNTHETIC_VERIFICATION_CODE ?? "424242";
 if (!backendOrigin || !anonKey || !serviceRoleKey) {
   throw new Error("BACKEND_ORIGIN, BACKEND_ANON_KEY and BACKEND_SERVICE_ROLE_KEY are required.");
 }
@@ -158,14 +157,19 @@ const serviceHeaders = {
   "content-type": "application/json",
 };
 
-async function anonListingRows(
-  listingId: string,
-): Promise<
-  Array<{ id: string; title: string; price_is_free: boolean; province: string; district: string }>
+async function anonListingRows(listingId: string): Promise<
+  Array<{
+    id: string;
+    title: string;
+    price_is_free: boolean;
+    province: string;
+    district: string;
+    contact_e164: string;
+  }>
 > {
   const url = new URL(`${backendOrigin}/rest/v1/listings`);
   url.searchParams.set("id", `eq.${listingId}`);
-  url.searchParams.set("select", "id,title,price_is_free,province,district");
+  url.searchParams.set("select", "id,title,price_is_free,province,district,contact_e164");
   const response = await fetch(url, { headers: anonHeaders });
   assert(response.ok, `Anonymous listing probe failed: ${response.status}`);
   return (await response.json()) as Array<{
@@ -174,6 +178,7 @@ async function anonListingRows(
     price_is_free: boolean;
     province: string;
     district: string;
+    contact_e164: string;
   }>;
 }
 
@@ -311,7 +316,7 @@ async function submitListing(
   input: {
     title: string;
     phone: string;
-    expectVerification: boolean;
+    expectBootstrap: boolean;
     photoSeed: number;
     province: string;
     district: string;
@@ -319,7 +324,7 @@ async function submitListing(
     withCondition?: boolean;
     withDescription?: boolean;
   },
-): Promise<string> {
+): Promise<{ listingId: string; recoveryCode: string | null }> {
   await page.goto(`${publicBaseUrl}/ilan-ver`, { waitUntil: "networkidle" });
   await page.getByRole("heading", { level: 1, name: "İlan Ver" }).waitFor();
   await assertNoHorizontalOverflow(page, "/ilan-ver");
@@ -379,22 +384,35 @@ async function submitListing(
     (await page.locator('input[type="checkbox"]').count()) === 0,
     "Obsolete declaration checkbox is still visible in publication step.",
   );
-  await page
-    .getByText("Telefon numaran ilanda herkese açık görünür.", { exact: true })
-    .first()
-    .waitFor();
+  assert(
+    (await page
+      .getByText("Telefon numaran ilanda herkese açık görünür.", { exact: true })
+      .count()) === 1,
+    "Public-phone disclosure must be visible exactly once.",
+  );
+  assert(
+    (await page.getByText(/doğrulanmış telefon|telefonunu doğrula|doğrulama kodu/i).count()) === 0,
+    "Ordinary-goods publication still exposes phone-verification claims.",
+  );
   await page
     .getByText(/İlanı yayınlayarak/)
     .first()
     .waitFor();
 
-  if (input.expectVerification) {
-    expectUnauthorizedOnce(page, "POST", "/ilan-ver", "initial submit requires verification");
+  if (input.expectBootstrap) {
+    expectUnauthorizedOnce(page, "POST", "/ilan-ver", "initial submission requires seller session");
   }
   await page.getByRole("button", { name: "İlanı yayınla" }).click();
-  if (input.expectVerification) {
-    await page.getByLabel("6 haneli doğrulama kodu", { exact: true }).waitFor();
-    await page.getByLabel("6 haneli doğrulama kodu", { exact: true }).fill(verificationCode);
+
+  let recoveryCode: string | null = null;
+  if (input.expectBootstrap) {
+    const recovery = page.getByTestId("seller-recovery-code");
+    await recovery.waitFor();
+    recoveryCode = (await recovery.textContent())?.trim() ?? "";
+    assert(
+      /^ABR1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{32}$/.test(recoveryCode),
+      "Recovery code format is invalid.",
+    );
 
     let transientFailure = "";
     let stopProbe = false;
@@ -412,15 +430,15 @@ async function submitListing(
       }
     })();
 
-    await page.getByRole("button", { name: "Doğrula ve yayınla" }).click();
+    await page.getByRole("button", { name: "Kodu kaydettim, ilanı yayınla" }).click();
     await page.getByRole("heading", { level: 1, name: "İlanın yayınlandı" }).waitFor();
     stopProbe = true;
     await probe;
     assert(!transientFailure, transientFailure);
   } else {
     assert(
-      (await page.getByLabel("6 haneli doğrulama kodu", { exact: true }).count()) === 0,
-      "Remembered seller session unexpectedly requested another verification code.",
+      (await page.getByTestId("seller-recovery-code").count()) === 0,
+      "Existing seller session unexpectedly created another recovery credential.",
     );
     await page.getByRole("heading", { level: 1, name: "İlanın yayınlandı" }).waitFor();
   }
@@ -430,22 +448,38 @@ async function submitListing(
   assert(/^[0-9a-f-]{36}$/i.test(listingId), "Published listing id data attribute is missing.");
   await success.getByRole("link", { name: "İlanı görüntüle", exact: true }).waitFor();
   await success.getByRole("link", { name: "İlanlarım", exact: true }).waitFor();
-  return listingId;
+  return { listingId, recoveryCode };
 }
 
-async function openOwnerListings(page: Page, phone: string): Promise<void> {
+async function openOwnerListings(page: Page): Promise<void> {
   await page.goto(`${publicBaseUrl}/ilanlarim`, { waitUntil: "networkidle" });
-  await page.getByLabel("İlanlarım telefon numarası", { exact: true }).fill(phone);
-  await page.getByRole("button", { name: "İlanlarımı göster", exact: true }).click();
+  await page.getByRole("heading", { level: 1, name: "İlanlarım" }).waitFor();
 }
 
-async function verifyFreshSellerManagement(page: Page, phone: string): Promise<void> {
-  expectUnauthorizedOnce(page, "POST", "/ilanlarim", "fresh seller list requires verification");
-  await openOwnerListings(page, phone);
-  await page.getByLabel("İlanlarım doğrulama kodu", { exact: true }).waitFor();
-  await page.getByLabel("İlanlarım doğrulama kodu", { exact: true }).fill(verificationCode);
-  await page.getByRole("button", { name: "Doğrula ve ilanlarımı göster" }).click();
-  await page.getByRole("link", { name: "Yeni ilan ver", exact: true }).waitFor();
+async function recoverOwnerListings(page: Page, recoveryCode: string): Promise<string> {
+  await page.getByLabel("İlanlarım kurtarma kodu", { exact: true }).fill(recoveryCode);
+  await page.getByRole("button", { name: "Kurtarmayı hazırla" }).click();
+  const candidate = page.getByTestId("candidate-seller-recovery-code");
+  await candidate.waitFor();
+  const candidateCode = (await candidate.textContent())?.trim() ?? "";
+  assert(
+    /^ABR1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{32}$/.test(candidateCode),
+    "Pre-commit recovery candidate format is invalid.",
+  );
+  assert(
+    (await page.getByTestId("rotated-seller-recovery-code").count()) === 0,
+    "Recovery rotated before the pre-generated candidate was acknowledged.",
+  );
+
+  await page.getByRole("button", { name: "Yeni kodu kaydettim, erişimi kurtar" }).click();
+  const rotated = page.getByTestId("rotated-seller-recovery-code");
+  await rotated.waitFor();
+  const nextCode = (await rotated.textContent())?.trim() ?? "";
+  assert(
+    nextCode === candidateCode,
+    "Server recovery did not preserve the pre-generated candidate.",
+  );
+  return nextCode;
 }
 
 function expectHref(actual: string | null, expected: string): void {
@@ -455,15 +489,17 @@ function expectHref(actual: string | null, expected: string): void {
 const browser = await chromium.launch({ headless: true });
 const ownerContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const otherContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+const staleContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const ownerPage = await ownerContext.newPage();
 const buyerPage = await ownerContext.newPage();
 const otherSellerPage = await otherContext.newPage();
+const staleSellerPage = await staleContext.newPage();
 const founderPage = await ownerContext.newPage();
 const runtimeErrors: string[] = [];
 const privilegedBrowserMutations: string[] = [];
 const assetFailures: string[] = [];
 
-for (const page of [ownerPage, buyerPage, otherSellerPage, founderPage]) {
+for (const page of [ownerPage, buyerPage, otherSellerPage, staleSellerPage, founderPage]) {
   page.on("pageerror", (error) => runtimeErrors.push(`pageerror: ${error.message}`));
   page.on("console", (message) => {
     if (message.type() !== "error") return;
@@ -520,10 +556,10 @@ try {
   const ownerPhone = "+12025550188";
   const otherPhone = "+12025550199";
   const title = `Mercedes B 150 near final ${Date.now()}`;
-  const listingId = await submitListing(ownerPage, {
+  const ownerSubmission = await submitListing(ownerPage, {
     title,
     phone: ownerPhone,
-    expectVerification: true,
+    expectBootstrap: true,
     photoSeed: 17,
     province: "Tekirdağ",
     district: "Çorlu",
@@ -531,6 +567,9 @@ try {
     withCondition: false,
     withDescription: false,
   });
+  const listingId = ownerSubmission.listingId;
+  assert(ownerSubmission.recoveryCode, "Initial seller recovery code was not captured.");
+  let ownerRecoveryCode = ownerSubmission.recoveryCode;
 
   const publicRows = await anonListingRows(listingId);
   assert(
@@ -589,50 +628,145 @@ try {
   await assertResponsiveRoute(buyerPage, `${publicBaseUrl}/ilan/${listingId}`, "/ilan/$id", title);
   await assertResponsiveRoute(ownerPage, `${publicBaseUrl}/ilanlarim`, "/ilanlarim", "İlanlarım");
 
-  await openOwnerListings(ownerPage, ownerPhone);
+  const originalSessionCookie = (await ownerContext.cookies()).find(
+    (cookie) => cookie.name === "arar_seller_session",
+  );
+  assert(originalSessionCookie, "Opaque seller session cookie was not stored by the browser.");
+  assert(originalSessionCookie.httpOnly, "Seller session cookie is not HttpOnly.");
+  assert(originalSessionCookie.secure, "Seller session cookie is not Secure.");
+
+  // Cookie loss: no phone/localStorage fallback. Recovery restores access and rotates the credential.
+  await ownerContext.clearCookies();
+  expectUnauthorizedOnce(ownerPage, "POST", "/ilanlarim", "cookie loss requires recovery");
+  await openOwnerListings(ownerPage);
+  assert(
+    (await ownerPage.getByLabel("İlanlarım kurtarma kodu", { exact: true }).count()) === 1,
+    "Cookie loss did not offer recovery-code access.",
+  );
+  assert(
+    (await ownerPage.evaluate(() =>
+      Object.keys(window.localStorage).some((key) => key.includes("seller-phone")),
+    )) === false,
+    "Seller phone remains coupled to localStorage.",
+  );
+  ownerRecoveryCode = await recoverOwnerListings(ownerPage, ownerRecoveryCode);
+
+  // Recovery revokes the pre-recovery token, so a copied/stale session cannot authorize.
+  await staleContext.addCookies([
+    {
+      name: originalSessionCookie.name,
+      value: originalSessionCookie.value,
+      url: publicBaseUrl,
+      httpOnly: true,
+      secure: true,
+      sameSite: "Lax",
+    },
+  ]);
+  expectUnauthorizedOnce(staleSellerPage, "POST", "/ilanlarim", "recovery revokes stale session");
+  await openOwnerListings(staleSellerPage);
+  await staleSellerPage.getByLabel("İlanlarım kurtarma kodu", { exact: true }).waitFor();
+
+  // Consumed recovery code cannot be replayed.
+  expectUnauthorizedOnce(ownerPage, "POST", "/ilanlarim", "recovery replay is rejected");
+  const replay = await ownerPage.evaluate(async (code) => {
+    const randomPart = (byteLength: number) => {
+      const bytes = new Uint8Array(byteLength);
+      crypto.getRandomValues(bytes);
+      let binary = "";
+      for (const byte of bytes) binary += String.fromCharCode(byte);
+      return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/u, "");
+    };
+    const form = new FormData();
+    form.set("action", "seller_recover");
+    form.set("recoveryCode", code);
+    form.set("replacementRecoveryCode", `ABR1.${randomPart(12)}.${randomPart(24)}`);
+    const response = await fetch("/ilanlarim", {
+      method: "POST",
+      body: form,
+      credentials: "same-origin",
+    });
+    return { status: response.status, body: await response.json() };
+  }, ownerSubmission.recoveryCode);
+  assert(
+    replay.status === 401 &&
+      typeof replay.body === "object" &&
+      replay.body !== null &&
+      (replay.body as { code?: string }).code === "RECOVERY_FAILED",
+    `Consumed recovery code replay did not fail: ${JSON.stringify(replay)}`,
+  );
+
+  // Current-device logout revokes the active server-side session.
+  await ownerPage.getByRole("button", { name: "Bu cihazdan çıkış yap" }).click();
+  await ownerPage.getByText("Bu cihazdaki satıcı oturumu kapatıldı.", { exact: true }).waitFor();
+  expectUnauthorizedOnce(ownerPage, "POST", "/ilanlarim", "logout revokes current session");
+  const afterLogout = await ownerPage.evaluate(async () => {
+    const form = new FormData();
+    form.set("action", "seller_list");
+    const response = await fetch("/ilanlarim", {
+      method: "POST",
+      body: form,
+      credentials: "same-origin",
+    });
+    return response.status;
+  });
+  assert(afterLogout === 401, `Revoked logout session unexpectedly authorized: ${afterLogout}`);
+
+  // Recover again so the owner can continue management.
+  ownerRecoveryCode = await recoverOwnerListings(ownerPage, ownerRecoveryCode);
   const ownerCard = ownerPage.getByTestId(`seller-listing-${listingId}`);
   await ownerCard.waitFor();
   await ownerCard.getByText("Yayında", { exact: true }).waitFor();
 
-  await verifyFreshSellerManagement(otherSellerPage, otherPhone);
+  // Seller B receives a distinct seller_id by creating its own listing, even if contact phones later match.
+  const otherTitle = `Other seller isolation ${Date.now()}`;
+  const otherSubmission = await submitListing(otherSellerPage, {
+    title: otherTitle,
+    phone: otherPhone,
+    expectBootstrap: true,
+    photoSeed: 23,
+    province: "İzmir",
+    district: "Konak",
+    isFree: false,
+    withCondition: true,
+    withDescription: true,
+  });
+  await openOwnerListings(otherSellerPage);
+  await otherSellerPage.getByTestId(`seller-listing-${otherSubmission.listingId}`).waitFor();
   assert(
     (await otherSellerPage.getByText(title, { exact: true }).count()) === 0,
-    "Another verified phone inferred the owner's listing.",
+    "Seller B inferred Seller A's listing.",
   );
   expectHttpFailureOnce(
     otherSellerPage,
     403,
     "POST",
     "/ilanlarim",
-    "cross-phone seller mutation is denied",
+    "cross-seller_id mutation is denied",
   );
-  const denied = await otherSellerPage.evaluate(
-    async ({ phone, listingId }) => {
-      const form = new FormData();
-      form.set("action", "seller_unpublish");
-      form.set("phone", phone);
-      form.set("listingId", listingId);
-      const response = await fetch("/ilanlarim", {
-        method: "POST",
-        body: form,
-        credentials: "same-origin",
-      });
-      return { status: response.status, body: await response.json() };
-    },
-    { phone: otherPhone, listingId },
-  );
+  const denied = await otherSellerPage.evaluate(async (targetListingId) => {
+    const form = new FormData();
+    form.set("action", "seller_unpublish");
+    form.set("listingId", targetListingId);
+    const response = await fetch("/ilanlarim", {
+      method: "POST",
+      body: form,
+      credentials: "same-origin",
+    });
+    return { status: response.status, body: await response.json() };
+  }, listingId);
   assert(
     denied.status === 403 &&
       typeof denied.body === "object" &&
       denied.body !== null &&
       (denied.body as { code?: string }).code === "NOT_AUTHORIZED",
-    `Cross-phone mutation did not fail generically: ${JSON.stringify(denied)}`,
+    `Cross-seller mutation did not fail generically: ${JSON.stringify(denied)}`,
   );
 
   await ownerCard.getByRole("button", { name: "Düzenle" }).click();
   await ownerPage.getByLabel("İlanlarım başlık").fill(`${title} güncel`);
   await ownerPage.getByLabel("Ücretsiz veriyorum").uncheck();
   await ownerPage.getByLabel("İlanlarım fiyat").fill("4321");
+  await ownerPage.getByLabel("İlanlarım telefon", { exact: true }).fill(otherPhone);
   await ownerPage.getByLabel("İlanlarım il", { exact: true }).selectOption("İstanbul");
   await ownerPage.getByLabel("İlanlarım ilçe", { exact: true }).selectOption("Kadıköy");
   await ownerPage.getByRole("button", { name: "Değişiklikleri kaydet" }).click();
@@ -643,9 +777,30 @@ try {
     updatedRows.length === 1 &&
       updatedRows[0]?.price_is_free === false &&
       updatedRows[0]?.province === "İstanbul" &&
-      updatedRows[0]?.district === "Kadıköy",
+      updatedRows[0]?.district === "Kadıköy" &&
+      updatedRows[0]?.contact_e164 === otherPhone,
     `Seller edit did not reach public row: ${JSON.stringify(updatedRows)}`,
   );
+
+  expectHttpFailureOnce(
+    otherSellerPage,
+    403,
+    "POST",
+    "/ilanlarim",
+    "matching public phone does not transfer ownership",
+  );
+  const samePhoneDenied = await otherSellerPage.evaluate(async (targetListingId) => {
+    const form = new FormData();
+    form.set("action", "seller_unpublish");
+    form.set("listingId", targetListingId);
+    const response = await fetch("/ilanlarim", {
+      method: "POST",
+      body: form,
+      credentials: "same-origin",
+    });
+    return response.status;
+  }, listingId);
+  assert(samePhoneDenied === 403, "Matching public phone transferred seller authorization.");
 
   const updatedCard = ownerPage.getByTestId(`seller-listing-${listingId}`);
   await updatedCard.getByRole("button", { name: "Yayından kaldır" }).click();
@@ -688,10 +843,10 @@ try {
   assert(!deletedObject.ok, `Seller delete left Storage object: ${deletedObject.status}`);
 
   const founderTitle = `Founder takedown B 150 ${Date.now()}`;
-  const founderListingId = await submitListing(ownerPage, {
+  const founderSubmission = await submitListing(ownerPage, {
     title: founderTitle,
     phone: ownerPhone,
-    expectVerification: false,
+    expectBootstrap: false,
     photoSeed: 29,
     province: "İstanbul",
     district: "Kadıköy",
@@ -699,6 +854,7 @@ try {
     withCondition: true,
     withDescription: true,
   });
+  const founderListingId = founderSubmission.listingId;
   const founderInventory = await privilegedPhotoInventory(founderListingId);
   assert(
     founderInventory.length === 1,
@@ -775,7 +931,7 @@ try {
   assert(runtimeErrors.length === 0, `Browser runtime errors: ${runtimeErrors.join(" | ")}`);
 
   console.log(
-    "Near-final browser acceptance passed: trusted self-service auto-publish -> public search/detail/contact -> verified-phone ownership isolation/edit/unpublish/sold/delete -> founder post-moderation takedown.",
+    "Stage 1 browser acceptance passed: opaque seller session + one-time recovery -> trusted auto-publication -> seller_id isolation/edit/phone-change/unpublish/sold/delete -> founder post-moderation takedown.",
   );
 } finally {
   await ownerContext.close();

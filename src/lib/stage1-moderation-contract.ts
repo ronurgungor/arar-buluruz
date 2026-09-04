@@ -11,7 +11,7 @@ export type Stage1ModerationListing = {
   sellerDisplayName: string;
   status: PilotListingStatus;
   contactE164: string | null;
-  phoneVerified: boolean;
+  contactControlRecorded: boolean;
   publicationInstructionRecorded: boolean;
   listingRulesVersion: string | null;
   listingRulesAccepted: boolean;

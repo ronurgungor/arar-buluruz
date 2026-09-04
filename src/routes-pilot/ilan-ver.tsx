@@ -50,7 +50,7 @@ export const Route = createFileRoute("/ilan-ver")({
 });
 
 type PhotoDraft = { id: string; file: File; previewUrl: string };
-type SessionSubmitResult = "submitted" | "verification_required" | "failed";
+type SessionSubmitResult = "submitted" | "session_required" | "failed";
 const E164_PATTERN = /^\+[1-9][0-9]{7,14}$/;
 const PRICE_PATTERN = /^\d{1,10}(?:[.,]\d{1,2})?$/;
 const fieldClass =
@@ -116,8 +116,8 @@ function Stage1ListingWizard() {
   const [district, setDistrict] = useState("");
   const [sellerDisplayName, setSellerDisplayName] = useState("");
   const [phone, setPhone] = useState("+90");
-  const [verificationChallengeId, setVerificationChallengeId] = useState<string | null>(null);
-  const [verificationCode, setVerificationCode] = useState("");
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [recoveryAcknowledged, setRecoveryAcknowledged] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [successId, setSuccessId] = useState<string | null>(null);
@@ -234,27 +234,26 @@ function Stage1ListingWizard() {
     const result = await postSelfService(buildSubmissionForm());
     if (result.ok && result.action === "submitted") {
       setSuccessId(result.listingId);
-      setVerificationChallengeId(null);
       return "submitted";
     }
     if (!result.ok) {
-      if (result.code === "VERIFICATION_REQUIRED") return "verification_required";
+      if (result.code === "SESSION_REQUIRED") return "session_required";
       setError(result.message);
     }
     return "failed";
   };
 
-  const startVerification = async () => {
+  const bootstrapSeller = async () => {
     const form = new FormData();
-    form.set("action", "start_verification");
-    form.set("phone", phone.trim());
+    form.set("action", "seller_bootstrap");
     const result = await postSelfService(form);
-    if (result.ok && result.action === "verification_started") {
-      setVerificationChallengeId(result.challengeId);
-      setVerificationCode("");
-      return;
+    if (result.ok && result.action === "seller_bootstrapped") {
+      setRecoveryCode(result.recoveryCode);
+      setRecoveryAcknowledged(false);
+      return true;
     }
     if (!result.ok) setError(result.message);
+    return false;
   };
 
   const beginFinalSubmit = async () => {
@@ -266,30 +265,25 @@ function Stage1ListingWizard() {
 
     setBusy(true);
     const result = await submitWithSession();
-    if (result === "verification_required") {
+    if (result === "session_required") {
       clearError();
-      await startVerification();
+      await bootstrapSeller();
     }
     setBusy(false);
   };
 
-  const confirmVerification = async () => {
-    if (!verificationChallengeId || !/^\d{6}$/.test(verificationCode)) {
-      setError("6 haneli doğrulama kodunu girin.");
-      return;
-    }
+  const acknowledgeRecoveryAndSubmit = async () => {
+    setRecoveryAcknowledged(true);
     setBusy(true);
     clearError();
-    const form = new FormData();
-    form.set("action", "verify_phone");
-    form.set("phone", phone.trim());
-    form.set("challengeId", verificationChallengeId);
-    form.set("code", verificationCode);
-    const result = await postSelfService(form);
-    if (result.ok && result.action === "phone_verified") {
-      await submitWithSession();
-    } else if (!result.ok) {
-      setError(result.message);
+    const result = await submitWithSession();
+    if (result !== "submitted") {
+      if (result === "session_required") {
+        setError(
+          "Satıcı oturumu kullanılamıyor. Kurtarma kodunu İlanlarım sayfasında kullanabilirsin.",
+        );
+      }
+      setRecoveryAcknowledged(false);
     }
     setBusy(false);
   };
@@ -692,8 +686,8 @@ function Stage1ListingWizard() {
             <div>
               <h2 className="text-lg font-bold">Satıcı ve iletişim</h2>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                İlanı yayınlamadan önce telefonunu doğrulayacağız. Doğrulama bir süre hatırlanır;
-                her ilanda yeniden kod istemeyiz.
+                Telefon numaran yalnızca ilandaki Ara ve WhatsApp iletişimi için kullanılır. Satıcı
+                erişimin bu cihazdaki güvenli oturumla yönetilir.
               </p>
             </div>
 
@@ -740,18 +734,15 @@ function Stage1ListingWizard() {
                   id="stage1-phone"
                   aria-label="Telefon numarası"
                   value={phone}
-                  onChange={(event) => {
-                    setPhone(event.target.value);
-                    setVerificationChallengeId(null);
-                  }}
+                  onChange={(event) => setPhone(event.target.value)}
                   inputMode="tel"
                   autoComplete="tel"
                   placeholder="+905xxxxxxxxx"
                   className={`mt-1.5 ${fieldClass}`}
                 />
                 <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-                  +90 ile başlayan numaranı yaz. Kod yalnız gerektiğinde istenir; hesap veya şifre
-                  gerekmez.
+                  +90 ile başlayan numaranı yaz. Bu numara ilanında herkese açık iletişim bilgisi
+                  olarak görünür; satıcı yönetim yetkisini belirlemez.
                 </span>
               </div>
             </div>
@@ -798,35 +789,25 @@ function Stage1ListingWizard() {
               </p>
             </div>
 
-            {verificationChallengeId && (
+            {recoveryCode && !recoveryAcknowledged && (
               <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-primary">Son adım</p>
-                <p className="mt-1 text-sm font-semibold text-foreground">Telefonunu doğrula</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  {phone.trim()} numarasına gönderilen 6 haneli kodu gir.
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">
+                  Kurtarma kodun — yalnızca bir kez gösterilir
                 </p>
-                <input
-                  id="stage1-verification-code"
-                  aria-label="6 haneli doğrulama kodu"
-                  value={verificationCode}
-                  onChange={(event) =>
-                    setVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))
-                  }
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  placeholder="000000"
-                  className={`mt-3 ${fieldClass} text-center text-xl font-bold tracking-[0.4em]`}
-                />
-                <button
-                  type="button"
-                  disabled={busy}
-                  aria-busy={busy}
-                  onClick={() => void confirmVerification()}
-                  className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-60"
+                <p className="mt-1 text-sm leading-relaxed text-foreground">
+                  Bu cihazın çerezi kaybolursa İlanlarım erişimini bu kodla geri alabilirsin. Kodu
+                  şimdi güvenli bir yere kaydet; bağlantı, telefon numarası veya şifre değildir.
+                </p>
+                <code
+                  data-testid="seller-recovery-code"
+                  className="mt-3 block break-all rounded-xl border border-border bg-background p-3 text-sm font-bold"
                 >
-                  {busy && <Loader2 aria-hidden className="h-4 w-4 animate-spin" />}
-                  {busy ? "Doğrulanıyor…" : "Doğrula ve yayınla"}
-                </button>
+                  {recoveryCode}
+                </code>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  Arar Buluruz bu kodun açık halini tekrar gösteremez. Kurtarma başarılı olduğunda
+                  eski kod iptal edilir ve yeni kod verilir.
+                </p>
               </div>
             )}
           </section>
@@ -840,7 +821,6 @@ function Stage1ListingWizard() {
                 disabled={busy}
                 onClick={() => {
                   clearError();
-                  setVerificationChallengeId(null);
                   setStep((current) => current - 1);
                 }}
                 className="inline-flex h-12 min-w-12 items-center justify-center gap-1 rounded-full border border-border bg-background px-4 text-sm font-semibold transition-colors hover:bg-accent disabled:opacity-50"
@@ -858,7 +838,18 @@ function Stage1ListingWizard() {
               >
                 Devam <ChevronRight aria-hidden className="h-4 w-4" />
               </button>
-            ) : !verificationChallengeId ? (
+            ) : recoveryCode && !recoveryAcknowledged ? (
+              <button
+                type="button"
+                disabled={busy}
+                aria-busy={busy}
+                onClick={() => void acknowledgeRecoveryAndSubmit()}
+                className="ml-auto inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-60"
+              >
+                {busy && <Loader2 aria-hidden className="h-4 w-4 animate-spin" />}
+                {busy ? "Yayınlanıyor…" : "Kodu kaydettim, ilanı yayınla"}
+              </button>
+            ) : (
               <button
                 type="button"
                 disabled={busy}
@@ -869,10 +860,6 @@ function Stage1ListingWizard() {
                 {busy && <Loader2 aria-hidden className="h-4 w-4 animate-spin" />}
                 {busy ? "Hazırlanıyor…" : "İlanı yayınla"}
               </button>
-            ) : (
-              <p className="ml-auto flex-1 text-center text-xs font-medium text-muted-foreground">
-                Yayınlamak için doğrulama kodunu gir.
-              </p>
             )}
           </div>
         </div>

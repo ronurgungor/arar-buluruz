@@ -52,6 +52,7 @@ function requestForPublish(): Request {
 
 beforeAll(() => {
   process.env.PILOT_OPERATOR_ENABLED = "enabled";
+  process.env.PILOT_SYNTHETIC_TEST_MODE = "enabled";
   process.env.PILOT_OPERATOR_SUPABASE_URL = "http://127.0.0.1:54321";
   process.env.PILOT_OPERATOR_SUPABASE_SERVICE_ROLE_KEY = "synthetic-service-role-key";
   console.error = () => {};
@@ -90,15 +91,51 @@ afterAll(() => {
 });
 
 describe("founder exceptional publish readiness", () => {
-  test("rejects missing phone verification", async () => {
+  test("ordinary-goods exceptional publish does not require phone verification", async () => {
     currentRow = { ...readyRow(), contact_verified_at: null };
     patchCalls = 0;
     photoCalls = 0;
     const response = await handleStage1ModerationRequest(requestForPublish());
-    expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({ ok: false, code: "INVALID_STATE" });
-    expect(patchCalls).toBe(0);
-    expect(photoCalls).toBe(0);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ ok: true, listingId });
+    expect(patchCalls).toBe(1);
+    expect(photoCalls).toBe(1);
+  });
+
+  test("vehicle and real-estate production publication fail closed without EIDS", async () => {
+    const priorMode = process.env.PILOT_SYNTHETIC_TEST_MODE;
+    process.env.PILOT_SYNTHETIC_TEST_MODE = "disabled";
+    try {
+      for (const category of ["vehicle", "real-estate"]) {
+        currentRow = { ...readyRow(), category, contact_verified_at: null };
+        patchCalls = 0;
+        photoCalls = 0;
+        const response = await handleStage1ModerationRequest(requestForPublish());
+        expect(response.status).toBe(400);
+        expect(await response.json()).toMatchObject({ ok: false, code: "INVALID_STATE" });
+        expect(patchCalls).toBe(0);
+        expect(photoCalls).toBe(0);
+      }
+    } finally {
+      process.env.PILOT_SYNTHETIC_TEST_MODE = priorMode;
+    }
+
+    const priorUrl = process.env.PILOT_OPERATOR_SUPABASE_URL;
+    process.env.PILOT_OPERATOR_SUPABASE_URL = "https://synthetic.example";
+    try {
+      for (const category of ["vehicle", "real-estate"]) {
+        currentRow = { ...readyRow(), category, contact_verified_at: null };
+        patchCalls = 0;
+        photoCalls = 0;
+        const response = await handleStage1ModerationRequest(requestForPublish());
+        expect(response.status).toBe(400);
+        expect(await response.json()).toMatchObject({ ok: false, code: "INVALID_STATE" });
+        expect(patchCalls).toBe(0);
+        expect(photoCalls).toBe(0);
+      }
+    } finally {
+      process.env.PILOT_OPERATOR_SUPABASE_URL = priorUrl;
+    }
   });
 
   test("rejects missing publication instruction", async () => {

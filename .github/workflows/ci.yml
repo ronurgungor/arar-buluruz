@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - agent/smsless-seller-ownership-phase1
   workflow_dispatch:
 
 permissions:

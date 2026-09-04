@@ -13,6 +13,12 @@ import type {
   Stage1SellerManagementResponse,
 } from "./stage1-seller-management-contract";
 import {
+  createOpaqueSellerSessionToken,
+  createSellerRecoveryCredential,
+  parseSellerRecoveryCode,
+  sha256Hex,
+} from "./stage1-seller-credentials";
+import {
   STAGE1_MAX_PHOTOS,
   STAGE1_MAX_TOTAL_UPLOAD_BYTES,
   STAGE1_SELLER_SESSION_TTL_SECONDS,
@@ -27,18 +33,23 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 const SHA256_HEX_PATTERN = /^[0-9a-f]{64}$/;
 const PRICE_PATTERN = /^\d{1,10}(?:[.,]\d{1,2})?$/;
 const MAX_REQUEST_BYTES = STAGE1_MAX_TOTAL_UPLOAD_BYTES + 2 * 1024 * 1024;
-const VERIFICATION_TTL_MS = 10 * 60 * 1000;
 const SELLER_SESSION_COOKIE = "arar_seller_session";
 const LISTING_RULES_VERSION = "2026-08-28-v1";
+const RATE_BUCKET_MAX_ENTRIES = 4096;
+const RATE_BUCKET_SWEEP_INTERVAL = 64;
 
 class Stage1SubmissionError extends Error {
-  readonly code: Exclude<Stage1SubmissionResponse, { ok: true }>["code"];
+  readonly code:
+    | Exclude<Stage1SubmissionResponse, { ok: true }>["code"]
+    | Exclude<Stage1SellerManagementResponse, { ok: true }>["code"];
   readonly status: number;
   readonly retryAfterSeconds?: number;
   readonly limiterClass?: string;
 
   constructor(
-    code: Exclude<Stage1SubmissionResponse, { ok: true }>["code"],
+    code:
+      | Exclude<Stage1SubmissionResponse, { ok: true }>["code"]
+      | Exclude<Stage1SellerManagementResponse, { ok: true }>["code"],
     message: string,
     status = 400,
     retryAfterSeconds?: number,
@@ -55,13 +66,11 @@ class Stage1SubmissionError extends Error {
 }
 
 type BackendConfig = { baseUrl: string; serviceRoleKey: string };
-type Challenge = { e164: string; codeHash: string; expiresAt: number; attempts: number };
 type RateBucket = { count: number; resetAt: number };
-type SellerSessionPayload = {
-  e164: string;
-  verifiedAt: string;
+type SellerSession = {
+  sellerId: string;
   expiresAt: string;
-  nonce: string;
+  tokenDigest: string;
 };
 type SubmissionClaim = {
   listing_id: string;
@@ -81,10 +90,10 @@ type SellerBackendRow = {
   province: string;
   district: string;
   seller_display_name: string;
+  owner_user_id: string | null;
   status: string;
   contact_channel: string | null;
   contact_e164: string | null;
-  contact_verified_at: string | null;
   publication_instruction_at: string | null;
   private_seller_declaration_at: string | null;
   content_rights_declaration_at: string | null;
@@ -106,8 +115,8 @@ type SellerPhotoRow = {
   sort_order: number | string;
 };
 
-const challenges = new Map<string, Challenge>();
 const rateBuckets = new Map<string, RateBucket>();
+let rateBucketOperationsSinceSweep = 0;
 
 function jsonResponse(
   payload: Stage1ApiResponse,
@@ -216,6 +225,12 @@ function resolveTrustedClientIp(request: Request): string {
   return value;
 }
 
+function sweepExpiredRateBuckets(now: number): void {
+  for (const [bucketKey, bucket] of rateBuckets) {
+    if (bucket.resetAt <= now) rateBuckets.delete(bucketKey);
+  }
+}
+
 function enforceRateLimit(
   limiterClass: string,
   key: string,
@@ -225,9 +240,29 @@ function enforceRateLimit(
 ): void {
   const effectiveLimit = relaxed ? Math.max(limit * 10, limit + 20) : limit;
   const now = Date.now();
+  rateBucketOperationsSinceSweep += 1;
+  if (
+    rateBucketOperationsSinceSweep >= RATE_BUCKET_SWEEP_INTERVAL ||
+    rateBuckets.size >= RATE_BUCKET_MAX_ENTRIES
+  ) {
+    sweepExpiredRateBuckets(now);
+    rateBucketOperationsSinceSweep = 0;
+  }
+
   const bucketKey = `${limiterClass}:${key}`;
   const current = rateBuckets.get(bucketKey);
   if (!current || current.resetAt <= now) {
+    if (current) rateBuckets.delete(bucketKey);
+    if (rateBuckets.size >= RATE_BUCKET_MAX_ENTRIES) {
+      throw new Stage1SubmissionError(
+        "RATE_LIMITED",
+        "Çok fazla istek gönderildi. Lütfen kısa bir süre sonra tekrar deneyin.",
+        429,
+        60,
+        undefined,
+        limiterClass,
+      );
+    }
     rateBuckets.set(bucketKey, { count: 1, resetAt: now + windowMs });
     return;
   }
@@ -248,7 +283,7 @@ function enforceRateLimit(
 function usesRelaxedSyntheticLimits(request: Request): boolean {
   return (
     isLoopbackHost(new URL(request.url).hostname) &&
-    process.env.PILOT_PHONE_VERIFICATION_MODE?.trim() === "synthetic"
+    process.env.PILOT_SYNTHETIC_TEST_MODE?.trim() === "enabled"
   );
 }
 
@@ -419,112 +454,6 @@ function assertAllowedFields(form: FormData, allowed: ReadonlySet<string>): void
   }
 }
 
-async function sha256Hex(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-}
-
-function getCapabilitySecret(): string {
-  const secret = process.env.PILOT_SUBMISSION_CAPABILITY_SECRET?.trim() ?? "";
-  if (secret.length < 32) {
-    throw new Stage1SubmissionError(
-      "BACKEND_UNAVAILABLE",
-      "İlan doğrulama yetenek anahtarı bu ortamda yapılandırılmamış.",
-      503,
-    );
-  }
-  return secret;
-}
-
-function base64UrlEncode(value: Uint8Array | string): string {
-  return Buffer.from(value).toString("base64url");
-}
-
-function base64UrlDecode(value: string): Uint8Array | null {
-  if (!/^[A-Za-z0-9_-]+$/.test(value)) return null;
-  const decoded = new Uint8Array(Buffer.from(value, "base64url"));
-  return base64UrlEncode(decoded) === value ? decoded : null;
-}
-
-async function signSellerSessionPayload(payloadPart: string, secret: string): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payloadPart));
-  return base64UrlEncode(new Uint8Array(signature));
-}
-
-async function createSellerSession(e164: string): Promise<{ token: string; expiresAt: string }> {
-  const now = new Date();
-  const expiresAt = new Date(now.getTime() + STAGE1_SELLER_SESSION_TTL_SECONDS * 1000);
-  const payload: SellerSessionPayload = {
-    e164,
-    verifiedAt: now.toISOString(),
-    expiresAt: expiresAt.toISOString(),
-    nonce: crypto.randomUUID(),
-  };
-  const payloadPart = base64UrlEncode(JSON.stringify(payload));
-  const signature = await signSellerSessionPayload(payloadPart, getCapabilitySecret());
-  return { token: `${payloadPart}.${signature}`, expiresAt: payload.expiresAt };
-}
-
-async function verifySellerSessionToken(
-  token: string,
-  expectedE164: string,
-): Promise<SellerSessionPayload> {
-  const pieces = token.split(".");
-  if (pieces.length !== 2 || !pieces[0] || !pieces[1]) {
-    throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
-  }
-  const [payloadPart, signature] = pieces;
-  const expectedSignature = await signSellerSessionPayload(payloadPart, getCapabilitySecret());
-  const actualBytes = base64UrlDecode(signature);
-  const expectedBytes = base64UrlDecode(expectedSignature);
-  if (!actualBytes || !expectedBytes || actualBytes.byteLength !== expectedBytes.byteLength) {
-    throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
-  }
-  let mismatch = 0;
-  for (let index = 0; index < actualBytes.byteLength; index += 1) {
-    mismatch |= actualBytes[index] ^ expectedBytes[index];
-  }
-  if (mismatch !== 0) {
-    throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
-  }
-
-  let payload: SellerSessionPayload;
-  try {
-    payload = JSON.parse(
-      Buffer.from(payloadPart, "base64url").toString("utf8"),
-    ) as SellerSessionPayload;
-  } catch {
-    throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
-  }
-  if (
-    !stage1E164Schema.safeParse(payload.e164).success ||
-    payload.e164 !== expectedE164 ||
-    !UUID_PATTERN.test(payload.nonce)
-  ) {
-    throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
-  }
-  const verifiedAt = Date.parse(payload.verifiedAt);
-  const expiresAt = Date.parse(payload.expiresAt);
-  const now = Date.now();
-  if (
-    !Number.isFinite(verifiedAt) ||
-    !Number.isFinite(expiresAt) ||
-    verifiedAt > now + 60_000 ||
-    expiresAt <= now ||
-    expiresAt - verifiedAt > STAGE1_SELLER_SESSION_TTL_SECONDS * 1000 + 1000
-  ) {
-    throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
-  }
-  return payload;
-}
-
 function readCookie(request: Request, name: string): string | null {
   const raw = request.headers.get("cookie") ?? "";
   for (const part of raw.split(";")) {
@@ -534,132 +463,321 @@ function readCookie(request: Request, name: string): string | null {
   return null;
 }
 
-function sellerSessionCookie(token: string, request: Request): string {
-  const attributes = [
+function sellerSessionCookie(token: string): string {
+  return [
     `${SELLER_SESSION_COOKIE}=${token}`,
     "Path=/",
     "HttpOnly",
     "SameSite=Lax",
+    "Secure",
     `Max-Age=${STAGE1_SELLER_SESSION_TTL_SECONDS}`,
-  ];
-  if (new URL(request.url).protocol === "https:") attributes.push("Secure");
-  return attributes.join("; ");
+  ].join("; ");
 }
 
-async function requireSellerSession(
+function clearSellerSessionCookie(): string {
+  return [
+    `${SELLER_SESSION_COOKIE}=`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    "Secure",
+    "Max-Age=0",
+  ].join("; ");
+}
+
+function isOpaqueSessionToken(value: string): boolean {
+  return /^[A-Za-z0-9_-]{43}$/.test(value);
+}
+
+function sessionExpiry(): string {
+  return new Date(Date.now() + STAGE1_SELLER_SESSION_TTL_SECONDS * 1000).toISOString();
+}
+
+async function createSellerIdentity(config: BackendConfig): Promise<{
+  sellerId: string;
+  sessionToken: string;
+  sessionExpiresAt: string;
+  recoveryCode: string;
+}> {
+  const sellerId = crypto.randomUUID();
+  const sessionToken = createOpaqueSellerSessionToken();
+  const sessionDigest = await sha256Hex(sessionToken);
+  const sessionExpiresAt = sessionExpiry();
+  const recovery = await createSellerRecoveryCredential();
+  const response = await requireOk(
+    await fetch(`${config.baseUrl}/rest/v1/rpc/create_seller_identity`, {
+      method: "POST",
+      headers: serviceHeaders(config),
+      body: JSON.stringify({
+        p_seller_id: sellerId,
+        p_recovery_selector: recovery.selector,
+        p_recovery_digest: recovery.digest,
+        p_session_digest: sessionDigest,
+        p_session_expires_at: sessionExpiresAt,
+      }),
+    }),
+    "seller identity create",
+  );
+  const created = (await response.json()) as string | null;
+  if (created !== sellerId) throw new Error("Seller identity creation returned an unexpected id.");
+  return { sellerId, sessionToken, sessionExpiresAt, recoveryCode: recovery.code };
+}
+
+async function resolveSellerSession(
+  config: BackendConfig,
   request: Request,
-  expectedE164: string,
-): Promise<SellerSessionPayload> {
+): Promise<SellerSession> {
   const token = readCookie(request, SELLER_SESSION_COOKIE);
-  if (!token) {
-    throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Telefon doğrulaması gerekiyor.", 401);
+  if (!token || !isOpaqueSessionToken(token)) {
+    throw new Stage1SubmissionError(
+      "SESSION_REQUIRED",
+      "Bu cihazda geçerli satıcı oturumu yok. Kurtarma kodunla devam edebilirsin.",
+      401,
+    );
   }
-  return await verifySellerSessionToken(token, expectedE164);
+  const tokenDigest = await sha256Hex(token);
+  const response = await requireOk(
+    await fetch(`${config.baseUrl}/rest/v1/rpc/resolve_seller_session`, {
+      method: "POST",
+      headers: serviceHeaders(config),
+      body: JSON.stringify({ p_session_digest: tokenDigest }),
+    }),
+    "seller session resolve",
+  );
+  const rows = (await response.json()) as Array<{ seller_id?: string; expires_at?: string }>;
+  const row = rows[0];
+  if (
+    rows.length !== 1 ||
+    !row ||
+    typeof row.seller_id !== "string" ||
+    !UUID_PATTERN.test(row.seller_id) ||
+    typeof row.expires_at !== "string" ||
+    !Number.isFinite(Date.parse(row.expires_at))
+  ) {
+    throw new Stage1SubmissionError(
+      "SESSION_REQUIRED",
+      "Bu cihazdaki satıcı oturumu geçerli değil. Kurtarma kodunla devam edebilirsin.",
+      401,
+    );
+  }
+  return { sellerId: row.seller_id, expiresAt: row.expires_at, tokenDigest };
 }
 
-async function startVerification(
+async function sellerBootstrap(
   form: FormData,
   clientIp: string,
   request: Request,
 ): Promise<Response> {
-  assertAllowedFields(form, new Set(["action", "phone"]));
-  const e164 = stage1E164Schema.parse(requiredString(form, "phone", 8, 16));
-  const relaxed = usesRelaxedSyntheticLimits(request);
-  enforceRateLimit("otp-start-phone", e164, 5, 15 * 60 * 1000, relaxed);
-  enforceRateLimit("otp-start-ip", clientIp, 40, 15 * 60 * 1000, relaxed);
-
-  const mode = process.env.PILOT_PHONE_VERIFICATION_MODE?.trim() ?? "disabled";
-  if (mode !== "synthetic") {
-    throw new Stage1SubmissionError(
-      "VERIFICATION_UNAVAILABLE",
-      "Telefon doğrulama hizmeti bu ortamda henüz etkin değil.",
-      503,
-    );
-  }
-  if (!isLoopbackHost(new URL(request.url).hostname)) {
-    throw new Stage1SubmissionError(
-      "VERIFICATION_UNAVAILABLE",
-      "Sentetik telefon doğrulaması yalnız yerel testte kullanılabilir.",
-      503,
-    );
-  }
-  const code = process.env.PILOT_SYNTHETIC_VERIFICATION_CODE?.trim() ?? "";
-  if (!/^\d{6}$/.test(code)) {
-    throw new Stage1SubmissionError(
-      "VERIFICATION_UNAVAILABLE",
-      "Sentetik telefon doğrulama kodu yapılandırılmamış.",
-      503,
-    );
-  }
-  const challengeId = crypto.randomUUID();
-  challenges.set(challengeId, {
-    e164,
-    codeHash: await sha256Hex(`${challengeId}:${code}`),
-    expiresAt: Date.now() + VERIFICATION_TTL_MS,
-    attempts: 0,
-  });
-  return jsonResponse({
-    ok: true,
-    action: "verification_started",
-    challengeId,
-    message: "Telefon doğrulama adımı başlatıldı.",
-  });
-}
-
-async function verifyPhone(form: FormData, clientIp: string, request: Request): Promise<Response> {
-  assertAllowedFields(form, new Set(["action", "phone", "challengeId", "code"]));
-  const e164 = stage1E164Schema.parse(requiredString(form, "phone", 8, 16));
-  const challengeId = requiredString(form, "challengeId", 36, 36).toLowerCase();
-  const code = requiredString(form, "code", 6, 6);
-  if (!UUID_PATTERN.test(challengeId) || !/^\d{6}$/.test(code)) {
-    throw new Stage1SubmissionError("INVALID_REQUEST", "Doğrulama bilgisi geçersiz.");
+  assertAllowedFields(form, new Set(["action"]));
+  const existingToken = readCookie(request, SELLER_SESSION_COOKIE);
+  if (existingToken) {
+    const config = readBackendConfig();
+    try {
+      await resolveSellerSession(config, request);
+      throw new Stage1SubmissionError(
+        "INVALID_REQUEST",
+        "Bu cihazda zaten geçerli bir satıcı oturumu var.",
+        409,
+      );
+    } catch (error) {
+      if (error instanceof Stage1SubmissionError && error.code === "INVALID_REQUEST") throw error;
+      throw new Stage1SubmissionError(
+        "SESSION_REQUIRED",
+        "Mevcut oturum geçerli değil. Önce kurtarma kodunu kullan veya çıkış yap.",
+        401,
+      );
+    }
   }
 
   enforceRateLimit(
-    "otp-confirm-ip",
+    "seller-bootstrap-ip",
     clientIp,
-    100,
-    15 * 60 * 1000,
+    20,
+    60 * 60 * 1000,
     usesRelaxedSyntheticLimits(request),
   );
-
-  const challenge = challenges.get(challengeId);
-  if (!challenge || challenge.expiresAt <= Date.now() || challenge.e164 !== e164) {
-    challenges.delete(challengeId);
-    throw new Stage1SubmissionError(
-      "VERIFICATION_REQUIRED",
-      "Telefon doğrulaması yeniden gerekiyor.",
-      401,
-    );
-  }
-
-  challenge.attempts += 1;
-  if (challenge.attempts > 5) {
-    challenges.delete(challengeId);
-    throw new Stage1SubmissionError(
-      "RATE_LIMITED",
-      "Doğrulama deneme sınırı aşıldı.",
-      429,
-      600,
-      undefined,
-      "otp-challenge",
-    );
-  }
-  if ((await sha256Hex(`${challengeId}:${code}`)) !== challenge.codeHash) {
-    throw new Stage1SubmissionError("VERIFICATION_REQUIRED", "Doğrulama kodu geçersiz.", 401);
-  }
-
-  challenges.delete(challengeId);
-  const session = await createSellerSession(e164);
+  const config = readBackendConfig();
+  const created = await createSellerIdentity(config);
   return jsonResponse(
     {
       ok: true,
-      action: "phone_verified",
-      sessionExpiresAt: session.expiresAt,
-      message: "Telefon doğrulandı.",
+      action: "seller_bootstrapped",
+      recoveryCode: created.recoveryCode,
+      sessionExpiresAt: created.sessionExpiresAt,
+      message: "Satıcı erişimin hazır. Kurtarma kodunu güvenli bir yerde sakla.",
+    },
+    201,
+    { "Set-Cookie": sellerSessionCookie(created.sessionToken) },
+  );
+}
+
+async function sellerRecover(
+  form: FormData,
+  clientIp: string,
+  request: Request,
+): Promise<Response> {
+  assertAllowedFields(form, new Set(["action", "recoveryCode", "replacementRecoveryCode"]));
+  const rawCode = requiredString(form, "recoveryCode", 10, 160);
+  const replacementRawCode = requiredString(form, "replacementRecoveryCode", 10, 160);
+  const parsed = await parseSellerRecoveryCode(rawCode);
+  const replacement = await parseSellerRecoveryCode(replacementRawCode);
+  if (!parsed || !replacement || replacement.digest === parsed.digest) {
+    throw new Stage1SubmissionError("RECOVERY_FAILED", "Kurtarma kodu geçersiz.", 401);
+  }
+  const relaxed = usesRelaxedSyntheticLimits(request);
+  enforceRateLimit("seller-recovery-ip", clientIp, 40, 60 * 60 * 1000, relaxed);
+  enforceRateLimit("seller-recovery-selector", parsed.selector, 8, 60 * 60 * 1000, relaxed);
+
+  const config = readBackendConfig();
+  const sessionToken = createOpaqueSellerSessionToken();
+  const sessionDigest = await sha256Hex(sessionToken);
+  const expiresAt = sessionExpiry();
+  const response = await requireOk(
+    await fetch(`${config.baseUrl}/rest/v1/rpc/recover_seller_identity`, {
+      method: "POST",
+      headers: serviceHeaders(config),
+      body: JSON.stringify({
+        p_recovery_selector: parsed.selector,
+        p_recovery_digest: parsed.digest,
+        p_new_recovery_selector: replacement.selector,
+        p_new_recovery_digest: replacement.digest,
+        p_new_session_digest: sessionDigest,
+        p_new_session_expires_at: expiresAt,
+      }),
+    }),
+    "seller recovery",
+  );
+  const rows = (await response.json()) as Array<{
+    seller_id?: string;
+    session_expires_at?: string;
+  }>;
+  if (
+    rows.length !== 1 ||
+    !rows[0]?.seller_id ||
+    !UUID_PATTERN.test(rows[0].seller_id) ||
+    typeof rows[0].session_expires_at !== "string"
+  ) {
+    throw new Stage1SubmissionError(
+      "RECOVERY_FAILED",
+      "Kurtarma kodu geçersiz, daha önce kullanılmış veya artık geçerli değil.",
+      401,
+    );
+  }
+  return jsonResponse(
+    {
+      ok: true,
+      action: "seller_recovered",
+      sessionExpiresAt: rows[0].session_expires_at,
+      message:
+        "Erişim geri kazanıldı. Tarayıcında oluşturduğun yeni kurtarma kodunu saklamaya devam et.",
     },
     200,
-    { "Set-Cookie": sellerSessionCookie(session.token, request) },
+    { "Set-Cookie": sellerSessionCookie(sessionToken) },
+  );
+}
+
+async function sellerReconcileRecovery(
+  form: FormData,
+  clientIp: string,
+  request: Request,
+): Promise<Response> {
+  assertAllowedFields(form, new Set(["action", "recoveryCode", "replacementRecoveryCode"]));
+  const rawCode = requiredString(form, "recoveryCode", 10, 160);
+  const replacementRawCode = requiredString(form, "replacementRecoveryCode", 10, 160);
+  const parsed = await parseSellerRecoveryCode(rawCode);
+  const replacement = await parseSellerRecoveryCode(replacementRawCode);
+  if (!parsed || !replacement || replacement.digest === parsed.digest) {
+    throw new Stage1SubmissionError("RECOVERY_FAILED", "Kurtarma kodu geçersiz.", 401);
+  }
+  const relaxed = usesRelaxedSyntheticLimits(request);
+  enforceRateLimit("seller-recovery-reconcile-ip", clientIp, 40, 60 * 60 * 1000, relaxed);
+  enforceRateLimit(
+    "seller-recovery-reconcile-selector",
+    parsed.selector,
+    8,
+    60 * 60 * 1000,
+    relaxed,
+  );
+
+  const config = readBackendConfig();
+  const sessionToken = createOpaqueSellerSessionToken();
+  const sessionDigest = await sha256Hex(sessionToken);
+  const expiresAt = sessionExpiry();
+  const response = await requireOk(
+    await fetch(`${config.baseUrl}/rest/v1/rpc/recover_seller_identity`, {
+      method: "POST",
+      headers: serviceHeaders(config),
+      body: JSON.stringify({
+        p_recovery_selector: parsed.selector,
+        p_recovery_digest: parsed.digest,
+        p_new_recovery_selector: replacement.selector,
+        p_new_recovery_digest: replacement.digest,
+        p_new_session_digest: sessionDigest,
+        p_new_session_expires_at: expiresAt,
+      }),
+    }),
+    "seller recovery reconciliation rotation",
+  );
+  const rows = (await response.json()) as Array<{
+    seller_id?: string;
+    session_expires_at?: string;
+  }>;
+  if (
+    rows.length !== 1 ||
+    !rows[0]?.seller_id ||
+    !UUID_PATTERN.test(rows[0].seller_id) ||
+    typeof rows[0].session_expires_at !== "string"
+  ) {
+    throw new Stage1SubmissionError(
+      "RECOVERY_NOT_COMMITTED",
+      "Belirsiz kurtarma sonucu doğrulanamadı. İlk denemenin sonucu veya kurtarma durumu değişmiş olabilir; önceki kodun hâlâ geçerli olduğunu varsaymayın.",
+      409,
+    );
+  }
+  return jsonResponse(
+    {
+      ok: true,
+      action: "seller_recovery_reconciled",
+      sessionExpiresAt: rows[0].session_expires_at,
+      message:
+        "Belirsiz kurtarma güvenli biçimde yeniden döndürüldü. Tarayıcında oluşturduğun en yeni kurtarma kodunu sakla.",
+    },
+    200,
+    { "Set-Cookie": sellerSessionCookie(sessionToken) },
+  );
+}
+
+async function sellerLogout(form: FormData, request: Request): Promise<Response> {
+  assertAllowedFields(form, new Set(["action"]));
+  const token = readCookie(request, SELLER_SESSION_COOKIE);
+  if (token && isOpaqueSessionToken(token)) {
+    try {
+      const config = readBackendConfig();
+      await requireOk(
+        await fetch(`${config.baseUrl}/rest/v1/rpc/revoke_seller_session`, {
+          method: "POST",
+          headers: serviceHeaders(config),
+          body: JSON.stringify({ p_session_digest: await sha256Hex(token) }),
+        }),
+        "seller session revoke",
+      );
+    } catch {
+      return jsonResponse(
+        {
+          ok: false,
+          code: "LOGOUT_PARTIAL",
+          message:
+            "Bu cihazdaki oturum çerezi temizlendi ancak sunucu oturumunun iptali doğrulanamadı.",
+        },
+        503,
+        { "Set-Cookie": clearSellerSessionCookie() },
+      );
+    }
+  }
+  return jsonResponse(
+    { ok: true, action: "seller_logged_out", message: "Bu cihazdaki satıcı oturumu kapatıldı." },
+    200,
+    { "Set-Cookie": clearSellerSessionCookie() },
   );
 }
 
@@ -794,8 +912,8 @@ async function createPendingRow(
     province: string;
     district: string;
     sellerDisplayName: string;
+    sellerId: string;
     phone: string;
-    verifiedAt: string;
     rulesAcceptedAt: string;
   },
 ): Promise<void> {
@@ -814,11 +932,10 @@ async function createPendingRow(
         province: input.province,
         district: input.district,
         seller_display_name: input.sellerDisplayName,
+        owner_user_id: input.sellerId,
         search_keywords: [],
         contact_channel: "phone_whatsapp",
         contact_e164: input.phone,
-        contact_verified_at: input.verifiedAt,
-        contact_verification_method: "one_time_code",
         publication_instruction_at: input.rulesAcceptedAt,
         listing_rules_version: LISTING_RULES_VERSION,
         listing_rules_accepted_at: input.rulesAcceptedAt,
@@ -833,12 +950,22 @@ async function createPendingRow(
   }
 }
 
-function assertVehiclePublicationAllowed(category: string, request: Request): void {
-  if (category !== "vehicle") return;
-  if (isLoopbackHost(new URL(request.url).hostname)) return;
+function assertEidsPublicationAllowed(
+  category: string,
+  request: Request,
+  config: BackendConfig,
+): void {
+  if (category !== "vehicle" && category !== "real-estate") return;
+  if (
+    process.env.PILOT_SYNTHETIC_TEST_MODE === "enabled" &&
+    isLoopbackHost(new URL(request.url).hostname) &&
+    isLoopbackHost(new URL(config.baseUrl).hostname)
+  ) {
+    return;
+  }
   throw new Stage1SubmissionError(
     "NOT_ENABLED",
-    "Vasıta ilanları için gerekli EİDS doğrulaması production ortamında henüz etkin değil.",
+    "Vasıta ve emlak ilanları için gerekli EİDS yetkilendirmesi production ortamında henüz etkin değil.",
     503,
   );
 }
@@ -882,8 +1009,6 @@ async function submitListing(
       "İl ve ilçe seçimi Türkiye konum kataloğuyla eşleşmiyor.",
     );
   }
-  assertVehiclePublicationAllowed(category, request);
-
   const { price, isFree } = parsePrice(form);
   const photos = readPhotos(form);
   const idempotencyKey = requiredString(form, "idempotencyKey", 36, 36).toLowerCase();
@@ -895,8 +1020,9 @@ async function submitListing(
     throw new Error("Idempotency hash generation failed.");
   }
 
-  const verified = await requireSellerSession(request, phone);
   const config = readBackendConfig();
+  assertEidsPublicationAllowed(category, request, config);
+  const sellerSession = await resolveSellerSession(config, request);
   const listingId = crypto.randomUUID();
   const rulesAcceptedAt = new Date().toISOString();
 
@@ -911,8 +1037,8 @@ async function submitListing(
     province,
     district,
     sellerDisplayName,
+    sellerId: sellerSession.sellerId,
     phone,
-    verifiedAt: verified.verifiedAt,
     rulesAcceptedAt,
   });
 
@@ -954,7 +1080,8 @@ async function submitListing(
 
   try {
     const relaxed = usesRelaxedSyntheticLimits(request);
-    enforceRateLimit("listing-create-seller", phone, 10, 60 * 60 * 1000, relaxed);
+    enforceRateLimit("listing-create-seller", sellerSession.sellerId, 10, 60 * 60 * 1000, relaxed);
+    enforceRateLimit("listing-create-phone", phone, 20, 60 * 60 * 1000, relaxed);
     enforceRateLimit("listing-create-ip", clientIp, 60, 60 * 60 * 1000, relaxed);
   } catch (cause) {
     try {
@@ -1075,11 +1202,11 @@ function sellerStatus(value: string): Stage1SellerListingStatus | null {
 
 async function fetchSellerRows(
   config: BackendConfig,
-  input: { listingId?: string; phone?: string },
+  input: { listingId?: string; sellerId?: string },
 ): Promise<SellerBackendRow[]> {
   const url = new URL(`${config.baseUrl}/rest/v1/listings`);
   if (input.listingId) url.searchParams.set("id", `eq.${input.listingId}`);
-  if (input.phone) url.searchParams.set("contact_e164", `eq.${input.phone}`);
+  if (input.sellerId) url.searchParams.set("owner_user_id", `eq.${input.sellerId}`);
   url.searchParams.set(
     "select",
     [
@@ -1093,10 +1220,10 @@ async function fetchSellerRows(
       "province",
       "district",
       "seller_display_name",
+      "owner_user_id",
       "status",
       "contact_channel",
       "contact_e164",
-      "contact_verified_at",
       "publication_instruction_at",
       "private_seller_declaration_at",
       "content_rights_declaration_at",
@@ -1164,22 +1291,14 @@ async function signSellerPhoto(config: BackendConfig, objectPath: string): Promi
   return signed.toString();
 }
 
-async function assertSellerSession(
-  form: FormData,
-  request: Request,
-): Promise<{ phone: string; verified: SellerSessionPayload }> {
-  const phone = stage1E164Schema.parse(requiredString(form, "phone", 8, 16));
-  return { phone, verified: await requireSellerSession(request, phone) };
-}
-
 async function requireOwnedListing(
   config: BackendConfig,
   listingId: string,
-  phone: string,
+  sellerId: string,
 ): Promise<SellerBackendRow> {
   const rows = await fetchSellerRows(config, { listingId });
   const listing = rows[0];
-  if (!listing || listing.contact_e164 !== phone) {
+  if (!listing || listing.owner_user_id !== sellerId) {
     throw new Stage1SubmissionError(
       "NOT_AUTHORIZED",
       "Bu ilan için yönetim yetkisi doğrulanamadı.",
@@ -1218,6 +1337,7 @@ async function mapSellerListing(
     province: row.province,
     district: row.district,
     sellerDisplayName: row.seller_display_name,
+    contactPhone: row.contact_e164 ?? "",
     status,
     photoUrls,
     createdAt: row.created_at,
@@ -1251,20 +1371,19 @@ async function patchSellerListing(
 }
 
 async function sellerList(form: FormData, clientIp: string, request: Request): Promise<Response> {
-  assertAllowedFields(form, new Set(["action", "phone"]));
-  const { phone } = await assertSellerSession(form, request);
-  const relaxed = usesRelaxedSyntheticLimits(request);
-  enforceRateLimit("seller-list-phone", phone, 60, 15 * 60 * 1000, relaxed);
-  enforceRateLimit("seller-list-ip", clientIp, 180, 15 * 60 * 1000, relaxed);
+  assertAllowedFields(form, new Set(["action"]));
   const config = readBackendConfig();
-  const rows = await fetchSellerRows(config, { phone });
+  const session = await resolveSellerSession(config, request);
+  const relaxed = usesRelaxedSyntheticLimits(request);
+  enforceRateLimit("seller-list-seller", session.sellerId, 60, 15 * 60 * 1000, relaxed);
+  enforceRateLimit("seller-list-ip", clientIp, 180, 15 * 60 * 1000, relaxed);
+  const rows = await fetchSellerRows(config, { sellerId: session.sellerId });
   const listings = await Promise.all(rows.map((row) => mapSellerListing(config, row)));
   return jsonResponse({
     ok: true,
     action: "seller_list",
     listings,
-    message:
-      listings.length > 0 ? "İlanların yüklendi." : "Bu telefonla yönetilen ilan bulunamadı.",
+    message: listings.length > 0 ? "İlanların yüklendi." : "Bu satıcıya ait ilan bulunamadı.",
   });
 }
 
@@ -1273,8 +1392,8 @@ async function sellerUpdate(form: FormData, clientIp: string, request: Request):
     form,
     new Set([
       "action",
-      "phone",
       "listingId",
+      "contactPhone",
       "category",
       "condition",
       "priceMode",
@@ -1285,14 +1404,14 @@ async function sellerUpdate(form: FormData, clientIp: string, request: Request):
       "district",
     ]),
   );
-  const { phone } = await assertSellerSession(form, request);
+  const config = readBackendConfig();
+  const session = await resolveSellerSession(config, request);
   const relaxed = usesRelaxedSyntheticLimits(request);
-  enforceRateLimit("seller-update-phone", phone, 40, 15 * 60 * 1000, relaxed);
+  enforceRateLimit("seller-update-seller", session.sellerId, 40, 15 * 60 * 1000, relaxed);
   enforceRateLimit("seller-update-ip", clientIp, 120, 15 * 60 * 1000, relaxed);
 
-  const config = readBackendConfig();
   const listingId = requiredUuid(form);
-  const listing = await requireOwnedListing(config, listingId, phone);
+  const listing = await requireOwnedListing(config, listingId, session.sellerId);
   if (listing.status !== "published" && listing.status !== "unpublished") {
     throw new Stage1SubmissionError(
       "INVALID_REQUEST",
@@ -1302,7 +1421,7 @@ async function sellerUpdate(form: FormData, clientIp: string, request: Request):
   }
 
   const category = stage1CategorySchema.parse(requiredString(form, "category", 3, 32));
-  assertVehiclePublicationAllowed(category, request);
+  assertEidsPublicationAllowed(category, request, config);
   const conditionRaw = optionalString(form, "condition", 32);
   const condition = conditionRaw ? stage1ConditionSchema.parse(conditionRaw) : null;
   const title = requiredString(form, "title", 3, 120);
@@ -1316,6 +1435,11 @@ async function sellerUpdate(form: FormData, clientIp: string, request: Request):
     );
   }
   const { price, isFree } = parsePrice(form);
+  const contactPhone = stage1E164Schema.parse(requiredString(form, "contactPhone", 8, 16));
+  const contactChanged = listing.contact_e164 !== contactPhone;
+  if (contactChanged) {
+    enforceRateLimit("seller-contact-phone", contactPhone, 20, 60 * 60 * 1000, relaxed);
+  }
 
   await patchSellerListing(
     config,
@@ -1329,6 +1453,8 @@ async function sellerUpdate(form: FormData, clientIp: string, request: Request):
       district,
       price_amount: price,
       price_is_free: isFree,
+      contact_e164: contactPhone,
+      ...(contactChanged ? { publication_instruction_at: new Date().toISOString() } : {}),
     },
     "seller listing update",
   );
@@ -1345,14 +1471,14 @@ async function sellerUnpublish(
   clientIp: string,
   request: Request,
 ): Promise<Response> {
-  assertAllowedFields(form, new Set(["action", "phone", "listingId"]));
-  const { phone } = await assertSellerSession(form, request);
-  const relaxed = usesRelaxedSyntheticLimits(request);
-  enforceRateLimit("seller-unpublish-phone", phone, 40, 15 * 60 * 1000, relaxed);
-  enforceRateLimit("seller-unpublish-ip", clientIp, 120, 15 * 60 * 1000, relaxed);
+  assertAllowedFields(form, new Set(["action", "listingId"]));
   const config = readBackendConfig();
+  const session = await resolveSellerSession(config, request);
+  const relaxed = usesRelaxedSyntheticLimits(request);
+  enforceRateLimit("seller-unpublish-seller", session.sellerId, 40, 15 * 60 * 1000, relaxed);
+  enforceRateLimit("seller-unpublish-ip", clientIp, 120, 15 * 60 * 1000, relaxed);
   const listingId = requiredUuid(form);
-  const listing = await requireOwnedListing(config, listingId, phone);
+  const listing = await requireOwnedListing(config, listingId, session.sellerId);
   if (listing.status !== "published") {
     throw new Stage1SubmissionError(
       "INVALID_REQUEST",
@@ -1379,14 +1505,14 @@ async function sellerMarkSold(
   clientIp: string,
   request: Request,
 ): Promise<Response> {
-  assertAllowedFields(form, new Set(["action", "phone", "listingId"]));
-  const { phone } = await assertSellerSession(form, request);
-  const relaxed = usesRelaxedSyntheticLimits(request);
-  enforceRateLimit("seller-sold-phone", phone, 40, 15 * 60 * 1000, relaxed);
-  enforceRateLimit("seller-sold-ip", clientIp, 120, 15 * 60 * 1000, relaxed);
+  assertAllowedFields(form, new Set(["action", "listingId"]));
   const config = readBackendConfig();
+  const session = await resolveSellerSession(config, request);
+  const relaxed = usesRelaxedSyntheticLimits(request);
+  enforceRateLimit("seller-sold-seller", session.sellerId, 40, 15 * 60 * 1000, relaxed);
+  enforceRateLimit("seller-sold-ip", clientIp, 120, 15 * 60 * 1000, relaxed);
   const listingId = requiredUuid(form);
-  const listing = await requireOwnedListing(config, listingId, phone);
+  const listing = await requireOwnedListing(config, listingId, session.sellerId);
   if (listing.status !== "published" && listing.status !== "unpublished") {
     throw new Stage1SubmissionError(
       "INVALID_REQUEST",
@@ -1414,14 +1540,14 @@ async function sellerMarkSold(
 }
 
 async function sellerDelete(form: FormData, clientIp: string, request: Request): Promise<Response> {
-  assertAllowedFields(form, new Set(["action", "phone", "listingId"]));
-  const { phone } = await assertSellerSession(form, request);
-  const relaxed = usesRelaxedSyntheticLimits(request);
-  enforceRateLimit("seller-delete-phone", phone, 20, 15 * 60 * 1000, relaxed);
-  enforceRateLimit("seller-delete-ip", clientIp, 60, 15 * 60 * 1000, relaxed);
+  assertAllowedFields(form, new Set(["action", "listingId"]));
   const config = readBackendConfig();
+  const session = await resolveSellerSession(config, request);
+  const relaxed = usesRelaxedSyntheticLimits(request);
+  enforceRateLimit("seller-delete-seller", session.sellerId, 20, 15 * 60 * 1000, relaxed);
+  enforceRateLimit("seller-delete-ip", clientIp, 60, 15 * 60 * 1000, relaxed);
   const listingId = requiredUuid(form);
-  const listing = await requireOwnedListing(config, listingId, phone);
+  const listing = await requireOwnedListing(config, listingId, session.sellerId);
 
   if (listing.status === "published") {
     await patchSellerListing(
@@ -1473,8 +1599,11 @@ export async function handleStage1SelfServiceRequest(request: Request): Promise<
     const clientIp = resolveTrustedClientIp(request);
     const form = await request.formData();
     const action = form.get("action");
-    if (action === "start_verification") return await startVerification(form, clientIp, request);
-    if (action === "verify_phone") return await verifyPhone(form, clientIp, request);
+    if (action === "seller_bootstrap") return await sellerBootstrap(form, clientIp, request);
+    if (action === "seller_recover") return await sellerRecover(form, clientIp, request);
+    if (action === "seller_reconcile_recovery")
+      return await sellerReconcileRecovery(form, clientIp, request);
+    if (action === "seller_logout") return await sellerLogout(form, request);
     if (action === "submit_listing") return await submitListing(form, clientIp, request);
     if (action === "seller_list") return await sellerList(form, clientIp, request);
     if (action === "seller_update") return await sellerUpdate(form, clientIp, request);

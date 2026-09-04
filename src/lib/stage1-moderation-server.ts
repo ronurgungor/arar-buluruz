@@ -121,6 +121,25 @@ function readConfig(): BackendConfig {
   return { baseUrl: url.toString().replace(/\/+$/, ""), serviceRoleKey };
 }
 
+function assertEidsPublicationAllowed(
+  config: BackendConfig,
+  category: string,
+  request: Request,
+): void {
+  if (category !== "vehicle" && category !== "real-estate") return;
+  if (
+    process.env.PILOT_SYNTHETIC_TEST_MODE === "enabled" &&
+    isLoopbackHost(new URL(request.url).hostname) &&
+    isLoopbackHost(new URL(config.baseUrl).hostname)
+  ) {
+    return;
+  }
+  throw new ModerationError(
+    "INVALID_STATE",
+    "Vasıta ve emlak ilanları için gerekli EİDS yetkilendirmesi production ortamında henüz etkin değil.",
+  );
+}
+
 function headers(config: BackendConfig, contentType = "application/json"): HeadersInit {
   return {
     apikey: config.serviceRoleKey,
@@ -231,7 +250,7 @@ async function listListings(config: BackendConfig): Promise<Stage1ModerationList
         sellerDisplayName: row.seller_display_name,
         status: row.status,
         contactE164: row.contact_e164,
-        phoneVerified: row.contact_verified_at !== null,
+        contactControlRecorded: row.contact_verified_at !== null,
         publicationInstructionRecorded: row.publication_instruction_at !== null,
         listingRulesVersion: row.listing_rules_version,
         listingRulesAccepted: row.listing_rules_accepted_at !== null,
@@ -266,7 +285,7 @@ async function patchListing(
     throw new Error(`${context} did not mutate exactly one listing.`);
 }
 
-async function publish(config: BackendConfig, form: FormData): Promise<string> {
+async function publish(config: BackendConfig, form: FormData, request: Request): Promise<string> {
   const id = requiredUuid(form);
   const listing = await fetchListing(config, id);
   if (!listing || (listing.status !== "pending" && listing.status !== "unpublished")) {
@@ -275,9 +294,7 @@ async function publish(config: BackendConfig, form: FormData): Promise<string> {
       "Yalnız incelemedeki veya yayından kaldırılmış ilan yayınlanabilir.",
     );
   }
-  if (!listing.contact_verified_at) {
-    throw new ModerationError("INVALID_STATE", "Telefon kontrolü tamamlanmamış.");
-  }
+  assertEidsPublicationAllowed(config, listing.category, request);
   if (!listing.publication_instruction_at) {
     throw new ModerationError(
       "INVALID_STATE",
@@ -388,7 +405,7 @@ export async function handleStage1ModerationRequest(request: Request): Promise<R
       return jsonResponse({
         ok: true,
         message: "İlan yayınlandı.",
-        listingId: await publish(config, form),
+        listingId: await publish(config, form, request),
       });
     if (action === "reject")
       return jsonResponse({

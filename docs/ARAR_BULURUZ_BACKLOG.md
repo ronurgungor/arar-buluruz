@@ -1,11 +1,87 @@
 # Arar Buluruz — Backlog
 
-_Last updated: 2026-09-01, Europe/Istanbul_
+_Last updated: 2026-09-04, Europe/Istanbul_
+
+Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
+
+## Current active backlog — PR #84 final closure
+
+Completed on the active branch:
+
+- [x] Replace ordinary-goods OTP/verified-phone ownership with pseudonymous seller UUID ownership.
+- [x] Add `listings.owner_user_id` without phone-equality backfill.
+- [x] Add server-side revocable opaque HttpOnly seller sessions with digest-only persistence.
+- [x] Add rotating one-time recovery credentials and atomic `recover_seller_identity(...)` consume/rotate/session-revocation behavior.
+- [x] Close the first PR #84 security remediation without history rewrite or production activation.
+- [x] Complete the second Codex exact-head security review; it identified the non-rotating reconciliation BLOCKER and process-memory recovery rate-limit IMPORTANT.
+- [x] Record Advisor acceptance of both second-review findings.
+- [x] Replace ambiguous non-rotating reconciliation with `A → B`, browser pre-generation/display of C, then atomic `B → C` reconciliation through `recover_seller_identity(...)`.
+- [x] Prove successful `B → C` consumes B, makes C current, revokes pre-existing sessions and rejects B replay.
+- [x] Ensure no-commit `B → C` failure does not claim A is definitely still valid.
+- [x] Preserve recovery/session digest-only persistence and browser possession/display of replacement C before irreversible reconciliation mutation.
+- [x] Add append-only migration `20260904070000_retire_nonrotating_recovery_reconciliation.sql` and retire/drop obsolete `reconcile_seller_recovery(...)` from the final schema.
+- [x] Keep `recover_seller_identity(...)` privileged/service-role-only and deny `public` / `anon` / `authenticated` execution.
+- [x] Canonical migration chain is **12 migrations**; no migration history rewritten.
+- [x] Apply trusted-IP recovery limiting before attacker-controlled selector bucket allocation.
+- [x] Bound/sweep process-local rate-limit buckets without Redis/distributed-abuse redesign.
+- [x] Clear the browser session cookie on every logout attempt and return `LOGOUT_PARTIAL` when server revoke cannot be confirmed.
+- [x] Prove seller A/B isolation through `seller_id → owner_user_id` and phone-change non-transfer semantics.
+- [x] Retire ordinary-goods OTP actions/current phone-bound ownership semantics while preserving historical evidence.
+- [x] Keep public phone as contact data and manual line/WhatsApp control as risk-triggered only.
+- [x] Fail closed for **both Vasıta and Emlak** real-production publication without EİDS.
+- [x] Require explicit default-off `PILOT_SYNTHETIC_TEST_MODE=enabled` plus applicable loopback request/backend conditions for synthetic Vasıta/Emlak bypass.
+- [x] Preserve RLS/private-Storage/trusted-photo/signed-photo/idempotency/atomic-publication/takedown invariants.
+- [x] Focused/canonical Stage 1 exact-head run `33848314033` on `e841cf688b8cafb97d0508d0c1afec9e96446670` is SUCCESS.
+- [x] All seven canonical workflows on `e841cf688b8cafb97d0508d0c1afec9e96446670` are SUCCESS: CI `33848313993`; Stage 1 `33848314033`; Activation `33848313967`; V0 `33848313970`; Real pilot `33848313977`; Self-host `33848313963`; Managed `33848313976`.
+- [x] Advisor independently inspected the 8-file second remediation on `e841cf6...`; both accepted findings are CLOSED and no new security blocker was found.
+- [x] PR #84 is OPEN to `main` and remains **UNMERGED**.
+
+Active final gate:
+
+- [-] Complete this canonical **docs-only** truth synchronization; no security/application/database behavior change.
+- [ ] Verify `e841cf6... → docs-sync head` contains documentation files only and no code, SQL migration, workflow, dependency or runtime file.
+- [ ] Require all seven canonical workflows GREEN on the same new docs-only exact head.
+- [ ] Keep PR #84 OPEN / UNMERGED.
+- [ ] Run one **final narrow Codex exact-head recovery-security closure review** on that new 7/7-GREEN head.
+- [ ] Only after that review, return to Advisor/founder for the merge decision; do not merge in the current gate.
+
+Deferred until evidence or a separate gate justifies them:
+
+- [ ] passkey;
+- [ ] email authentication;
+- [ ] OAuth;
+- [ ] password authentication;
+- [ ] general e-Devlet login;
+- [ ] broader/shared distributed abuse state;
+- [ ] production proxy/TLS/host/client-IP hardening;
+- [ ] production operational recovery/reconciliation work that requires a real deployment context.
+
+Hard gates remain closed:
+
+- [ ] real personal/seller/listing/contact/photo data;
+- [ ] production/public activation;
+- [ ] AWS / production infrastructure;
+- [ ] secrets/environment mutation;
+- [ ] paid recurring services;
+- [ ] real SMS;
+- [ ] production EİDS calls;
+- [ ] Ads/monetization;
+- [ ] payments/orders/reservations/commission;
+- [ ] Publish/Update;
+- [ ] Tarladan changes;
+- [ ] history rewrite/force-push.
+
+The GVK Mükerrer 20/B decision affects tax/company sequencing only; it opens none of these gates.
+
+
+## Historical backlog snapshot through 2026-09-01 — retained for audit
+
+> This appendix preserves the previous snapshot as historical evidence. Any verified-phone, OTP, phone-bound ownership/session, founder-entry, or vehicle-only EİDS wording below is **not current product authority** after D-030.
 
 Legend: `[x]` completed, `[-]` active gate, `[ ]` frozen/deferred.
 
 
-## Current active backlog — 2026-09-01
+### Current active backlog — 2026-09-01
 
 Closed:
 
@@ -52,9 +128,9 @@ Hard gates remain closed:
 
 The GVK Mükerrer 20/B decision changes tax/company sequencing only. It does not open any of these production/legal/data gates.
 
-## Historical PR #78 post-Codex remediation — completed 2026-08-30
+### Historical PR #78 post-Codex remediation — completed 2026-08-30
 
-### Historical checkpoint
+#### Historical checkpoint
 
 This section supersedes the older PR #78 closure checkpoint below for current status. Review evidence: `docs/PR78_CODEX_REVIEW_2026-08-30.md`.
 
@@ -76,7 +152,7 @@ Deferred to the production/recovery gate; do not partially implement in PR #78:
 - [ ] cross-service hard-delete retry/reconciliation.
 
 
-## Historical PR #78 closure checkpoint — 2026-08-28
+### Historical PR #78 closure checkpoint — 2026-08-28
 
 Current product authority: `docs/PRODUCT_CONTRACT_V2.md`.
 
@@ -108,7 +184,7 @@ Historical business sequence (superseded by D-028):
 
 Production, real data, AWS, paid services, real SMS, production EİDS, Ads/monetization, payments/orders/reservations/commission, in-app chat, classic Auth/password, native app/Play Store and Tarladan changes remain outside this batch.
 
-## Completed foundations
+### Completed foundations
 
 - [x] Create and publish the original frontend-only mock prototype.
 - [x] Keep Lovable database, auth, storage, secrets and edge functions disabled.
@@ -120,7 +196,7 @@ Production, real data, AWS, paid services, real SMS, production EİDS, Ads/monet
 - [x] Canonicalize D-019: **V0 — UX ve değer önerisi doğrulaması**.
 - [x] Preserve provider-independent/no-rebuild boundaries.
 
-## V0 and KVKK-min package
+### V0 and KVKK-min package
 
 - [x] Default V0 to synthetic/mock listings.
 - [x] Add the visible V0 test notice.
@@ -131,7 +207,7 @@ Production, real data, AWS, paid services, real SMS, production EİDS, Ads/monet
 - [x] Verify no application cookie, Google Fonts, analytics, advertising-network, auth or backend request in the synthetic test build.
 - [x] Merge the KVKK-min package through PR #30 as `399489b3a452a22664136bc43115cc796cf71fc6`.
 
-## First publish incident and recovery
+### First publish incident and recovery
 
 - [x] Execute the first conditionally approved Lovable Publish/Update.
 - [x] Detect that public `/ara` showed the disconnected-state message instead of synthetic listings.
@@ -143,7 +219,7 @@ Production, real data, AWS, paid services, real SMS, production EİDS, Ads/monet
 - [x] Close superseded PR #32 without merge.
 - [x] Record the unpublish through PR #35 as `acb381565880e365467045c9ad0512edd6bd535a`.
 
-## Production-source diagnosis and correction
+### Production-source diagnosis and correction
 
 - [x] Diagnose the public disconnected state without Lovable agent messages or environment mutation.
 - [x] Confirm explicit production `mock` was incorrectly converted to `disabled`.
@@ -159,7 +235,7 @@ Production, real data, AWS, paid services, real SMS, production EİDS, Ads/monet
 - [x] Merge PR #36 as `7a999d44ea1e8978a48ce150bbfdeafa648dbfa7`.
 - [x] Record corrected production readiness through PR #37 as `59e5d987f4d73be486958a3d36d371cfa5dd2abe`.
 
-## Corrected V0 publication
+### Corrected V0 publication
 
 - [x] Receive explicit founder approval for bounded Publish/Update.
 - [x] Confirm GitHub `main` is exactly `59e5d987f4d73be486958a3d36d371cfa5dd2abe` before publication.
@@ -172,7 +248,7 @@ Production, real data, AWS, paid services, real SMS, production EİDS, Ads/monet
 - [x] Accept the publication as **V0 — UX ve değer önerisi doğrulaması**.
 - [x] Preserve the explicit limitation that this is not real marketplace, account, listing, moderation or supply-demand validation.
 
-## Post-publication V0 refinements
+### Post-publication V0 refinements
 
 - [x] Use one bounded Lovable pass to translate the 404/root-error UI, add consistent keyboard focus visibility and add a polite search-result live region.
 - [x] Reject and restore the unintended accessibility-pass dependency and lockfile mutation through PR #39.
@@ -188,7 +264,7 @@ Production, real data, AWS, paid services, real SMS, production EİDS, Ads/monet
 - [x] Publish/Update synchronized source `edb293b69348ba615b67122908b8cbd9ff4707ef`.
 - [x] Record deployment ID `d6040da8-3425-46b7-8f89-b1e4241af61f` and verify the public project remains `completed` and `is_published: true`.
 
-## V0 hardening and accepted publication record
+### V0 hardening and accepted publication record
 
 - [x] Merge PR #43 phase/privacy hardening as `55692d651ade414185ce70b077bc1e0670e20a67`.
 - [x] Merge PR #44 bare public-V0 release-path alignment as `f33856d7417e449ad3e9bfec1f501eb61989de45`.
@@ -196,11 +272,11 @@ Production, real data, AWS, paid services, real SMS, production EİDS, Ads/monet
 - [x] Record the accepted publication through documentation-only PR #45 as `991f7533967ac964bfe01fcb55627ee4d65a6681`.
 - [x] Preserve exact runtime signature `public-v0|listings=mock|gate1=off` and all frozen backend/data/dependency boundaries.
 
-## V0 Quality Completion Program
+### V0 Quality Completion Program
 
 The program was completed under single ownership. Workstream B and Workstream C were not published separately; one combined founder-approved Publish/Update was executed only after both workstreams were complete and release readiness was documented.
 
-### Workstream B — Search and URL correctness
+#### Workstream B — Search and URL correctness
 
 - [x] Add shared Turkish-character-tolerant normalization without a dependency.
 - [x] Replace uncontrolled inside-word substring matching with all-token word-prefix matching.
@@ -210,7 +286,7 @@ The program was completed under single ownership. Workstream B and Workstream C 
 - [x] Merge PR #46 with normal merge commit `1ba1e6dfdfc7908e16497f6aeca3880c718fcfcb`.
 - [x] Keep Workstream B unpublished until Workstream C and publish it only through the combined release gate.
 
-### Workstream C — Narrow UX and mobile coverage completion
+#### Workstream C — Narrow UX and mobile coverage completion
 
 - [x] Add synthetic public V0 mobile core-flow coverage around a 390×844 viewport.
 - [x] Validate mobile home, search, city, district, result, detail and lower contact/footer areas without overlap or horizontal overflow.
@@ -228,7 +304,7 @@ The program was completed under single ownership. Workstream B and Workstream C 
 - [x] Record the accepted combined publication in `docs/V0_QUALITY_COMPLETION_PUBLICATION.md`.
 - [x] Complete the V0 Quality Completion Program.
 
-## Founder external-sales + fraud + TR-backend preparation gate
+### Founder external-sales + fraud + TR-backend preparation gate
 
 - [x] Canonicalize D-020: provider-neutral **External Sales Link / Haricî Satış Bağlantısı**; Shopier is only an independent third-party example/provider candidate, not an integration or partnership.
 - [x] Freeze the future single-field UX copy without rendering it in public V0.
@@ -245,11 +321,11 @@ The program was completed under single ownership. Workstream B and Workstream C 
 - [x] Pass frozen install, lint, unit/red-team tests, bare public V0 build/signature, production-mode V0 privacy/PWA and full existing Gate 1 CI on PR #50 head `caf126cdb021a518c10dde890a34df3f8f4abe5d`.
 - [x] Merge PR #50 normally as `351321f63a72028f2976d3279b5202c370ce14c1`.
 
-## Superseding current state — PR #52 / PR #53 and pre-Claude review
+### Superseding current state — PR #52 / PR #53 and pre-Claude review
 
 The older “Current gate status” wording below is retained as historical sequence context but is superseded by this section.
 
-### V0 usability publication and observed evidence
+#### V0 usability publication and observed evidence
 
 - [x] Merge PR #52, **Complete V0 location and demo listing usability**, advancing `main` to `714298af58049b3c2ee2b5b345b36c63b6e7f865`.
 - [x] Publicly publish the PR #52 V0 usability release.
@@ -258,7 +334,7 @@ The older “Current gate status” wording below is retained as historical sequ
 - [x] Record initial real supply intent: real users explicitly said their actual listings may be published.
 - [x] Keep this evidence narrow: initial supply intent is validated, but real listing operations, moderation sustainability, seller-contact operations and a functioning supply-demand loop are not yet validated.
 
-### Historical — Real Çorlu pilot backend preparation (superseded as current product framing)
+#### Historical — Real Çorlu pilot backend preparation (superseded as current product framing)
 
 - [x] Prepare the future founder-controlled 5–10 real Çorlu listing backend/data/security foundation through PR #53 without activating it.
 - [x] Merge PR #53 normally as `9376ba60dfc049a4df27ce25255fa5923b2a154e`.
@@ -266,14 +342,14 @@ The older “Current gate status” wording below is retained as historical sequ
 - [x] Pass post-merge V0 minimal PWA `31280761873`.
 - [x] Preserve the public runtime as mock/synthetic + zero-data demo with no real backend, personal data, Storage, Auth or external-sales CTA.
 
-### Documentation sync before independent review
+#### Documentation sync before independent review
 
 - [x] Historical post-PR53 documentation synchronization completed; later Product Contract V2 sync supersedes its product assumptions.
 - [ ] Run an independent Claude full-repository review after this documentation sync merges.
 - [ ] Treat Claude findings as advisory only; do not automatically implement recommendations.
 - [ ] Open a separate founder-authorized gate for any implementation resulting from the review.
 
-### Hard FOUNDER BUDGET / REVENUE gate
+#### Hard FOUNDER BUDGET / REVENUE gate
 
 Arar Buluruz currently earns no revenue.
 
@@ -286,7 +362,7 @@ Until a separate explicit founder budget/revenue decision is opened and approved
 
 Technical readiness, a provider shortlist, a successful future POC or completion of D-021 prerequisites does **not** itself authorize spending.
 
-### Real-data activation remains closed
+#### Real-data activation remains closed
 
 - [ ] Do not enter real seller listing/contact/photo data.
 - [ ] Do not connect the public runtime to the prepared real backend.
@@ -294,7 +370,7 @@ Technical readiness, a provider shortlist, a successful future POC or completion
 - [ ] Do not activate public external-sales CTA.
 - [ ] Historical constraint superseded by D-025 for product geography/intake. Keep real personal-data/public production activation closed until a separate founder gate.
 
-## Current gate status — historical/superseded wording
+### Current gate status — historical/superseded wording
 
 The **Founder external-sales + fraud + TR-backend preparation** implementation gate is complete and closed.
 
@@ -302,7 +378,7 @@ There is no active public external-sales, backend, auth, real-data, infrastructu
 
 The next permitted phase was recorded at that time as **anonymous, non-directive V0 user-observation preparation**. Current/superseding state is the PR #52/#53 and pre-Claude-review section above.
 
-## Frozen until a separate explicit gate
+### Frozen until a separate explicit gate
 
 - [ ] Do not change the Lovable environment or listing-source setting.
 - [ ] Do not send a Lovable agent message for publication, rollback or diagnosis.
@@ -315,7 +391,7 @@ The next permitted phase was recorded at that time as **anonymous, non-directive
 - [ ] Do not buy a VPS, paid fraud/reputation service, SMS/KYC, monitoring SaaS or other recurring infrastructure.
 - [ ] Do not Publish/Update this repository implementation without a separate explicit founder gate.
 
-## D-021 next production/backend gate triggers
+### D-021 next production/backend gate triggers
 
 A future Türkiye self-hosted production POC gate may open only after both the technical prerequisites and the separate FOUNDER BUDGET / REVENUE gate permit it. Technical readiness alone does not permit purchase.
 
@@ -333,11 +409,11 @@ A future decision package must provide at minimum:
 
 Restore onto a completely empty environment remains mandatory once a production POC is separately authorized. Restore failure means production NO-GO.
 
-## V0 evaluation boundary
+### V0 evaluation boundary
 
 Current repository evidence now also proves the synthetic seller self-service, verified-phone ownership, listing management, buyer contact and post-moderation lifecycle technically. It still does not prove real-world seller completion, moderation sustainability, buyer conversion, abuse rates, marketplace liquidity or a functioning supply-demand loop.
 
-## Operating rules
+### Operating rules
 
 - D-018 remains the routine-execution authority inside an explicitly opened founder gate.
 - Only one code writer operates at a time; no parallel Lovable agent or assistant mutation is permitted.

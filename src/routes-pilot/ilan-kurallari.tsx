@@ -42,7 +42,7 @@ function ListingRules() {
         {
           title: "Telefon ve doğrudan iletişim",
           paragraphs: [
-            "İlan verirken doğrulanan telefon, ilan aktif olduğu sürece herkese açık görünür. Alıcı için hem Ara hem WhatsApp bağlantısı aynı açık numaradan oluşturulur.",
+            "İlanda yayımlanmasını istediğiniz telefon, ilan aktif olduğu sürece herkese açık görünür. Alıcı için Ara ve WhatsApp bağlantıları bu numaradan oluşturulur.",
             "Telefon bilgisini yalnız ilgili ilan hakkında iletişim amacıyla kullanın; reklam, pazarlama veya ilgisiz iletişim için kullanmayın.",
           ],
         },
@@ -57,16 +57,16 @@ function ListingRules() {
           ],
         },
         {
-          title: "Vasıta / Araç",
+          title: "Vasıta / Araç ve Emlak",
           paragraphs: [
-            "Vasıta kategorisi ürün deneyimi ve sentetik geliştirme/test kapsamında korunur.",
-            "Gerçek production araç ilanı, gerekli EİDS yetkilendirme doğrulaması devreye alınmadan yayımlanmayacaktır.",
+            "Vasıta ve Emlak kategorileri ürün deneyimi ve sentetik geliştirme/test kapsamında korunur.",
+            "Gerçek production araç veya emlak ilanı, gerekli EİDS yetkilendirme doğrulaması devreye alınmadan yayımlanmayacaktır.",
           ],
         },
         {
           title: "Yayın ve moderasyon",
           paragraphs: [
-            "Telefon doğrulaması, gerekli alanlar ve güvenli fotoğraf işlemi tamamlandığında ilan teknik kontrollerle otomatik yayımlanabilir. Normal akışta yayın öncesi kurucu onayı yoktur.",
+            "Geçerli satıcı oturumu, gerekli alanlar ve güvenli fotoğraf işlemi tamamlandığında ilan teknik kontrollerle otomatik yayımlanabilir. Telefon satıcı kimliği veya yönetim yetkisi değildir. Normal akışta yayın öncesi kurucu onayı yoktur.",
             "Arar Buluruz ilanı sonradan inceleyebilir, şikâyet üzerine veya kurallara aykırılık halinde yayından kaldırabilir ya da silebilir.",
             "Yanlış kişiye ait telefon, çocuk görüntüsü, hassas/özel nitelikli veri veya yetkisiz kişisel veri bildirimi gibi yüksek riskli durumlarda ilan önce yayından kaldırılır, sonra incelenir.",
           ],

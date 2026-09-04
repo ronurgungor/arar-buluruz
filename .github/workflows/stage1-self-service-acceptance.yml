@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - agent/smsless-seller-ownership-phase1
   workflow_dispatch:
 
 permissions:
@@ -23,7 +26,7 @@ jobs:
       - name: Check out exact PR head
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
       - name: Verify exact head
@@ -160,11 +163,10 @@ jobs:
           NITRO_HOST=127.0.0.1 \
           NITRO_PORT=4173 \
           PILOT_SELF_SERVICE_ENABLED=enabled \
+          PILOT_SYNTHETIC_TEST_MODE=enabled \
           PILOT_SUBMISSION_SUPABASE_URL="$api_url" \
           PILOT_SUBMISSION_SUPABASE_SERVICE_ROLE_KEY="$service_role_key" \
           PILOT_SUBMISSION_CAPABILITY_SECRET="synthetic-stage1-capability-secret-0123456789" \
-          PILOT_PHONE_VERIFICATION_MODE=synthetic \
-          PILOT_SYNTHETIC_VERIFICATION_CODE=424242 \
             bun .output/server/index.mjs >"$RUNNER_TEMP/stage1-public.log" 2>&1 &
           public_pid=$!
 
@@ -173,6 +175,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY="$anon_key" \
           VITE_PILOT_OPERATOR_UI=enabled \
           PILOT_OPERATOR_ENABLED=enabled \
+          PILOT_SYNTHETIC_TEST_MODE=enabled \
           PILOT_OPERATOR_SUPABASE_URL="$api_url" \
           PILOT_OPERATOR_SUPABASE_SERVICE_ROLE_KEY="$service_role_key" \
             bun --bun vite dev --host 127.0.0.1 --port 4175 --strictPort \
@@ -207,8 +210,10 @@ jobs:
           BACKEND_ORIGIN="$api_url" \
           BACKEND_ANON_KEY="$anon_key" \
           BACKEND_SERVICE_ROLE_KEY="$service_role_key" \
-          SYNTHETIC_VERIFICATION_CODE=424242 \
             bun scripts/stage1-self-service-browser-e2e.ts
+
+          PUBLIC_BASE_URL=http://127.0.0.1:4173 \
+            bun scripts/stage1-recovery-reconciliation-browser-e2e.ts
 
           cleanup
           trap - EXIT

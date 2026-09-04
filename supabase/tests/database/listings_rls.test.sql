@@ -41,9 +41,10 @@ select columns_are(
     'content_rights_declaration_at',
     'sold_at',
     'listing_rules_version',
-    'listing_rules_accepted_at'
+    'listing_rules_accepted_at',
+    'owner_user_id'
   ],
-  'listings has the approved classifieds, seller-contact and rules-evidence columns'
+  'listings has the approved classifieds, seller-contact, rules-evidence and owner columns'
 );
 
 select ok(

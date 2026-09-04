@@ -46,13 +46,8 @@ export const STAGE1_CONDITION_LABELS: Record<Stage1Condition, string> = {
 export type Stage1SubmissionResponse =
   | {
       ok: true;
-      action: "verification_started";
-      challengeId: string;
-      message: string;
-    }
-  | {
-      ok: true;
-      action: "phone_verified";
+      action: "seller_bootstrapped";
+      recoveryCode: string;
       sessionExpiresAt: string;
       message: string;
     }
@@ -66,8 +61,7 @@ export type Stage1SubmissionResponse =
       ok: false;
       code:
         | "NOT_ENABLED"
-        | "VERIFICATION_UNAVAILABLE"
-        | "VERIFICATION_REQUIRED"
+        | "SESSION_REQUIRED"
         | "NOT_AUTHORIZED"
         | "INVALID_REQUEST"
         | "RATE_LIMITED"
