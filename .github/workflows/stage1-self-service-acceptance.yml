@@ -212,6 +212,9 @@ jobs:
           BACKEND_SERVICE_ROLE_KEY="$service_role_key" \
             bun scripts/stage1-self-service-browser-e2e.ts
 
+          PUBLIC_BASE_URL=http://127.0.0.1:4173 \
+            bun scripts/stage1-recovery-reconciliation-browser-e2e.ts
+
           cleanup
           trap - EXIT
 
