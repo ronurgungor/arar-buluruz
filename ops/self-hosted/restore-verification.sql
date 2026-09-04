@@ -46,6 +46,10 @@ begin
     raise exception 'private seller identity/session tables are missing';
   end if;
 
+  if to_regprocedure('public.reconcile_seller_recovery(text,text,text,timestamptz)') is not null then
+    raise exception 'obsolete non-rotating recovery reconciliation RPC still exists';
+  end if;
+
   if not exists (
     select 1
     from pg_catalog.pg_class c
@@ -97,11 +101,19 @@ begin
        'EXECUTE'
      )
      or has_function_privilege(
-       'anon',
-       'public.reconcile_seller_recovery(text,text,text,timestamptz)',
+       'authenticated',
+       'public.recover_seller_identity(text,text,text,text,text,timestamptz)',
        'EXECUTE'
      ) then
-    raise exception 'anonymous role can invoke seller session/recovery functions';
+    raise exception 'public application role can invoke privileged seller session/recovery functions';
+  end if;
+
+  if not has_function_privilege(
+       'service_role',
+       'public.recover_seller_identity(text,text,text,text,text,timestamptz)',
+       'EXECUTE'
+     ) then
+    raise exception 'service_role recovery rotation privilege is missing';
   end if;
 
   if not has_column_privilege('anon', 'public.listings', 'contact_channel', 'SELECT')
