@@ -21,6 +21,14 @@ if (!apiUrl || !anonKey || !serviceRoleKey) {
   throw new Error("Migration Supabase URL, anon key and service-role key are required.");
 }
 
+// The managed-source portability proof intentionally has no hosted service-role API key.
+// Its existing sentinel keeps that proof unprivileged; full application signing is exercised
+// against the self-host target where a genuine service-role key is available.
+const hasPrivilegedVerificationKey = serviceRoleKey !== "unused-in-verify";
+if (mode === "seed" && !hasPrivilegedVerificationKey) {
+  throw new Error("Migration fixture seed mode requires a genuine service-role key.");
+}
+
 const baseUrl = apiUrl.replace(/\/+$/, "");
 const storageBase = `${baseUrl}/storage/v1`;
 const listingId = "93000000-0000-4000-8000-000000000001";
@@ -240,10 +248,7 @@ if (!publicListing || publicListing.id !== listingId) {
 if (publicListing.publicContact?.e164 !== contactE164) {
   throw new Error("Migration fixture public contact did not survive the application read path.");
 }
-if (
-  publicListing.photos.length !== 1 ||
-  publicListing.photos[0] !== expectedApplicationPhotoUrl
-) {
+if (publicListing.photos.length !== 1 || publicListing.photos[0] !== expectedApplicationPhotoUrl) {
   throw new Error(
     `Expected one application-mediated public photo URL, got ${JSON.stringify(publicListing.photos)}.`,
   );
@@ -260,30 +265,34 @@ for (const expiresIn of [60, 86_400]) {
   );
 }
 
-const issuanceResponse = await maybeHandlePublicListingPhotoRequest(
-  new Request(`https://fixture.invalid${expectedApplicationPhotoUrl}`),
-  {
-    config: { baseUrl, serviceRoleKey },
-  },
-);
-if (issuanceResponse?.status !== 302) {
-  throw new Error(`Application photo issuance returned ${issuanceResponse?.status ?? "no response"}.`);
-}
-const signedUrl = issuanceResponse.headers.get("location");
-if (!signedUrl) {
-  throw new Error("Application photo issuance returned no signed Storage location.");
-}
-
-const signedRead = await requireOk(
-  await fetch(signedUrl),
-  "migration fixture application-mediated signed public photo read",
-);
-const restoredBytes = new Uint8Array(await signedRead.arrayBuffer());
-const restoredSha256 = createHash("sha256").update(restoredBytes).digest("hex");
-if (restoredSha256 !== expectedSha256 || restoredBytes.byteLength !== sanitized.bytes.byteLength) {
-  throw new Error(
-    `Migration fixture photo mismatch: expected ${expectedSha256}/${sanitized.bytes.byteLength}, got ${restoredSha256}/${restoredBytes.byteLength}.`,
+if (hasPrivilegedVerificationKey) {
+  const issuanceResponse = await maybeHandlePublicListingPhotoRequest(
+    new Request(`https://fixture.invalid${expectedApplicationPhotoUrl}`),
+    {
+      config: { baseUrl, serviceRoleKey },
+    },
   );
+  if (issuanceResponse?.status !== 302) {
+    throw new Error(
+      `Application photo issuance returned ${issuanceResponse?.status ?? "no response"}.`,
+    );
+  }
+  const signedUrl = issuanceResponse.headers.get("location");
+  if (!signedUrl) {
+    throw new Error("Application photo issuance returned no signed Storage location.");
+  }
+
+  const signedRead = await requireOk(
+    await fetch(signedUrl),
+    "migration fixture application-mediated signed public photo read",
+  );
+  const restoredBytes = new Uint8Array(await signedRead.arrayBuffer());
+  const restoredSha256 = createHash("sha256").update(restoredBytes).digest("hex");
+  if (restoredSha256 !== expectedSha256 || restoredBytes.byteLength !== sanitized.bytes.byteLength) {
+    throw new Error(
+      `Migration fixture photo mismatch: expected ${expectedSha256}/${sanitized.bytes.byteLength}, got ${restoredSha256}/${restoredBytes.byteLength}.`,
+    );
+  }
 }
 
 await requireRejected(
@@ -309,5 +318,7 @@ if (anonymousListResponse.ok) {
 }
 
 console.log(
-  `Migration photo fixture ${mode} verification passed: app adapter + app-mediated signed private Storage + SHA-256 ${expectedSha256}.`,
+  hasPrivilegedVerificationKey
+    ? `Migration photo fixture ${mode} verification passed: app adapter + app-mediated signed private Storage + SHA-256 ${expectedSha256}.`
+    : `Migration photo fixture ${mode} verification passed: app adapter + direct anonymous Storage denial; privileged hosted signing intentionally not exercised.`,
 );
