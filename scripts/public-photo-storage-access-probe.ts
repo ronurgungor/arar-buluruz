@@ -130,7 +130,10 @@ try {
     }),
     "anonymous active photo manifest",
   );
-  const manifestRows = (await manifest.json()) as Array<{ photo_id?: string; object_path?: string }>;
+  const manifestRows = (await manifest.json()) as Array<{
+    photo_id?: string;
+    object_path?: string;
+  }>;
   if (
     manifestRows.length !== 1 ||
     manifestRows[0]?.photo_id !== photoId ||
