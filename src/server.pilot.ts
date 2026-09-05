@@ -7,6 +7,7 @@ import {
 import { loadPilotListingsCollection } from "./build-profiles/pilot/public-listings";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { maybeHandlePublicListingPhotoRequest } from "./lib/public-photo-signing-server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -95,6 +96,9 @@ async function handleSitemap(request: Request): Promise<Response> {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const publicPhotoResponse = await maybeHandlePublicListingPhotoRequest(request);
+      if (publicPhotoResponse) return publicPhotoResponse;
+
       if (new URL(request.url).pathname === "/sitemap.xml") {
         return await handleSitemap(request);
       }

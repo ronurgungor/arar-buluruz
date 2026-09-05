@@ -150,6 +150,11 @@ jobs:
           LOCAL_SUPABASE_SERVICE_ROLE_KEY="$service_role_key" \
             bun scripts/real-pilot-backend-integration.ts
 
+          LOCAL_SUPABASE_URL="$api_url" \
+          LOCAL_SUPABASE_ANON_KEY="$anon_key" \
+          LOCAL_SUPABASE_SERVICE_ROLE_KEY="$service_role_key" \
+            bun scripts/public-photo-storage-access-probe.ts
+
           MIGRATION_SUPABASE_URL="$api_url" \
           MIGRATION_SUPABASE_ANON_KEY="$anon_key" \
           MIGRATION_SUPABASE_SERVICE_ROLE_KEY="$service_role_key" \
