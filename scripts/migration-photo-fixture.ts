@@ -7,6 +7,7 @@ import {
   validateListingPhotoContentSignature,
 } from "../src/lib/listing-photo";
 import { fetchPublicListing } from "../src/lib/public-listings";
+import { maybeHandlePublicListingPhotoRequest } from "../src/lib/public-photo-signing-server";
 
 const mode = process.argv[2];
 if (mode !== "seed" && mode !== "verify") {
@@ -26,6 +27,7 @@ const listingId = "93000000-0000-4000-8000-000000000001";
 const photoId = "94000000-0000-4000-8000-000000000001";
 const contactE164 = "+12025550141";
 const objectPath = buildListingPhotoObjectPath(listingId, photoId, "image/webp");
+const expectedApplicationPhotoUrl = `/api/listing-photo/${listingId}/${photoId}`;
 const PNG_SIGNATURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 type TestImagePipeline = {
@@ -238,13 +240,43 @@ if (!publicListing || publicListing.id !== listingId) {
 if (publicListing.publicContact?.e164 !== contactE164) {
   throw new Error("Migration fixture public contact did not survive the application read path.");
 }
-if (publicListing.photos.length !== 1) {
-  throw new Error(`Expected one public signed photo URL, got ${publicListing.photos.length}.`);
+if (
+  publicListing.photos.length !== 1 ||
+  publicListing.photos[0] !== expectedApplicationPhotoUrl
+) {
+  throw new Error(
+    `Expected one application-mediated public photo URL, got ${JSON.stringify(publicListing.photos)}.`,
+  );
+}
+
+for (const expiresIn of [60, 86_400]) {
+  await requireRejected(
+    await fetch(`${storageBase}/object/sign/listing_photos/${encodeObjectPath(objectPath)}`, {
+      method: "POST",
+      headers: apiHeaders(anonKey),
+      body: JSON.stringify({ expiresIn }),
+    }),
+    `active anonymous direct photo signing with ${expiresIn}s TTL`,
+  );
+}
+
+const issuanceResponse = await maybeHandlePublicListingPhotoRequest(
+  new Request(`https://fixture.invalid${expectedApplicationPhotoUrl}`),
+  {
+    config: { baseUrl, serviceRoleKey },
+  },
+);
+if (issuanceResponse?.status !== 302) {
+  throw new Error(`Application photo issuance returned ${issuanceResponse?.status ?? "no response"}.`);
+}
+const signedUrl = issuanceResponse.headers.get("location");
+if (!signedUrl) {
+  throw new Error("Application photo issuance returned no signed Storage location.");
 }
 
 const signedRead = await requireOk(
-  await fetch(publicListing.photos[0]!),
-  "migration fixture signed public photo read",
+  await fetch(signedUrl),
+  "migration fixture application-mediated signed public photo read",
 );
 const restoredBytes = new Uint8Array(await signedRead.arrayBuffer());
 const restoredSha256 = createHash("sha256").update(restoredBytes).digest("hex");
@@ -277,5 +309,5 @@ if (anonymousListResponse.ok) {
 }
 
 console.log(
-  `Migration photo fixture ${mode} verification passed: app adapter + signed private Storage + SHA-256 ${expectedSha256}.`,
+  `Migration photo fixture ${mode} verification passed: app adapter + app-mediated signed private Storage + SHA-256 ${expectedSha256}.`,
 );
