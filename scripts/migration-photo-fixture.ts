@@ -288,7 +288,10 @@ if (hasPrivilegedVerificationKey) {
   );
   const restoredBytes = new Uint8Array(await signedRead.arrayBuffer());
   const restoredSha256 = createHash("sha256").update(restoredBytes).digest("hex");
-  if (restoredSha256 !== expectedSha256 || restoredBytes.byteLength !== sanitized.bytes.byteLength) {
+  if (
+    restoredSha256 !== expectedSha256 ||
+    restoredBytes.byteLength !== sanitized.bytes.byteLength
+  ) {
     throw new Error(
       `Migration fixture photo mismatch: expected ${expectedSha256}/${sanitized.bytes.byteLength}, got ${restoredSha256}/${restoredBytes.byteLength}.`,
     );
