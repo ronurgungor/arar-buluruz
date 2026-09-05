@@ -599,14 +599,14 @@ try {
   const hero = buyerPage.getByAltText(`${title} fotoğraf 1`);
   const heroSrc = await hero.getAttribute("src");
   assert(
-    heroSrc?.includes("/storage/v1/object/sign/listing_photos/"),
-    `Public photo is not signed: ${heroSrc}`,
+    heroSrc?.startsWith(`/api/listing-photo/${listingId}/`),
+    `Public photo bypassed application signing route: ${heroSrc}`,
   );
   const decoded = await hero.evaluate((image) => ({
     complete: (image as HTMLImageElement).complete,
     width: (image as HTMLImageElement).naturalWidth,
   }));
-  assert(decoded.complete && decoded.width > 0, "Signed public photo did not decode.");
+  assert(decoded.complete && decoded.width > 0, "Application-mediated public photo did not decode.");
   const contactBar = buyerPage.getByTestId("detail-contact-bar");
   expectHref(
     await contactBar.getByRole("link", { name: "Ara", exact: true }).getAttribute("href"),
