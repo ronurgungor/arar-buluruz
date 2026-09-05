@@ -87,17 +87,20 @@ insert into public.listings (
 SQL
 
 # Exercise the canonical application backup contract. Supabase-managed auth/storage
-# rows stay outside the database dump. The one application-owned policy attached to
-# storage.objects is preserved separately and checksummed by the exporter.
+# rows stay outside the database dump. The public-photo architecture intentionally
+# has no anonymous storage.objects SELECT/sign policy to preserve or replay.
 APPLICATION_BACKUP_DIR="$dump_dir" \
 APPLICATION_DB_CONTAINER="$db_container" \
   bash scripts/export-application-backup.sh
 
+if [[ -e "$dump_dir/storage-policy.sql" ]]; then
+  echo "Application backup unexpectedly emitted an obsolete Storage-policy artifact." >&2
+  exit 1
+fi
+
 # Emulate a clean Supabase target without destroying managed auth/storage/extension
 # schemas. Only application-owned schemas are removed; the target's public schema
-# is recreated with the same server-side ownership boundary before restore. Dropping
-# public intentionally cascades the cross-schema Storage policy, proving the backup
-# artifact is needed rather than relying on residual target state.
+# is recreated with the same server-side ownership boundary before restore.
 run_psql <<'SQL'
 drop schema if exists private cascade;
 drop schema if exists public cascade;
@@ -117,11 +120,8 @@ SQL
 } | docker exec -i "$db_container" \
   psql -X --single-transaction -v ON_ERROR_STOP=1 -U postgres -d postgres
 
-# Reattach only the application-owned policy to the target's existing managed
-# storage.objects table. No provider Storage metadata or object rows are replayed.
-run_psql < "$dump_dir/storage-policy.sql"
-
-# Verify restored schema/security/lifecycle invariants independently of the app.
+# No cross-schema Storage policy is replayed. The restored application must instead
+# preserve the fail-closed application-mediated signing boundary verified below.
 run_psql < ops/self-hosted/restore-verification.sql
 
 # PostgREST may still hold the pre-drop schema cache. A local-only restart makes
@@ -149,4 +149,4 @@ LOCAL_SUPABASE_URL="$api_url" \
 LOCAL_SUPABASE_ANON_KEY="$anon_key" \
   bun scripts/logical-restore-app-verification.ts
 
-echo "Synthetic logical backup, clean application-schema restore, Storage-policy replay and app-level verification passed."
+echo "Synthetic logical backup, clean application-schema restore, zero-anonymous-Storage-policy boundary and app-level verification passed."
