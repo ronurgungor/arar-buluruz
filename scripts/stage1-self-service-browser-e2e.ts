@@ -606,7 +606,7 @@ try {
     complete: (image as HTMLImageElement).complete,
     width: (image as HTMLImageElement).naturalWidth,
   }));
-  assert(decoded.complete && decoded.width > 0, "Application-mediated public photo did not decode.");
+  assert(decoded.complete && decoded.width > 0, "Application photo did not decode.");
   const contactBar = buyerPage.getByTestId("detail-contact-bar");
   expectHref(
     await contactBar.getByRole("link", { name: "Ara", exact: true }).getAttribute("href"),
