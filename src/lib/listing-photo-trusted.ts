@@ -6,7 +6,7 @@ import {
 } from "./listing-photo";
 
 export const LISTING_PHOTO_SIGNED_URL_DEFAULT_SECONDS = 60;
-export const LISTING_PHOTO_SIGNED_URL_MAX_SECONDS = 5 * 60;
+export const LISTING_PHOTO_SIGNED_URL_MAX_SECONDS = LISTING_PHOTO_SIGNED_URL_DEFAULT_SECONDS;
 
 export type StoredListingPhotoMetadata = {
   listingId: string;
