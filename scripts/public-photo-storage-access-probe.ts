@@ -42,6 +42,14 @@ async function requireRejected(response: Response, context: string): Promise<voi
   }
 }
 
+async function requireNoEnumeration(response: Response, context: string): Promise<void> {
+  if (!response.ok) return;
+  const rows = (await response.json()) as unknown;
+  if (!Array.isArray(rows) || rows.length !== 0) {
+    throw new Error(`${context} exposed metadata: ${JSON.stringify(rows)}`);
+  }
+}
+
 async function cleanup(): Promise<void> {
   await fetch(`${storageBase}/object/listing_photos`, {
     method: "DELETE",
@@ -160,7 +168,7 @@ try {
     "anonymous private Storage object read",
   );
 
-  await requireRejected(
+  await requireNoEnumeration(
     await fetch(`${storageBase}/object/list/listing_photos`, {
       method: "POST",
       headers: headers(anonKey),
@@ -174,13 +182,13 @@ try {
     "anonymous Storage object listing",
   );
 
-  await requireRejected(
+  await requireNoEnumeration(
     await fetch(`${storageBase}/bucket`, { headers: headers(anonKey) }),
     "anonymous Storage bucket listing",
   );
 
   console.log(
-    "Public photo Storage access probe passed: active manifest remains public while direct anon sign/read/object-list/bucket-list are denied, including long-TTL signing attempts.",
+    "Public photo Storage access probe passed: active manifest remains public while direct anon sign/read are denied and object/bucket enumeration returns no metadata, including long-TTL signing attempts.",
   );
 } finally {
   await cleanup();
