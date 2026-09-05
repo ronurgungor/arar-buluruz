@@ -4,7 +4,6 @@
 do $$
 declare
   anonymous_policy_qual text;
-  storage_policy_qual text;
   photo_manifest_oid oid;
   photo_path_helper_oid oid;
 begin
@@ -188,9 +187,10 @@ begin
     raise exception 'published listing exists without complete public-contact publication readiness';
   end if;
 
-  -- Photo delivery is part of the first real-pilot scope. The restored target must
-  -- preserve the private bucket, narrow public manifest and lifecycle-aware signed
-  -- URL policy. Object bytes are verified separately after Storage restore.
+  -- Photo delivery remains in first real-pilot scope, but anonymous browsers must not
+  -- hold any Storage SELECT/sign policy. They receive only the narrow active-listing
+  -- manifest; the application server re-checks deliverability with the service-role-only
+  -- RPC immediately before creating a fixed-TTL signed URL.
   if to_regclass('storage.buckets') is null or to_regclass('storage.objects') is null then
     raise exception 'Supabase Storage database schema is missing';
   end if;
@@ -227,32 +227,36 @@ begin
     raise exception 'photo delivery function search_path is not pinned empty';
   end if;
 
-  if not has_function_privilege('anon', photo_manifest_oid, 'EXECUTE')
-     or not has_function_privilege('anon', photo_path_helper_oid, 'EXECUTE') then
-    raise exception 'anon photo delivery EXECUTE contract is missing';
+  if not has_function_privilege('anon', photo_manifest_oid, 'EXECUTE') then
+    raise exception 'anon active-listing photo manifest EXECUTE contract is missing';
+  end if;
+
+  if has_function_privilege('anon', photo_path_helper_oid, 'EXECUTE')
+     or has_function_privilege('authenticated', photo_path_helper_oid, 'EXECUTE') then
+    raise exception 'public application role can invoke the retired Storage-signing helper';
+  end if;
+
+  if not has_function_privilege('service_role', photo_path_helper_oid, 'EXECUTE')
+     or not has_function_privilege(
+       'service_role',
+       'public.get_deliverable_listing_photo(uuid,uuid)',
+       'EXECUTE'
+     ) then
+    raise exception 'service-role photo delivery privilege is missing';
   end if;
 
   if has_table_privilege('anon', 'private.listing_photos', 'SELECT') then
     raise exception 'anon gained direct private listing_photos SELECT privilege';
   end if;
 
-  select pg_catalog.pg_get_expr(p.polqual, p.polrelid)
-  into storage_policy_qual
-  from pg_catalog.pg_policy p
-  join pg_catalog.pg_class c on c.oid = p.polrelid
-  join pg_catalog.pg_namespace n on n.oid = c.relnamespace
-  where n.nspname = 'storage'
-    and c.relname = 'objects'
-    and p.polname = 'Public can sign active listing photo objects'
-    and p.polcmd = 'r'
-    and p.polroles = array[(select oid from pg_catalog.pg_roles where rolname = 'anon')];
-
-  if storage_policy_qual is null
-     or storage_policy_qual !~* 'bucket_id\s*=\s*''listing_photos'''
-     or storage_policy_qual !~* 'allow_only_operation'
-     or storage_policy_qual !~* 'storage.object.sign'
-     or storage_policy_qual !~* 'is_deliverable_listing_photo_path' then
-    raise exception 'Storage photo policy is missing or does not preserve signed-only bucket/lifecycle gates: %', storage_policy_qual;
+  if exists (
+    select 1
+    from pg_catalog.pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and policyname = 'Public can sign active listing photo objects'
+  ) then
+    raise exception 'obsolete anonymous Storage photo-signing policy still exists';
   end if;
 end;
 $$;
