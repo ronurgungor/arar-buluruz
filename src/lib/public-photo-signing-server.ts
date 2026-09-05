@@ -20,7 +20,7 @@ type PublicPhotoSigningOptions = {
   fetchImpl?: typeof fetch;
 };
 
-function noStoreHeaders(contentType = "text/plain; charset=utf-8"): HeadersInit {
+function noStoreHeaders(contentType = "text/plain; charset=utf-8"): Record<string, string> {
   return {
     "Cache-Control": "no-store, max-age=0",
     "Content-Type": contentType,
