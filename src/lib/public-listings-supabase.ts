@@ -50,9 +50,8 @@ export type PublicSupabaseConfig = {
   publicKey: string;
 };
 
-const LISTING_PHOTO_BUCKET = "listing_photos";
-const LISTING_PHOTO_SIGNED_URL_SECONDS = 60;
 const LISTING_PHOTO_MAX_BYTES = 8 * 1024 * 1024;
+const PUBLIC_LISTING_PHOTO_PATH_PREFIX = "/api/listing-photo";
 
 const publicListingRowSchema = z.object({
   id: z.string().uuid(),
@@ -106,14 +105,6 @@ const publicPhotoManifestRowSchema = z.object({
   }),
 });
 const publicPhotoManifestRowsSchema = z.array(publicPhotoManifestRowSchema).max(32);
-const signedPhotoResponseSchema = z
-  .object({
-    signedURL: z.string().optional(),
-    signedUrl: z.string().optional(),
-  })
-  .refine((value) => Boolean(value.signedURL ?? value.signedUrl), {
-    message: "Signed photo response did not include a URL.",
-  });
 
 const PUBLIC_LISTING_COLLECTION_COLUMNS = [
   "id",
@@ -183,10 +174,8 @@ function createListingsUrl(
   return apiUrl;
 }
 
-function publicApiHeaders(config: PublicSupabaseConfig, includeAuthorization = false): HeadersInit {
-  return includeAuthorization
-    ? { apikey: config.publicKey, Authorization: `Bearer ${config.publicKey}` }
-    : { apikey: config.publicKey };
+function publicApiHeaders(config: PublicSupabaseConfig): HeadersInit {
+  return { apikey: config.publicKey };
 }
 
 function validatePhotoObjectPath(listingId: string, photoId: string, objectPath: string): void {
@@ -196,8 +185,8 @@ function validatePhotoObjectPath(listingId: string, photoId: string, objectPath:
   }
 }
 
-function encodeObjectPath(path: string): string {
-  return path.split("/").map(encodeURIComponent).join("/");
+function buildApplicationPhotoUrl(listingId: string, photoId: string): string {
+  return `${PUBLIC_LISTING_PHOTO_PATH_PREFIX}/${encodeURIComponent(listingId)}/${encodeURIComponent(photoId)}`;
 }
 
 async function fetchListingPhotoManifest(
@@ -239,66 +228,13 @@ async function fetchListingPhotoManifest(
   return parsed.data;
 }
 
-async function createPublicSignedPhotoUrl(
-  objectPath: string,
-  config: PublicSupabaseConfig,
-  fetchImpl: typeof fetch,
-): Promise<string> {
-  const baseUrl = validateSupabaseUrl(config.url);
-  const storageUrl = new URL(
-    `storage/v1/object/sign/${LISTING_PHOTO_BUCKET}/${encodeObjectPath(objectPath)}`,
-    `${baseUrl.toString().replace(/\/+$/, "")}/`,
-  );
-  const response = await fetchImpl(storageUrl, {
-    method: "POST",
-    headers: {
-      ...publicApiHeaders(config, true),
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({ expiresIn: LISTING_PHOTO_SIGNED_URL_SECONDS }),
-  });
-
-  if (!response.ok) {
-    throw new PublicListingsError(`Listing photo signing failed with status ${response.status}.`);
-  }
-
-  const parsed = signedPhotoResponseSchema.safeParse(await response.json());
-  if (!parsed.success) {
-    throw new PublicListingsError(
-      "Listing photo signing response did not match the approved schema.",
-    );
-  }
-
-  const rawSignedUrl = parsed.data.signedURL ?? parsed.data.signedUrl;
-  if (!rawSignedUrl) {
-    throw new PublicListingsError("Listing photo signing response did not include a URL.");
-  }
-
-  const normalizedSignedPath = rawSignedUrl.startsWith("/object/")
-    ? `/storage/v1${rawSignedUrl}`
-    : rawSignedUrl;
-  const signedUrl = new URL(normalizedSignedPath, baseUrl);
-  if (signedUrl.origin !== baseUrl.origin) {
-    throw new PublicListingsError("Listing photo signing response changed backend origin.");
-  }
-  if (!signedUrl.pathname.startsWith(`/storage/v1/object/sign/${LISTING_PHOTO_BUCKET}/`)) {
-    throw new PublicListingsError(
-      "Listing photo signing response used an unexpected Storage path.",
-    );
-  }
-
-  return signedUrl.toString();
-}
-
 async function fetchPublicPhotoUrls(
   listingId: string,
   config: PublicSupabaseConfig,
   fetchImpl: typeof fetch,
 ): Promise<string[]> {
   const manifest = await fetchListingPhotoManifest(listingId, config, fetchImpl);
-  return await Promise.all(
-    manifest.map((photo) => createPublicSignedPhotoUrl(photo.object_path, config, fetchImpl)),
-  );
+  return manifest.map((photo) => buildApplicationPhotoUrl(listingId, photo.photo_id));
 }
 
 function mapPublicRow(row: z.infer<typeof publicListingRowSchema>, photos: string[]): ListingView {

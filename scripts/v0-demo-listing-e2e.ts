@@ -198,6 +198,9 @@ try {
   );
   await page.getByRole("link", { name: "Arar Buluruz ana sayfa" }).click();
   await page.waitForURL(new URL("/", baseUrl).toString());
+  await page
+    .getByRole("heading", { level: 1, name: "Demo ilan oluşturma" })
+    .waitFor({ state: "detached" });
   await page.goBack({ waitUntil: "domcontentloaded" });
   await page.getByRole("heading", { level: 1, name: "Demo ilan oluşturma" }).waitFor();
   await page.waitForFunction(() => {

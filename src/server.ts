@@ -7,6 +7,7 @@ import {
 } from "./lib/discovery-contract";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { maybeHandlePublicListingPhotoRequest } from "./lib/public-photo-signing-server";
 
 const STATIC_SSR_PROBE_PARAM = "__v0_static_ssr_500_probe";
 
@@ -100,6 +101,9 @@ export default {
     }
 
     try {
+      const publicPhotoResponse = await maybeHandlePublicListingPhotoRequest(request);
+      if (publicPhotoResponse) return publicPhotoResponse;
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       const normalizedResponse = await normalizeCatastrophicSsrResponse(response);

@@ -46,63 +46,35 @@ if grep -qE '(COPY|INSERT INTO)[[:space:]]+(storage|auth)\.' "$backup_dir/data.s
   exit 1
 fi
 
-# The photo-signing RLS policy is application-owned but is attached to the
-# Supabase-managed storage.objects table. Dumping the whole storage schema would
-# capture provider internals and caused restore collisions previously. Preserve
-# only this policy definition as a separately checksummed application artifact.
-policy_count="$(run_psql -Atc "
+# Public photo signing is now application-mediated. There must be no anonymous/public
+# SELECT policy on storage.objects to export or replay: direct object reads, listing and
+# Storage signing all remain outside the browser role.
+anonymous_storage_select_policies="$(run_psql -Atc "
   select count(*)
   from pg_catalog.pg_policy p
   join pg_catalog.pg_class c on c.oid = p.polrelid
   join pg_catalog.pg_namespace n on n.oid = c.relnamespace
   where n.nspname = 'storage'
     and c.relname = 'objects'
-    and p.polname = 'Public can sign active listing photo objects'
     and p.polcmd = 'r'
-    and p.polroles = array[(select oid from pg_catalog.pg_roles where rolname = 'anon')]
-    and p.polwithcheck is null;
+    and (
+      0::oid = any(p.polroles)
+      or (select oid from pg_catalog.pg_roles where rolname = 'anon') = any(p.polroles)
+    );
 ")"
-if [[ "$policy_count" != "1" ]]; then
-  echo "Expected exactly one canonical application-owned Storage photo policy, found $policy_count." >&2
+if [[ "$anonymous_storage_select_policies" != "0" ]]; then
+  echo "Expected zero anonymous/public Storage object SELECT policies, found $anonymous_storage_select_policies." >&2
   exit 1
 fi
-
-policy_qual="$(run_psql -Atc "
-  select pg_catalog.pg_get_expr(p.polqual, p.polrelid)
-  from pg_catalog.pg_policy p
-  join pg_catalog.pg_class c on c.oid = p.polrelid
-  join pg_catalog.pg_namespace n on n.oid = c.relnamespace
-  where n.nspname = 'storage'
-    and c.relname = 'objects'
-    and p.polname = 'Public can sign active listing photo objects';
-")"
-if [[ -z "$policy_qual" ]]; then
-  echo "Storage photo policy qualifier could not be exported." >&2
-  exit 1
-fi
-
-cat > "$backup_dir/storage-policy.sql" <<SQL
--- Application-owned cross-schema policy captured from the source database.
--- No storage.objects rows or Supabase-managed Storage DDL are included.
-drop policy if exists "Public can sign active listing photo objects" on storage.objects;
-create policy "Public can sign active listing photo objects"
-on storage.objects
-for select
-to anon
-using (
-$policy_qual
-);
-SQL
 
 sha256sum \
   "$backup_dir/roles.sql" \
   "$backup_dir/schema.sql" \
   "$backup_dir/data.sql" \
-  "$backup_dir/storage-policy.sql" \
   > "$backup_dir/sha256sums.txt"
 (
   cd "$backup_dir"
   sha256sum --check --strict sha256sums.txt
 )
 
-echo "Portable application DB backup and cross-schema Storage policy created and checksum-verified."
+echo "Portable application DB backup created and checksum-verified with zero anonymous Storage object SELECT policies."

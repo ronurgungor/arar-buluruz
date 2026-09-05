@@ -90,60 +90,37 @@ if grep -qE '(COPY|INSERT INTO)[[:space:]]+(storage|auth)\.' "$backup_dir/data.s
   exit 1
 fi
 
-policy_count="$(run_psql -Atc "
+# Public photo delivery is application-mediated. The managed source must therefore
+# expose no public/anonymous SELECT policy on storage.objects: direct reads,
+# enumeration and Storage signing remain outside browser privileges and there is
+# no cross-schema Storage policy to export or replay during portability restore.
+anonymous_storage_select_policies="$(run_psql -Atc "
   select count(*)
   from pg_catalog.pg_policy p
   join pg_catalog.pg_class c on c.oid = p.polrelid
   join pg_catalog.pg_namespace n on n.oid = c.relnamespace
   where n.nspname = 'storage'
     and c.relname = 'objects'
-    and p.polname = 'Public can sign active listing photo objects'
     and p.polcmd = 'r'
-    and p.polroles = array[(select oid from pg_catalog.pg_roles where rolname = 'anon')]
-    and p.polwithcheck is null;
+    and (
+      0::oid = any(p.polroles)
+      or (select oid from pg_catalog.pg_roles where rolname = 'anon') = any(p.polroles)
+    );
 ")"
-if [[ "$policy_count" != "1" ]]; then
-  echo "Expected exactly one canonical managed Storage photo policy, found $policy_count." >&2
+if [[ "$anonymous_storage_select_policies" != "0" ]]; then
+  echo "Expected zero anonymous/public managed Storage object SELECT policies, found $anonymous_storage_select_policies." >&2
   exit 1
 fi
-
-policy_qual="$(run_psql -Atc "
-  select pg_catalog.pg_get_expr(p.polqual, p.polrelid)
-  from pg_catalog.pg_policy p
-  join pg_catalog.pg_class c on c.oid = p.polrelid
-  join pg_catalog.pg_namespace n on n.oid = c.relnamespace
-  where n.nspname = 'storage'
-    and c.relname = 'objects'
-    and p.polname = 'Public can sign active listing photo objects';
-")"
-if [[ -z "$policy_qual" ]]; then
-  echo "Managed Storage photo policy qualifier could not be exported." >&2
-  exit 1
-fi
-
-cat > "$backup_dir/storage-policy.sql" <<SQL
--- Application-owned cross-schema policy captured from the managed source.
--- No storage.objects rows or provider-managed Storage DDL are included.
-drop policy if exists "Public can sign active listing photo objects" on storage.objects;
-create policy "Public can sign active listing photo objects"
-on storage.objects
-for select
-to anon
-using (
-$policy_qual
-);
-SQL
 
 sha256sum \
   "$backup_dir/source-roles.sql" \
   "$backup_dir/roles.sql" \
   "$backup_dir/schema.sql" \
   "$backup_dir/data.sql" \
-  "$backup_dir/storage-policy.sql" \
   > "$backup_dir/sha256sums.txt"
 (
   cd "$backup_dir"
   sha256sum --check --strict sha256sums.txt
 )
 
-echo "Managed application DB backup, source role inventory, portable role contract and Storage policy created and checksum-verified."
+echo "Managed application DB backup, source role inventory and portable role contract created and checksum-verified with zero anonymous Storage object SELECT policies."
