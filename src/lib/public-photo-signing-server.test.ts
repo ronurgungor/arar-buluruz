@@ -57,9 +57,7 @@ describe("application-controlled public photo signing", () => {
   test("issues an active listing photo through the server with the fixed canonical TTL", async () => {
     const requests: Array<{ url: URL; init?: RequestInit }> = [];
     const response = await maybeHandlePublicListingPhotoRequest(
-      new Request(
-        `https://app.example/api/listing-photo/${listingId}/${photoId}?expiresIn=86400`,
-      ),
+      new Request(`https://app.example/api/listing-photo/${listingId}/${photoId}?expiresIn=86400`),
       { config, fetchImpl: activePhotoFetch(requests) },
     );
 
@@ -110,7 +108,9 @@ describe("application-controlled public photo signing", () => {
 
   test("does not expose a signing handler for unrelated routes or non-GET mutation attempts", async () => {
     expect(
-      await maybeHandlePublicListingPhotoRequest(new Request("https://app.example/ara"), { config }),
+      await maybeHandlePublicListingPhotoRequest(new Request("https://app.example/ara"), {
+        config,
+      }),
     ).toBeNull();
 
     const response = await maybeHandlePublicListingPhotoRequest(
