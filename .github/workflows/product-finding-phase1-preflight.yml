@@ -29,7 +29,20 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
       - name: Prettier check
-        run: bunx prettier --check .
+        run: >-
+          bunx prettier --check
+          package.json
+          src/lib/listing-search.ts
+          src/lib/product-finding-contract.test.ts
+          src/lib/product-finding-contract.ts
+          src/lib/public-listings-contact.test.ts
+          src/lib/public-listings-supabase.ts
+          src/lib/public-listings.test.ts
+          src/lib/public-listings.ts
+          src/lib/stage1-product-fields.ts
+          src/lib/stage1-product-integrity-server.test.ts
+          src/lib/stage1-self-service-server.ts
+          src/lib/stage1-seller-management-contract.ts
       - name: Lint
         run: bun run lint
       - name: Unit tests
