@@ -31,7 +31,22 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Apply focused Phase 2 wiring
-        run: bun scripts/product-finding-phase2-wire.ts
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("scripts/product-finding-phase2-wire.ts")
+          lines = path.read_text(encoding="utf-8").splitlines()
+          for index, line in enumerate(lines):
+              if "Structured seller fields were not persisted:" in line:
+                  lines[index] = '    "Structured seller fields were not persisted.",'
+              elif 'await buyerPage.goto(`${"${publicBaseUrl}"}/ara?q=b150`' in line:
+                  lines[index] = '  `  await buyerPage.goto(publicBaseUrl + "/ara?q=b150", { waitUntil: "networkidle" });'
+              elif "Contextual filters were not serialized canonically:" in line:
+                  lines[index] = '    "Contextual filters were not serialized canonically.",'
+          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+          bun scripts/product-finding-phase2-wire.ts
 
       - name: Canonical formatting
         run: >-
