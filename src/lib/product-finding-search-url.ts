@@ -18,23 +18,41 @@ export type ProductFindingSearchUrlState = {
   sort?: string;
 };
 
-function optionalString(value: unknown): string | undefined {
-  return typeof value === "string" ? value : undefined;
+function optionalString(value: unknown, field: string): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string") throw new Error(`Search URL ${field} must be a string.`);
+  return value;
+}
+
+function optionalNumberString(value: unknown, field: string): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value === "string") return value;
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  throw new Error(`Search URL ${field} must be numeric.`);
+}
+
+function optionalContextualString(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    return JSON.stringify(value);
+  }
+  throw new Error("Search URL contextual filters must be an object.");
 }
 
 export function normalizeProductFindingSearchUrlState(
   input: Record<string, unknown>,
 ): ProductFindingSearchUrlState {
   return {
-    q: optionalString(input.q),
-    category: optionalString(input.category),
-    productType: optionalString(input.productType),
-    province: optionalString(input.province),
-    district: optionalString(input.district),
-    priceMin: optionalString(input.priceMin),
-    priceMax: optionalString(input.priceMax),
-    contextual: optionalString(input.contextual),
-    sort: optionalString(input.sort),
+    q: optionalString(input.q, "q"),
+    category: optionalString(input.category, "category"),
+    productType: optionalString(input.productType, "productType"),
+    province: optionalString(input.province, "province"),
+    district: optionalString(input.district, "district"),
+    priceMin: optionalNumberString(input.priceMin, "priceMin"),
+    priceMax: optionalNumberString(input.priceMax, "priceMax"),
+    contextual: optionalContextualString(input.contextual),
+    sort: optionalString(input.sort, "sort"),
   };
 }
 
