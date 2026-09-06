@@ -34,7 +34,27 @@ select lives_ok(
       'pending'
     )
   $sql$,
-  'compatible product type and structured object persist'
+  'compatible main automobile and structured object persist'
+);
+
+select lives_ok(
+  $sql$
+    insert into public.listings (
+      id, title, description, price_amount, price_is_free, category, product_type,
+      product_attributes_version, product_attributes, province, district, seller_display_name, status
+    ) values
+      (
+        '9a000000-0000-4000-8000-000000000008',
+        'Synthetic Corolla part', '', 1000, false, 'vehicle', 'automobile-part', 1, '{}'::jsonb,
+        'Tekirdağ', 'Çorlu', 'Synthetic Seller', 'pending'
+      ),
+      (
+        '9a000000-0000-4000-8000-000000000009',
+        'Synthetic Corolla accessory', '', 1000, false, 'vehicle', 'automobile-accessory', 1, '{}'::jsonb,
+        'Tekirdağ', 'Çorlu', 'Synthetic Seller', 'pending'
+      )
+  $sql$,
+  'minimal vehicle part and accessory product types persist without a larger taxonomy'
 );
 
 select lives_ok(
@@ -58,7 +78,7 @@ select lives_ok(
       'pending'
     )
   $sql$,
-  'legacy null product type remains usable'
+  'legacy null product type remains usable and explicit Free remains zero'
 );
 
 select throws_ok(
@@ -75,6 +95,22 @@ select throws_ok(
   '23514',
   null,
   'database rejects category/product-type mismatch'
+);
+
+select throws_ok(
+  $sql$
+    insert into public.listings (
+      id, title, description, price_amount, price_is_free, category, product_type,
+      product_attributes_version, product_attributes, province, district, seller_display_name, status
+    ) values (
+      '9a000000-0000-4000-8000-000000000010',
+      'Vehicle part in wrong category', '', 1000, false, 'electronics', 'automobile-part', 1, '{}'::jsonb,
+      'Tekirdağ', 'Çorlu', 'Synthetic Seller', 'pending'
+    )
+  $sql$,
+  '23514',
+  null,
+  'vehicle part type cannot leak into another category'
 );
 
 select throws_ok(
@@ -140,6 +176,20 @@ select throws_ok(
   '23514',
   null,
   'free listing requires zero amount'
+);
+
+select lives_ok(
+  $sql$
+    insert into public.listings (
+      id, title, description, price_amount, price_is_free, category,
+      province, district, seller_display_name, status
+    ) values (
+      '9a000000-0000-4000-8000-000000000011',
+      'Positive priced listing', '', 1, false, 'home',
+      'Tekirdağ', 'Çorlu', 'Synthetic Seller', 'pending'
+    )
+  $sql$,
+  'priced listing requires and accepts a positive amount'
 );
 
 select ok(
