@@ -34,6 +34,9 @@ const ACCESSORY_QUERY_MARKERS = [
   "sarj aleti",
   "charger",
 ] as const;
+const GENERIC_ROLE_TOKENS = new Set(
+  [...PART_QUERY_MARKERS, ...ACCESSORY_QUERY_MARKERS].flatMap((value) => value.split(" ")),
+);
 
 const ROOT_MAIN_PRODUCT_TYPE: Record<ProductType, ProductType> = {
   automobile: "automobile",
@@ -115,6 +118,10 @@ function getRoleMarker(normalizedQuery: string): ProductRole | "ambiguous" | nul
   if (part) return "part";
   if (accessory) return "accessory";
   return null;
+}
+
+function hasNonRoleSignal(normalizedQuery: string): boolean {
+  return normalizedQuery.split(" ").some((token) => !GENERIC_ROLE_TOKENS.has(token));
 }
 
 function getDirectAliasCandidates(
@@ -227,18 +234,27 @@ export function resolveSearchIntent(
     return highResolution(direct, "product_alias");
   }
 
-  if (mainInventoryRoots.size !== 1 || inventoryRoots.size !== 1) {
-    return inventoryRoots.size > 1 || mainInventoryRoots.size > 1
-      ? ambiguousResolution(request.category)
-      : noneResolution(request.category);
+  if (inventoryRoots.size !== 1) {
+    return inventoryRoots.size > 1 ? ambiguousResolution(request.category) : noneResolution(request.category);
   }
 
-  const mainType = [...mainInventoryRoots][0];
+  const mainType = [...inventoryRoots][0];
   if (requestedRole && requestedRole !== "main") {
+    if (!hasNonRoleSignal(normalizedQuery)) return ambiguousResolution(request.category);
     const related = relatedRoleProductType(mainType, requestedRole);
-    return related ? highResolution(related, "typed_inventory") : ambiguousResolution(request.category);
+    const hasMatchingRoleEvidence = queryMatchedTypedListings.some(
+      (listing) =>
+        ROOT_MAIN_PRODUCT_TYPE[listing.productType!] === mainType &&
+        PRODUCT_TYPE_REGISTRY[listing.productType!].role === requestedRole,
+    );
+    if (related && hasMatchingRoleEvidence) return highResolution(related, "typed_inventory");
+    return noneResolution(request.category);
   }
-  return highResolution(mainType, "typed_inventory");
+
+  if (mainInventoryRoots.size === 1 && mainInventoryRoots.has(mainType)) {
+    return highResolution(mainType, "typed_inventory");
+  }
+  return noneResolution(request.category);
 }
 
 export function listingMatchesSearchRequest(
