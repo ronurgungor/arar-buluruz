@@ -18,7 +18,10 @@ alter table public.listings
   add constraint listings_category_product_type_check
     check (
       product_type is null
-      or (category = 'vehicle' and product_type = 'automobile')
+      or (
+        category = 'vehicle'
+        and product_type in ('automobile', 'automobile-part', 'automobile-accessory')
+      )
       or (category = 'real-estate' and product_type = 'housing')
       or (category = 'electronics' and product_type in ('phone', 'phone-accessory'))
       or (category = 'home' and product_type = 'wardrobe')
@@ -43,12 +46,26 @@ alter table public.listings
       )
     );
 
--- A zero amount has one canonical meaning: Free. Existing synthetic/legacy zero rows are migrated
--- deterministically to the explicit free state rather than preserving an impossible priced+0 state.
-update public.listings
-set price_is_free = true
-where price_amount = 0
-  and price_is_free = false;
+-- The old schema allowed price_is_free=false with price_amount=0, but that state did not say
+-- whether an individual historical row meant "Free" or an invalid/missing priced value. Do not
+-- invent semantics by bulk-converting ambiguous rows. Repository-owned synthetic fixtures audited
+-- for this migration are either explicitly Free already or have a positive price, so no automatic
+-- row remediation is justified here. Any unexpected ambiguous persisted row must be classified
+-- explicitly before this migration may proceed.
+do $$
+begin
+  if exists (
+    select 1
+    from public.listings
+    where price_is_free = false
+      and price_amount = 0
+  ) then
+    raise exception using
+      errcode = '23514',
+      message = 'ambiguous legacy price rows exist: classify each price_is_free=false, price_amount=0 row explicitly before applying Product Finding Integrity Phase 1';
+  end if;
+end;
+$$;
 
 alter table public.listings
   drop constraint if exists listings_free_price_check,
