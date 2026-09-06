@@ -80,7 +80,7 @@ describe("product finding Phase 2 UI contract", () => {
         transmission: "automatic",
         fuel: "hybrid",
       }),
-    ).toEqual(["2022", "31000 km", "Otomatik"]);
+    ).toEqual(["2022", "31.000 km", "Otomatik"]);
     expect(getListingContextFacts("phone", { storage_gb: 256, brand: "Apple" })).toEqual([
       "256 GB",
     ]);
