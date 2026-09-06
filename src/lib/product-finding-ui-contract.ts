@@ -5,6 +5,10 @@ import {
   type ProductRole,
   type ProductType,
 } from "./product-finding-contract";
+import {
+  getBuyerFacetMode,
+  type BuyerFacetMode,
+} from "./product-finding-buyer-facets";
 import type { Stage1Category } from "./stage1-self-service-contract";
 
 export type ProductFieldInputKind = "text" | "number" | "select";
@@ -18,30 +22,32 @@ export type ProductFieldUiDefinition = Readonly<{
   unit?: string;
   step?: number;
   choices?: readonly ProductFieldChoice[];
-  buyerFacet: boolean;
   cardPriority?: number;
 }>;
+
+export type BuyerFacetFieldUiDefinition = ProductFieldUiDefinition &
+  Readonly<{
+    buyerFacetMode: BuyerFacetMode;
+  }>;
 
 const choice = (value: string | number, label: string): ProductFieldChoice => ({ value, label });
 
 const PRODUCT_FIELD_UI: Record<ProductType, readonly ProductFieldUiDefinition[]> = {
   automobile: [
-    { key: "make", label: "Marka", input: "text", placeholder: "Örn. Toyota", buyerFacet: true },
-    { key: "model", label: "Model", input: "text", placeholder: "Örn. Corolla", buyerFacet: false },
-    { key: "year", label: "Model yılı", input: "number", buyerFacet: true, cardPriority: 1 },
+    { key: "make", label: "Marka", input: "text", placeholder: "Örn. Toyota" },
+    { key: "model", label: "Model", input: "text", placeholder: "Örn. Corolla" },
+    { key: "year", label: "Model yılı", input: "number", cardPriority: 1 },
     {
       key: "km",
       label: "Kilometre",
       input: "number",
       unit: "km",
-      buyerFacet: false,
       cardPriority: 2,
     },
     {
       key: "transmission",
       label: "Vites",
       input: "select",
-      buyerFacet: true,
       cardPriority: 3,
       choices: [
         choice("manual", "Manuel"),
@@ -53,7 +59,6 @@ const PRODUCT_FIELD_UI: Record<ProductType, readonly ProductFieldUiDefinition[]>
       key: "fuel",
       label: "Yakıt",
       input: "select",
-      buyerFacet: true,
       choices: [
         choice("gasoline", "Benzin"),
         choice("diesel", "Dizel"),
@@ -66,7 +71,6 @@ const PRODUCT_FIELD_UI: Record<ProductType, readonly ProductFieldUiDefinition[]>
       key: "body_type",
       label: "Kasa tipi",
       input: "select",
-      buyerFacet: true,
       choices: [
         choice("sedan", "Sedan"),
         choice("hatchback", "Hatchback"),
@@ -87,7 +91,6 @@ const PRODUCT_FIELD_UI: Record<ProductType, readonly ProductFieldUiDefinition[]>
       key: "offer_type",
       label: "İlan tipi",
       input: "select",
-      buyerFacet: true,
       cardPriority: 1,
       choices: [choice("sale", "Satılık"), choice("rent", "Kiralık")],
     },
@@ -95,7 +98,6 @@ const PRODUCT_FIELD_UI: Record<ProductType, readonly ProductFieldUiDefinition[]>
       key: "property_type",
       label: "Konut tipi",
       input: "select",
-      buyerFacet: true,
       choices: [
         choice("apartment", "Daire"),
         choice("detached_house", "Müstakil ev"),
@@ -108,7 +110,6 @@ const PRODUCT_FIELD_UI: Record<ProductType, readonly ProductFieldUiDefinition[]>
       key: "room_count",
       label: "Oda sayısı",
       input: "select",
-      buyerFacet: true,
       cardPriority: 2,
       choices: [
         choice("studio", "Stüdyo"),
@@ -125,25 +126,22 @@ const PRODUCT_FIELD_UI: Record<ProductType, readonly ProductFieldUiDefinition[]>
       label: "Brüt alan",
       input: "number",
       unit: "m²",
-      buyerFacet: false,
       cardPriority: 3,
     },
   ],
   phone: [
-    { key: "brand", label: "Marka", input: "text", placeholder: "Örn. Apple", buyerFacet: true },
+    { key: "brand", label: "Marka", input: "text", placeholder: "Örn. Apple" },
     {
       key: "model",
       label: "Model",
       input: "text",
       placeholder: "Örn. iPhone 13",
-      buyerFacet: false,
     },
     {
       key: "storage_gb",
       label: "Depolama",
       input: "select",
       unit: "GB",
-      buyerFacet: true,
       cardPriority: 1,
       choices: [16, 32, 64, 128, 256, 512, 1024, 2048].map((value) =>
         choice(value, value >= 1024 ? `${value / 1024} TB` : `${value} GB`),
@@ -157,7 +155,6 @@ const PRODUCT_FIELD_UI: Record<ProductType, readonly ProductFieldUiDefinition[]>
       label: "Genişlik",
       input: "number",
       unit: "cm",
-      buyerFacet: true,
       cardPriority: 1,
     },
     {
@@ -165,15 +162,13 @@ const PRODUCT_FIELD_UI: Record<ProductType, readonly ProductFieldUiDefinition[]>
       label: "Yükseklik",
       input: "number",
       unit: "cm",
-      buyerFacet: false,
       cardPriority: 2,
     },
-    { key: "depth_cm", label: "Derinlik", input: "number", unit: "cm", buyerFacet: false },
+    { key: "depth_cm", label: "Derinlik", input: "number", unit: "cm" },
     {
       key: "door_type",
       label: "Kapak tipi",
       input: "select",
-      buyerFacet: true,
       cardPriority: 3,
       choices: [
         choice("hinged", "Menteşeli"),
@@ -188,14 +183,12 @@ const PRODUCT_FIELD_UI: Record<ProductType, readonly ProductFieldUiDefinition[]>
       label: "Numara",
       input: "number",
       step: 0.5,
-      buyerFacet: true,
       cardPriority: 1,
     },
     {
       key: "target_group",
       label: "Kullanım",
       input: "select",
-      buyerFacet: true,
       cardPriority: 2,
       choices: [
         choice("women", "Kadın"),
@@ -204,14 +197,13 @@ const PRODUCT_FIELD_UI: Record<ProductType, readonly ProductFieldUiDefinition[]>
         choice("kids", "Çocuk"),
       ],
     },
-    { key: "brand", label: "Marka", input: "text", placeholder: "Örn. Nike", buyerFacet: true },
+    { key: "brand", label: "Marka", input: "text", placeholder: "Örn. Nike" },
   ],
   bicycle: [
     {
       key: "bicycle_type",
       label: "Bisiklet tipi",
       input: "select",
-      buyerFacet: true,
       cardPriority: 1,
       choices: [
         choice("city", "Şehir"),
@@ -229,7 +221,6 @@ const PRODUCT_FIELD_UI: Record<ProductType, readonly ProductFieldUiDefinition[]>
       input: "number",
       unit: "inç",
       step: 0.5,
-      buyerFacet: true,
       cardPriority: 2,
     },
     {
@@ -238,7 +229,6 @@ const PRODUCT_FIELD_UI: Record<ProductType, readonly ProductFieldUiDefinition[]>
       input: "number",
       unit: "cm",
       step: 0.5,
-      buyerFacet: true,
       cardPriority: 3,
     },
   ],
@@ -267,10 +257,12 @@ export function getSellerProductFields(
 
 export function getBuyerFacetFields(
   productType: ProductType | null,
-): readonly ProductFieldUiDefinition[] {
-  return getSellerProductFields(productType)
-    .filter((field) => field.buyerFacet)
-    .slice(0, 5);
+): readonly BuyerFacetFieldUiDefinition[] {
+  if (!productType) return [];
+  return getSellerProductFields(productType).flatMap((field) => {
+    const buyerFacetMode = getBuyerFacetMode(productType, field.key);
+    return buyerFacetMode ? [{ ...field, buyerFacetMode }] : [];
+  });
 }
 
 export function formatProductFieldValue(
