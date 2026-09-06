@@ -42,6 +42,7 @@ alter table public.listings
       )
       or (
         product_type is not null
+        and product_attributes_version is not null
         and product_attributes_version = 1
       )
     );
