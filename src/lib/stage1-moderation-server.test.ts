@@ -17,6 +17,7 @@ function readyRow(): Record<string, unknown> {
     price_amount: 100,
     price_is_free: false,
     category: "home",
+    product_type: null,
     item_condition: null,
     seller_display_name: "Sentetik Satıcı",
     status: "pending",
@@ -102,12 +103,47 @@ describe("founder exceptional publish readiness", () => {
     expect(photoCalls).toBe(1);
   });
 
-  test("vehicle and real-estate production publication fail closed without EIDS", async () => {
+  test("automobile parts and accessories remain ordinary under the Vehicle category", async () => {
     const priorMode = process.env.PILOT_SYNTHETIC_TEST_MODE;
     process.env.PILOT_SYNTHETIC_TEST_MODE = "disabled";
     try {
-      for (const category of ["vehicle", "real-estate"]) {
-        currentRow = { ...readyRow(), category, contact_verified_at: null };
+      for (const productType of ["automobile-part", "automobile-accessory"]) {
+        currentRow = {
+          ...readyRow(),
+          category: "vehicle",
+          product_type: productType,
+          contact_verified_at: null,
+        };
+        patchCalls = 0;
+        photoCalls = 0;
+        const response = await handleStage1ModerationRequest(requestForPublish());
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({ ok: true, listingId });
+        expect(patchCalls).toBe(1);
+        expect(photoCalls).toBe(1);
+      }
+    } finally {
+      process.env.PILOT_SYNTHETIC_TEST_MODE = priorMode;
+    }
+  });
+
+  test("automobile, housing and legacy regulated rows fail closed without production EIDS", async () => {
+    const priorMode = process.env.PILOT_SYNTHETIC_TEST_MODE;
+    process.env.PILOT_SYNTHETIC_TEST_MODE = "disabled";
+    const regulatedCases = [
+      { category: "vehicle", productType: "automobile" },
+      { category: "real-estate", productType: "housing" },
+      { category: "vehicle", productType: null },
+      { category: "real-estate", productType: null },
+    ] as const;
+    try {
+      for (const { category, productType } of regulatedCases) {
+        currentRow = {
+          ...readyRow(),
+          category,
+          product_type: productType,
+          contact_verified_at: null,
+        };
         patchCalls = 0;
         photoCalls = 0;
         const response = await handleStage1ModerationRequest(requestForPublish());
@@ -123,8 +159,13 @@ describe("founder exceptional publish readiness", () => {
     const priorUrl = process.env.PILOT_OPERATOR_SUPABASE_URL;
     process.env.PILOT_OPERATOR_SUPABASE_URL = "https://synthetic.example";
     try {
-      for (const category of ["vehicle", "real-estate"]) {
-        currentRow = { ...readyRow(), category, contact_verified_at: null };
+      for (const { category, productType } of regulatedCases.slice(0, 2)) {
+        currentRow = {
+          ...readyRow(),
+          category,
+          product_type: productType,
+          contact_verified_at: null,
+        };
         patchCalls = 0;
         photoCalls = 0;
         const response = await handleStage1ModerationRequest(requestForPublish());
