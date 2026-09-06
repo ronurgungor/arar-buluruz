@@ -104,7 +104,10 @@ const publicListingRowBaseSchema = z.object({
 type PublicListingRowBase = z.infer<typeof publicListingRowBaseSchema>;
 
 function assertPublicListingIntegrity(row: PublicListingRowBase, context: z.RefinementCtx): void {
-  if ((row.price_is_free && row.price_amount !== 0) || (!row.price_is_free && row.price_amount <= 0)) {
+  if (
+    (row.price_is_free && row.price_amount !== 0) ||
+    (!row.price_is_free && row.price_amount <= 0)
+  ) {
     context.addIssue({ code: "custom", message: "Invalid price truth" });
   }
   try {

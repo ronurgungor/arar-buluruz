@@ -49,13 +49,22 @@ export function listingMatchesQuery(listing: SearchableListing, query: string): 
   return queryTokens.every((token) => listingWords.some((word) => word.startsWith(token)));
 }
 
-export function listingMatchesSearchRequest(listing: ListingView, request: SearchRequestV1): boolean {
+export function listingMatchesSearchRequest(
+  listing: ListingView,
+  request: SearchRequestV1,
+): boolean {
   if (!listing.category) {
-    if (request.category !== null || request.productType !== null || Object.keys(request.contextual).length) {
+    if (
+      request.category !== null ||
+      request.productType !== null ||
+      Object.keys(request.contextual).length
+    ) {
       return false;
     }
-    if (request.location.province !== null && listing.city !== request.location.province) return false;
-    if (request.location.district !== null && listing.district !== request.location.district) return false;
+    if (request.location.province !== null && listing.city !== request.location.province)
+      return false;
+    if (request.location.district !== null && listing.district !== request.location.district)
+      return false;
     if (request.price.min !== null && listing.price < request.price.min) return false;
     if (request.price.max !== null && listing.price > request.price.max) return false;
   } else if (
@@ -87,7 +96,9 @@ export function executeSearchRequestV1(
   if (request.sort === "relevance") return relevant;
   return relevant.slice().sort((left, right) => {
     if (request.sort === "newest") {
-      return Date.parse(right.createdAt) - Date.parse(left.createdAt) || left.id.localeCompare(right.id);
+      return (
+        Date.parse(right.createdAt) - Date.parse(left.createdAt) || left.id.localeCompare(right.id)
+      );
     }
     if (request.sort === "price_asc") {
       return left.price - right.price || Date.parse(right.createdAt) - Date.parse(left.createdAt);

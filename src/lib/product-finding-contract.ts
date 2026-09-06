@@ -173,7 +173,9 @@ function attributesSchema(definition: ProductTypeDefinition) {
 }
 
 export function getProductTypesForCategory(category: Stage1Category): readonly ProductType[] {
-  return PRODUCT_TYPES.filter((productType) => PRODUCT_TYPE_REGISTRY[productType].category === category);
+  return PRODUCT_TYPES.filter(
+    (productType) => PRODUCT_TYPE_REGISTRY[productType].category === category,
+  );
 }
 
 export function isProductTypeCompatible(

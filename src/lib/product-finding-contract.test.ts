@@ -247,16 +247,10 @@ describe("product finding contract", () => {
       ),
     ).toBe(true);
     expect(
-      listingMatchesStructuredFilters(
-        { ...common, productType: "automobile-part" },
-        request,
-      ),
+      listingMatchesStructuredFilters({ ...common, productType: "automobile-part" }, request),
     ).toBe(false);
     expect(
-      listingMatchesStructuredFilters(
-        { ...common, productType: "automobile-accessory" },
-        request,
-      ),
+      listingMatchesStructuredFilters({ ...common, productType: "automobile-accessory" }, request),
     ).toBe(false);
   });
 

@@ -41,7 +41,9 @@ function readJsonObject(form: FormData): unknown {
   }
 }
 
-function normalizeSelection(input: Parameters<typeof validateProductSelection>[0]): ValidatedProductSelection {
+function normalizeSelection(
+  input: Parameters<typeof validateProductSelection>[0],
+): ValidatedProductSelection {
   try {
     return validateProductSelection(input);
   } catch {
@@ -51,9 +53,7 @@ function normalizeSelection(input: Parameters<typeof validateProductSelection>[0
 
 export function hasStage1ProductFields(form: FormData): boolean {
   return (
-    form.has("productType") ||
-    form.has("productAttributesVersion") ||
-    form.has("productAttributes")
+    form.has("productType") || form.has("productAttributesVersion") || form.has("productAttributes")
   );
 }
 

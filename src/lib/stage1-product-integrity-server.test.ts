@@ -64,7 +64,10 @@ describe("Stage-1 product integrity server boundary", () => {
     const form = baseSubmission("electronics");
     form.set("productType", "phone");
     form.set("productAttributesVersion", "1");
-    form.set("productAttributes", JSON.stringify({ brand: "Apple", model: "iPhone 15", storage_gb: 256 }));
+    form.set(
+      "productAttributes",
+      JSON.stringify({ brand: "Apple", model: "iPhone 15", storage_gb: 256 }),
+    );
     const response = await handleStage1SelfServiceRequest(requestFor(form));
     expect(response.status).toBe(401);
     expect(await response.json()).toMatchObject({ ok: false, code: "SESSION_REQUIRED" });
@@ -79,7 +82,10 @@ describe("Stage-1 product integrity server boundary", () => {
 
     const arbitrary = baseSubmission("electronics");
     arbitrary.set("productType", "phone");
-    arbitrary.set("productAttributes", JSON.stringify({ brand: "Apple", seller_defined: "inject" }));
+    arbitrary.set(
+      "productAttributes",
+      JSON.stringify({ brand: "Apple", seller_defined: "inject" }),
+    );
     const arbitraryResponse = await handleStage1SelfServiceRequest(requestFor(arbitrary));
     expect(arbitraryResponse.status).toBe(400);
     expect(await arbitraryResponse.json()).toMatchObject({ ok: false, code: "INVALID_REQUEST" });
@@ -111,7 +117,9 @@ describe("Stage-1 product integrity server boundary", () => {
   });
 
   test("ordinary goods remain outside EIDS while Vehicle and Real Estate fail closed", async () => {
-    const ordinary = await handleStage1SelfServiceRequest(requestFor(baseSubmission("electronics")));
+    const ordinary = await handleStage1SelfServiceRequest(
+      requestFor(baseSubmission("electronics")),
+    );
     expect(ordinary.status).toBe(401);
     expect(await ordinary.json()).toMatchObject({ ok: false, code: "SESSION_REQUIRED" });
 
@@ -129,10 +137,14 @@ describe("Stage-1 product integrity server boundary", () => {
     let patchCalls = 0;
 
     globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = new URL(typeof input === "string" ? input : input instanceof URL ? input : input.url);
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input : input.url,
+      );
       const method = init?.method ?? "GET";
       if (url.pathname === "/rest/v1/rpc/resolve_seller_session" && method === "POST") {
-        return Response.json([{ seller_id: sellerId, expires_at: new Date(Date.now() + 60_000).toISOString() }]);
+        return Response.json([
+          { seller_id: sellerId, expires_at: new Date(Date.now() + 60_000).toISOString() },
+        ]);
       }
       if (url.pathname === "/rest/v1/listings" && method === "GET") {
         return Response.json([

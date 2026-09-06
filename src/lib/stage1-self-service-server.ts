@@ -1688,7 +1688,10 @@ export async function handleStage1SelfServiceRequest(request: Request): Promise<
         error.status,
       );
     }
-    if (error instanceof Stage1ProductInputError || (error instanceof Error && error.name === "ZodError")) {
+    if (
+      error instanceof Stage1ProductInputError ||
+      (error instanceof Error && error.name === "ZodError")
+    ) {
       return jsonResponse(
         { ok: false, code: "INVALID_REQUEST", message: "İlan bilgileri eksik veya geçersiz." },
         400,

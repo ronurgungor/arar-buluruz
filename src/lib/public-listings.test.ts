@@ -36,7 +36,16 @@ const publicRow = {
   province: "Tekirdag",
   district: "Corlu",
   seller_display_name: "Pilot Seller",
-  search_keywords: ["ev ve yaşam", "gardırop", "dolap", "elbise dolabı", "120", "200", "60", "sliding"],
+  search_keywords: [
+    "ev ve yaşam",
+    "gardırop",
+    "dolap",
+    "elbise dolabı",
+    "120",
+    "200",
+    "60",
+    "sliding",
+  ],
   created_at: "2026-07-30T10:00:00+00:00",
   published_at: "2026-07-30T11:00:00+00:00",
 };
