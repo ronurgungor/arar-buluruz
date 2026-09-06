@@ -18,6 +18,7 @@ import {
   parseSellerRecoveryCode,
   sha256Hex,
 } from "./stage1-seller-credentials";
+import { resolveProductComplianceScope, type ProductType } from "./product-finding-contract";
 import {
   hasStage1ProductFields,
   parseStage1ProductFields,
@@ -32,6 +33,7 @@ import {
   stage1CategorySchema,
   stage1ConditionSchema,
   stage1E164Schema,
+  type Stage1Category,
   type Stage1SubmissionResponse,
 } from "./stage1-self-service-contract";
 
@@ -968,11 +970,12 @@ async function createPendingRow(
 }
 
 function assertEidsPublicationAllowed(
-  category: string,
+  category: Stage1Category,
+  productType: ProductType | null,
   request: Request,
   config: BackendConfig,
 ): void {
-  if (category !== "vehicle" && category !== "real-estate") return;
+  if (resolveProductComplianceScope({ category, productType }) === "ordinary") return;
   if (
     process.env.PILOT_SYNTHETIC_TEST_MODE === "enabled" &&
     isLoopbackHost(new URL(request.url).hostname) &&
@@ -1042,7 +1045,7 @@ async function submitListing(
   }
 
   const config = readBackendConfig();
-  assertEidsPublicationAllowed(category, request, config);
+  assertEidsPublicationAllowed(category, product.productType, request, config);
   const sellerSession = await resolveSellerSession(config, request);
   const listingId = crypto.randomUUID();
   const rulesAcceptedAt = new Date().toISOString();
@@ -1468,7 +1471,6 @@ async function sellerUpdate(form: FormData, clientIp: string, request: Request):
     productAttributes: listing.product_attributes,
   });
   const category = stage1CategorySchema.parse(requiredString(form, "category", 3, 32));
-  assertEidsPublicationAllowed(category, request, config);
   const product = hasStage1ProductFields(form)
     ? parseStage1ProductFields(form, category)
     : transitionStoredProductFields({
@@ -1477,6 +1479,7 @@ async function sellerUpdate(form: FormData, clientIp: string, request: Request):
         previousAttributes: previousProduct.productAttributes,
         nextCategory: category,
       });
+  assertEidsPublicationAllowed(category, product.productType, request, config);
   const conditionRaw = optionalString(form, "condition", 32);
   const condition = conditionRaw ? stage1ConditionSchema.parse(conditionRaw) : null;
   const title = requiredString(form, "title", 3, 120);
