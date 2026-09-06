@@ -1,6 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import {
-  PRODUCT_ATTRIBUTES_VERSION,
+  transitionProductSelection,
   type ProductAttributes,
   type ProductType,
 } from "@/lib/product-finding-contract";
@@ -46,6 +46,20 @@ export function ProductSelectionFields({
     onChange({ productType, attributes: next });
   };
 
+  const changeProductType = (nextProductType: ProductType | null) => {
+    const transitioned = transitionProductSelection({
+      previousCategory: category,
+      previousProductType: productType,
+      previousAttributes: attributes,
+      nextCategory: category,
+      nextProductType,
+    });
+    onChange({
+      productType: transitioned.productType,
+      attributes: transitioned.productAttributes,
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -59,10 +73,7 @@ export function ProductSelectionFields({
             aria-label="Ürün tipi"
             value={productType ?? ""}
             onChange={(event) =>
-              onChange({
-                productType: event.target.value ? (event.target.value as ProductType) : null,
-                attributes: {},
-              })
+              changeProductType(event.target.value ? (event.target.value as ProductType) : null)
             }
             className={selectClass}
           >
@@ -168,10 +179,6 @@ export function ProductSelectionFields({
             })}
           </div>
         </div>
-      ) : null}
-
-      {productType ? (
-        <input type="hidden" name="productAttributesVersion" value={PRODUCT_ATTRIBUTES_VERSION} />
       ) : null}
     </div>
   );
