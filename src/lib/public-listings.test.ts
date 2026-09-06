@@ -29,11 +29,14 @@ const publicRow = {
   price_amount: "1250.00",
   price_is_free: false,
   category: "home",
+  product_type: "wardrobe",
+  product_attributes_version: 1,
+  product_attributes: { width_cm: 120, height_cm: 200, depth_cm: 60, door_type: "sliding" },
   item_condition: "good",
   province: "Tekirdag",
   district: "Corlu",
   seller_display_name: "Pilot Seller",
-  search_keywords: ["pilot", "visible"],
+  search_keywords: ["ev ve yaşam", "gardırop", "dolap", "elbise dolabı", "120", "200", "60", "sliding"],
   created_at: "2026-07-30T10:00:00+00:00",
   published_at: "2026-07-30T11:00:00+00:00",
 };
@@ -226,7 +229,7 @@ describe("resolveListingsSource", () => {
 });
 
 describe("public Supabase REST reader", () => {
-  test("loads approved listing columns and app-mediated lifecycle-gated photo URLs", async () => {
+  test("loads approved structured listing columns and app-mediated lifecycle-gated photo URLs", async () => {
     const requests: Array<{ url: URL; headers: Headers }> = [];
     const baseFetch = photoAwareFetch();
     const fetchMock = (async (input, init) => {
@@ -243,6 +246,9 @@ describe("public Supabase REST reader", () => {
     expect(listingRequest?.url.searchParams.get("order")).toBe("published_at.desc,id.desc");
     const selectedColumns = listingRequest?.url.searchParams.get("select") ?? "";
     expect(selectedColumns).toContain("seller_display_name");
+    expect(selectedColumns).toContain("product_type");
+    expect(selectedColumns).toContain("product_attributes_version");
+    expect(selectedColumns).toContain("product_attributes");
     expect(selectedColumns).not.toContain("status");
     expect(selectedColumns).not.toContain("expires_at");
     expect(selectedColumns).not.toContain("phone");
@@ -260,6 +266,9 @@ describe("public Supabase REST reader", () => {
         price: 1250,
         isFree: false,
         category: "home",
+        productType: "wardrobe",
+        productAttributesVersion: 1,
+        productAttributes: publicRow.product_attributes,
         condition: "good",
         city: publicRow.province,
         district: publicRow.district,
@@ -299,6 +308,26 @@ describe("public Supabase REST reader", () => {
       })) as unknown as typeof fetch;
 
     await expect(fetchPublicListings(config, fetchMock)).rejects.toBeInstanceOf(
+      PublicListingsError,
+    );
+  });
+
+  test("rejects inconsistent product facts and price truth", async () => {
+    const invalidProductFetch = (async () =>
+      new Response(JSON.stringify([{ ...publicRow, category: "fashion", product_type: "phone" }]), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })) as unknown as typeof fetch;
+    await expect(fetchPublicListings(config, invalidProductFetch)).rejects.toBeInstanceOf(
+      PublicListingsError,
+    );
+
+    const invalidPriceFetch = (async () =>
+      new Response(JSON.stringify([{ ...publicRow, price_amount: 0, price_is_free: false }]), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })) as unknown as typeof fetch;
+    await expect(fetchPublicListings(config, invalidPriceFetch)).rejects.toBeInstanceOf(
       PublicListingsError,
     );
   });
