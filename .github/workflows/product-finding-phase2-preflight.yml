@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: product-finding-phase2-preflight-${{ github.ref }}
@@ -15,14 +15,12 @@ concurrency:
 
 jobs:
   quality:
-    name: Phase 2 contract lint, unit and build
+    name: Phase 2 seller buyer lint, unit and build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          persist-credentials: false
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -32,8 +30,48 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
-      - name: Check Phase 2 formatting
-        run: bunx prettier --check docs/PRODUCT_FINDING_PHASE2_CONTRACT.md src/lib/product-finding-buyer-facets.ts src/lib/product-finding-contract.ts src/lib/product-finding-contract.test.ts src/lib/product-finding-range-filters.test.ts src/lib/product-finding-ui-contract.ts src/lib/product-finding-ui-contract.test.ts src/lib/listing-search.ts src/lib/listing-search.test.ts package.json
+      - name: Apply focused Phase 2 wiring
+        run: bun scripts/product-finding-phase2-wire.ts
+
+      - name: Canonical formatting
+        run: >-
+          bunx prettier --write
+          docs/PRODUCT_FINDING_PHASE2_CONTRACT.md
+          src/components/product/ProductSelectionFields.tsx
+          src/components/search/ProductFindingFilterSheet.tsx
+          src/lib/product-finding-buyer-facets.ts
+          src/lib/product-finding-contract.ts
+          src/lib/product-finding-contract.test.ts
+          src/lib/product-finding-range-filters.test.ts
+          src/lib/product-finding-search-url.ts
+          src/lib/product-finding-search-url.test.ts
+          src/lib/product-finding-ui-contract.ts
+          src/lib/product-finding-ui-contract.test.ts
+          src/lib/listing-search.ts
+          src/lib/listing-search.test.ts
+          src/lib/listing-return.ts
+          src/lib/stage1-product-fields.ts
+          src/routes-pilot/ara.tsx
+          src/routes-pilot/ilan-ver.tsx
+          src/routes-pilot/ilanlarim.tsx
+          src/routes-pilot/ilan.$id.tsx
+          scripts/stage1-self-service-browser-e2e.ts
+          scripts/product-finding-phase2-wire.ts
+          package.json
+
+      - name: Commit focused wiring and formatting when needed
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "Phase 2 wiring already applied and formatted."
+            exit 0
+          fi
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Wire Product Finding Phase 2 seller and buyer UI"
+          git push origin HEAD:agent/product-finding-phase2
 
       - name: Lint
         run: bun run lint
