@@ -46,9 +46,7 @@ function parseNestedJson(value: string): unknown {
   return parsed;
 }
 
-function optionalContextual(
-  value: unknown,
-): Record<string, ContextualFacetFilter> | undefined {
+function optionalContextual(value: unknown): Record<string, ContextualFacetFilter> | undefined {
   if (value === undefined) return undefined;
   const parsed = typeof value === "string" ? parseNestedJson(value) : value;
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
