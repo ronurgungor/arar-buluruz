@@ -5,10 +5,7 @@ import {
   type ProductRole,
   type ProductType,
 } from "./product-finding-contract";
-import {
-  getBuyerFacetMode,
-  type BuyerFacetMode,
-} from "./product-finding-buyer-facets";
+import { getBuyerFacetMode, type BuyerFacetMode } from "./product-finding-buyer-facets";
 import type { Stage1Category } from "./stage1-self-service-contract";
 
 export type ProductFieldInputKind = "text" | "number" | "select";

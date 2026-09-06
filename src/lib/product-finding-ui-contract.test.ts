@@ -59,9 +59,7 @@ describe("product finding Phase 2 UI contract", () => {
       ["door_type", "multi"],
     ]);
 
-    expect(
-      getBuyerFacetFields("shoes").map((field) => [field.key, field.buyerFacetMode]),
-    ).toEqual([
+    expect(getBuyerFacetFields("shoes").map((field) => [field.key, field.buyerFacetMode])).toEqual([
       ["size_eu", "multi"],
       ["target_group", "multi"],
       ["brand", "multi"],

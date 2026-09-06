@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  listingMatchesStructuredFilters,
-  parseSearchRequestV1,
-} from "./product-finding-contract";
+import { listingMatchesStructuredFilters, parseSearchRequestV1 } from "./product-finding-contract";
 
 const automobile = (attributes: Record<string, string | number | boolean>) => ({
   category: "vehicle" as const,
