@@ -42,9 +42,12 @@ select columns_are(
     'sold_at',
     'listing_rules_version',
     'listing_rules_accepted_at',
-    'owner_user_id'
+    'owner_user_id',
+    'product_type',
+    'product_attributes_version',
+    'product_attributes'
   ],
-  'listings has the approved classifieds, seller-contact, rules-evidence and owner columns'
+  'listings has the approved classifieds, seller-contact, rules-evidence, owner and product-finding columns'
 );
 
 select ok(
