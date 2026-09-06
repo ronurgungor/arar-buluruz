@@ -1,4 +1,9 @@
 import { getDistrictsForCity as getCatalogDistrictsForCity } from "@/data/turkiye-locations";
+import {
+  listingMatchesStructuredFilters,
+  parseSearchRequestV1,
+  type SearchRequestV1,
+} from "./product-finding-contract";
 import type { ListingView } from "./public-listings";
 
 export const ALL_CITIES = "Tüm Türkiye";
@@ -42,6 +47,53 @@ export function listingMatchesQuery(listing: SearchableListing, query: string): 
   ).split(" ");
 
   return queryTokens.every((token) => listingWords.some((word) => word.startsWith(token)));
+}
+
+export function listingMatchesSearchRequest(listing: ListingView, request: SearchRequestV1): boolean {
+  if (!listing.category) {
+    if (request.category !== null || request.productType !== null || Object.keys(request.contextual).length) {
+      return false;
+    }
+    if (request.location.province !== null && listing.city !== request.location.province) return false;
+    if (request.location.district !== null && listing.district !== request.location.district) return false;
+    if (request.price.min !== null && listing.price < request.price.min) return false;
+    if (request.price.max !== null && listing.price > request.price.max) return false;
+  } else if (
+    !listingMatchesStructuredFilters(
+      {
+        category: listing.category,
+        productType: listing.productType,
+        productAttributes: listing.productAttributes,
+        price: listing.price,
+        province: listing.city,
+        district: listing.district,
+      },
+      request,
+    )
+  ) {
+    return false;
+  }
+
+  return listingMatchesQuery(listing, request.q);
+}
+
+export function executeSearchRequestV1(
+  listings: readonly ListingView[],
+  rawRequest: SearchRequestV1 | unknown,
+): ListingView[] {
+  const request = parseSearchRequestV1(rawRequest);
+  const relevant = listings.filter((listing) => listingMatchesSearchRequest(listing, request));
+
+  if (request.sort === "relevance") return relevant;
+  return relevant.slice().sort((left, right) => {
+    if (request.sort === "newest") {
+      return Date.parse(right.createdAt) - Date.parse(left.createdAt) || left.id.localeCompare(right.id);
+    }
+    if (request.sort === "price_asc") {
+      return left.price - right.price || Date.parse(right.createdAt) - Date.parse(left.createdAt);
+    }
+    return right.price - left.price || Date.parse(right.createdAt) - Date.parse(left.createdAt);
+  });
 }
 
 export function getDistrictsForCity(city: string): readonly string[] {
