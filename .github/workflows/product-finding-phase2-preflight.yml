@@ -32,8 +32,11 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
-      - name: Check formatting
-        run: bunx prettier --check docs/PRODUCT_FINDING_PHASE2_CONTRACT.md src/lib/product-finding-ui-contract.ts src/lib/product-finding-ui-contract.test.ts src/lib/listing-search.ts src/lib/listing-search.test.ts package.json
+      - name: Format Phase 2 files in runner
+        run: bunx prettier --write docs/PRODUCT_FINDING_PHASE2_CONTRACT.md src/lib/product-finding-ui-contract.ts src/lib/product-finding-ui-contract.test.ts src/lib/listing-search.ts src/lib/listing-search.test.ts package.json
+
+      - name: Verify formatted diff is clean
+        run: git diff --check
 
       - name: Lint
         run: bun run lint
@@ -45,3 +48,17 @@ jobs:
         env:
           VITE_LISTINGS_SOURCE: disabled
         run: bun run build
+
+      - name: Upload runner-formatted Phase 2 files
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: product-finding-phase2-formatted
+          path: |
+            docs/PRODUCT_FINDING_PHASE2_CONTRACT.md
+            src/lib/product-finding-ui-contract.ts
+            src/lib/product-finding-ui-contract.test.ts
+            src/lib/listing-search.ts
+            src/lib/listing-search.test.ts
+            package.json
+          retention-days: 1
