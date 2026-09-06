@@ -38,6 +38,84 @@ function requestFor(form: FormData, options?: { cookie?: string; path?: string }
   });
 }
 
+function sellerUpdateForm(listingId: string, category: string, productType?: string): FormData {
+  const edit = new FormData();
+  edit.set("action", "seller_update");
+  edit.set("listingId", listingId);
+  edit.set("contactPhone", "+905551112233");
+  edit.set("category", category);
+  edit.set("condition", "good");
+  edit.set("priceMode", "priced");
+  edit.set("price", "1250");
+  edit.set("title", "Synthetic product-scope transition");
+  edit.set("description", "");
+  edit.set("province", "Tekirdağ");
+  edit.set("district", "Çorlu");
+  if (productType !== undefined) edit.set("productType", productType);
+  return edit;
+}
+
+function installSellerUpdateBackend(input: {
+  sellerId: string;
+  listingId: string;
+  onPatch: () => void;
+}): void {
+  globalThis.fetch = (async (requestInput: RequestInfo | URL, init?: RequestInit) => {
+    const url = new URL(
+      typeof requestInput === "string"
+        ? requestInput
+        : requestInput instanceof URL
+          ? requestInput
+          : requestInput.url,
+    );
+    const method = init?.method ?? "GET";
+    if (url.pathname === "/rest/v1/rpc/resolve_seller_session" && method === "POST") {
+      return Response.json([
+        { seller_id: input.sellerId, expires_at: new Date(Date.now() + 60_000).toISOString() },
+      ]);
+    }
+    if (url.pathname === "/rest/v1/listings" && method === "GET") {
+      return Response.json([
+        {
+          id: input.listingId,
+          title: "Synthetic phone",
+          description: "",
+          price_amount: 1250,
+          price_is_free: false,
+          category: "electronics",
+          product_type: "phone",
+          product_attributes_version: 1,
+          product_attributes: { brand: "Apple" },
+          item_condition: null,
+          province: "Tekirdağ",
+          district: "Çorlu",
+          seller_display_name: "Synthetic Seller",
+          owner_user_id: input.sellerId,
+          status: "published",
+          contact_channel: "phone_whatsapp",
+          contact_e164: "+905551112233",
+          publication_instruction_at: new Date().toISOString(),
+          private_seller_declaration_at: null,
+          content_rights_declaration_at: null,
+          listing_rules_version: "2026-08-28-v1",
+          listing_rules_accepted_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          published_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 60_000).toISOString(),
+          unpublished_at: null,
+          sold_at: null,
+        },
+      ]);
+    }
+    if (url.pathname === "/rest/v1/listings" && method === "PATCH") {
+      input.onPatch();
+      return Response.json([{ id: input.listingId }]);
+    }
+    throw new Error(`Unexpected backend request: ${method} ${url.pathname}`);
+  }) as typeof fetch;
+}
+
 beforeAll(() => {
   process.env.PILOT_SELF_SERVICE_ENABLED = "enabled";
   process.env.PILOT_SUBMISSION_SUPABASE_URL = "https://synthetic.example";
@@ -116,12 +194,31 @@ describe("Stage-1 product integrity server boundary", () => {
     expect(await freeResponse.json()).toMatchObject({ ok: false, code: "SESSION_REQUIRED" });
   });
 
-  test("ordinary goods remain outside EIDS while Vehicle and Real Estate fail closed", async () => {
+  test("EIDS applies only to actual automobile/housing scopes while vehicle parts stay ordinary", async () => {
     const ordinary = await handleStage1SelfServiceRequest(
       requestFor(baseSubmission("electronics")),
     );
     expect(ordinary.status).toBe(401);
     expect(await ordinary.json()).toMatchObject({ ok: false, code: "SESSION_REQUIRED" });
+
+    for (const productType of ["automobile-part", "automobile-accessory"]) {
+      const form = baseSubmission("vehicle");
+      form.set("productType", productType);
+      const response = await handleStage1SelfServiceRequest(requestFor(form));
+      expect(response.status).toBe(401);
+      expect(await response.json()).toMatchObject({ ok: false, code: "SESSION_REQUIRED" });
+    }
+
+    for (const [category, productType] of [
+      ["vehicle", "automobile"],
+      ["real-estate", "housing"],
+    ] as const) {
+      const form = baseSubmission(category);
+      form.set("productType", productType);
+      const response = await handleStage1SelfServiceRequest(requestFor(form));
+      expect(response.status).toBe(503);
+      expect(await response.json()).toMatchObject({ ok: false, code: "NOT_ENABLED" });
+    }
 
     for (const category of ["vehicle", "real-estate"]) {
       const response = await handleStage1SelfServiceRequest(requestFor(baseSubmission(category)));
@@ -130,82 +227,70 @@ describe("Stage-1 product integrity server boundary", () => {
     }
   });
 
-  test("editing an ordinary listing into Vehicle or Real Estate reruns the EIDS gate before PATCH", async () => {
+  test("seller update resolves product scope before EIDS and keeps vehicle parts ordinary", async () => {
     const sellerId = "91000000-0000-4000-8000-000000000001";
     const listingId = "92000000-0000-4000-8000-000000000001";
     const token = "A".repeat(43);
     let patchCalls = 0;
-
-    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = new URL(
-        typeof input === "string" ? input : input instanceof URL ? input : input.url,
-      );
-      const method = init?.method ?? "GET";
-      if (url.pathname === "/rest/v1/rpc/resolve_seller_session" && method === "POST") {
-        return Response.json([
-          { seller_id: sellerId, expires_at: new Date(Date.now() + 60_000).toISOString() },
-        ]);
-      }
-      if (url.pathname === "/rest/v1/listings" && method === "GET") {
-        return Response.json([
-          {
-            id: listingId,
-            title: "Synthetic phone",
-            description: "",
-            price_amount: 1250,
-            price_is_free: false,
-            category: "electronics",
-            product_type: "phone",
-            product_attributes_version: 1,
-            product_attributes: { brand: "Apple" },
-            item_condition: null,
-            province: "Tekirdağ",
-            district: "Çorlu",
-            seller_display_name: "Synthetic Seller",
-            owner_user_id: sellerId,
-            status: "published",
-            contact_channel: "phone_whatsapp",
-            contact_e164: "+905551112233",
-            publication_instruction_at: new Date().toISOString(),
-            private_seller_declaration_at: null,
-            content_rights_declaration_at: null,
-            listing_rules_version: "2026-08-28-v1",
-            listing_rules_accepted_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            published_at: new Date().toISOString(),
-            expires_at: new Date(Date.now() + 60_000).toISOString(),
-            unpublished_at: null,
-            sold_at: null,
-          },
-        ]);
-      }
-      if (url.pathname === "/rest/v1/listings" && method === "PATCH") {
+    installSellerUpdateBackend({
+      sellerId,
+      listingId,
+      onPatch: () => {
         patchCalls += 1;
-        return Response.json([{ id: listingId }]);
-      }
-      throw new Error(`Unexpected backend request: ${method} ${url.pathname}`);
-    }) as typeof fetch;
+      },
+    });
 
     try {
-      for (const category of ["vehicle", "real-estate"]) {
-        const edit = new FormData();
-        edit.set("action", "seller_update");
-        edit.set("listingId", listingId);
-        edit.set("contactPhone", "+905551112233");
-        edit.set("category", category);
-        edit.set("condition", "good");
-        edit.set("priceMode", "priced");
-        edit.set("price", "1250");
-        edit.set("title", "Synthetic regulated transition");
-        edit.set("description", "");
-        edit.set("province", "Tekirdağ");
-        edit.set("district", "Çorlu");
-        if (category === "vehicle") edit.set("productType", "automobile");
-        if (category === "real-estate") edit.set("productType", "housing");
-
+      for (const productType of ["automobile-part", "automobile-accessory"]) {
         const response = await handleStage1SelfServiceRequest(
-          requestFor(edit, { cookie: `arar_seller_session=${token}`, path: "/ilanlarim" }),
+          requestFor(sellerUpdateForm(listingId, "vehicle", productType), {
+            cookie: `arar_seller_session=${token}`,
+            path: "/ilanlarim",
+          }),
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({ ok: true, action: "seller_updated" });
+      }
+      expect(patchCalls).toBe(2);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("seller update keeps automobile, housing and legacy regulated targets fail closed before PATCH", async () => {
+    const sellerId = "91000000-0000-4000-8000-000000000002";
+    const listingId = "92000000-0000-4000-8000-000000000002";
+    const token = "B".repeat(43);
+    let patchCalls = 0;
+    installSellerUpdateBackend({
+      sellerId,
+      listingId,
+      onPatch: () => {
+        patchCalls += 1;
+      },
+    });
+
+    try {
+      for (const [category, productType] of [
+        ["vehicle", "automobile"],
+        ["real-estate", "housing"],
+      ] as const) {
+        const response = await handleStage1SelfServiceRequest(
+          requestFor(sellerUpdateForm(listingId, category, productType), {
+            cookie: `arar_seller_session=${token}`,
+            path: "/ilanlarim",
+          }),
+        );
+        expect(response.status).toBe(503);
+        expect(await response.json()).toMatchObject({ ok: false, code: "NOT_ENABLED" });
+      }
+
+      for (const category of ["vehicle", "real-estate"]) {
+        const response = await handleStage1SelfServiceRequest(
+          requestFor(sellerUpdateForm(listingId, category), {
+            cookie: `arar_seller_session=${token}`,
+            path: "/ilanlarim",
+          }),
         );
         expect(response.status).toBe(503);
         expect(await response.json()).toMatchObject({ ok: false, code: "NOT_ENABLED" });
