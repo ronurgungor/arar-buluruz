@@ -62,7 +62,9 @@ describe("listing search compact model normalization", () => {
   });
 
   test("preserves Turkish folding, prefixes and rejects unrelated compact tokens", () => {
-    expect(listingMatchesQuery(searchableListing("Çizgisiz çalışma masası"), "calisma mas")).toBe(true);
+    expect(listingMatchesQuery(searchableListing("Çizgisiz çalışma masası"), "calisma mas")).toBe(
+      true,
+    );
     expect(listingMatchesQuery(searchableListing("Mercedes B 150"), "b250")).toBe(false);
   });
 });
@@ -113,12 +115,16 @@ describe("Phase 2 deterministic intent and relevant-set ordering", () => {
 
   test("Corolla price sort never promotes parts or accessories into automobile intent", () => {
     const request = parseSearchRequestV1({ version: 1, q: "Corolla", sort: "price_asc" });
-    expect(resolveSearchIntent([corollaPart, corollaCar, corollaAccessory], request)).toMatchObject({
-      productType: "automobile",
-      confidence: "high",
-    });
+    expect(resolveSearchIntent([corollaPart, corollaCar, corollaAccessory], request)).toMatchObject(
+      {
+        productType: "automobile",
+        confidence: "high",
+      },
+    );
     expect(
-      executeSearchRequestV1([corollaPart, corollaCar, corollaAccessory], request).map((item) => item.id),
+      executeSearchRequestV1([corollaPart, corollaCar, corollaAccessory], request).map(
+        (item) => item.id,
+      ),
     ).toEqual([corollaCar.id]);
   });
 
@@ -128,9 +134,9 @@ describe("Phase 2 deterministic intent and relevant-set ordering", () => {
       productType: "automobile-part",
       confidence: "high",
     });
-    expect(executeSearchRequestV1([corollaPart, corollaCar], request).map((item) => item.id)).toEqual([
-      corollaPart.id,
-    ]);
+    expect(
+      executeSearchRequestV1([corollaPart, corollaCar], request).map((item) => item.id),
+    ).toEqual([corollaPart.id]);
   });
 
   test("iPhone 13 phone intent excludes cases even under ascending price sort", () => {
@@ -167,9 +173,9 @@ describe("Phase 2 deterministic intent and relevant-set ordering", () => {
       productType: "automobile-part",
       source: "explicit_filter",
     });
-    expect(executeSearchRequestV1([corollaCar, corollaPart], request).map((item) => item.id)).toEqual([
-      corollaPart.id,
-    ]);
+    expect(
+      executeSearchRequestV1([corollaCar, corollaPart], request).map((item) => item.id),
+    ).toEqual([corollaPart.id]);
   });
 
   test("ambiguous typed evidence does not silently force a product type", () => {

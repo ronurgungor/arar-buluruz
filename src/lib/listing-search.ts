@@ -229,13 +229,17 @@ export function resolveSearchIntent(
     if (definition.role !== "main") return highResolution(direct, "product_alias");
     if (requestedRole && requestedRole !== "main") {
       const related = relatedRoleProductType(directRoot, requestedRole);
-      return related ? highResolution(related, "product_alias") : ambiguousResolution(request.category);
+      return related
+        ? highResolution(related, "product_alias")
+        : ambiguousResolution(request.category);
     }
     return highResolution(direct, "product_alias");
   }
 
   if (inventoryRoots.size !== 1) {
-    return inventoryRoots.size > 1 ? ambiguousResolution(request.category) : noneResolution(request.category);
+    return inventoryRoots.size > 1
+      ? ambiguousResolution(request.category)
+      : noneResolution(request.category);
   }
 
   const mainType = [...inventoryRoots][0];

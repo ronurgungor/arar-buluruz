@@ -44,10 +44,7 @@ describe("product finding Phase 2 UI contract", () => {
       "fuel",
       "body_type",
     ]);
-    expect(getBuyerFacetFields("phone").map((field) => field.key)).toEqual([
-      "brand",
-      "storage_gb",
-    ]);
+    expect(getBuyerFacetFields("phone").map((field) => field.key)).toEqual(["brand", "storage_gb"]);
   });
 
   test("listing-card contextual facts are compact, translated and capped", () => {
