@@ -19,6 +19,7 @@ export const PRODUCT_TYPES = [
 export const productTypeSchema = z.enum(PRODUCT_TYPES);
 export type ProductType = z.infer<typeof productTypeSchema>;
 export type ProductRole = "main" | "accessory" | "part";
+export type ProductComplianceScope = "ordinary" | "eids_vehicle" | "eids_real_estate";
 
 const shortText = (max: number) => z.string().trim().min(1).max(max);
 const optionalFields = (fields: Record<string, z.ZodTypeAny>) =>
@@ -185,6 +186,25 @@ export function isProductTypeCompatible(
   return productType === null || PRODUCT_TYPE_REGISTRY[productType].category === category;
 }
 
+export function resolveProductComplianceScope(input: {
+  category: Stage1Category;
+  productType: ProductType | null;
+}): ProductComplianceScope {
+  if (
+    input.category === "vehicle" &&
+    (input.productType === null || input.productType === "automobile")
+  ) {
+    return "eids_vehicle";
+  }
+  if (
+    input.category === "real-estate" &&
+    (input.productType === null || input.productType === "housing")
+  ) {
+    return "eids_real_estate";
+  }
+  return "ordinary";
+}
+
 export function validateProductSelection(input: {
   category: Stage1Category;
   productType: unknown;
@@ -245,10 +265,15 @@ export function transitionProductSelection(input: {
 
   const categoryChanged = input.previousCategory !== input.nextCategory;
   const typeChanged = input.previousProductType !== input.nextProductType;
-  const regulated = (category: Stage1Category) =>
-    category === "vehicle" || category === "real-estate";
   const complianceMustBeReevaluated =
-    categoryChanged && (regulated(input.previousCategory) || regulated(input.nextCategory));
+    resolveProductComplianceScope({
+      category: input.previousCategory,
+      productType: input.previousProductType,
+    }) !==
+    resolveProductComplianceScope({
+      category: input.nextCategory,
+      productType: input.nextProductType,
+    });
 
   if (input.nextProductType === null) {
     return {
