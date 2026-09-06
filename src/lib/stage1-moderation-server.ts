@@ -1,8 +1,15 @@
 import { isPilotListingStatus } from "./pilot-operator-contract";
+import {
+  isProductTypeCompatible,
+  productTypeSchema,
+  resolveProductComplianceScope,
+  type ProductComplianceScope,
+} from "./product-finding-contract";
 import type {
   Stage1ModerationListing,
   Stage1ModerationResponse,
 } from "./stage1-moderation-contract";
+import { stage1CategorySchema } from "./stage1-self-service-contract";
 
 const TARLADAN_PROJECT_REFS = new Set(["jlbsoraqnlricbyagxdk", "gwgrwwvaiizfsqaacnhf"]);
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -16,6 +23,7 @@ type BackendRow = {
   price_amount: number | string;
   price_is_free: boolean;
   category: string;
+  product_type: string | null;
   item_condition: string | null;
   seller_display_name: string;
   status: string;
@@ -121,12 +129,26 @@ function readConfig(): BackendConfig {
   return { baseUrl: url.toString().replace(/\/+$/, ""), serviceRoleKey };
 }
 
+function resolveListingComplianceScope(listing: BackendRow): ProductComplianceScope {
+  const category = stage1CategorySchema.safeParse(listing.category);
+  const productType =
+    listing.product_type === null ? null : productTypeSchema.safeParse(listing.product_type);
+  if (!category.success || (productType !== null && !productType.success)) {
+    throw new ModerationError("INVALID_STATE", "İlan ürün kapsamı doğrulanamadı.");
+  }
+  const parsedProductType = productType === null ? null : productType.data;
+  if (!isProductTypeCompatible(category.data, parsedProductType)) {
+    throw new ModerationError("INVALID_STATE", "İlan ürün kapsamı kategoriyle eşleşmiyor.");
+  }
+  return resolveProductComplianceScope({ category: category.data, productType: parsedProductType });
+}
+
 function assertEidsPublicationAllowed(
   config: BackendConfig,
-  category: string,
+  complianceScope: ProductComplianceScope,
   request: Request,
 ): void {
-  if (category !== "vehicle" && category !== "real-estate") return;
+  if (complianceScope === "ordinary") return;
   if (
     process.env.PILOT_SYNTHETIC_TEST_MODE === "enabled" &&
     isLoopbackHost(new URL(request.url).hostname) &&
@@ -169,7 +191,7 @@ async function fetchListing(config: BackendConfig, id: string): Promise<BackendR
   url.searchParams.set("id", `eq.${id}`);
   url.searchParams.set(
     "select",
-    "id,title,description,price_amount,price_is_free,category,item_condition,seller_display_name,status,contact_channel,contact_e164,contact_verified_at,publication_instruction_at,private_seller_declaration_at,content_rights_declaration_at,listing_rules_version,listing_rules_accepted_at,created_at,published_at,expires_at,unpublished_at",
+    "id,title,description,price_amount,price_is_free,category,product_type,item_condition,seller_display_name,status,contact_channel,contact_e164,contact_verified_at,publication_instruction_at,private_seller_declaration_at,content_rights_declaration_at,listing_rules_version,listing_rules_accepted_at,created_at,published_at,expires_at,unpublished_at",
   );
   url.searchParams.set("limit", "1");
   const response = await requireOk(
@@ -222,7 +244,7 @@ async function listListings(config: BackendConfig): Promise<Stage1ModerationList
   const url = new URL(`${config.baseUrl}/rest/v1/listings`);
   url.searchParams.set(
     "select",
-    "id,title,description,price_amount,price_is_free,category,item_condition,seller_display_name,status,contact_channel,contact_e164,contact_verified_at,publication_instruction_at,private_seller_declaration_at,content_rights_declaration_at,listing_rules_version,listing_rules_accepted_at,created_at,published_at,expires_at,unpublished_at",
+    "id,title,description,price_amount,price_is_free,category,product_type,item_condition,seller_display_name,status,contact_channel,contact_e164,contact_verified_at,publication_instruction_at,private_seller_declaration_at,content_rights_declaration_at,listing_rules_version,listing_rules_accepted_at,created_at,published_at,expires_at,unpublished_at",
   );
   url.searchParams.set("order", "created_at.desc,id.desc");
   url.searchParams.set("limit", "50");
@@ -294,7 +316,7 @@ async function publish(config: BackendConfig, form: FormData, request: Request):
       "Yalnız incelemedeki veya yayından kaldırılmış ilan yayınlanabilir.",
     );
   }
-  assertEidsPublicationAllowed(config, listing.category, request);
+  assertEidsPublicationAllowed(config, resolveListingComplianceScope(listing), request);
   if (!listing.publication_instruction_at) {
     throw new ModerationError(
       "INVALID_STATE",
