@@ -37,6 +37,8 @@ export function restoreListingResultsScroll(url: string): void {
   const scrollY = Number(raw);
   if (!Number.isFinite(scrollY) || scrollY < 0) return;
   window.requestAnimationFrame(() => {
-    window.requestAnimationFrame(() => window.scrollTo({ top: scrollY, left: 0, behavior: "auto" }));
+    window.requestAnimationFrame(() =>
+      window.scrollTo({ top: scrollY, left: 0, behavior: "auto" }),
+    );
   });
 }

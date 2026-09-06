@@ -29,7 +29,7 @@ replaceOnce(
 );
 replaceOnce(
   createRoute,
-  '  const validateCurrentStep = (): boolean => {',
+  "  const validateCurrentStep = (): boolean => {",
   `  const changeCategory = (nextCategory: Stage1Category | "") => {
     if (nextCategory === category) return;
     if (!nextCategory || !category) {
@@ -69,7 +69,7 @@ replaceOnce(
 );
 replaceOnce(
   createRoute,
-  '                    onChange={(event) => setCategory(event.target.value as Stage1Category)}',
+  "                    onChange={(event) => setCategory(event.target.value as Stage1Category)}",
   '                    onChange={(event) => changeCategory(event.target.value as Stage1Category | "")}',
 );
 replaceOnce(
@@ -122,7 +122,7 @@ replaceOnce(
                         productAttributesVersion: transitioned.productAttributesVersion,
                         productAttributes: transitioned.productAttributes,
                       });
-                    }}`, 
+                    }}`,
 );
 replaceOnce(
   editRoute,
@@ -201,7 +201,7 @@ replaceOnce(
   e2e,
   `    contact_e164: string;
   }>;
-}`, 
+}`,
   `    contact_e164: string;
     product_type: string | null;
     product_attributes_version: number | null;
@@ -288,7 +288,7 @@ replaceOnce(
       publicRows[0]?.product_attributes?.make === "Mercedes" &&
       publicRows[0]?.product_attributes?.year === 2016 &&
       publicRows[0]?.product_attributes?.km === 118000,
-    `Structured seller fields were not persisted: ${"${JSON.stringify(publicRows[0])}"}`,
+    "Structured seller fields were not persisted.",
   );
   assert(
     publicRows[0]?.search_keywords.includes("Mercedes") &&
@@ -303,7 +303,7 @@ replaceOnce(
     .first()
     .click();
   await buyerPage.waitForLoadState("networkidle");`,
-  `  await buyerPage.goto(`${"${publicBaseUrl}"}/ara?q=b150`, { waitUntil: "networkidle" });
+  `  await buyerPage.goto(publicBaseUrl + "/ara?q=b150", { waitUntil: "networkidle" });
   await buyerPage.getByRole("button", { name: /^Filtreler/ }).click();
   await buyerPage.getByLabel("Filtre il", { exact: true }).selectOption("Tekirdağ");
   await buyerPage.getByLabel("Filtre ilçe", { exact: true }).selectOption("Çorlu");
@@ -331,7 +331,7 @@ replaceOnce(
     JSON.stringify(serializedContextual.year) === JSON.stringify({ min: 2010, max: 2020 }) &&
       JSON.stringify(serializedContextual.km) === JSON.stringify({ min: null, max: 120000 }) &&
       JSON.stringify(serializedContextual.transmission) === JSON.stringify(["automatic"]),
-    `Contextual filters were not serialized canonically: ${"${JSON.stringify(serializedContextual)}"}`,
+    "Contextual filters were not serialized canonically.",
   );
 
   await buyerPage.getByRole("button", { name: /^Filtreler/ }).click();

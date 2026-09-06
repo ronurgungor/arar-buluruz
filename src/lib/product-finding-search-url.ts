@@ -54,7 +54,8 @@ function parseContextual(value: string | undefined): unknown {
     }
     return parsed;
   } catch (error) {
-    if (error instanceof SyntaxError) throw new Error("Search URL contains invalid contextual JSON.");
+    if (error instanceof SyntaxError)
+      throw new Error("Search URL contains invalid contextual JSON.");
     throw error;
   }
 }
@@ -85,7 +86,9 @@ export function parseSearchRequestV1FromUrl(
   });
 }
 
-function stableContextualJson(contextual: Record<string, ContextualFacetFilter>): string | undefined {
+function stableContextualJson(
+  contextual: Record<string, ContextualFacetFilter>,
+): string | undefined {
   const keys = Object.keys(contextual).sort((left, right) => left.localeCompare(right));
   if (keys.length === 0) return undefined;
   const stable: Record<string, ContextualFacetFilter> = {};

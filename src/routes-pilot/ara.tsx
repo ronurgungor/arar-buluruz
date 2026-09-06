@@ -278,7 +278,9 @@ function SearchPage() {
                           : `Fiyat ≤ ${formatPrice(request.price.max ?? 0)}`
                     }
                     onRemove={() =>
-                      navigateRequest(parseSearchRequestV1({ ...request, price: { min: null, max: null } }))
+                      navigateRequest(
+                        parseSearchRequestV1({ ...request, price: { min: null, max: null } }),
+                      )
                     }
                   />
                 ) : null}
@@ -287,7 +289,10 @@ function SearchPage() {
                     label={STAGE1_CATEGORY_LABELS[request.category]}
                     onRemove={() =>
                       navigateRequest(
-                        transitionSearchRequestScope(request, { category: null, productType: null }),
+                        transitionSearchRequestScope(request, {
+                          category: null,
+                          productType: null,
+                        }),
                       )
                     }
                   />
@@ -436,7 +441,8 @@ function SearchPage() {
               <div className="mt-8 rounded-2xl border border-border bg-card p-7 text-center shadow-sm">
                 <p className="font-semibold text-foreground">Aramana uygun ilan bulamadık.</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Filtreleri kendin kaldırabilir veya konumu genişletebilirsin; hiçbir filtre otomatik gevşetilmez.
+                  Filtreleri kendin kaldırabilir veya konumu genişletebilirsin; hiçbir filtre
+                  otomatik gevşetilmez.
                 </p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   {countProductFindingActiveFilters(request!) > 0 ? (

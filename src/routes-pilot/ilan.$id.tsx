@@ -4,7 +4,8 @@ import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
 import { CLOSED_ROBOTS, robotsContent } from "@/build-profiles/pilot/public-discovery";
 import { loadPilotListingDetail } from "@/build-profiles/pilot/public-listings";
 import { AdSlot } from "@/components/AdSlot";
-import { ALL_CITIES, ALL_DISTRICTS } from "@/lib/listing-search";
+import { parseSearchRequestV1 } from "@/lib/product-finding-contract";
+import { serializeSearchRequestV1ToUrl } from "@/lib/product-finding-search-url";
 import { hasListingResultsHistory } from "@/lib/listing-return";
 import { buildPublicSellerContactActions } from "@/lib/public-seller-contact";
 import { STAGE1_CONDITION_LABELS } from "@/lib/stage1-self-service-contract";
@@ -58,7 +59,9 @@ function ListingDetail() {
     void navigate({
       to: "/ara",
       replace: true,
-      search: { q: "", il: ALL_CITIES, ilce: ALL_DISTRICTS, sirala: "yeni" },
+      search: serializeSearchRequestV1ToUrl(
+        parseSearchRequestV1({ version: 1, q: "", sort: "newest" }),
+      ),
     });
   };
 

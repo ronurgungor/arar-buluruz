@@ -165,11 +165,18 @@ async function anonListingRows(listingId: string): Promise<
     province: string;
     district: string;
     contact_e164: string;
+    product_type: string | null;
+    product_attributes_version: number | null;
+    product_attributes: Record<string, unknown>;
+    search_keywords: string[];
   }>
 > {
   const url = new URL(`${backendOrigin}/rest/v1/listings`);
   url.searchParams.set("id", `eq.${listingId}`);
-  url.searchParams.set("select", "id,title,price_is_free,province,district,contact_e164");
+  url.searchParams.set(
+    "select",
+    "id,title,price_is_free,province,district,contact_e164,product_type,product_attributes_version,product_attributes,search_keywords",
+  );
   const response = await fetch(url, { headers: anonHeaders });
   assert(response.ok, `Anonymous listing probe failed: ${response.status}`);
   return (await response.json()) as Array<{
@@ -179,6 +186,10 @@ async function anonListingRows(listingId: string): Promise<
     province: string;
     district: string;
     contact_e164: string;
+    product_type: string | null;
+    product_attributes_version: number | null;
+    product_attributes: Record<string, unknown>;
+    search_keywords: string[];
   }>;
 }
 
@@ -323,6 +334,8 @@ async function submitListing(
     isFree: boolean;
     withCondition?: boolean;
     withDescription?: boolean;
+    productType?: string;
+    productAttributes?: Record<string, string | number>;
   },
 ): Promise<{ listingId: string; recoveryCode: string | null }> {
   await page.goto(`${publicBaseUrl}/ilan-ver`, { waitUntil: "networkidle" });
@@ -338,6 +351,30 @@ async function submitListing(
   await page.getByRole("button", { name: /Devam/ }).click();
 
   await page.getByLabel("Kategori", { exact: true }).selectOption("vehicle");
+  if (input.productType) {
+    await page.getByLabel("Ürün tipi", { exact: true }).selectOption(input.productType);
+    const attributes = input.productAttributes ?? {};
+    const textFields: Record<string, string> = { make: "Marka", model: "Model" };
+    const numberFields: Record<string, string> = { year: "Model yılı", km: "Kilometre" };
+    const selectFields: Record<string, string> = {
+      transmission: "Vites",
+      fuel: "Yakıt",
+      body_type: "Kasa tipi",
+    };
+    for (const [key, label] of Object.entries(textFields)) {
+      const value = attributes[key];
+      if (value !== undefined) await page.getByLabel(label, { exact: true }).fill(String(value));
+    }
+    for (const [key, label] of Object.entries(numberFields)) {
+      const value = attributes[key];
+      if (value !== undefined) await page.getByLabel(label, { exact: true }).fill(String(value));
+    }
+    for (const [key, label] of Object.entries(selectFields)) {
+      const value = attributes[key];
+      if (value !== undefined)
+        await page.getByLabel(label, { exact: true }).selectOption(String(value));
+    }
+  }
   await page.getByLabel("Başlık", { exact: true }).fill(input.title);
   if (input.withCondition !== false) {
     await page.getByLabel("Durum", { exact: true }).selectOption("good");
@@ -566,6 +603,16 @@ try {
     isFree: true,
     withCondition: false,
     withDescription: false,
+    productType: "automobile",
+    productAttributes: {
+      make: "Mercedes",
+      model: "B 150",
+      year: 2016,
+      km: 118000,
+      transmission: "automatic",
+      fuel: "gasoline",
+      body_type: "hatchback",
+    },
   });
   const listingId = ownerSubmission.listingId;
   assert(ownerSubmission.recoveryCode, "Initial seller recovery code was not captured.");
@@ -575,6 +622,19 @@ try {
   assert(
     publicRows.length === 1 && publicRows[0]?.price_is_free === true,
     "Auto-published listing was not immediately public with Free state.",
+  );
+  assert(
+    publicRows[0]?.product_type === "automobile" &&
+      publicRows[0]?.product_attributes_version === 1 &&
+      publicRows[0]?.product_attributes?.make === "Mercedes" &&
+      publicRows[0]?.product_attributes?.year === 2016 &&
+      publicRows[0]?.product_attributes?.km === 118000,
+    "Structured seller fields were not persisted.",
+  );
+  assert(
+    publicRows[0]?.search_keywords.includes("Mercedes") &&
+      publicRows[0]?.search_keywords.includes("B 150"),
+    "System search keywords were not derived from persisted structured fields.",
   );
   const publicManifest = await publicPhotoManifest(listingId);
   assert(publicManifest.length === 1, "Auto-published listing did not expose one trusted photo.");
@@ -589,10 +649,74 @@ try {
     await buyerPage.getByText("Ücretsiz", { exact: true }).first().waitFor();
   }
 
+  await buyerPage.goto(publicBaseUrl + "/ara?q=b150", { waitUntil: "networkidle" });
+  await buyerPage.getByRole("button", { name: /^Filtreler/ }).click();
+  await buyerPage.getByLabel("Filtre il", { exact: true }).selectOption("Tekirdağ");
+  await buyerPage.getByLabel("Filtre ilçe", { exact: true }).selectOption("Çorlu");
+  await buyerPage.getByLabel("Minimum fiyat", { exact: true }).fill("0");
+  await buyerPage.getByLabel("Maksimum fiyat", { exact: true }).fill("5000");
+  await buyerPage.getByLabel("Filtre kategori", { exact: true }).selectOption("vehicle");
+  await buyerPage.getByRole("button", { name: "Otomobil", exact: true }).click();
+  await buyerPage.getByLabel("Model yılı minimum", { exact: true }).fill("2010");
+  await buyerPage.getByLabel("Model yılı maksimum", { exact: true }).fill("2020");
+  await buyerPage.getByLabel("Kilometre maksimum", { exact: true }).fill("120000");
+  await buyerPage.getByRole("button", { name: "Otomatik", exact: true }).click();
+  await buyerPage.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
   await buyerPage
     .getByRole("link", { name: new RegExp(title) })
     .first()
-    .click();
+    .waitFor();
+  await buyerPage.getByText("2016 · 118.000 km · Otomatik", { exact: true }).waitFor();
+  const filteredUrl = new URL(buyerPage.url());
+  assert(
+    filteredUrl.searchParams.get("q") === "b150",
+    "Query was not retained in canonical URL state.",
+  );
+  assert(filteredUrl.searchParams.get("category") === "vehicle", "Category was not serialized.");
+  assert(
+    filteredUrl.searchParams.get("productType") === "automobile",
+    "Product type was not serialized.",
+  );
+  assert(filteredUrl.searchParams.get("province") === "Tekirdağ", "Province was not serialized.");
+  assert(filteredUrl.searchParams.get("district") === "Çorlu", "District was not serialized.");
+  assert(filteredUrl.searchParams.get("priceMin") === "0", "Price min was not serialized.");
+  assert(filteredUrl.searchParams.get("priceMax") === "5000", "Price max was not serialized.");
+  const serializedContextual = JSON.parse(
+    filteredUrl.searchParams.get("contextual") ?? "{}",
+  ) as Record<string, unknown>;
+  assert(
+    JSON.stringify(serializedContextual.year) === JSON.stringify({ min: 2010, max: 2020 }) &&
+      JSON.stringify(serializedContextual.km) === JSON.stringify({ min: null, max: 120000 }) &&
+      JSON.stringify(serializedContextual.transmission) === JSON.stringify(["automatic"]),
+    "Contextual filters were not serialized canonically.",
+  );
+
+  await buyerPage.getByRole("button", { name: /^Filtreler/ }).click();
+  await buyerPage.getByLabel("Kilometre maksimum", { exact: true }).fill("100000");
+  await buyerPage.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
+  await buyerPage.getByText("Sonuç bulunamadı", { exact: true }).waitFor();
+  assert(
+    (await buyerPage.getByRole("link", { name: new RegExp(title) }).count()) === 0,
+    "Active numeric range was silently relaxed.",
+  );
+  await buyerPage.getByRole("button", { name: /^Filtreler/ }).click();
+  await buyerPage.getByLabel("Kilometre maksimum", { exact: true }).fill("120000");
+  await buyerPage.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
+  const filteredResult = buyerPage.getByRole("link", { name: new RegExp(title) }).first();
+  await filteredResult.waitFor();
+  await buyerPage.getByLabel("Sıralama", { exact: true }).selectOption("price_asc");
+  await filteredResult.waitFor();
+  assert(
+    new URL(buyerPage.url()).searchParams.get("sort") === "price_asc",
+    "Sort was not serialized.",
+  );
+
+  await buyerPage.setViewportSize({ width: 390, height: 420 });
+  await buyerPage.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  const resultsScrollY = await buyerPage.evaluate(() => window.scrollY);
+  assert(resultsScrollY > 0, "Search fixture was not scrollable for Back restoration proof.");
+  const searchUrlBeforeDetail = buyerPage.url();
+  await filteredResult.click();
   await buyerPage.waitForLoadState("networkidle");
   await buyerPage.getByRole("heading", { level: 1, name: title }).waitFor();
   await buyerPage.getByText("Ücretsiz", { exact: true }).waitFor();
@@ -617,6 +741,18 @@ try {
       .getByRole("link", { name: "WhatsApp’tan yaz", exact: true })
       .getAttribute("href"),
     `https://wa.me/${ownerPhone.slice(1)}`,
+  );
+
+  await buyerPage.getByTestId("results-back").click();
+  await buyerPage.waitForURL(searchUrlBeforeDetail);
+  await buyerPage.waitForFunction(
+    (expected) => Math.abs(window.scrollY - expected) <= 5,
+    resultsScrollY,
+  );
+  assert(buyerPage.url() === searchUrlBeforeDetail, "Back did not restore the exact search URL.");
+  assert(
+    Math.abs((await buyerPage.evaluate(() => window.scrollY)) - resultsScrollY) <= 5,
+    "Back did not restore the previous results scroll position.",
   );
 
   await assertResponsiveRoute(
@@ -764,6 +900,15 @@ try {
 
   await ownerCard.getByRole("button", { name: "Düzenle" }).click();
   await ownerPage.getByLabel("İlanlarım başlık").fill(`${title} güncel`);
+  await ownerPage.getByLabel("İlanlarım kategori", { exact: true }).selectOption("electronics");
+  assert(
+    (await ownerPage.getByLabel("Marka", { exact: true }).count()) === 0,
+    "Category transition retained incompatible automobile attributes.",
+  );
+  await ownerPage.getByLabel("Ürün tipi", { exact: true }).selectOption("phone");
+  await ownerPage.getByLabel("Marka", { exact: true }).fill("Samsung");
+  await ownerPage.getByLabel("Model", { exact: true }).fill("Galaxy S21");
+  await ownerPage.getByLabel("Depolama", { exact: true }).selectOption("256");
   await ownerPage.getByLabel("Ücretsiz veriyorum").uncheck();
   await ownerPage.getByLabel("İlanlarım fiyat").fill("4321");
   await ownerPage.getByLabel("İlanlarım telefon", { exact: true }).fill(otherPhone);
@@ -778,8 +923,13 @@ try {
       updatedRows[0]?.price_is_free === false &&
       updatedRows[0]?.province === "İstanbul" &&
       updatedRows[0]?.district === "Kadıköy" &&
-      updatedRows[0]?.contact_e164 === otherPhone,
-    `Seller edit did not reach public row: ${JSON.stringify(updatedRows)}`,
+      updatedRows[0]?.contact_e164 === otherPhone &&
+      updatedRows[0]?.product_type === "phone" &&
+      updatedRows[0]?.product_attributes_version === 1 &&
+      updatedRows[0]?.product_attributes?.brand === "Samsung" &&
+      updatedRows[0]?.product_attributes?.storage_gb === 256 &&
+      updatedRows[0]?.product_attributes?.make === undefined,
+    `Seller edit did not transition/persist structured fields: ${JSON.stringify(updatedRows)}`,
   );
 
   expectHttpFailureOnce(
@@ -931,7 +1081,7 @@ try {
   assert(runtimeErrors.length === 0, `Browser runtime errors: ${runtimeErrors.join(" | ")}`);
 
   console.log(
-    "Stage 1 browser acceptance passed: opaque seller session + one-time recovery -> trusted auto-publication -> seller_id isolation/edit/phone-change/unpublish/sold/delete -> founder post-moderation takedown.",
+    "Stage 1 + Product Finding Phase 2 browser acceptance passed: structured seller create -> persisted/public adapter -> intent/scope -> multi/range filters -> sort/card -> detail/Back URL+scroll -> canonical seller edit transition -> ownership/takedown lifecycle.",
   );
 } finally {
   await ownerContext.close();

@@ -156,11 +156,13 @@ export function ProductFindingFilterSheet({
 }: ProductFindingFilterSheetProps) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(request);
-  const [priceMin, setPriceMin] = useState(request.price.min === null ? "" : String(request.price.min));
-  const [priceMax, setPriceMax] = useState(request.price.max === null ? "" : String(request.price.max));
-  const [ranges, setRanges] = useState<Record<string, RangeDraft>>(
-    rangeDraftsFromRequest(request),
+  const [priceMin, setPriceMin] = useState(
+    request.price.min === null ? "" : String(request.price.min),
   );
+  const [priceMax, setPriceMax] = useState(
+    request.price.max === null ? "" : String(request.price.max),
+  );
+  const [ranges, setRanges] = useState<Record<string, RangeDraft>>(rangeDraftsFromRequest(request));
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -208,10 +210,7 @@ export function ProductFindingFilterSheet({
     }
   };
 
-  const toggleMultiValue = (
-    key: string,
-    value: string | number | boolean,
-  ) => {
+  const toggleMultiValue = (key: string, value: string | number | boolean) => {
     const current = draft.contextual[key];
     const values = Array.isArray(current) ? current : [];
     const exists = values.some((item) => valueIdentity(item) === valueIdentity(value));
@@ -281,12 +280,17 @@ export function ProductFindingFilterSheet({
       <DrawerContent className="max-h-[92vh]">
         <DrawerHeader className="text-left">
           <DrawerTitle>Filtreler</DrawerTitle>
-          <DrawerDescription>Yalnız ihtiyacın olan alanları seç; boş olanlar filtrelenmez.</DrawerDescription>
+          <DrawerDescription>
+            Yalnız ihtiyacın olan alanları seç; boş olanlar filtrelenmez.
+          </DrawerDescription>
         </DrawerHeader>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
           <div className="mx-auto w-full max-w-md space-y-6">
             {error ? (
-              <p role="alert" className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+              <p
+                role="alert"
+                className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"
+              >
                 {error}
               </p>
             ) : null}
@@ -409,7 +413,8 @@ export function ProductFindingFilterSheet({
                     return (
                       <section key={field.key} className="space-y-2">
                         <FilterSectionTitle>
-                          {field.label}{field.unit ? ` (${field.unit})` : ""}
+                          {field.label}
+                          {field.unit ? ` (${field.unit})` : ""}
                         </FilterSectionTitle>
                         <div className="grid grid-cols-2 gap-2">
                           <input
