@@ -24,16 +24,6 @@ function optionalString(value: unknown, field: string): string | undefined {
   return value;
 }
 
-function optionalNumber(value: unknown, field: string): number | undefined {
-  if (value === undefined) return undefined;
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim() !== "") {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  throw new Error(`Search URL ${field} must be numeric.`);
-}
-
 function parseNestedJson(value: string): unknown {
   let parsed: unknown = value;
   for (let depth = 0; depth < 2 && typeof parsed === "string"; depth += 1) {
@@ -44,6 +34,17 @@ function parseNestedJson(value: string): unknown {
     }
   }
   return parsed;
+}
+
+function optionalNumber(value: unknown, field: string): number | undefined {
+  if (value === undefined) return undefined;
+  const parsed = typeof value === "string" ? parseNestedJson(value) : value;
+  if (typeof parsed === "number" && Number.isFinite(parsed)) return parsed;
+  if (typeof parsed === "string" && parsed.trim() !== "") {
+    const numeric = Number(parsed);
+    if (Number.isFinite(numeric)) return numeric;
+  }
+  throw new Error(`Search URL ${field} must be numeric.`);
 }
 
 function optionalContextual(value: unknown): Record<string, ContextualFacetFilter> | undefined {
