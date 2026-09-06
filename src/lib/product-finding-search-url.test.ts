@@ -40,6 +40,41 @@ describe("Product Finding Phase 2 search URL codec", () => {
     });
   });
 
+  test("preserves router-decoded zero price and contextual hard filters", () => {
+    const request = parseSearchRequestV1FromUrl({
+      q: "b150",
+      category: "vehicle",
+      productType: "automobile",
+      province: "Tekirdağ",
+      district: "Çorlu",
+      priceMin: 0,
+      priceMax: 5000,
+      contextual: {
+        year: { min: 2010, max: 2020 },
+        km: { min: null, max: 120000 },
+        transmission: ["automatic"],
+      },
+      sort: "price_asc",
+    });
+
+    expect(request.price).toEqual({ min: 0, max: 5000 });
+    expect(request.contextual.year).toEqual({ min: 2010, max: 2020 });
+    expect(request.contextual.km).toEqual({ min: null, max: 120000 });
+    expect(request.contextual.transmission).toEqual(["automatic"]);
+    expect(serializeSearchRequestV1ToUrl(request)).toEqual({
+      q: "b150",
+      category: "vehicle",
+      productType: "automobile",
+      province: "Tekirdağ",
+      district: "Çorlu",
+      priceMin: "0",
+      priceMax: "5000",
+      contextual:
+        '{"km":{"min":null,"max":120000},"transmission":["automatic"],"year":{"min":2010,"max":2020}}',
+      sort: "price_asc",
+    });
+  });
+
   test("uses canonical query-aware sort defaults", () => {
     expect(parseSearchRequestV1FromUrl({ q: "telefon" }).sort).toBe("relevance");
     expect(parseSearchRequestV1FromUrl({ q: "" }).sort).toBe("newest");
@@ -57,5 +92,7 @@ describe("Product Finding Phase 2 search URL codec", () => {
     expect(() =>
       parseSearchRequestV1FromUrl({ productType: "automobile", contextual: "not-json" }),
     ).toThrow();
+    expect(() => parseSearchRequestV1FromUrl({ priceMin: {} })).toThrow();
+    expect(() => parseSearchRequestV1FromUrl({ contextual: [] })).toThrow();
   });
 });
