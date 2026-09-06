@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  productTypeSchema,
+  validateProductSelection,
+  type ProductAttributes,
+  type ProductType,
+} from "@/lib/product-finding-contract";
 import { publicSellerContactSchema, type PublicSellerContact } from "@/lib/public-seller-contact";
 import {
   stage1CategorySchema,
@@ -13,6 +19,9 @@ export type ListingView = {
   price: number;
   isFree?: boolean;
   category?: Stage1Category;
+  productType: ProductType | null;
+  productAttributesVersion: 1 | null;
+  productAttributes: ProductAttributes;
   condition?: Stage1Condition | null;
   city: string;
   district: string;
@@ -53,7 +62,20 @@ export type PublicSupabaseConfig = {
 const LISTING_PHOTO_MAX_BYTES = 8 * 1024 * 1024;
 const PUBLIC_LISTING_PHOTO_PATH_PREFIX = "/api/listing-photo";
 
-const publicListingRowSchema = z.object({
+const productAttributesVersionSchema = z
+  .union([z.number(), z.string()])
+  .nullable()
+  .transform((value, context) => {
+    if (value === null) return null;
+    const version = typeof value === "number" ? value : Number(value);
+    if (version !== 1) {
+      context.addIssue({ code: "custom", message: "Invalid product_attributes_version" });
+      return z.NEVER;
+    }
+    return 1 as const;
+  });
+
+const publicListingRowBaseSchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(3).max(120),
   description: z.string().max(5000),
@@ -67,6 +89,9 @@ const publicListingRowSchema = z.object({
   }),
   price_is_free: z.boolean(),
   category: stage1CategorySchema,
+  product_type: productTypeSchema.nullable(),
+  product_attributes_version: productAttributesVersionSchema,
+  product_attributes: z.unknown(),
   item_condition: stage1ConditionSchema.nullable(),
   province: z.string().min(2).max(64),
   district: z.string().min(2).max(64),
@@ -76,11 +101,35 @@ const publicListingRowSchema = z.object({
   published_at: z.string().datetime({ offset: true }),
 });
 
+type PublicListingRowBase = z.infer<typeof publicListingRowBaseSchema>;
+
+function assertPublicListingIntegrity(row: PublicListingRowBase, context: z.RefinementCtx): void {
+  if (
+    (row.price_is_free && row.price_amount !== 0) ||
+    (!row.price_is_free && row.price_amount <= 0)
+  ) {
+    context.addIssue({ code: "custom", message: "Invalid price truth" });
+  }
+  try {
+    validateProductSelection({
+      category: row.category,
+      productType: row.product_type,
+      productAttributesVersion: row.product_attributes_version,
+      productAttributes: row.product_attributes,
+    });
+  } catch {
+    context.addIssue({ code: "custom", message: "Invalid structured product facts" });
+  }
+}
+
+const publicListingRowSchema = publicListingRowBaseSchema.superRefine(assertPublicListingIntegrity);
 const publicListingRowsSchema = z.array(publicListingRowSchema);
-const publicListingDetailRowSchema = publicListingRowSchema.extend({
-  contact_channel: publicSellerContactSchema.shape.channel,
-  contact_e164: publicSellerContactSchema.shape.e164,
-});
+const publicListingDetailRowSchema = publicListingRowBaseSchema
+  .extend({
+    contact_channel: publicSellerContactSchema.shape.channel,
+    contact_e164: publicSellerContactSchema.shape.e164,
+  })
+  .superRefine(assertPublicListingIntegrity);
 const publicListingDetailRowsSchema = z.array(publicListingDetailRowSchema);
 
 const publicPhotoManifestRowSchema = z.object({
@@ -113,6 +162,9 @@ const PUBLIC_LISTING_COLLECTION_COLUMNS = [
   "price_amount",
   "price_is_free",
   "category",
+  "product_type",
+  "product_attributes_version",
+  "product_attributes",
   "item_condition",
   "province",
   "district",
@@ -238,12 +290,21 @@ async function fetchPublicPhotoUrls(
 }
 
 function mapPublicRow(row: z.infer<typeof publicListingRowSchema>, photos: string[]): ListingView {
+  const product = validateProductSelection({
+    category: row.category,
+    productType: row.product_type,
+    productAttributesVersion: row.product_attributes_version,
+    productAttributes: row.product_attributes,
+  });
   return {
     id: row.id,
     title: row.title,
     price: row.price_amount,
     isFree: row.price_is_free,
     category: row.category,
+    productType: product.productType,
+    productAttributesVersion: product.productAttributesVersion,
+    productAttributes: product.productAttributes,
     condition: row.item_condition,
     city: row.province,
     district: row.district,

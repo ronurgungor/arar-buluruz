@@ -1,3 +1,4 @@
+import type { ProductAttributes, ProductType } from "./product-finding-contract";
 import type { Stage1Category, Stage1Condition } from "./stage1-self-service-contract";
 
 export type Stage1SellerListingStatus =
@@ -14,6 +15,9 @@ export type Stage1SellerListing = {
   price: number;
   isFree: boolean;
   category: Stage1Category;
+  productType: ProductType | null;
+  productAttributesVersion: 1 | null;
+  productAttributes: ProductAttributes;
   condition: Stage1Condition | null;
   province: string;
   district: string;

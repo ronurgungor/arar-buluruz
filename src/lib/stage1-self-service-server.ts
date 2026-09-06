@@ -18,6 +18,14 @@ import {
   parseSellerRecoveryCode,
   sha256Hex,
 } from "./stage1-seller-credentials";
+import { resolveProductComplianceScope, type ProductType } from "./product-finding-contract";
+import {
+  hasStage1ProductFields,
+  parseStage1ProductFields,
+  parseStoredProductFields,
+  Stage1ProductInputError,
+  transitionStoredProductFields,
+} from "./stage1-product-fields";
 import {
   STAGE1_MAX_PHOTOS,
   STAGE1_MAX_TOTAL_UPLOAD_BYTES,
@@ -25,6 +33,7 @@ import {
   stage1CategorySchema,
   stage1ConditionSchema,
   stage1E164Schema,
+  type Stage1Category,
   type Stage1SubmissionResponse,
 } from "./stage1-self-service-contract";
 
@@ -86,6 +95,9 @@ type SellerBackendRow = {
   price_amount: number | string;
   price_is_free: boolean;
   category: string;
+  product_type: string | null;
+  product_attributes_version: number | string | null;
+  product_attributes: unknown;
   item_condition: string | null;
   province: string;
   district: string;
@@ -792,7 +804,7 @@ function parsePrice(form: FormData): { price: number; isFree: boolean } {
     throw new Stage1SubmissionError("INVALID_REQUEST", "Fiyat bilgisi geçersiz.");
   }
   const price = Number(raw.replace(",", "."));
-  if (!Number.isFinite(price) || price < 0 || price > 9_999_999_999.99) {
+  if (!Number.isFinite(price) || price <= 0 || price > 9_999_999_999.99) {
     throw new Stage1SubmissionError("INVALID_REQUEST", "Fiyat bilgisi geçersiz.");
   }
   return { price, isFree: false };
@@ -908,6 +920,10 @@ async function createPendingRow(
     price: number;
     isFree: boolean;
     category: string;
+    productType: string | null;
+    productAttributesVersion: 1 | null;
+    productAttributes: Readonly<Record<string, string | number | boolean>>;
+    searchKeywords: string[];
     condition: string | null;
     province: string;
     district: string;
@@ -928,12 +944,15 @@ async function createPendingRow(
         price_amount: input.price,
         price_is_free: input.isFree,
         category: input.category,
+        product_type: input.productType,
+        product_attributes_version: input.productAttributesVersion,
+        product_attributes: input.productAttributes,
         item_condition: input.condition,
         province: input.province,
         district: input.district,
         seller_display_name: input.sellerDisplayName,
         owner_user_id: input.sellerId,
-        search_keywords: [],
+        search_keywords: input.searchKeywords,
         contact_channel: "phone_whatsapp",
         contact_e164: input.phone,
         publication_instruction_at: input.rulesAcceptedAt,
@@ -951,11 +970,12 @@ async function createPendingRow(
 }
 
 function assertEidsPublicationAllowed(
-  category: string,
+  category: Stage1Category,
+  productType: ProductType | null,
   request: Request,
   config: BackendConfig,
 ): void {
-  if (category !== "vehicle" && category !== "real-estate") return;
+  if (resolveProductComplianceScope({ category, productType }) === "ordinary") return;
   if (
     process.env.PILOT_SYNTHETIC_TEST_MODE === "enabled" &&
     isLoopbackHost(new URL(request.url).hostname) &&
@@ -980,6 +1000,9 @@ async function submitListing(
     new Set([
       "action",
       "category",
+      "productType",
+      "productAttributesVersion",
+      "productAttributes",
       "title",
       "condition",
       "priceMode",
@@ -995,6 +1018,7 @@ async function submitListing(
   );
 
   const category = stage1CategorySchema.parse(requiredString(form, "category", 3, 32));
+  const product = parseStage1ProductFields(form, category);
   const conditionRaw = optionalString(form, "condition", 32);
   const condition = conditionRaw ? stage1ConditionSchema.parse(conditionRaw) : null;
   const title = requiredString(form, "title", 3, 120);
@@ -1021,7 +1045,7 @@ async function submitListing(
   }
 
   const config = readBackendConfig();
-  assertEidsPublicationAllowed(category, request, config);
+  assertEidsPublicationAllowed(category, product.productType, request, config);
   const sellerSession = await resolveSellerSession(config, request);
   const listingId = crypto.randomUUID();
   const rulesAcceptedAt = new Date().toISOString();
@@ -1033,6 +1057,10 @@ async function submitListing(
     price,
     isFree,
     category,
+    productType: product.productType,
+    productAttributesVersion: product.productAttributesVersion,
+    productAttributes: product.productAttributes,
+    searchKeywords: product.searchKeywords,
     condition,
     province,
     district,
@@ -1216,6 +1244,9 @@ async function fetchSellerRows(
       "price_amount",
       "price_is_free",
       "category",
+      "product_type",
+      "product_attributes_version",
+      "product_attributes",
       "item_condition",
       "province",
       "district",
@@ -1319,6 +1350,12 @@ async function mapSellerListing(
   if (!category.success || (condition !== null && !condition.success) || !status) {
     throw new Error("Seller listing violated the classifieds contract.");
   }
+  const product = parseStoredProductFields({
+    category: category.data,
+    productType: row.product_type,
+    productAttributesVersion: row.product_attributes_version,
+    productAttributes: row.product_attributes,
+  });
   const inventory = await fetchSellerPhotoInventory(config, row.id);
   const photoUrls = await Promise.all(
     inventory
@@ -1333,6 +1370,9 @@ async function mapSellerListing(
     price: Number(row.price_amount),
     isFree: row.price_is_free,
     category: category.data,
+    productType: product.productType,
+    productAttributesVersion: product.productAttributesVersion,
+    productAttributes: product.productAttributes,
     condition: condition?.data ?? null,
     province: row.province,
     district: row.district,
@@ -1395,6 +1435,9 @@ async function sellerUpdate(form: FormData, clientIp: string, request: Request):
       "listingId",
       "contactPhone",
       "category",
+      "productType",
+      "productAttributesVersion",
+      "productAttributes",
       "condition",
       "priceMode",
       "price",
@@ -1420,8 +1463,23 @@ async function sellerUpdate(form: FormData, clientIp: string, request: Request):
     );
   }
 
+  const previousCategory = stage1CategorySchema.parse(listing.category);
+  const previousProduct = parseStoredProductFields({
+    category: previousCategory,
+    productType: listing.product_type,
+    productAttributesVersion: listing.product_attributes_version,
+    productAttributes: listing.product_attributes,
+  });
   const category = stage1CategorySchema.parse(requiredString(form, "category", 3, 32));
-  assertEidsPublicationAllowed(category, request, config);
+  const product = hasStage1ProductFields(form)
+    ? parseStage1ProductFields(form, category)
+    : transitionStoredProductFields({
+        previousCategory,
+        previousProductType: previousProduct.productType,
+        previousAttributes: previousProduct.productAttributes,
+        nextCategory: category,
+      });
+  assertEidsPublicationAllowed(category, product.productType, request, config);
   const conditionRaw = optionalString(form, "condition", 32);
   const condition = conditionRaw ? stage1ConditionSchema.parse(conditionRaw) : null;
   const title = requiredString(form, "title", 3, 120);
@@ -1446,6 +1504,10 @@ async function sellerUpdate(form: FormData, clientIp: string, request: Request):
     listingId,
     {
       category,
+      product_type: product.productType,
+      product_attributes_version: product.productAttributesVersion,
+      product_attributes: product.productAttributes,
+      search_keywords: product.searchKeywords,
       item_condition: condition,
       title,
       description,
@@ -1629,7 +1691,10 @@ export async function handleStage1SelfServiceRequest(request: Request): Promise<
         error.status,
       );
     }
-    if (error instanceof Error && error.name === "ZodError") {
+    if (
+      error instanceof Stage1ProductInputError ||
+      (error instanceof Error && error.name === "ZodError")
+    ) {
       return jsonResponse(
         { ok: false, code: "INVALID_REQUEST", message: "İlan bilgileri eksik veya geçersiz." },
         400,

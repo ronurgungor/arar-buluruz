@@ -55,6 +55,14 @@ function readRuntimeSource(): ListingsSource {
   });
 }
 
+function legacyMockProductFacts() {
+  return {
+    productType: null,
+    productAttributesVersion: null,
+    productAttributes: {},
+  } as const;
+}
+
 export async function loadListingsCollection(): Promise<ListingsCollectionResult> {
   const source = readRuntimeSource();
 
@@ -62,7 +70,11 @@ export async function loadListingsCollection(): Promise<ListingsCollectionResult
     return {
       source,
       state: "ready",
-      listings: mockListings.map((listing) => ({ ...listing, distanceKm: listing.distanceKm })),
+      listings: mockListings.map((listing) => ({
+        ...listing,
+        ...legacyMockProductFacts(),
+        distanceKm: listing.distanceKm,
+      })),
     };
   }
 
@@ -109,7 +121,14 @@ export async function loadListingDetail(id: string): Promise<ListingDetailResult
     return {
       source,
       state: "ready",
-      listing: listing ? { ...listing, distanceKm: listing.distanceKm, publicContact: null } : null,
+      listing: listing
+        ? {
+            ...listing,
+            ...legacyMockProductFacts(),
+            distanceKm: listing.distanceKm,
+            publicContact: null,
+          }
+        : null,
     };
   }
 
