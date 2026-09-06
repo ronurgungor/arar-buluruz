@@ -189,21 +189,47 @@ jobs:
           }
           trap cleanup EXIT
 
-          for url in http://127.0.0.1:4173/ilan-ver http://127.0.0.1:4175/kurucu; do
-            ready=false
-            for attempt in $(seq 1 60); do
-              if curl --fail --silent --show-error "$url" >/dev/null; then
+          dump_readiness_diagnostics() {
+            echo "--- process state ---"
+            ps -o pid,ppid,stat,etime,cmd -p "$public_pid,$founder_pid" || true
+            echo "--- listening sockets ---"
+            ss -ltnp || true
+            echo "--- bounded backend REST probe ---"
+            curl --silent --show-error \
+              --connect-timeout 2 --max-time 5 \
+              -o /dev/null -w 'backend status=%{http_code} total=%{time_total}s\n' \
+              "$api_url/rest/v1/" || true
+            echo "--- public server log ---"
+            cat "$RUNNER_TEMP/stage1-public.log" || true
+            echo "--- founder server log ---"
+            cat "$RUNNER_TEMP/stage1-founder.log" || true
+          }
+
+          probe_ready() {
+            local label="$1"
+            local url="$2"
+            local ready=false
+            for attempt in $(seq 1 20); do
+              if curl --fail --silent --show-error \
+                --connect-timeout 2 --max-time 5 \
+                "$url" -o /dev/null; then
+                echo "Readiness probe passed: $label ($url), attempt $attempt."
                 ready=true
                 break
               fi
               sleep 1
             done
             if [[ "$ready" != "true" ]]; then
-              cat "$RUNNER_TEMP/stage1-public.log" || true
-              cat "$RUNNER_TEMP/stage1-founder.log" || true
-              exit 1
+              echo "::error::Readiness probe failed: $label ($url)"
+              dump_readiness_diagnostics
+              return 1
             fi
-          done
+          }
+
+          probe_ready "public home" "http://127.0.0.1:4173/"
+          probe_ready "public listing submission" "http://127.0.0.1:4173/ilan-ver"
+          probe_ready "public seller inventory" "http://127.0.0.1:4173/ilanlarim"
+          probe_ready "founder moderation" "http://127.0.0.1:4175/kurucu"
 
           PUBLIC_BASE_URL=http://127.0.0.1:4173 \
           FOUNDER_BASE_URL=http://127.0.0.1:4175 \
