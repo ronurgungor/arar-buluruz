@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getBuyerFacetMode } from "./product-finding-buyer-facets";
 import type { Stage1Category } from "./stage1-self-service-contract";
 
 export const PRODUCT_ATTRIBUTES_VERSION = 1 as const;
@@ -360,6 +361,17 @@ const facetValueSchema = z.union([
   z.number().finite(),
   z.boolean(),
 ]);
+const multiFacetFilterSchema = z.array(facetValueSchema).min(1).max(20);
+const rangeFacetFilterSchema = z
+  .object({
+    min: z.number().finite().nullable().default(null),
+    max: z.number().finite().nullable().default(null),
+  })
+  .strict();
+const contextualFacetFilterSchema = z.union([multiFacetFilterSchema, rangeFacetFilterSchema]);
+
+export type ContextualFacetFilter = z.infer<typeof contextualFacetFilterSchema>;
+
 export const searchRequestV1Schema = z.object({
   version: z.literal(1),
   q: z.string().max(200).default(""),
@@ -386,7 +398,7 @@ export const searchRequestV1Schema = z.object({
   price: z
     .object({ min: z.number().min(0).nullable(), max: z.number().min(0).nullable() })
     .default({ min: null, max: null }),
-  contextual: z.record(z.array(facetValueSchema).min(1).max(20)).default({}),
+  contextual: z.record(contextualFacetFilterSchema).default({}),
   sort: searchSortSchema.default("relevance"),
 });
 
@@ -423,10 +435,30 @@ export function parseSearchRequestV1(input: unknown): SearchRequestV1 {
       throw new Error("Contextual filters require a product type.");
     }
     const definition = PRODUCT_TYPE_REGISTRY[request.productType];
-    for (const [key, values] of Object.entries(request.contextual)) {
+    for (const [key, filter] of Object.entries(request.contextual)) {
       const fieldSchema = definition.attributeFields[key];
-      if (!fieldSchema) throw new Error(`Unknown contextual filter: ${key}`);
-      for (const value of values) fieldSchema.parse(value);
+      const facetMode = getBuyerFacetMode(request.productType, key);
+      if (!fieldSchema || !facetMode) throw new Error(`Unknown contextual filter: ${key}`);
+
+      if (facetMode === "multi") {
+        if (!Array.isArray(filter)) {
+          throw new Error(`Contextual filter ${key} requires multi values.`);
+        }
+        for (const value of filter) fieldSchema.parse(value);
+        continue;
+      }
+
+      if (Array.isArray(filter)) {
+        throw new Error(`Contextual filter ${key} requires a numeric range.`);
+      }
+      if (filter.min === null && filter.max === null) {
+        throw new Error(`Contextual range ${key} requires min or max.`);
+      }
+      if (filter.min !== null && filter.max !== null && filter.min > filter.max) {
+        throw new Error(`Contextual range ${key} has min above max.`);
+      }
+      if (filter.min !== null) fieldSchema.parse(filter.min);
+      if (filter.max !== null) fieldSchema.parse(filter.max);
     }
   }
   return request;
@@ -479,10 +511,18 @@ export function listingMatchesStructuredFilters(
   if (request.price.min !== null && listing.price < request.price.min) return false;
   if (request.price.max !== null && listing.price > request.price.max) return false;
 
-  for (const [facet, acceptedValues] of Object.entries(request.contextual)) {
+  for (const [facet, filter] of Object.entries(request.contextual)) {
     const listingValue = listing.productAttributes[facet];
     if (listingValue === undefined || listingValue === null) return false;
-    if (!acceptedValues.some((value) => facetValuesEqual(listingValue, value))) return false;
+
+    if (Array.isArray(filter)) {
+      if (!filter.some((value) => facetValuesEqual(listingValue, value))) return false;
+      continue;
+    }
+
+    if (typeof listingValue !== "number") return false;
+    if (filter.min !== null && listingValue < filter.min) return false;
+    if (filter.max !== null && listingValue > filter.max) return false;
   }
   return true;
 }
