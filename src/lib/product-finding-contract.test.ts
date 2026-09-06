@@ -5,6 +5,7 @@ import {
   generateSystemSearchKeywords,
   listingMatchesStructuredFilters,
   parseSearchRequestV1,
+  resolveProductComplianceScope,
   transitionProductSelection,
   transitionSearchRequestScope,
   validateProductSelection,
@@ -50,6 +51,31 @@ describe("product finding contract", () => {
     expect(PRODUCT_TYPE_REGISTRY["automobile-part"].role).toBe("part");
     expect(PRODUCT_TYPE_REGISTRY["phone-accessory"].role).toBe("accessory");
     expect(PRODUCT_TYPE_REGISTRY["bicycle-part"].role).toBe("part");
+  });
+
+  test("resolves the explicit EIDS compliance scope without regulating vehicle parts or accessories", () => {
+    expect(resolveProductComplianceScope({ category: "vehicle", productType: "automobile" })).toBe(
+      "eids_vehicle",
+    );
+    expect(
+      resolveProductComplianceScope({ category: "vehicle", productType: "automobile-part" }),
+    ).toBe("ordinary");
+    expect(
+      resolveProductComplianceScope({ category: "vehicle", productType: "automobile-accessory" }),
+    ).toBe("ordinary");
+    expect(resolveProductComplianceScope({ category: "real-estate", productType: "housing" })).toBe(
+      "eids_real_estate",
+    );
+    expect(resolveProductComplianceScope({ category: "vehicle", productType: null })).toBe(
+      "eids_vehicle",
+    );
+    expect(resolveProductComplianceScope({ category: "real-estate", productType: null })).toBe(
+      "eids_real_estate",
+    );
+    expect(resolveProductComplianceScope({ category: "electronics", productType: "phone" })).toBe(
+      "ordinary",
+    );
+    expect(resolveProductComplianceScope({ category: "home", productType: null })).toBe("ordinary");
   });
 
   test("rejects incompatible category/product type combinations", () => {
@@ -131,7 +157,7 @@ describe("product finding contract", () => {
     });
   });
 
-  test("marks regulated category transitions for compliance re-evaluation", () => {
+  test("marks compliance-scope transitions for re-evaluation", () => {
     expect(
       transitionProductSelection({
         previousCategory: "electronics",
@@ -139,6 +165,15 @@ describe("product finding contract", () => {
         previousAttributes: {},
         nextCategory: "vehicle",
         nextProductType: "automobile",
+      }).complianceMustBeReevaluated,
+    ).toBe(true);
+    expect(
+      transitionProductSelection({
+        previousCategory: "vehicle",
+        previousProductType: "automobile",
+        previousAttributes: {},
+        nextCategory: "vehicle",
+        nextProductType: "automobile-part",
       }).complianceMustBeReevaluated,
     ).toBe(true);
     expect(
