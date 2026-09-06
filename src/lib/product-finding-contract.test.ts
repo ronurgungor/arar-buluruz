@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   PRODUCT_ATTRIBUTES_VERSION,
+  PRODUCT_TYPE_REGISTRY,
   generateSystemSearchKeywords,
   listingMatchesStructuredFilters,
   parseSearchRequestV1,
@@ -11,29 +12,44 @@ import {
 
 describe("product finding contract", () => {
   test("accepts the frozen shallow category/product-type registry and legacy null type", () => {
-    expect(validateProductSelection({ category: "vehicle", productType: "automobile" }).productType).toBe(
-      "automobile",
-    );
-    expect(validateProductSelection({ category: "real-estate", productType: "housing" }).productType).toBe(
-      "housing",
-    );
-    expect(validateProductSelection({ category: "electronics", productType: "phone" }).productType).toBe(
-      "phone",
-    );
-    expect(validateProductSelection({ category: "home", productType: "wardrobe" }).productType).toBe(
-      "wardrobe",
-    );
-    expect(validateProductSelection({ category: "fashion", productType: "shoes" }).productType).toBe(
-      "shoes",
-    );
-    expect(validateProductSelection({ category: "hobby-sports", productType: "bicycle" }).productType).toBe(
-      "bicycle",
-    );
+    expect(
+      validateProductSelection({ category: "vehicle", productType: "automobile" }).productType,
+    ).toBe("automobile");
+    expect(
+      validateProductSelection({ category: "vehicle", productType: "automobile-part" }).productType,
+    ).toBe("automobile-part");
+    expect(
+      validateProductSelection({ category: "vehicle", productType: "automobile-accessory" })
+        .productType,
+    ).toBe("automobile-accessory");
+    expect(
+      validateProductSelection({ category: "real-estate", productType: "housing" }).productType,
+    ).toBe("housing");
+    expect(
+      validateProductSelection({ category: "electronics", productType: "phone" }).productType,
+    ).toBe("phone");
+    expect(
+      validateProductSelection({ category: "home", productType: "wardrobe" }).productType,
+    ).toBe("wardrobe");
+    expect(
+      validateProductSelection({ category: "fashion", productType: "shoes" }).productType,
+    ).toBe("shoes");
+    expect(
+      validateProductSelection({ category: "hobby-sports", productType: "bicycle" }).productType,
+    ).toBe("bicycle");
     expect(validateProductSelection({ category: "other", productType: null })).toEqual({
       productType: null,
       productAttributesVersion: null,
       productAttributes: {},
     });
+  });
+
+  test("classifies the minimum product roles as main, accessory, or part", () => {
+    expect(PRODUCT_TYPE_REGISTRY.automobile.role).toBe("main");
+    expect(PRODUCT_TYPE_REGISTRY["automobile-accessory"].role).toBe("accessory");
+    expect(PRODUCT_TYPE_REGISTRY["automobile-part"].role).toBe("part");
+    expect(PRODUCT_TYPE_REGISTRY["phone-accessory"].role).toBe("accessory");
+    expect(PRODUCT_TYPE_REGISTRY["bicycle-part"].role).toBe("part");
   });
 
   test("rejects incompatible category/product type combinations", () => {
@@ -108,7 +124,11 @@ describe("product finding contract", () => {
       nextCategory: "electronics",
       nextProductType: "phone",
     });
-    expect(retained.productAttributes).toEqual({ brand: "Apple", model: "iPhone 15", storage_gb: 256 });
+    expect(retained.productAttributes).toEqual({
+      brand: "Apple",
+      model: "iPhone 15",
+      storage_gb: 256,
+    });
   });
 
   test("marks regulated category transitions for compliance re-evaluation", () => {
@@ -196,6 +216,45 @@ describe("product finding contract", () => {
     expect(
       listingMatchesStructuredFilters(
         { ...base, productAttributes: { fuel: "diesel", transmission: "automatic" } },
+        request,
+      ),
+    ).toBe(false);
+  });
+
+  test("canonical Corolla main-product scope excludes parts and accessories", () => {
+    const request = parseSearchRequestV1({
+      version: 1,
+      q: "corolla",
+      category: "vehicle",
+      productType: "automobile",
+    });
+    const common = {
+      category: "vehicle" as const,
+      price: 1_000,
+      province: "Tekirdağ",
+      district: "Çorlu",
+      productAttributes: {},
+    };
+
+    expect(
+      listingMatchesStructuredFilters(
+        {
+          ...common,
+          productType: "automobile",
+          productAttributes: { make: "Toyota", model: "Corolla" },
+        },
+        request,
+      ),
+    ).toBe(true);
+    expect(
+      listingMatchesStructuredFilters(
+        { ...common, productType: "automobile-part" },
+        request,
+      ),
+    ).toBe(false);
+    expect(
+      listingMatchesStructuredFilters(
+        { ...common, productType: "automobile-accessory" },
         request,
       ),
     ).toBe(false);
