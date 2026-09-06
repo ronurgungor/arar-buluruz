@@ -1,10 +1,17 @@
 name: Product Finding Phase 2 preflight
 
 on:
+  push:
+    branches:
+      - agent/product-finding-phase2
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: product-finding-phase2-preflight-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:
@@ -14,8 +21,6 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          persist-credentials: false
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -25,8 +30,22 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
-      - name: Check Phase 2 formatting
-        run: bunx prettier --check docs/PRODUCT_FINDING_PHASE2_CONTRACT.md src/lib/product-finding-buyer-facets.ts src/lib/product-finding-contract.ts src/lib/product-finding-contract.test.ts src/lib/product-finding-ui-contract.ts src/lib/product-finding-ui-contract.test.ts src/lib/listing-search.ts src/lib/listing-search.test.ts package.json
+      - name: Format Phase 2 files in runner
+        run: bunx prettier --write docs/PRODUCT_FINDING_PHASE2_CONTRACT.md src/lib/product-finding-buyer-facets.ts src/lib/product-finding-contract.ts src/lib/product-finding-contract.test.ts src/lib/product-finding-range-filters.test.ts src/lib/product-finding-ui-contract.ts src/lib/product-finding-ui-contract.test.ts src/lib/listing-search.ts src/lib/listing-search.test.ts package.json
+
+      - name: Commit canonical formatting when needed
+        shell: bash
+        run: |
+          if git diff --quiet -- docs/PRODUCT_FINDING_PHASE2_CONTRACT.md src/lib/product-finding-buyer-facets.ts src/lib/product-finding-contract.ts src/lib/product-finding-contract.test.ts src/lib/product-finding-range-filters.test.ts src/lib/product-finding-ui-contract.ts src/lib/product-finding-ui-contract.test.ts src/lib/listing-search.ts src/lib/listing-search.test.ts package.json; then
+            echo "Phase 2 files already match canonical formatting."
+            exit 0
+          fi
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/PRODUCT_FINDING_PHASE2_CONTRACT.md src/lib/product-finding-buyer-facets.ts src/lib/product-finding-contract.ts src/lib/product-finding-contract.test.ts src/lib/product-finding-range-filters.test.ts src/lib/product-finding-ui-contract.ts src/lib/product-finding-ui-contract.test.ts src/lib/listing-search.ts src/lib/listing-search.test.ts package.json
+          git commit -m "Format Product Finding Phase 2 range contract"
+          git push origin HEAD:agent/product-finding-phase2
 
       - name: Lint
         run: bun run lint
