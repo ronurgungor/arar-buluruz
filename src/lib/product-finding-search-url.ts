@@ -12,9 +12,9 @@ export type ProductFindingSearchUrlState = {
   productType?: string;
   province?: string;
   district?: string;
-  priceMin?: string;
-  priceMax?: string;
-  contextual?: string;
+  priceMin?: number;
+  priceMax?: number;
+  contextual?: Record<string, ContextualFacetFilter>;
   sort?: string;
 };
 
@@ -24,20 +24,37 @@ function optionalString(value: unknown, field: string): string | undefined {
   return value;
 }
 
-function optionalNumberString(value: unknown, field: string): string | undefined {
+function optionalNumber(value: unknown, field: string): number | undefined {
   if (value === undefined) return undefined;
-  if (typeof value === "string") return value;
-  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
   throw new Error(`Search URL ${field} must be numeric.`);
 }
 
-function optionalContextualString(value: unknown): string | undefined {
-  if (value === undefined) return undefined;
-  if (typeof value === "string") return value;
-  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-    return JSON.stringify(value);
+function parseNestedJson(value: string): unknown {
+  let parsed: unknown = value;
+  for (let depth = 0; depth < 2 && typeof parsed === "string"; depth += 1) {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      break;
+    }
   }
-  throw new Error("Search URL contextual filters must be an object.");
+  return parsed;
+}
+
+function optionalContextual(
+  value: unknown,
+): Record<string, ContextualFacetFilter> | undefined {
+  if (value === undefined) return undefined;
+  const parsed = typeof value === "string" ? parseNestedJson(value) : value;
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new Error("Search URL contextual filters must be an object.");
+  }
+  return parsed as Record<string, ContextualFacetFilter>;
 }
 
 export function normalizeProductFindingSearchUrlState(
@@ -49,33 +66,11 @@ export function normalizeProductFindingSearchUrlState(
     productType: optionalString(input.productType, "productType"),
     province: optionalString(input.province, "province"),
     district: optionalString(input.district, "district"),
-    priceMin: optionalNumberString(input.priceMin, "priceMin"),
-    priceMax: optionalNumberString(input.priceMax, "priceMax"),
-    contextual: optionalContextualString(input.contextual),
+    priceMin: optionalNumber(input.priceMin, "priceMin"),
+    priceMax: optionalNumber(input.priceMax, "priceMax"),
+    contextual: optionalContextual(input.contextual),
     sort: optionalString(input.sort, "sort"),
   };
-}
-
-function parseOptionalNumber(value: string | undefined): number | null {
-  if (value === undefined || value.trim() === "") return null;
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) throw new Error("Search URL contains an invalid number.");
-  return parsed;
-}
-
-function parseContextual(value: string | undefined): unknown {
-  if (value === undefined || value.trim() === "") return {};
-  try {
-    const parsed: unknown = JSON.parse(value);
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-      throw new Error("Contextual filters must be an object.");
-    }
-    return parsed;
-  } catch (error) {
-    if (error instanceof SyntaxError)
-      throw new Error("Search URL contains invalid contextual JSON.");
-    throw error;
-  }
 }
 
 export function parseSearchRequestV1FromUrl(
@@ -96,22 +91,22 @@ export function parseSearchRequestV1FromUrl(
     productType: state.productType?.trim() || null,
     location: { province, district },
     price: {
-      min: parseOptionalNumber(state.priceMin),
-      max: parseOptionalNumber(state.priceMax),
+      min: state.priceMin ?? null,
+      max: state.priceMax ?? null,
     },
-    contextual: parseContextual(state.contextual),
+    contextual: state.contextual ?? {},
     sort: state.sort?.trim() || getDefaultSearchSort(q),
   });
 }
 
-function stableContextualJson(
+function stableContextual(
   contextual: Record<string, ContextualFacetFilter>,
-): string | undefined {
+): Record<string, ContextualFacetFilter> | undefined {
   const keys = Object.keys(contextual).sort((left, right) => left.localeCompare(right));
   if (keys.length === 0) return undefined;
   const stable: Record<string, ContextualFacetFilter> = {};
   for (const key of keys) stable[key] = contextual[key];
-  return JSON.stringify(stable);
+  return stable;
 }
 
 export function serializeSearchRequestV1ToUrl(
@@ -124,9 +119,9 @@ export function serializeSearchRequestV1ToUrl(
     productType: request.productType ?? undefined,
     province: request.location.province ?? undefined,
     district: request.location.district ?? undefined,
-    priceMin: request.price.min === null ? undefined : String(request.price.min),
-    priceMax: request.price.max === null ? undefined : String(request.price.max),
-    contextual: stableContextualJson(request.contextual),
+    priceMin: request.price.min ?? undefined,
+    priceMax: request.price.max ?? undefined,
+    contextual: stableContextual(request.contextual),
     sort: SEARCH_SORTS.includes(request.sort) ? request.sort : undefined,
   };
 }
