@@ -5,6 +5,8 @@ export const PRODUCT_ATTRIBUTES_VERSION = 1 as const;
 
 export const PRODUCT_TYPES = [
   "automobile",
+  "automobile-part",
+  "automobile-accessory",
   "housing",
   "phone",
   "phone-accessory",
@@ -16,6 +18,7 @@ export const PRODUCT_TYPES = [
 
 export const productTypeSchema = z.enum(PRODUCT_TYPES);
 export type ProductType = z.infer<typeof productTypeSchema>;
+export type ProductRole = "main" | "accessory" | "part";
 
 const shortText = (max: number) => z.string().trim().min(1).max(max);
 const optionalFields = (fields: Record<string, z.ZodTypeAny>) =>
@@ -51,9 +54,10 @@ const housingFields = {
 const phoneFields = {
   brand: shortText(60),
   model: shortText(80),
-  storage_gb: z.number().int().refine((value) =>
-    [16, 32, 64, 128, 256, 512, 1024, 2048].includes(value),
-  ),
+  storage_gb: z
+    .number()
+    .int()
+    .refine((value) => [16, 32, 64, 128, 256, 512, 1024, 2048].includes(value)),
 };
 
 const wardrobeFields = {
@@ -78,7 +82,7 @@ const bicycleFields = {
 export type ProductTypeDefinition = {
   category: Stage1Category;
   label: string;
-  kind: "main" | "accessory";
+  role: ProductRole;
   aliases: readonly string[];
   attributeFields: Record<string, z.ZodTypeAny>;
 };
@@ -87,57 +91,71 @@ export const PRODUCT_TYPE_REGISTRY: Record<ProductType, ProductTypeDefinition> =
   automobile: {
     category: "vehicle",
     label: "Otomobil",
-    kind: "main",
+    role: "main",
     aliases: ["otomobil", "araba", "oto"],
     attributeFields: automobileFields,
+  },
+  "automobile-part": {
+    category: "vehicle",
+    label: "Otomobil parçası",
+    role: "part",
+    aliases: ["otomobil parçası", "araba parçası", "oto parça"],
+    attributeFields: {},
+  },
+  "automobile-accessory": {
+    category: "vehicle",
+    label: "Otomobil aksesuarı",
+    role: "accessory",
+    aliases: ["otomobil aksesuarı", "araba aksesuarı", "oto aksesuar"],
+    attributeFields: {},
   },
   housing: {
     category: "real-estate",
     label: "Konut",
-    kind: "main",
+    role: "main",
     aliases: ["konut", "ev", "daire"],
     attributeFields: housingFields,
   },
   phone: {
     category: "electronics",
     label: "Telefon",
-    kind: "main",
+    role: "main",
     aliases: ["telefon", "cep telefonu", "akıllı telefon"],
     attributeFields: phoneFields,
   },
   "phone-accessory": {
     category: "electronics",
     label: "Telefon aksesuarı",
-    kind: "accessory",
+    role: "accessory",
     aliases: ["telefon aksesuarı", "cep telefonu aksesuarı"],
     attributeFields: {},
   },
   wardrobe: {
     category: "home",
     label: "Gardırop",
-    kind: "main",
+    role: "main",
     aliases: ["gardırop", "dolap", "elbise dolabı"],
     attributeFields: wardrobeFields,
   },
   shoes: {
     category: "fashion",
     label: "Ayakkabı",
-    kind: "main",
+    role: "main",
     aliases: ["ayakkabı"],
     attributeFields: shoesFields,
   },
   bicycle: {
     category: "hobby-sports",
     label: "Bisiklet",
-    kind: "main",
+    role: "main",
     aliases: ["bisiklet"],
     attributeFields: bicycleFields,
   },
   "bicycle-part": {
     category: "hobby-sports",
-    label: "Bisiklet parçası / aksesuarı",
-    kind: "accessory",
-    aliases: ["bisiklet parçası", "bisiklet aksesuarı"],
+    label: "Bisiklet parçası",
+    role: "part",
+    aliases: ["bisiklet parçası", "bisiklet yedek parça"],
     attributeFields: {},
   },
 };
@@ -225,7 +243,8 @@ export function transitionProductSelection(input: {
 
   const categoryChanged = input.previousCategory !== input.nextCategory;
   const typeChanged = input.previousProductType !== input.nextProductType;
-  const regulated = (category: Stage1Category) => category === "vehicle" || category === "real-estate";
+  const regulated = (category: Stage1Category) =>
+    category === "vehicle" || category === "real-estate";
   const complianceMustBeReevaluated =
     categoryChanged && (regulated(input.previousCategory) || regulated(input.nextCategory));
 
@@ -291,7 +310,9 @@ export function generateSystemSearchKeywords(input: {
 }): string[] {
   const output: string[] = [];
   const seen = new Set<string>();
-  for (const alias of CATEGORY_SEARCH_ALIASES[input.category] ?? []) addKeyword(output, seen, alias);
+  for (const alias of CATEGORY_SEARCH_ALIASES[input.category] ?? []) {
+    addKeyword(output, seen, alias);
+  }
 
   if (input.productType) {
     const definition = PRODUCT_TYPE_REGISTRY[input.productType];
@@ -307,7 +328,11 @@ export const SEARCH_SORTS = ["relevance", "newest", "price_asc", "price_desc"] a
 export const searchSortSchema = z.enum(SEARCH_SORTS);
 export type SearchSort = z.infer<typeof searchSortSchema>;
 
-const facetValueSchema = z.union([z.string().trim().min(1).max(120), z.number().finite(), z.boolean()]);
+const facetValueSchema = z.union([
+  z.string().trim().min(1).max(120),
+  z.number().finite(),
+  z.boolean(),
+]);
 export const searchRequestV1Schema = z.object({
   version: z.literal(1),
   q: z.string().max(200).default(""),
@@ -326,7 +351,10 @@ export const searchRequestV1Schema = z.object({
     .default(null),
   productType: productTypeSchema.nullable().default(null),
   location: z
-    .object({ province: z.string().trim().min(2).max(64).nullable(), district: z.string().trim().min(2).max(64).nullable() })
+    .object({
+      province: z.string().trim().min(2).max(64).nullable(),
+      district: z.string().trim().min(2).max(64).nullable(),
+    })
     .default({ province: null, district: null }),
   price: z
     .object({ min: z.number().min(0).nullable(), max: z.number().min(0).nullable() })
@@ -348,11 +376,18 @@ export const SEARCH_REQUEST_V1_PRECEDENCE = [
 
 export function parseSearchRequestV1(input: unknown): SearchRequestV1 {
   const request = searchRequestV1Schema.parse(input);
-  if (request.price.min !== null && request.price.max !== null && request.price.min > request.price.max) {
+  if (
+    request.price.min !== null &&
+    request.price.max !== null &&
+    request.price.min > request.price.max
+  ) {
     throw new Error("Minimum price cannot exceed maximum price.");
   }
   if (request.productType !== null) {
-    if (request.category === null || !isProductTypeCompatible(request.category, request.productType)) {
+    if (
+      request.category === null ||
+      !isProductTypeCompatible(request.category, request.productType)
+    ) {
       throw new Error("Search product type requires its compatible category.");
     }
   }
@@ -408,8 +443,12 @@ export function listingMatchesStructuredFilters(
 ): boolean {
   if (request.category !== null && listing.category !== request.category) return false;
   if (request.productType !== null && listing.productType !== request.productType) return false;
-  if (request.location.province !== null && listing.province !== request.location.province) return false;
-  if (request.location.district !== null && listing.district !== request.location.district) return false;
+  if (request.location.province !== null && listing.province !== request.location.province) {
+    return false;
+  }
+  if (request.location.district !== null && listing.district !== request.location.district) {
+    return false;
+  }
   if (request.price.min !== null && listing.price < request.price.min) return false;
   if (request.price.max !== null && listing.price > request.price.max) return false;
 
