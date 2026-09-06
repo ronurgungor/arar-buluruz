@@ -270,7 +270,7 @@ export function formatProductFieldValue(
   const choiceLabel = field.choices?.find((item) => item.value === value)?.label;
   if (choiceLabel) return choiceLabel;
   const text =
-    typeof value === "number"
+    typeof value === "number" && field.unit
       ? new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 2 }).format(value)
       : String(value).trim();
   if (!text) return null;
