@@ -32,10 +32,14 @@ describe("Product Finding Phase 2 search URL codec", () => {
       productType: "automobile",
       province: "Tekirdağ",
       district: "Çorlu",
-      priceMin: "500000",
-      priceMax: "1500000",
-      contextual:
-        '{"km":{"min":null,"max":50000},"make":["Toyota"],"transmission":["automatic"],"year":{"min":2020,"max":2024}}',
+      priceMin: 500000,
+      priceMax: 1500000,
+      contextual: {
+        km: { min: null, max: 50000 },
+        make: ["Toyota"],
+        transmission: ["automatic"],
+        year: { min: 2020, max: 2024 },
+      },
       sort: "price_asc",
     });
   });
@@ -67,11 +71,34 @@ describe("Product Finding Phase 2 search URL codec", () => {
       productType: "automobile",
       province: "Tekirdağ",
       district: "Çorlu",
-      priceMin: "0",
-      priceMax: "5000",
-      contextual:
-        '{"km":{"min":null,"max":120000},"transmission":["automatic"],"year":{"min":2010,"max":2020}}',
+      priceMin: 0,
+      priceMax: 5000,
+      contextual: {
+        km: { min: null, max: 120000 },
+        transmission: ["automatic"],
+        year: { min: 2010, max: 2020 },
+      },
       sort: "price_asc",
+    });
+  });
+
+  test("accepts legacy stringified router values without double-encoding new URLs", () => {
+    const request = parseSearchRequestV1FromUrl({
+      category: "vehicle",
+      productType: "automobile",
+      priceMin: '"0"',
+      contextual: JSON.stringify(
+        JSON.stringify({ year: { min: 2010, max: 2020 }, transmission: ["automatic"] }),
+      ),
+    });
+
+    expect(request.price.min).toBe(0);
+    expect(request.contextual.year).toEqual({ min: 2010, max: 2020 });
+    expect(request.contextual.transmission).toEqual(["automatic"]);
+    expect(serializeSearchRequestV1ToUrl(request).priceMin).toBe(0);
+    expect(serializeSearchRequestV1ToUrl(request).contextual).toEqual({
+      transmission: ["automatic"],
+      year: { min: 2010, max: 2020 },
     });
   });
 
