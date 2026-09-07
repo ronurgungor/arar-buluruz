@@ -582,13 +582,7 @@ function observePage(page: Page): void {
   });
 }
 
-for (const page of [
-  ownerPage,
-  compatibilityPage,
-  otherSellerPage,
-  staleSellerPage,
-  founderPage,
-]) {
+for (const page of [ownerPage, compatibilityPage, otherSellerPage, staleSellerPage, founderPage]) {
   observePage(page);
 }
 
