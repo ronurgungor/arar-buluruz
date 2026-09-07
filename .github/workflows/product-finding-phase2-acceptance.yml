@@ -228,6 +228,9 @@ jobs:
           probe_ready "founder moderation" "http://127.0.0.1:4175/kurucu"
 
           PUBLIC_BASE_URL=http://127.0.0.1:4173 \
+            bun scripts/product-finding-phase2-filter-diagnostic.ts
+
+          PUBLIC_BASE_URL=http://127.0.0.1:4173 \
           FOUNDER_BASE_URL=http://127.0.0.1:4175 \
           BACKEND_ORIGIN="$api_url" \
           BACKEND_ANON_KEY="$anon_key" \
