@@ -660,7 +660,7 @@ try {
     await compatibilityPage.getByText("Ücretsiz", { exact: true }).first().waitFor();
   }
   await compatibilityPage.close();
-await compatibilityContext.close();
+  await compatibilityContext.close();
 
   const buyerContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const buyerPage = await buyerContext.newPage();
