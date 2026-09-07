@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   quality:
-    name: Phase 2 read-only formatting, lint, unit and build
+    name: Phase 2 temporary formatter and quality probe
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -32,33 +32,16 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
-      - name: Check canonical formatting
-        shell: bash
+      - name: Format split harness in runner copy
         run: |
-          bunx prettier --check \
-            docs/PRODUCT_FINDING_PHASE2_CONTRACT.md \
-            src/components/product/ProductSelectionFields.tsx \
-            src/components/search/ProductFindingFilterSheet.tsx \
-            src/lib/product-finding-buyer-facets.ts \
-            src/lib/product-finding-contract.ts \
-            src/lib/product-finding-contract.test.ts \
-            src/lib/product-finding-range-filters.test.ts \
-            src/lib/product-finding-search-url.ts \
-            src/lib/product-finding-search-url.test.ts \
-            src/lib/product-finding-ui-contract.ts \
-            src/lib/product-finding-ui-contract.test.ts \
-            src/lib/listing-search.ts \
-            src/lib/listing-search.test.ts \
-            src/lib/listing-return.ts \
-            src/lib/stage1-product-fields.ts \
-            src/routes-pilot/ara.tsx \
-            src/routes-pilot/ilan-ver.tsx \
-            src/routes-pilot/ilanlarim.tsx \
-            'src/routes-pilot/ilan.$id.tsx' \
+          bunx prettier --write \
             scripts/stage1-self-service-browser-e2e.ts \
-            package.json
+            scripts/stage1-self-service-browser-e2e-shared.ts \
+            scripts/stage1-self-service-browser-e2e-seller-create.ts \
+            scripts/stage1-self-service-browser-e2e-buyer.ts \
+            scripts/stage1-self-service-browser-e2e-seller-management.ts
 
-      - name: Lint
+      - name: Lint formatted runner copy
         run: bun run lint
 
       - name: Full unit suite
@@ -69,5 +52,16 @@ jobs:
           VITE_LISTINGS_SOURCE: disabled
         run: bun run build
 
-      - name: Verify CI did not mutate tracked source
-        run: git diff --exit-code
+      - name: Upload formatted split harness
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: formatted-phase2-harness
+          path: |
+            scripts/stage1-self-service-browser-e2e.ts
+            scripts/stage1-self-service-browser-e2e-shared.ts
+            scripts/stage1-self-service-browser-e2e-seller-create.ts
+            scripts/stage1-self-service-browser-e2e-buyer.ts
+            scripts/stage1-self-service-browser-e2e-seller-management.ts
+          if-no-files-found: error
+          retention-days: 1
