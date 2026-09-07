@@ -1,7 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { deflateSync } from "node:zlib";
-import { chromium, type Page, type Response as PlaywrightResponse } from "playwright";
+import {
+  chromium,
+  type Browser,
+  type Page,
+  type Response as PlaywrightResponse,
+} from "playwright";
 
 const publicBaseUrl = process.env.PUBLIC_BASE_URL ?? "http://127.0.0.1:4173";
 const founderBaseUrl = process.env.FOUNDER_BASE_URL ?? "http://127.0.0.1:4175";
@@ -536,6 +541,7 @@ const founderPage = await ownerContext.newPage();
 const runtimeErrors: string[] = [];
 const privilegedBrowserMutations: string[] = [];
 const assetFailures: string[] = [];
+let buyerBrowser: Browser | null = null;
 
 function observePage(page: Page): void {
   page.on("pageerror", (error) => runtimeErrors.push(`pageerror: ${error.message}`));
@@ -656,7 +662,8 @@ try {
   await compatibilityPage.close();
   await compatibilityContext.close();
 
-  const buyerContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  buyerBrowser = await chromium.launch({ headless: true });
+  const buyerContext = await buyerBrowser.newContext({ viewport: { width: 390, height: 844 } });
   const buyerPage = await buyerContext.newPage();
   observePage(buyerPage);
 
@@ -1095,6 +1102,7 @@ try {
     "Stage 1 + Product Finding Phase 2 browser acceptance passed: structured seller create -> persisted/public adapter -> intent/scope -> multi/range filters -> sort/card -> detail/Back URL+scroll -> canonical seller edit transition -> ownership/takedown lifecycle.",
   );
 } finally {
+  await buyerBrowser?.close();
   await ownerContext.close();
   await compatibilityContext.close();
   await otherContext.close();
