@@ -525,10 +525,11 @@ function expectHref(actual: string | null, expected: string): void {
 
 const browser = await chromium.launch({ headless: true });
 const ownerContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+const buyerContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const otherContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const staleContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const ownerPage = await ownerContext.newPage();
-const buyerPage = await ownerContext.newPage();
+const buyerPage = await buyerContext.newPage();
 const otherSellerPage = await otherContext.newPage();
 const staleSellerPage = await staleContext.newPage();
 const founderPage = await ownerContext.newPage();
@@ -1085,6 +1086,7 @@ try {
   );
 } finally {
   await ownerContext.close();
+  await buyerContext.close();
   await otherContext.close();
   await browser.close();
 }
