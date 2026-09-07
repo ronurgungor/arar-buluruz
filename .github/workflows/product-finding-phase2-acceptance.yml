@@ -227,15 +227,25 @@ jobs:
           probe_ready "public seller inventory" "http://127.0.0.1:4173/ilanlarim"
           probe_ready "founder moderation" "http://127.0.0.1:4175/kurucu"
 
+          echo "--- empty-inventory filter diagnostic ---"
           PUBLIC_BASE_URL=http://127.0.0.1:4173 \
             bun scripts/product-finding-phase2-filter-diagnostic.ts
 
+          set +e
           PUBLIC_BASE_URL=http://127.0.0.1:4173 \
           FOUNDER_BASE_URL=http://127.0.0.1:4175 \
           BACKEND_ORIGIN="$api_url" \
           BACKEND_ANON_KEY="$anon_key" \
           BACKEND_SERVICE_ROLE_KEY="$service_role_key" \
             bun scripts/stage1-self-service-browser-e2e.ts
+          e2e_status=$?
+          set -e
+
+          echo "--- post-journey filter diagnostic ---"
+          PUBLIC_BASE_URL=http://127.0.0.1:4173 \
+            bun scripts/product-finding-phase2-filter-diagnostic.ts
+
+          test "$e2e_status" -eq 0
 
           cleanup
           trap - EXIT
