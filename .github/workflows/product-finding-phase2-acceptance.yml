@@ -131,7 +131,7 @@ jobs:
 
           bash scripts/pilot-rc-artifact-boundary-check.sh
 
-      - name: Run Phase 2 buyer readiness delta
+      - name: Run split-process Phase 2 acceptance
         shell: bash
         env:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/phase2-browsers
@@ -210,25 +210,19 @@ jobs:
           probe_ready "public seller inventory" "http://127.0.0.1:4173/ilanlarim"
           probe_ready "founder moderation" "http://127.0.0.1:4175/kurucu"
 
-          set +e
           PUBLIC_BASE_URL=http://127.0.0.1:4173 \
           FOUNDER_BASE_URL=http://127.0.0.1:4175 \
           BACKEND_ORIGIN="$api_url" \
           BACKEND_ANON_KEY="$anon_key" \
           BACKEND_SERVICE_ROLE_KEY="$service_role_key" \
             bun scripts/stage1-self-service-browser-e2e.ts \
-              2>&1 | tee "$RUNNER_TEMP/phase2-canonical-failure.log"
-          canonical_status=${PIPESTATUS[0]}
-          set -e
-          test "$canonical_status" -ne 0
-          grep -F "waiting for getByLabel('Kilometre maksimum', { exact: true })" \
-            "$RUNNER_TEMP/phase2-canonical-failure.log"
+              2>&1 | tee "$RUNNER_TEMP/phase2-canonical-pass.log"
 
           PUBLIC_BASE_URL=http://127.0.0.1:4173 \
           BACKEND_ORIGIN="$api_url" \
           BACKEND_ANON_KEY="$anon_key" \
             bun scripts/product-finding-phase2-filter-diagnostic.ts \
-              2>&1 | tee "$RUNNER_TEMP/phase2-readiness-delta.log"
+              2>&1 | tee "$RUNNER_TEMP/phase2-bounded-delta.log"
 
           cleanup
           trap - EXIT
@@ -259,8 +253,8 @@ jobs:
             test-results/stage1-self-service/*.png
             ${{ runner.temp }}/phase2-public.log
             ${{ runner.temp }}/phase2-founder.log
-            ${{ runner.temp }}/phase2-canonical-failure.log
-            ${{ runner.temp }}/phase2-readiness-delta.log
+            ${{ runner.temp }}/phase2-canonical-pass.log
+            ${{ runner.temp }}/phase2-bounded-delta.log
           if-no-files-found: warn
           retention-days: 7
 
