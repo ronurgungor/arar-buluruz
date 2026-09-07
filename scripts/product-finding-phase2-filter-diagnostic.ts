@@ -150,7 +150,9 @@ async function recordState(page: Page, label: string, errors: string[]): Promise
       url: page.url(),
       drawerDialogs: await page.getByRole("dialog").count(),
       automobilePressed:
-        (await automobile.count()) > 0 ? await automobile.first().getAttribute("aria-pressed") : null,
+        (await automobile.count()) > 0
+          ? await automobile.first().getAttribute("aria-pressed")
+          : null,
       yearMinCount: await page.getByLabel("Model yılı minimum", { exact: true }).count(),
       yearMaxCount: await page.getByLabel("Model yılı maksimum", { exact: true }).count(),
       kmMinCount: await page.getByLabel("Kilometre minimum", { exact: true }).count(),
@@ -239,13 +241,18 @@ async function runSellerCompatibilityBuyer(): Promise<boolean> {
     const ownerPage = await createPage(ownerContext, errors);
     const fixture = await submitAutomobile(ownerPage, 53);
 
-    const compatibilityContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const compatibilityContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+    });
     const compatibilityPage = await createPage(compatibilityContext, errors);
     for (const query of ["b150", "b 150"]) {
       await compatibilityPage.goto(`${publicBaseUrl}/ara?q=${encodeURIComponent(query)}`, {
         waitUntil: "networkidle",
       });
-      await compatibilityPage.getByRole("link", { name: new RegExp(fixture.title) }).first().waitFor();
+      await compatibilityPage
+        .getByRole("link", { name: new RegExp(fixture.title) })
+        .first()
+        .waitFor();
     }
     await compatibilityContext.close();
 
@@ -264,7 +271,10 @@ async function runSellerCompatibilityBuyer(): Promise<boolean> {
 
 const sellerThenFreshBuyer = await runFreshBuyerInSellerBrowser();
 const sameUserSellerSearch = await runSameUserPath();
-assert(sameUserSellerSearch, "Actual same-user seller-to-search path failed; this is a runtime defect.");
+assert(
+  sameUserSellerSearch,
+  "Actual same-user seller-to-search path failed; this is a runtime defect.",
+);
 
 let sellerCompatibilityBuyer: boolean | null = null;
 if (sellerThenFreshBuyer) {
