@@ -26,12 +26,18 @@ async function getActiveAutomobileFixture(): Promise<{ id: string; title: string
   });
   assert(response.ok, `Automobile fixture lookup failed: ${response.status}`);
   const rows = (await response.json()) as Array<{ id: string; title: string }>;
-  assert(rows.length === 1 && rows[0], "Expected one active Automobile fixture after canonical failure.");
+  assert(
+    rows.length === 1 && rows[0],
+    "Expected one active Automobile fixture after canonical failure.",
+  );
   return rows[0];
 }
 
 async function waitForFixture(page: Page, title: string): Promise<void> {
-  await page.getByRole("link", { name: new RegExp(title) }).first().waitFor();
+  await page
+    .getByRole("link", { name: new RegExp(title) })
+    .first()
+    .waitFor();
 }
 
 async function recordState(page: Page, label: string): Promise<Record<string, unknown>> {
@@ -41,7 +47,8 @@ async function recordState(page: Page, label: string): Promise<Record<string, un
     url: page.url(),
     drawerDialogs: await page.getByRole("dialog").count(),
     automobileCount: await button.count(),
-    automobilePressed: (await button.count()) > 0 ? await button.first().getAttribute("aria-pressed") : null,
+    automobilePressed:
+      (await button.count()) > 0 ? await button.first().getAttribute("aria-pressed") : null,
     yearMinCount: await page.getByLabel("Model yılı minimum", { exact: true }).count(),
     yearMaxCount: await page.getByLabel("Model yılı maksimum", { exact: true }).count(),
     kmMinCount: await page.getByLabel("Kilometre minimum", { exact: true }).count(),
@@ -73,7 +80,10 @@ async function exerciseFilter(page: Page, label: string): Promise<boolean> {
   const yearMax = page.getByLabel("Model yılı maksimum", { exact: true });
   const kmMax = page.getByLabel("Kilometre maksimum", { exact: true });
   if ((await yearMin.count()) === 0 || (await yearMax.count()) === 0) {
-    await page.screenshot({ path: path.join(resultsDir, `${label}-missing-year.png`), fullPage: true });
+    await page.screenshot({
+      path: path.join(resultsDir, `${label}-missing-year.png`),
+      fullPage: true,
+    });
     return false;
   }
 
@@ -81,13 +91,19 @@ async function exerciseFilter(page: Page, label: string): Promise<boolean> {
   await recordState(page, `${label}-after-year-min`);
   await yearMax.fill("2020");
   const beforeKm = await recordState(page, `${label}-before-km`);
-  await page.screenshot({ path: path.join(resultsDir, `${label}-before-km.png`), fullPage: true });
+  await page.screenshot({
+    path: path.join(resultsDir, `${label}-before-km.png`),
+    fullPage: true,
+  });
   if ((beforeKm.kmMaxCount as number) !== 1 || !beforeKm.kmMaxVisible || !beforeKm.kmMaxEnabled) {
     return false;
   }
 
   await kmMax.fill("120000");
-  assert((await kmMax.inputValue()) === "120000", `${label}: Kilometre maksimum did not retain 120000.`);
+  assert(
+    (await kmMax.inputValue()) === "120000",
+    `${label}: Kilometre maksimum did not retain 120000.`,
+  );
   return true;
 }
 
@@ -122,12 +138,19 @@ try {
   await readyPage.goto(`${publicBaseUrl}/ara?q=b150`, { waitUntil: "networkidle" });
   await waitForFixture(readyPage, fixture.title);
   const readyPassed = await exerciseFilter(readyPage, "phase2-delta-ready");
-  console.log(`PHASE2_DELTA_READY ${readyPassed ? "PASS" : "FAIL"} errors=${JSON.stringify(readyErrors)}`);
+  console.log(
+    `PHASE2_DELTA_READY ${readyPassed ? "PASS" : "FAIL"} errors=${JSON.stringify(readyErrors)}`,
+  );
   await readyContext.close();
 
-  assert(!immediatePassed, "Immediate buyer unexpectedly passed; loader/result readiness is not the trigger.");
+  assert(
+    !immediatePassed,
+    "Immediate buyer unexpectedly passed; loader/result readiness is not the trigger.",
+  );
   assert(readyPassed, "Result-ready buyer did not pass; readiness invariant is insufficient.");
-  console.log("PHASE2_DELTA_PROVEN result-tree readiness is the minimal buyer precondition difference");
+  console.log(
+    "PHASE2_DELTA_PROVEN result-tree readiness is the minimal buyer precondition difference",
+  );
 } finally {
   await browser.close();
 }
