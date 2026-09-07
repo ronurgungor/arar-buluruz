@@ -19,16 +19,6 @@ const monitor = new HarnessMonitor();
 monitor.observePage(page);
 
 try {
-  for (const query of ["b150", "b 150"]) {
-    await page.goto(`${publicBaseUrl}/ara?q=${encodeURIComponent(query)}`, {
-      waitUntil: "networkidle",
-    });
-    await page
-      .getByRole("link", { name: new RegExp(title) })
-      .first()
-      .waitFor();
-  }
-
   await page.goto(`${publicBaseUrl}/ara?q=b150`, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: /^Filtreler/ }).click();
   await page.getByLabel("Filtre il", { exact: true }).selectOption("Tekirdağ");
@@ -141,6 +131,21 @@ try {
     Math.abs((await page.evaluate(() => window.scrollY)) - resultsScrollY) <= 5,
     "Back did not restore the previous results scroll position.",
   );
+
+  const compactContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  try {
+    const compactPage = await compactContext.newPage();
+    monitor.observePage(compactPage);
+    await compactPage.goto(`${publicBaseUrl}/ara?q=${encodeURIComponent("b 150")}`, {
+      waitUntil: "networkidle",
+    });
+    await compactPage
+      .getByRole("link", { name: new RegExp(title) })
+      .first()
+      .waitFor();
+  } finally {
+    await compactContext.close();
+  }
 
   await assertResponsiveRoute(page, `${publicBaseUrl}/ara?q=b150`, "/ara", "İlan ara");
   await assertResponsiveRoute(page, `${publicBaseUrl}/ilan/${listingId}`, "/ilan/$id", title);
