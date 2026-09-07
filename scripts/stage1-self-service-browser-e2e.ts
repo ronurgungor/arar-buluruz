@@ -1,12 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { deflateSync } from "node:zlib";
-import {
-  chromium,
-  type Browser,
-  type Page,
-  type Response as PlaywrightResponse,
-} from "playwright";
+import { chromium, type Browser, type Page, type Response as PlaywrightResponse } from "playwright";
 
 const publicBaseUrl = process.env.PUBLIC_BASE_URL ?? "http://127.0.0.1:4173";
 const founderBaseUrl = process.env.FOUNDER_BASE_URL ?? "http://127.0.0.1:4175";
