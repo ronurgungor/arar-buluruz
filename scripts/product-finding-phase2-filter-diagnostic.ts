@@ -32,7 +32,10 @@ try {
     controls: Array.from(document.querySelectorAll<HTMLElement>("[aria-label]")).map((element) => ({
       tag: element.tagName,
       label: element.getAttribute("aria-label"),
-      value: element instanceof HTMLInputElement || element instanceof HTMLSelectElement ? element.value : null,
+      value:
+        element instanceof HTMLInputElement || element instanceof HTMLSelectElement
+          ? element.value
+          : null,
       disabled:
         element instanceof HTMLInputElement || element instanceof HTMLSelectElement
           ? element.disabled
@@ -40,7 +43,12 @@ try {
     })),
     automobileButtons: Array.from(document.querySelectorAll("button")).flatMap((element) =>
       element.textContent?.trim() === "Otomobil"
-        ? [{ pressed: element.getAttribute("aria-pressed"), state: element.getAttribute("data-state") }]
+        ? [
+            {
+              pressed: element.getAttribute("aria-pressed"),
+              state: element.getAttribute("data-state"),
+            },
+          ]
         : [],
     ),
   }));
