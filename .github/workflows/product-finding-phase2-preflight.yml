@@ -9,8 +9,8 @@ permissions:
   contents: write
 
 jobs:
-  patch-late-buyer:
-    if: github.event.head_commit.message == 'Trigger late buyer creation patch'
+  patch-formatting:
+    if: github.event.head_commit.message == 'Trigger harness formatting patch'
     runs-on: ubuntu-latest
     steps:
       - name: Check out branch
@@ -19,205 +19,26 @@ jobs:
           ref: agent/product-finding-phase2
           fetch-depth: 0
 
-      - name: Apply exact harness-only patch
+      - name: Fix exact harness indentation
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
           path = Path("scripts/stage1-self-service-browser-e2e.ts")
           text = path.read_text(encoding="utf-8")
-
-          old = '''const browser = await chromium.launch({ headless: true });
-          const ownerContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
-          const compatibilityContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
-          const buyerContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
-          const otherContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
-          const staleContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
-          const ownerPage = await ownerContext.newPage();
-          const compatibilityPage = await compatibilityContext.newPage();
-          const buyerPage = await buyerContext.newPage();
-          const otherSellerPage = await otherContext.newPage();
-          const staleSellerPage = await staleContext.newPage();
-          const founderPage = await ownerContext.newPage();
-          const runtimeErrors: string[] = [];
-          const privilegedBrowserMutations: string[] = [];
-          const assetFailures: string[] = [];
-
-          for (const page of [
-            ownerPage,
-            compatibilityPage,
-            buyerPage,
-            otherSellerPage,
-            staleSellerPage,
-            founderPage,
-          ]) {
-            page.on("pageerror", (error) => runtimeErrors.push(`pageerror: ${error.message}`));
-            page.on("console", (message) => {
-              if (message.type() !== "error") return;
-              const text = message.text();
-              const statusMatch = text.match(
-                /^Failed to load resource: the server responded with a status of (401|403|404)\\b/,
-              );
-              if (statusMatch) {
-                const status = Number(statusMatch[1]) as ExpectedHttpFailureStatus;
-                if (consumeExpectedHttpFailureConsoleError(page, status)) return;
-              }
-              runtimeErrors.push(`console: ${text}`);
-            });
-            page.on("response", (response: PlaywrightResponse) => {
-              const url = response.url();
-              if (response.status() === 401 || response.status() === 403 || response.status() === 404) {
-                if (!consumeExpectedHttpFailureResponse(page, response)) {
-                  runtimeErrors.push(
-                    `unexpected HTTP ${response.status()}: ${response.request().method()} ${new URL(url).pathname}`,
-                  );
-                }
-              }
-              if (
-                (url.includes("/assets/") || /\\.(?:css|js)(?:\\?|$)/.test(url)) &&
-                response.status() >= 400
-              ) {
-                assetFailures.push(`${response.status()} ${url}`);
-              }
-            });
-            page.on("request", (request) => {
-              if (!request.url().startsWith(backendOrigin)) return;
-              const url = new URL(request.url());
-              const sensitive =
-                (url.pathname === "/rest/v1/listings" && request.method() !== "GET") ||
-                url.pathname.endsWith("/rpc/register_sanitized_listing_photo") ||
-                url.pathname.endsWith("/rpc/get_listing_photo_inventory") ||
-                url.pathname.endsWith("/rpc/complete_and_publish_listing_submission") ||
-                (url.pathname.startsWith("/storage/v1/object/listing_photos") &&
-                  !url.pathname.startsWith("/storage/v1/object/sign/listing_photos") &&
-                  request.method() !== "GET");
-              if (sensitive) privilegedBrowserMutations.push(`${request.method()} ${url.pathname}`);
-            });
-          }
-          '''
-
-          new = '''const browser = await chromium.launch({ headless: true });
-          const ownerContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
-          const compatibilityContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
-          const otherContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
-          const staleContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
-          const ownerPage = await ownerContext.newPage();
-          const compatibilityPage = await compatibilityContext.newPage();
-          const otherSellerPage = await otherContext.newPage();
-          const staleSellerPage = await staleContext.newPage();
-          const founderPage = await ownerContext.newPage();
-          const runtimeErrors: string[] = [];
-          const privilegedBrowserMutations: string[] = [];
-          const assetFailures: string[] = [];
-
-          function observePage(page: Page): void {
-            page.on("pageerror", (error) => runtimeErrors.push(`pageerror: ${error.message}`));
-            page.on("console", (message) => {
-              if (message.type() !== "error") return;
-              const text = message.text();
-              const statusMatch = text.match(
-                /^Failed to load resource: the server responded with a status of (401|403|404)\\b/,
-              );
-              if (statusMatch) {
-                const status = Number(statusMatch[1]) as ExpectedHttpFailureStatus;
-                if (consumeExpectedHttpFailureConsoleError(page, status)) return;
-              }
-              runtimeErrors.push(`console: ${text}`);
-            });
-            page.on("response", (response: PlaywrightResponse) => {
-              const url = response.url();
-              if (response.status() === 401 || response.status() === 403 || response.status() === 404) {
-                if (!consumeExpectedHttpFailureResponse(page, response)) {
-                  runtimeErrors.push(
-                    `unexpected HTTP ${response.status()}: ${response.request().method()} ${new URL(url).pathname}`,
-                  );
-                }
-              }
-              if (
-                (url.includes("/assets/") || /\\.(?:css|js)(?:\\?|$)/.test(url)) &&
-                response.status() >= 400
-              ) {
-                assetFailures.push(`${response.status()} ${url}`);
-              }
-            });
-            page.on("request", (request) => {
-              if (!request.url().startsWith(backendOrigin)) return;
-              const url = new URL(request.url());
-              const sensitive =
-                (url.pathname === "/rest/v1/listings" && request.method() !== "GET") ||
-                url.pathname.endsWith("/rpc/register_sanitized_listing_photo") ||
-                url.pathname.endsWith("/rpc/get_listing_photo_inventory") ||
-                url.pathname.endsWith("/rpc/complete_and_publish_listing_submission") ||
-                (url.pathname.startsWith("/storage/v1/object/listing_photos") &&
-                  !url.pathname.startsWith("/storage/v1/object/sign/listing_photos") &&
-                  request.method() !== "GET");
-              if (sensitive) privilegedBrowserMutations.push(`${request.method()} ${url.pathname}`);
-            });
-          }
-
-          for (const page of [
-            ownerPage,
-            compatibilityPage,
-            otherSellerPage,
-            staleSellerPage,
-            founderPage,
-          ]) {
-            observePage(page);
-          }
-          '''
-
+          old = "  await compatibilityPage.close();\nawait compatibilityContext.close();\n"
+          new = "  await compatibilityPage.close();\n  await compatibilityContext.close();\n"
           if text.count(old) != 1:
-              raise SystemExit(f"Expected harness setup block exactly once, found {text.count(old)}")
-          text = text.replace(old, new, 1)
-
-          old = '''  await compatibilityPage.close();
-
-            await buyerPage.goto(publicBaseUrl + "/ara?q=b150", { waitUntil: "networkidle" });
-          '''
-          new = '''  await compatibilityPage.close();
-          await compatibilityContext.close();
-
-            const buyerContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
-            const buyerPage = await buyerContext.newPage();
-            observePage(buyerPage);
-
-            await buyerPage.goto(publicBaseUrl + "/ara?q=b150", { waitUntil: "networkidle" });
-          '''
-          if text.count(old) != 1:
-              raise SystemExit(f"Expected buyer journey start exactly once, found {text.count(old)}")
-          text = text.replace(old, new, 1)
-
-          old = '''} finally {
-            await ownerContext.close();
-            await compatibilityContext.close();
-            await buyerContext.close();
-            await otherContext.close();
-            await browser.close();
-          }
-          '''
-          new = '''} finally {
-            await ownerContext.close();
-            await compatibilityContext.close();
-            await otherContext.close();
-            await browser.close();
-          }
-          '''
-          if text.count(old) != 1:
-              raise SystemExit(f"Expected cleanup block exactly once, found {text.count(old)}")
-          text = text.replace(old, new, 1)
-
-          path.write_text(text, encoding="utf-8")
+              raise SystemExit(f"Expected indentation target once, found {text.count(old)}")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
           PY
-
           git diff --check
-          git diff -- scripts/stage1-self-service-browser-e2e.ts
 
-      - name: Commit harness patch
+      - name: Commit formatting fix
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add scripts/stage1-self-service-browser-e2e.ts
-          git commit -m "Create buyer after compatibility smoke"
+          git commit -m "Format late buyer harness isolation"
           git push origin HEAD:agent/product-finding-phase2
