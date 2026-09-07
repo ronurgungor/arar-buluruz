@@ -34,7 +34,10 @@ async function getActiveAutomobileFixture(): Promise<{ id: string; title: string
 }
 
 async function waitForFixture(page: Page, title: string): Promise<void> {
-  await page.getByRole("link", { name: new RegExp(title) }).first().waitFor();
+  await page
+    .getByRole("link", { name: new RegExp(title) })
+    .first()
+    .waitFor();
 }
 
 async function fillCanonicalFilters(page: Page): Promise<void> {
@@ -55,7 +58,10 @@ async function fillCanonicalFilters(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Otomatik", exact: true }).click();
 }
 
-async function applyAndRoundTripDetail(page: Page, fixture: { id: string; title: string }): Promise<void> {
+async function applyAndRoundTripDetail(
+  page: Page,
+  fixture: { id: string; title: string },
+): Promise<void> {
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
   const result = page.getByRole("link", { name: new RegExp(fixture.title) }).first();
   await result.waitFor();
