@@ -83,11 +83,7 @@ async function exerciseFilter(page: Page, label: string, errors: string[]): Prom
   return (await kmMax.inputValue()) === "120000";
 }
 
-async function createPage(
-  context: BrowserContext,
-  errors: string[],
-  url?: string,
-): Promise<Page> {
+async function createPage(context: BrowserContext, errors: string[], url?: string): Promise<Page> {
   const page = await context.newPage();
   observe(page, errors);
   if (url) await page.goto(url, { waitUntil: "networkidle" });
@@ -103,11 +99,7 @@ async function runCase(label: string, setup: Setup): Promise<boolean> {
   try {
     setupContexts.push(...(await setup(browser, errors)));
     const buyerContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
-    const buyerPage = await createPage(
-      buyerContext,
-      errors,
-      `${publicBaseUrl}/ara?q=b150`,
-    );
+    const buyerPage = await createPage(buyerContext, errors, `${publicBaseUrl}/ara?q=b150`);
     const passed = await exerciseFilter(buyerPage, label, errors);
     console.log(
       `PHASE2_PRECONDITION_RESULT ${JSON.stringify({ label, passed, errors, contextCount: browser.contexts().length })}`,
