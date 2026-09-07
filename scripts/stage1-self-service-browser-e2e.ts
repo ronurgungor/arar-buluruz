@@ -525,10 +525,12 @@ function expectHref(actual: string | null, expected: string): void {
 
 const browser = await chromium.launch({ headless: true });
 const ownerContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+const compatibilityContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const buyerContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const otherContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const staleContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const ownerPage = await ownerContext.newPage();
+const compatibilityPage = await compatibilityContext.newPage();
 const buyerPage = await buyerContext.newPage();
 const otherSellerPage = await otherContext.newPage();
 const staleSellerPage = await staleContext.newPage();
@@ -537,7 +539,14 @@ const runtimeErrors: string[] = [];
 const privilegedBrowserMutations: string[] = [];
 const assetFailures: string[] = [];
 
-for (const page of [ownerPage, buyerPage, otherSellerPage, staleSellerPage, founderPage]) {
+for (const page of [
+  ownerPage,
+  compatibilityPage,
+  buyerPage,
+  otherSellerPage,
+  staleSellerPage,
+  founderPage,
+]) {
   page.on("pageerror", (error) => runtimeErrors.push(`pageerror: ${error.message}`));
   page.on("console", (message) => {
     if (message.type() !== "error") return;
@@ -583,11 +592,11 @@ for (const page of [ownerPage, buyerPage, otherSellerPage, staleSellerPage, foun
 }
 
 try {
-  await buyerPage.goto(publicBaseUrl, { waitUntil: "networkidle" });
+  await compatibilityPage.goto(publicBaseUrl, { waitUntil: "networkidle" });
   await assertResponsiveRoute(ownerPage, `${publicBaseUrl}/ilan-ver`, "/ilan-ver", "İlan Ver");
   await assertAnonDirectWritesDenied();
   assert(
-    (await buyerPage.locator("[data-ad-placement]").count()) === 0,
+    (await compatibilityPage.locator("[data-ad-placement]").count()) === 0,
     "Disabled home ad slot left DOM.",
   );
 
@@ -642,13 +651,14 @@ try {
   const originalObjectPath = publicManifest[0].object_path;
 
   for (const query of ["b150", "b 150"]) {
-    await buyerPage.goto(`${publicBaseUrl}/ara?q=${encodeURIComponent(query)}`, {
+    await compatibilityPage.goto(`${publicBaseUrl}/ara?q=${encodeURIComponent(query)}`, {
       waitUntil: "networkidle",
     });
-    const result = buyerPage.getByRole("link", { name: new RegExp(title) }).first();
+    const result = compatibilityPage.getByRole("link", { name: new RegExp(title) }).first();
     await result.waitFor();
-    await buyerPage.getByText("Ücretsiz", { exact: true }).first().waitFor();
+    await compatibilityPage.getByText("Ücretsiz", { exact: true }).first().waitFor();
   }
+  await compatibilityPage.close();
 
   await buyerPage.goto(publicBaseUrl + "/ara?q=b150", { waitUntil: "networkidle" });
   await buyerPage.getByRole("button", { name: /^Filtreler/ }).click();
@@ -1086,6 +1096,7 @@ try {
   );
 } finally {
   await ownerContext.close();
+  await compatibilityContext.close();
   await buyerContext.close();
   await otherContext.close();
   await browser.close();
