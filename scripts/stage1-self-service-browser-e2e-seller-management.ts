@@ -40,10 +40,23 @@ const founderPage = await ownerContext.newPage();
 const monitor = new HarnessMonitor();
 for (const page of [ownerPage, otherPage, stalePage, founderPage]) monitor.observePage(page);
 
-async function assertDetailUnavailable(page: Page, targetId: string, targetTitle: string): Promise<void> {
-  monitor.expectHttpFailureOnce(page, 404, "GET", `/ilan/${targetId}`, "inactive listing detail stays hidden");
+async function assertDetailUnavailable(
+  page: Page,
+  targetId: string,
+  targetTitle: string,
+): Promise<void> {
+  monitor.expectHttpFailureOnce(
+    page,
+    404,
+    "GET",
+    `/ilan/${targetId}`,
+    "inactive listing detail stays hidden",
+  );
   await page.goto(`${publicBaseUrl}/ilan/${targetId}`, { waitUntil: "networkidle" });
-  assert((await page.getByRole("heading", { level: 1, name: targetTitle }).count()) === 0, "Inactive listing detail remained publicly renderable.");
+  assert(
+    (await page.getByRole("heading", { level: 1, name: targetTitle }).count()) === 0,
+    "Inactive listing detail remained publicly renderable.",
+  );
 }
 
 try {
@@ -53,7 +66,9 @@ try {
   await assertResponsiveRoute(ownerPage, `${publicBaseUrl}/ilanlarim`, "/ilanlarim", "İlanlarım");
   await waitForSellerResolvedState(ownerPage, "inventory", listingId);
 
-  const originalSessionCookie = (await ownerContext.cookies()).find((cookie) => cookie.name === "arar_seller_session");
+  const originalSessionCookie = (await ownerContext.cookies()).find(
+    (cookie) => cookie.name === "arar_seller_session",
+  );
   assert(originalSessionCookie, "Restored seller session cookie was not stored by the browser.");
   assert(originalSessionCookie.httpOnly, "Seller session cookie is not HttpOnly.");
   assert(originalSessionCookie.secure, "Seller session cookie is not Secure.");
@@ -66,7 +81,9 @@ try {
   await openOwnerListings(ownerPage);
   await waitForSellerResolvedState(ownerPage, "recovery");
   assert(
-    (await ownerPage.evaluate(() => Object.keys(window.localStorage).some((key) => key.includes("seller-phone")))) === false,
+    (await ownerPage.evaluate(() =>
+      Object.keys(window.localStorage).some((key) => key.includes("seller-phone")),
+    )) === false,
     "Seller phone remains coupled to localStorage.",
   );
   ownerRecoveryCode = await recoverOwnerListings(ownerPage, ownerRecoveryCode);
@@ -90,7 +107,11 @@ try {
     form.set("action", "seller_recover");
     form.set("recoveryCode", code);
     form.set("replacementRecoveryCode", `ABR1.${randomPart(12)}.${randomPart(24)}`);
-    const response = await fetch("/ilanlarim", { method: "POST", body: form, credentials: "same-origin" });
+    const response = await fetch("/ilanlarim", {
+      method: "POST",
+      body: form,
+      credentials: "same-origin",
+    });
     return { status: response.status, body: await response.json() };
   }, privateState.recoveryCode);
   assert(
@@ -108,7 +129,11 @@ try {
   const afterLogout = await ownerPage.evaluate(async () => {
     const form = new FormData();
     form.set("action", "seller_list");
-    const response = await fetch("/ilanlarim", { method: "POST", body: form, credentials: "same-origin" });
+    const response = await fetch("/ilanlarim", {
+      method: "POST",
+      body: form,
+      credentials: "same-origin",
+    });
     return response.status;
   });
   assert(afterLogout === 401, `Revoked logout session unexpectedly authorized: ${afterLogout}`);
@@ -135,14 +160,27 @@ try {
   });
   await openOwnerListings(otherPage);
   await waitForSellerResolvedState(otherPage, "inventory", otherSubmission.listingId);
-  assert((await otherPage.getByText(title, { exact: true }).count()) === 0, "Seller B inferred Seller A's listing.");
+  assert(
+    (await otherPage.getByText(title, { exact: true }).count()) === 0,
+    "Seller B inferred Seller A's listing.",
+  );
 
-  monitor.expectHttpFailureOnce(otherPage, 403, "POST", "/ilanlarim", "cross-seller_id mutation is denied");
+  monitor.expectHttpFailureOnce(
+    otherPage,
+    403,
+    "POST",
+    "/ilanlarim",
+    "cross-seller_id mutation is denied",
+  );
   const denied = await otherPage.evaluate(async (targetListingId) => {
     const form = new FormData();
     form.set("action", "seller_unpublish");
     form.set("listingId", targetListingId);
-    const response = await fetch("/ilanlarim", { method: "POST", body: form, credentials: "same-origin" });
+    const response = await fetch("/ilanlarim", {
+      method: "POST",
+      body: form,
+      credentials: "same-origin",
+    });
     return { status: response.status, body: await response.json() };
   }, listingId);
   assert(
@@ -156,7 +194,10 @@ try {
   await ownerCard.getByRole("button", { name: "Düzenle" }).click();
   await ownerPage.getByLabel("İlanlarım başlık").fill(`${title} güncel`);
   await ownerPage.getByLabel("İlanlarım kategori", { exact: true }).selectOption("electronics");
-  assert((await ownerPage.getByLabel("Marka", { exact: true }).count()) === 0, "Category transition retained incompatible automobile attributes.");
+  assert(
+    (await ownerPage.getByLabel("Marka", { exact: true }).count()) === 0,
+    "Category transition retained incompatible automobile attributes.",
+  );
   await ownerPage.getByLabel("Ürün tipi", { exact: true }).selectOption("phone");
   await ownerPage.getByLabel("Marka", { exact: true }).fill("Samsung");
   await ownerPage.getByLabel("Model", { exact: true }).fill("Galaxy S21");
@@ -187,12 +228,22 @@ try {
     `Seller edit did not transition/persist structured fields: ${JSON.stringify(updatedRows)}`,
   );
 
-  monitor.expectHttpFailureOnce(otherPage, 403, "POST", "/ilanlarim", "matching public phone does not transfer ownership");
+  monitor.expectHttpFailureOnce(
+    otherPage,
+    403,
+    "POST",
+    "/ilanlarim",
+    "matching public phone does not transfer ownership",
+  );
   const samePhoneDenied = await otherPage.evaluate(async (targetListingId) => {
     const form = new FormData();
     form.set("action", "seller_unpublish");
     form.set("listingId", targetListingId);
-    const response = await fetch("/ilanlarim", { method: "POST", body: form, credentials: "same-origin" });
+    const response = await fetch("/ilanlarim", {
+      method: "POST",
+      body: form,
+      credentials: "same-origin",
+    });
     return response.status;
   }, listingId);
   assert(samePhoneDenied === 403, "Matching public phone transferred seller authorization.");
@@ -200,20 +251,38 @@ try {
   const updatedCard = ownerPage.getByTestId(`seller-listing-${listingId}`);
   await updatedCard.getByRole("button", { name: "Yayından kaldır" }).click();
   await ownerPage.getByText("İlan yayından kaldırıldı.", { exact: true }).waitFor();
-  assert((await anonListingRows(listingId)).length === 0, "Seller-unpublished listing remained public.");
-  assert((await publicPhotoManifest(listingId)).length === 0, "Seller-unpublished photo remained public.");
+  assert(
+    (await anonListingRows(listingId)).length === 0,
+    "Seller-unpublished listing remained public.",
+  );
+  assert(
+    (await publicPhotoManifest(listingId)).length === 0,
+    "Seller-unpublished photo remained public.",
+  );
   await assertSignedObjectUnavailable(originalObjectPath);
   await assertDetailUnavailable(ownerPage, listingId, `${title} güncel`);
   await openOwnerListings(ownerPage);
   await waitForSellerResolvedState(ownerPage, "inventory", listingId);
 
-  await ownerPage.getByTestId(`seller-listing-${listingId}`).getByRole("button", { name: "Satıldı" }).click();
+  await ownerPage
+    .getByTestId(`seller-listing-${listingId}`)
+    .getByRole("button", { name: "Satıldı" })
+    .click();
   await ownerPage.getByText("İlan satıldı olarak işaretlendi.", { exact: true }).waitFor();
-  await ownerPage.getByTestId(`seller-listing-${listingId}`).getByRole("button", { name: "Sil" }).click();
+  await ownerPage
+    .getByTestId(`seller-listing-${listingId}`)
+    .getByRole("button", { name: "Sil" })
+    .click();
   await ownerPage.getByRole("button", { name: "Evet, sil" }).click();
   await ownerPage.getByText("İlan silindi.", { exact: true }).waitFor();
-  assert((await anonListingRows(listingId)).length === 0, "Seller-deleted listing row remained public.");
-  assert((await privilegedPhotoInventory(listingId)).length === 0, "Seller delete left photo metadata.");
+  assert(
+    (await anonListingRows(listingId)).length === 0,
+    "Seller-deleted listing row remained public.",
+  );
+  assert(
+    (await privilegedPhotoInventory(listingId)).length === 0,
+    "Seller delete left photo metadata.",
+  );
   await assertStorageObjectDeleted(originalObjectPath);
 
   const founderTitle = `Founder takedown phone ${Date.now()}`;
@@ -232,29 +301,53 @@ try {
     withDescription: true,
   });
   const founderInventory = await privilegedPhotoInventory(founderSubmission.listingId);
-  assert(founderInventory.length === 1, "Founder-takedown fixture did not retain one trusted photo.");
+  assert(
+    founderInventory.length === 1,
+    "Founder-takedown fixture did not retain one trusted photo.",
+  );
   const founderObjectPath = founderInventory[0].object_path;
-  assert((await anonListingRows(founderSubmission.listingId)).length === 1, "Founder fixture did not auto-publish.");
+  assert(
+    (await anonListingRows(founderSubmission.listingId)).length === 1,
+    "Founder fixture did not auto-publish.",
+  );
 
   await founderPage.goto(`${founderBaseUrl}/kurucu`, { waitUntil: "networkidle" });
   await founderPage.getByRole("heading", { level: 1, name: "İlan moderasyonu" }).waitFor();
   const founderCard = founderPage.getByTestId(`moderation-listing-${founderSubmission.listingId}`);
   await founderCard.waitFor();
   await founderCard.getByText("Yayında", { exact: true }).waitFor();
-  assert((await founderCard.getByRole("button", { name: "Yayınla" }).count()) === 0, "Founder UI still exposed normal publication as a moderation step.");
-  assert((await founderCard.getByRole("button", { name: "Reddet" }).count()) === 0, "Founder UI still exposed pending rejection as the normal product path.");
+  assert(
+    (await founderCard.getByRole("button", { name: "Yayınla" }).count()) === 0,
+    "Founder UI still exposed normal publication as a moderation step.",
+  );
+  assert(
+    (await founderCard.getByRole("button", { name: "Reddet" }).count()) === 0,
+    "Founder UI still exposed pending rejection as the normal product path.",
+  );
   await founderCard.getByRole("button", { name: "Yayından kaldır" }).click();
   await founderPage.getByText("İlan yayından kaldırıldı.", { exact: true }).waitFor();
-  assert((await anonListingRows(founderSubmission.listingId)).length === 0, "Founder takedown remained public.");
-  assert((await publicPhotoManifest(founderSubmission.listingId)).length === 0, "Founder takedown photo remained public.");
+  assert(
+    (await anonListingRows(founderSubmission.listingId)).length === 0,
+    "Founder takedown remained public.",
+  );
+  assert(
+    (await publicPhotoManifest(founderSubmission.listingId)).length === 0,
+    "Founder takedown photo remained public.",
+  );
   await assertSignedObjectUnavailable(founderObjectPath);
   await assertDetailUnavailable(ownerPage, founderSubmission.listingId, founderTitle);
 
   await founderPage.goto(`${founderBaseUrl}/kurucu`, { waitUntil: "networkidle" });
-  await founderPage.getByTestId(`moderation-listing-${founderSubmission.listingId}`).getByRole("button", { name: "Sil" }).click();
+  await founderPage
+    .getByTestId(`moderation-listing-${founderSubmission.listingId}`)
+    .getByRole("button", { name: "Sil" })
+    .click();
   await founderPage.getByText("İlan ve ilişkili fotoğraflar silindi.", { exact: true }).waitFor();
 
-  await ownerPage.screenshot({ path: path.join(resultsDir, "phase2-seller-management.png"), fullPage: true });
+  await ownerPage.screenshot({
+    path: path.join(resultsDir, "phase2-seller-management.png"),
+    fullPage: true,
+  });
   monitor.assertClean();
   console.log("Phase 2 seller management and security process passed.");
 } finally {

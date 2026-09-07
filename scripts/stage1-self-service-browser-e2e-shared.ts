@@ -8,7 +8,8 @@ export const founderBaseUrl = process.env.FOUNDER_BASE_URL ?? "http://127.0.0.1:
 export const backendOrigin = process.env.BACKEND_ORIGIN ?? "";
 export const anonKey = process.env.BACKEND_ANON_KEY ?? "";
 export const serviceRoleKey = process.env.BACKEND_SERVICE_ROLE_KEY ?? "";
-export const handoffDir = process.env.PHASE2_HANDOFF_DIR ?? path.resolve("test-results/phase2-handoff");
+export const handoffDir =
+  process.env.PHASE2_HANDOFF_DIR ?? path.resolve("test-results/phase2-handoff");
 export const publicHandoffPath = path.join(handoffDir, "public.json");
 export const privateHandoffPath = path.join(handoffDir, "private.json");
 export const resultsDir = path.resolve("test-results/stage1-self-service");
@@ -186,10 +187,7 @@ export class HarnessMonitor {
           this.runtimeErrors.push(`unexpected HTTP ${status}: ${method} ${pathname}`);
         }
       }
-      if (
-        (url.includes("/assets/") || /\.(?:css|js)(?:\?|$)/.test(url)) &&
-        status >= 400
-      ) {
+      if ((url.includes("/assets/") || /\.(?:css|js)(?:\?|$)/.test(url)) && status >= 400) {
         this.assetFailures.push(`${status} ${url}`);
       }
     });
@@ -225,8 +223,14 @@ export class HarnessMonitor {
         .map((item) => `${item.status} (${item.label})`)
         .join(" | ")}`,
     );
-    assert(this.assetFailures.length === 0, `CSS/JS asset failures: ${this.assetFailures.join(" | ")}`);
-    assert(this.runtimeErrors.length === 0, `Browser runtime errors: ${this.runtimeErrors.join(" | ")}`);
+    assert(
+      this.assetFailures.length === 0,
+      `CSS/JS asset failures: ${this.assetFailures.join(" | ")}`,
+    );
+    assert(
+      this.runtimeErrors.length === 0,
+      `Browser runtime errors: ${this.runtimeErrors.join(" | ")}`,
+    );
   }
 }
 
@@ -277,7 +281,9 @@ export async function anonRowsByTitle(title: string): Promise<Array<{ id: string
   return (await response.json()) as Array<{ id: string }>;
 }
 
-export async function publicPhotoManifest(listingId: string): Promise<Array<{ object_path: string }>> {
+export async function publicPhotoManifest(
+  listingId: string,
+): Promise<Array<{ object_path: string }>> {
   requirePublicBackend();
   const response = await fetch(`${backendOrigin}/rest/v1/rpc/get_public_listing_photos`, {
     method: "POST",
@@ -316,7 +322,10 @@ export async function assertAnonDirectWritesDenied(): Promise<void> {
       status: "pending",
     }),
   });
-  assert(!directInsert.ok, `Anonymous direct listing INSERT unexpectedly succeeded: ${directInsert.status}`);
+  assert(
+    !directInsert.ok,
+    `Anonymous direct listing INSERT unexpectedly succeeded: ${directInsert.status}`,
+  );
 
   const directStorage = await fetch(
     `${backendOrigin}/storage/v1/object/listing_photos/forbidden/direct-write.webp`,
@@ -331,17 +340,23 @@ export async function assertAnonDirectWritesDenied(): Promise<void> {
       body: new Uint8Array([0x52, 0x49, 0x46, 0x46]),
     },
   );
-  assert(!directStorage.ok, `Anonymous direct Storage write unexpectedly succeeded: ${directStorage.status}`);
+  assert(
+    !directStorage.ok,
+    `Anonymous direct Storage write unexpectedly succeeded: ${directStorage.status}`,
+  );
 }
 
 export async function assertSignedObjectUnavailable(objectPath: string): Promise<void> {
   requirePublicBackend();
   const encoded = objectPath.split("/").map(encodeURIComponent).join("/");
-  const response = await fetch(`${backendOrigin}/storage/v1/object/sign/listing_photos/${encoded}`, {
-    method: "POST",
-    headers: anonHeaders(),
-    body: JSON.stringify({ expiresIn: 60 }),
-  });
+  const response = await fetch(
+    `${backendOrigin}/storage/v1/object/sign/listing_photos/${encoded}`,
+    {
+      method: "POST",
+      headers: anonHeaders(),
+      body: JSON.stringify({ expiresIn: 60 }),
+    },
+  );
   assert(!response.ok, `Inactive/private photo unexpectedly remained signable: ${response.status}`);
 }
 
@@ -437,27 +452,39 @@ export async function submitListing(
     }
     for (const [key, label] of Object.entries(selectFields)) {
       const value = attributes[key];
-      if (value !== undefined) await page.getByLabel(label, { exact: true }).selectOption(String(value));
+      if (value !== undefined)
+        await page.getByLabel(label, { exact: true }).selectOption(String(value));
     }
   }
   await page.getByLabel("Başlık", { exact: true }).fill(input.title);
   if (input.withCondition !== false) {
     await page.getByLabel("Durum", { exact: true }).selectOption("good");
   } else {
-    assert((await page.getByLabel("Durum", { exact: true }).inputValue()) === "", "Optional condition unexpectedly started with a value.");
+    assert(
+      (await page.getByLabel("Durum", { exact: true }).inputValue()) === "",
+      "Optional condition unexpectedly started with a value.",
+    );
   }
   if (input.isFree) {
     await page.getByLabel("Ücretsiz veriyorum", { exact: true }).check();
-    assert((await page.getByLabel("Fiyat (TL)", { exact: true }).inputValue()) === "", "Free state left an active-looking typed price.");
+    assert(
+      (await page.getByLabel("Fiyat (TL)", { exact: true }).inputValue()) === "",
+      "Free state left an active-looking typed price.",
+    );
   } else {
     await page.getByLabel("Fiyat (TL)", { exact: true }).fill("1250");
   }
   await page.getByRole("button", { name: /Devam/ }).click();
 
   if (input.withDescription !== false) {
-    await page.getByLabel("Açıklama", { exact: true }).fill("Sentetik ürün kabul testi açıklaması.");
+    await page
+      .getByLabel("Açıklama", { exact: true })
+      .fill("Sentetik ürün kabul testi açıklaması.");
   } else {
-    assert((await page.getByLabel("Açıklama", { exact: true }).inputValue()) === "", "Optional description unexpectedly started with content.");
+    assert(
+      (await page.getByLabel("Açıklama", { exact: true }).inputValue()) === "",
+      "Optional description unexpectedly started with content.",
+    );
   }
   await page.getByLabel("İl", { exact: true }).selectOption(input.province);
   await page.getByLabel("İlçe", { exact: true }).selectOption(input.district);
@@ -465,14 +492,36 @@ export async function submitListing(
 
   await page.getByLabel("İlanda görünecek ad", { exact: true }).fill("Sentetik Satıcı");
   await page.getByLabel("Telefon numarası", { exact: true }).fill(input.phone);
-  assert((await page.getByText("İletişim tercihi", { exact: true }).count()) === 0, "Contact preference selector is still visible.");
-  assert((await page.locator('input[type="checkbox"]').count()) === 0, "Obsolete declaration checkbox is still visible in publication step.");
-  assert((await page.getByText("Telefon numaran ilanda herkese açık görünür.", { exact: true }).count()) === 1, "Public-phone disclosure must be visible exactly once.");
-  assert((await page.getByText(/doğrulanmış telefon|telefonunu doğrula|doğrulama kodu/i).count()) === 0, "Ordinary-goods publication still exposes phone-verification claims.");
-  await page.getByText(/İlanı yayınlayarak/).first().waitFor();
+  assert(
+    (await page.getByText("İletişim tercihi", { exact: true }).count()) === 0,
+    "Contact preference selector is still visible.",
+  );
+  assert(
+    (await page.locator('input[type="checkbox"]').count()) === 0,
+    "Obsolete declaration checkbox is still visible in publication step.",
+  );
+  assert(
+    (await page
+      .getByText("Telefon numaran ilanda herkese açık görünür.", { exact: true })
+      .count()) === 1,
+    "Public-phone disclosure must be visible exactly once.",
+  );
+  assert(
+    (await page.getByText(/doğrulanmış telefon|telefonunu doğrula|doğrulama kodu/i).count()) === 0,
+    "Ordinary-goods publication still exposes phone-verification claims.",
+  );
+  await page
+    .getByText(/İlanı yayınlayarak/)
+    .first()
+    .waitFor();
 
   if (input.expectBootstrap) {
-    monitor.expectUnauthorizedOnce(page, "POST", "/ilan-ver", "initial submission requires seller session");
+    monitor.expectUnauthorizedOnce(
+      page,
+      "POST",
+      "/ilan-ver",
+      "initial submission requires seller session",
+    );
   }
   await page.getByRole("button", { name: "İlanı yayınla" }).click();
 
@@ -481,7 +530,10 @@ export async function submitListing(
     const recovery = page.getByTestId("seller-recovery-code");
     await recovery.waitFor();
     recoveryCode = (await recovery.textContent())?.trim() ?? "";
-    assert(/^ABR1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{32}$/.test(recoveryCode), "Recovery code format is invalid.");
+    assert(
+      /^ABR1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{32}$/.test(recoveryCode),
+      "Recovery code format is invalid.",
+    );
 
     let transientFailure = "";
     let stopProbe = false;
@@ -503,7 +555,10 @@ export async function submitListing(
     await probe;
     assert(!transientFailure, transientFailure);
   } else {
-    assert((await page.getByTestId("seller-recovery-code").count()) === 0, "Existing seller session unexpectedly created another recovery credential.");
+    assert(
+      (await page.getByTestId("seller-recovery-code").count()) === 0,
+      "Existing seller session unexpectedly created another recovery credential.",
+    );
     await page.getByRole("heading", { level: 1, name: "İlanın yayınlandı" }).waitFor();
   }
 
@@ -539,13 +594,22 @@ export async function recoverOwnerListings(page: Page, recoveryCode: string): Pr
   const candidate = page.getByTestId("candidate-seller-recovery-code");
   await candidate.waitFor();
   const candidateCode = (await candidate.textContent())?.trim() ?? "";
-  assert(/^ABR1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{32}$/.test(candidateCode), "Pre-commit recovery candidate format is invalid.");
-  assert((await page.getByTestId("rotated-seller-recovery-code").count()) === 0, "Recovery rotated before the pre-generated candidate was acknowledged.");
+  assert(
+    /^ABR1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{32}$/.test(candidateCode),
+    "Pre-commit recovery candidate format is invalid.",
+  );
+  assert(
+    (await page.getByTestId("rotated-seller-recovery-code").count()) === 0,
+    "Recovery rotated before the pre-generated candidate was acknowledged.",
+  );
   await page.getByRole("button", { name: "Yeni kodu kaydettim, erişimi kurtar" }).click();
   const rotated = page.getByTestId("rotated-seller-recovery-code");
   await rotated.waitFor();
   const nextCode = (await rotated.textContent())?.trim() ?? "";
-  assert(nextCode === candidateCode, "Server recovery did not preserve the pre-generated candidate.");
+  assert(
+    nextCode === candidateCode,
+    "Server recovery did not preserve the pre-generated candidate.",
+  );
   return nextCode;
 }
 

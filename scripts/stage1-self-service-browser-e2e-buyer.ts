@@ -20,8 +20,13 @@ monitor.observePage(page);
 
 try {
   for (const query of ["b150", "b 150"]) {
-    await page.goto(`${publicBaseUrl}/ara?q=${encodeURIComponent(query)}`, { waitUntil: "networkidle" });
-    await page.getByRole("link", { name: new RegExp(title) }).first().waitFor();
+    await page.goto(`${publicBaseUrl}/ara?q=${encodeURIComponent(query)}`, {
+      waitUntil: "networkidle",
+    });
+    await page
+      .getByRole("link", { name: new RegExp(title) })
+      .first()
+      .waitFor();
   }
 
   await page.goto(`${publicBaseUrl}/ara?q=b150`, { waitUntil: "networkidle" });
@@ -42,14 +47,23 @@ try {
   await result.waitFor();
   await page.getByText("2016 · 118.000 km · Otomatik", { exact: true }).waitFor();
   const filteredUrl = new URL(page.url());
-  assert(filteredUrl.searchParams.get("q") === "b150", "Query was not retained in canonical URL state.");
+  assert(
+    filteredUrl.searchParams.get("q") === "b150",
+    "Query was not retained in canonical URL state.",
+  );
   assert(filteredUrl.searchParams.get("category") === "vehicle", "Category was not serialized.");
-  assert(filteredUrl.searchParams.get("productType") === "automobile", "Product type was not serialized.");
+  assert(
+    filteredUrl.searchParams.get("productType") === "automobile",
+    "Product type was not serialized.",
+  );
   assert(filteredUrl.searchParams.get("province") === "Tekirdağ", "Province was not serialized.");
   assert(filteredUrl.searchParams.get("district") === "Çorlu", "District was not serialized.");
   assert(filteredUrl.searchParams.get("priceMin") === "0", "Price min was not serialized.");
   assert(filteredUrl.searchParams.get("priceMax") === "5000", "Price max was not serialized.");
-  const contextual = JSON.parse(filteredUrl.searchParams.get("contextual") ?? "{}") as Record<string, unknown>;
+  const contextual = JSON.parse(filteredUrl.searchParams.get("contextual") ?? "{}") as Record<
+    string,
+    unknown
+  >;
   assert(
     JSON.stringify(contextual.year) === JSON.stringify({ min: 2010, max: 2020 }) &&
       JSON.stringify(contextual.km) === JSON.stringify({ min: null, max: 120000 }) &&
@@ -61,9 +75,15 @@ try {
   await page.getByLabel("Kilometre maksimum", { exact: true }).fill("100000");
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
   await page.getByText("Sonuç bulunamadı", { exact: true }).waitFor();
-  assert((await page.getByRole("link", { name: new RegExp(title) }).count()) === 0, "Active numeric range was silently relaxed.");
+  assert(
+    (await page.getByRole("link", { name: new RegExp(title) }).count()) === 0,
+    "Active numeric range was silently relaxed.",
+  );
   const strictUrl = new URL(page.url());
-  const strictContextual = JSON.parse(strictUrl.searchParams.get("contextual") ?? "{}") as Record<string, unknown>;
+  const strictContextual = JSON.parse(strictUrl.searchParams.get("contextual") ?? "{}") as Record<
+    string,
+    unknown
+  >;
   assert(
     JSON.stringify(strictContextual.km) === JSON.stringify({ min: null, max: 100000 }),
     "Zero-result range was not retained as a hard canonical filter.",
@@ -89,28 +109,45 @@ try {
   await page.getByText("Ücretsiz", { exact: true }).waitFor();
   const hero = page.getByAltText(`${title} fotoğraf 1`);
   const heroSrc = await hero.getAttribute("src");
-  assert(heroSrc?.startsWith(`/api/listing-photo/${listingId}/`), `Public photo bypassed application signing route: ${heroSrc}`);
+  assert(
+    heroSrc?.startsWith(`/api/listing-photo/${listingId}/`),
+    `Public photo bypassed application signing route: ${heroSrc}`,
+  );
   const decoded = await hero.evaluate((image) => ({
     complete: (image as HTMLImageElement).complete,
     width: (image as HTMLImageElement).naturalWidth,
   }));
   assert(decoded.complete && decoded.width > 0, "Application photo did not decode.");
   const contactBar = page.getByTestId("detail-contact-bar");
-  expectHref(await contactBar.getByRole("link", { name: "Ara", exact: true }).getAttribute("href"), `tel:${ownerPhone}`);
   expectHref(
-    await contactBar.getByRole("link", { name: "WhatsApp’tan yaz", exact: true }).getAttribute("href"),
+    await contactBar.getByRole("link", { name: "Ara", exact: true }).getAttribute("href"),
+    `tel:${ownerPhone}`,
+  );
+  expectHref(
+    await contactBar
+      .getByRole("link", { name: "WhatsApp’tan yaz", exact: true })
+      .getAttribute("href"),
     `https://wa.me/${ownerPhone.slice(1)}`,
   );
 
   await page.getByTestId("results-back").click();
   await page.waitForURL(searchUrlBeforeDetail);
-  await page.waitForFunction((expected) => Math.abs(window.scrollY - expected) <= 5, resultsScrollY);
+  await page.waitForFunction(
+    (expected) => Math.abs(window.scrollY - expected) <= 5,
+    resultsScrollY,
+  );
   assert(page.url() === searchUrlBeforeDetail, "Back did not restore the exact search URL.");
-  assert(Math.abs((await page.evaluate(() => window.scrollY)) - resultsScrollY) <= 5, "Back did not restore the previous results scroll position.");
+  assert(
+    Math.abs((await page.evaluate(() => window.scrollY)) - resultsScrollY) <= 5,
+    "Back did not restore the previous results scroll position.",
+  );
 
   await assertResponsiveRoute(page, `${publicBaseUrl}/ara?q=b150`, "/ara", "İlan ara");
   await assertResponsiveRoute(page, `${publicBaseUrl}/ilan/${listingId}`, "/ilan/$id", title);
-  await page.screenshot({ path: path.join(resultsDir, "phase2-buyer-public-state.png"), fullPage: true });
+  await page.screenshot({
+    path: path.join(resultsDir, "phase2-buyer-public-state.png"),
+    fullPage: true,
+  });
   monitor.assertClean();
   console.log("Phase 2 buyer Product Finding process passed.");
 } finally {

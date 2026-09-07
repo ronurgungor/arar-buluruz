@@ -22,7 +22,10 @@ monitor.observePage(page);
 
 try {
   await page.goto(publicBaseUrl, { waitUntil: "networkidle" });
-  assert((await page.locator("[data-ad-placement]").count()) === 0, "Disabled home ad slot left DOM.");
+  assert(
+    (await page.locator("[data-ad-placement]").count()) === 0,
+    "Disabled home ad slot left DOM.",
+  );
   await assertResponsiveRoute(page, `${publicBaseUrl}/ilan-ver`, "/ilan-ver", "İlan Ver");
   await assertAnonDirectWritesDenied();
 
@@ -53,7 +56,10 @@ try {
 
   const rows = await anonListingRows(submission.listingId);
   const row = rows[0];
-  assert(rows.length === 1 && row?.price_is_free === true, "Auto-published listing was not immediately public with Free state.");
+  assert(
+    rows.length === 1 && row?.price_is_free === true,
+    "Auto-published listing was not immediately public with Free state.",
+  );
   assert(
     row?.product_type === "automobile" &&
       row.product_attributes_version === 1 &&
@@ -76,12 +82,19 @@ try {
   );
 
   for (const query of ["b150", "b 150"]) {
-    await page.goto(`${publicBaseUrl}/ara?q=${encodeURIComponent(query)}`, { waitUntil: "networkidle" });
-    await page.getByRole("link", { name: new RegExp(title) }).first().waitFor();
+    await page.goto(`${publicBaseUrl}/ara?q=${encodeURIComponent(query)}`, {
+      waitUntil: "networkidle",
+    });
+    await page
+      .getByRole("link", { name: new RegExp(title) })
+      .first()
+      .waitFor();
     await page.getByText("Ücretsiz", { exact: true }).first().waitFor();
   }
 
-  const sessionCookie = (await context.cookies()).find((cookie) => cookie.name === "arar_seller_session");
+  const sessionCookie = (await context.cookies()).find(
+    (cookie) => cookie.name === "arar_seller_session",
+  );
   assert(sessionCookie, "Opaque seller session cookie was not stored by the browser.");
   assert(sessionCookie.httpOnly, "Seller session cookie is not HttpOnly.");
   assert(sessionCookie.secure, "Seller session cookie is not Secure.");
