@@ -131,7 +131,7 @@ jobs:
 
           bash scripts/pilot-rc-artifact-boundary-check.sh
 
-      - name: Run Phase 2 seller-to-buyer browser journey
+      - name: Run A B C navigation discrimination matrix
         shell: bash
         env:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/phase2-browsers
@@ -184,22 +184,6 @@ jobs:
           }
           trap cleanup EXIT
 
-          dump_readiness_diagnostics() {
-            echo "--- process state ---"
-            ps -o pid,ppid,stat,etime,cmd -p "$public_pid,$founder_pid" || true
-            echo "--- listening sockets ---"
-            ss -ltnp || true
-            echo "--- bounded backend REST probe ---"
-            curl --silent --show-error \
-              --connect-timeout 2 --max-time 5 \
-              -o /dev/null -w 'backend status=%{http_code} total=%{time_total}s\n' \
-              "$api_url/rest/v1/" || true
-            echo "--- public server log ---"
-            cat "$RUNNER_TEMP/phase2-public.log" || true
-            echo "--- founder server log ---"
-            cat "$RUNNER_TEMP/phase2-founder.log" || true
-          }
-
           probe_ready() {
             local label="$1"
             local url="$2"
@@ -216,7 +200,6 @@ jobs:
             done
             if [[ "$ready" != "true" ]]; then
               echo "::error::Readiness probe failed: $label ($url)"
-              dump_readiness_diagnostics
               return 1
             fi
           }
@@ -227,25 +210,29 @@ jobs:
           probe_ready "public seller inventory" "http://127.0.0.1:4173/ilanlarim"
           probe_ready "founder moderation" "http://127.0.0.1:4175/kurucu"
 
-          echo "--- empty-inventory filter diagnostic ---"
-          PUBLIC_BASE_URL=http://127.0.0.1:4173 \
-            bun scripts/product-finding-phase2-filter-diagnostic.ts
-
           set +e
           PUBLIC_BASE_URL=http://127.0.0.1:4173 \
           FOUNDER_BASE_URL=http://127.0.0.1:4175 \
           BACKEND_ORIGIN="$api_url" \
           BACKEND_ANON_KEY="$anon_key" \
           BACKEND_SERVICE_ROLE_KEY="$service_role_key" \
-            bun scripts/stage1-self-service-browser-e2e.ts
-          e2e_status=$?
+            bun scripts/stage1-self-service-browser-e2e.ts \
+              2>&1 | tee "$RUNNER_TEMP/phase2-matrix-a.log"
+          a_status=${PIPESTATUS[0]}
           set -e
 
-          echo "--- post-journey filter diagnostic ---"
-          PUBLIC_BASE_URL=http://127.0.0.1:4173 \
-            bun scripts/product-finding-phase2-filter-diagnostic.ts
+          if [[ "$a_status" -eq 0 ]]; then
+            echo "::error::PHASE2_MATRIX_A unexpectedly passed; expected current hard-goto sequence failure."
+            exit 1
+          fi
+          grep -F "waiting for getByLabel('Kilometre maksimum', { exact: true })" \
+            "$RUNNER_TEMP/phase2-matrix-a.log"
+          echo "PHASE2_MATRIX_A CONFIRMED_FAIL current repeated hard-goto sequence"
 
-          test "$e2e_status" -eq 0
+          PUBLIC_BASE_URL=http://127.0.0.1:4173 \
+          BACKEND_ORIGIN="$api_url" \
+          BACKEND_ANON_KEY="$anon_key" \
+            bun scripts/product-finding-phase2-filter-diagnostic.ts
 
           cleanup
           trap - EXIT
@@ -276,6 +263,7 @@ jobs:
             test-results/stage1-self-service/*.png
             ${{ runner.temp }}/phase2-public.log
             ${{ runner.temp }}/phase2-founder.log
+            ${{ runner.temp }}/phase2-matrix-a.log
           if-no-files-found: warn
           retention-days: 7
 
