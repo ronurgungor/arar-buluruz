@@ -30,7 +30,12 @@ async function enterKmByUserInteraction(value: string) {
     const container = dialogNode?.querySelector(".overflow-y-auto");
     if (!(container instanceof HTMLElement)) return false;
     const rect = container.getBoundingClientRect();
-    return rect.right > 0 && rect.left < window.innerWidth && rect.bottom > 0 && rect.top < window.innerHeight;
+    return (
+      rect.right > 0 &&
+      rect.left < window.innerWidth &&
+      rect.bottom > 0 &&
+      rect.top < window.innerHeight
+    );
   });
   const geometry = await scrollContainer.evaluate((node) => {
     const element = node as HTMLElement;
