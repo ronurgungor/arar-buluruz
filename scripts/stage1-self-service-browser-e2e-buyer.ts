@@ -25,6 +25,13 @@ async function enterKmByUserInteraction(value: string) {
 
   const scrollContainer = dialog.locator(".overflow-y-auto").first();
   await scrollContainer.waitFor({ state: "visible" });
+  await page.waitForFunction(() => {
+    const dialogNode = document.querySelector('[role="dialog"][data-state="open"]');
+    const container = dialogNode?.querySelector(".overflow-y-auto");
+    if (!(container instanceof HTMLElement)) return false;
+    const rect = container.getBoundingClientRect();
+    return rect.right > 0 && rect.left < window.innerWidth && rect.bottom > 0 && rect.top < window.innerHeight;
+  });
   const geometry = await scrollContainer.evaluate((node) => {
     const element = node as HTMLElement;
     const rect = element.getBoundingClientRect();
