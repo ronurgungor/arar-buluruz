@@ -48,9 +48,8 @@ async function enterKmByUserInteraction(value: string) {
       const activeElement = document.activeElement;
       const drawer = container?.closest("[data-vaul-drawer]");
       return {
-        rawScrollCount: document.querySelectorAll(
-          '[data-testid="product-finding-filter-scroll"]',
-        ).length,
+        rawScrollCount: document.querySelectorAll('[data-testid="product-finding-filter-scroll"]')
+          .length,
         yearMaxCount: document.querySelectorAll('[aria-label="Model yılı maksimum"]').length,
         kmMinCount: document.querySelectorAll('[aria-label="Kilometre minimum"]').length,
         kmMaxCount: document.querySelectorAll('[aria-label="Kilometre maksimum"]').length,
