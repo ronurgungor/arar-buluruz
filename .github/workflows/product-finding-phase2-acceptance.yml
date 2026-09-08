@@ -130,6 +130,7 @@ jobs:
             bun run build
 
           bash scripts/pilot-rc-artifact-boundary-check.sh
+          grep -R -F -m 1 'product-finding-filter-scroll' .output/public .output/server
 
       - name: Run two consecutive deterministic split-process acceptances
         shell: bash
