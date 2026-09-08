@@ -40,13 +40,10 @@ async function enterKmByUserInteraction(value: string) {
 
   const beforeScrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
   await page.mouse.wheel(0, 360);
-  await page.waitForFunction(
-    (expectedScrollTop) => {
-      const container = document.querySelector('[role="dialog"] .overflow-y-auto');
-      return container instanceof HTMLElement && container.scrollTop > expectedScrollTop;
-    },
-    beforeScrollTop,
-  );
+  await page.waitForFunction((expectedScrollTop) => {
+    const container = document.querySelector('[role="dialog"] .overflow-y-auto');
+    return container instanceof HTMLElement && container.scrollTop > expectedScrollTop;
+  }, beforeScrollTop);
   const afterScrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
   assert(
     afterScrollTop > beforeScrollTop,
