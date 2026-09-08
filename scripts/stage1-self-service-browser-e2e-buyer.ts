@@ -19,15 +19,10 @@ const monitor = new HarnessMonitor();
 monitor.observePage(page);
 
 async function enterKmByUserInteraction(value: string) {
-  const dialog = page.locator('[role="dialog"][data-state="open"]').last();
-  await dialog.waitFor({ state: "attached" });
-  assert((await dialog.getAttribute("data-state")) === "open", "Filter Drawer is not open.");
-
-  const scrollContainer = dialog.locator(".overflow-y-auto").first();
+  const scrollContainer = page.getByTestId("product-finding-filter-scroll");
   await scrollContainer.waitFor({ state: "attached" });
   await page.waitForFunction(() => {
-    const dialogNode = document.querySelector('[role="dialog"][data-state="open"]');
-    const container = dialogNode?.querySelector(".overflow-y-auto");
+    const container = document.querySelector('[data-testid="product-finding-filter-scroll"]');
     if (!(container instanceof HTMLElement)) return false;
     const rect = container.getBoundingClientRect();
     return (
@@ -37,6 +32,7 @@ async function enterKmByUserInteraction(value: string) {
       rect.top < window.innerHeight
     );
   });
+
   const geometry = await scrollContainer.evaluate((node) => {
     const element = node as HTMLElement;
     const rect = element.getBoundingClientRect();
@@ -56,11 +52,11 @@ async function enterKmByUserInteraction(value: string) {
   });
   assert(
     geometry.scrollHeight > geometry.clientHeight,
-    `Filter Drawer body is not the scroll container: ${JSON.stringify(geometry)}.`,
+    `Filter Drawer body is not scrollable: ${JSON.stringify(geometry)}.`,
   );
   assert(
     geometry.visibleWidth > 0 && geometry.visibleHeight > 0,
-    `Filter Drawer scroll container has no visible region: ${JSON.stringify(geometry)}.`,
+    `Filter Drawer scroll container has no visible intersection: ${JSON.stringify(geometry)}.`,
   );
 
   await page.mouse.move(geometry.centerX, geometry.centerY);
@@ -79,8 +75,7 @@ async function enterKmByUserInteraction(value: string) {
   const beforeScrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
   await page.mouse.wheel(0, 360);
   await page.waitForFunction((expectedScrollTop) => {
-    const dialogNode = document.querySelector('[role="dialog"][data-state="open"]');
-    const container = dialogNode?.querySelector(".overflow-y-auto");
+    const container = document.querySelector('[data-testid="product-finding-filter-scroll"]');
     return container instanceof HTMLElement && container.scrollTop > expectedScrollTop;
   }, beforeScrollTop);
   const afterScrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
