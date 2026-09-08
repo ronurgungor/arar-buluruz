@@ -135,9 +135,7 @@ async function enterKmByUserInteraction(value: string) {
     }
     if (runTop !== null) visibleRuns.push({ top: runTop, bottom: lastY });
 
-    const visibleRun = visibleRuns.sort(
-      (a, b) => b.bottom - b.top - (a.bottom - a.top),
-    )[0];
+    const visibleRun = visibleRuns.sort((a, b) => b.bottom - b.top - (a.bottom - a.top))[0];
     return {
       centerX,
       centerY: visibleRun ? (visibleRun.top + visibleRun.bottom) / 2 : 0,
