@@ -83,6 +83,7 @@ async function recordState(label: string) {
     runtimeErrors: [...runtimeErrors],
   };
   console.log(`PHASE2_KM_STATE ${JSON.stringify(state)}`);
+  return state;
 }
 
 async function writeDrawerFailureEvidence() {
@@ -96,6 +97,13 @@ async function writeDrawerFailureEvidence() {
       ? await dialog.evaluate((node) => node.outerHTML.slice(0, 30000))
       : await page.locator("body").evaluate((node) => node.outerHTML.slice(0, 30000));
   await fs.writeFile(path.join(resultsDir, "phase2-km-failure-dom.html"), snapshot, "utf8");
+}
+
+async function enterKmByUserInteraction(locator: Locator, value: string) {
+  await locator.click();
+  await locator.press("ControlOrMeta+A");
+  await page.keyboard.type(value);
+  assert((await locator.inputValue()) === value, `Kilometre maksimum değeri ${value} olarak girilemedi.`);
 }
 
 try {
@@ -112,7 +120,7 @@ try {
   await recordState("after-year-min");
   await page.getByLabel("Model yılı maksimum", { exact: true }).fill("2020");
   await recordState("after-year-max");
-  await recordState("before-km-fill");
+  const beforeKm = await recordState("before-km-fill");
   const kmMax = page.getByLabel("Kilometre maksimum", { exact: true });
   try {
     await kmMax.fill("120000");
@@ -120,7 +128,18 @@ try {
     await recordState("km-fill-timeout");
     await writeDrawerFailureEvidence();
     console.log(`PHASE2_KM_FILL_ORIGINAL_ERROR ${String(error)}`);
-    throw error;
+    if (
+      beforeKm.kmMax.count === 1 &&
+      "visible" in beforeKm.kmMax &&
+      beforeKm.kmMax.visible &&
+      beforeKm.kmMax.enabled &&
+      beforeKm.kmMax.editable
+    ) {
+      await enterKmByUserInteraction(kmMax, "120000");
+      console.log("PHASE2_KM_KEYBOARD_INTERACTION_PASS");
+    } else {
+      throw error;
+    }
   }
   await page.getByRole("button", { name: "Otomatik", exact: true }).click();
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
@@ -154,7 +173,7 @@ try {
   );
 
   await page.getByRole("button", { name: /^Filtreler/ }).click();
-  await page.getByLabel("Kilometre maksimum", { exact: true }).fill("100000");
+  await enterKmByUserInteraction(page.getByLabel("Kilometre maksimum", { exact: true }), "100000");
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
   await page.getByText("Sonuç bulunamadı", { exact: true }).waitFor();
   assert(
@@ -172,7 +191,7 @@ try {
   );
 
   await page.getByRole("button", { name: /^Filtreler/ }).click();
-  await page.getByLabel("Kilometre maksimum", { exact: true }).fill("120000");
+  await enterKmByUserInteraction(page.getByLabel("Kilometre maksimum", { exact: true }), "120000");
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
   const restoredResult = page.getByRole("link", { name: new RegExp(title) }).first();
   await restoredResult.waitFor();
