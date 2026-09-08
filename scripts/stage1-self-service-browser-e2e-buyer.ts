@@ -31,9 +31,8 @@ async function logFilterScrollSelectorState(label: string) {
       current = current.parentElement;
     }
     return {
-      testIdCount: document.querySelectorAll(
-        '[data-testid="product-finding-filter-scroll"]',
-      ).length,
+      testIdCount: document.querySelectorAll('[data-testid="product-finding-filter-scroll"]')
+        .length,
       ancestors,
     };
   });
