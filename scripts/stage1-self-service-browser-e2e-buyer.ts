@@ -118,14 +118,36 @@ async function enterKmByUserInteraction(value: string) {
     const visibleRight = Math.min(window.innerWidth, rect.right);
     const visibleTop = Math.max(0, rect.top);
     const visibleBottom = Math.min(window.innerHeight, rect.bottom);
+    const centerX = (visibleLeft + visibleRight) / 2;
+
+    const visibleRuns: Array<{ top: number; bottom: number }> = [];
+    let runTop: number | null = null;
+    const firstY = Math.ceil(visibleTop) + 1;
+    const lastY = Math.floor(visibleBottom) - 1;
+    for (let y = firstY; y <= lastY; y += 2) {
+      const hit = document.elementFromPoint(centerX, y);
+      const hitsContainer = hit === element || (hit instanceof Node && element.contains(hit));
+      if (hitsContainer && runTop === null) runTop = y;
+      if (!hitsContainer && runTop !== null) {
+        visibleRuns.push({ top: runTop, bottom: y - 2 });
+        runTop = null;
+      }
+    }
+    if (runTop !== null) visibleRuns.push({ top: runTop, bottom: lastY });
+
+    const visibleRun = visibleRuns.sort(
+      (a, b) => b.bottom - b.top - (a.bottom - a.top),
+    )[0];
     return {
-      centerX: (visibleLeft + visibleRight) / 2,
-      centerY: (visibleTop + visibleBottom) / 2,
+      centerX,
+      centerY: visibleRun ? (visibleRun.top + visibleRun.bottom) / 2 : 0,
       clientHeight: element.clientHeight,
       scrollHeight: element.scrollHeight,
       scrollTop: element.scrollTop,
       visibleWidth: visibleRight - visibleLeft,
-      visibleHeight: visibleBottom - visibleTop,
+      visibleHeight: visibleRun ? visibleRun.bottom - visibleRun.top : 0,
+      visibleTop: visibleRun?.top ?? null,
+      visibleBottom: visibleRun?.bottom ?? null,
     };
   });
   assert(
@@ -140,6 +162,14 @@ async function enterKmByUserInteraction(value: string) {
   await page.mouse.move(geometry.centerX, geometry.centerY);
   const beforeScrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
   await page.mouse.wheel(0, 360);
+  await page.waitForFunction(
+    ({ selector, previous }) => {
+      const container = document.querySelector(selector);
+      return container instanceof HTMLElement && container.scrollTop > previous;
+    },
+    { selector: filterScrollSelector, previous: beforeScrollTop },
+    { timeout: 2000 },
+  );
   const afterScrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
   assert(
     afterScrollTop > beforeScrollTop,
