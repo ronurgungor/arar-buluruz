@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { chromium, type Locator, type Page } from "playwright";
+import { chromium, type Locator } from "playwright";
 import {
   HarnessMonitor,
   assert,
