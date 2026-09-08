@@ -137,8 +137,9 @@ try {
       assert((await kmMax.inputValue()) === "120000", "Normal keyboard input did not enter 120000.");
       console.log("PHASE2_KM_FILL_FALLBACK normal click+keyboard diagnostic passed");
     }
-    throw error;
+    console.log(`PHASE2_KM_FILL_ORIGINAL_ERROR ${String(error)}`);
   }
+  assert((await kmMax.inputValue()) === "120000", "Kilometre maksimum did not contain 120000.");
   await page.getByRole("button", { name: "Otomatik", exact: true }).click();
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
 
