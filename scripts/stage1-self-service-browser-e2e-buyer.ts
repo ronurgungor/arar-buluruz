@@ -176,10 +176,7 @@ try {
   );
 
   await page.getByRole("button", { name: /^Filtreler/ }).click();
-  await enterKmByUserInteraction(
-    page.getByLabel("Kilometre maksimum", { exact: true }),
-    "100000",
-  );
+  await enterKmByUserInteraction(page.getByLabel("Kilometre maksimum", { exact: true }), "100000");
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
   await page.getByText("Sonuç bulunamadı", { exact: true }).waitFor();
   assert(
@@ -197,10 +194,7 @@ try {
   );
 
   await page.getByRole("button", { name: /^Filtreler/ }).click();
-  await enterKmByUserInteraction(
-    page.getByLabel("Kilometre maksimum", { exact: true }),
-    "120000",
-  );
+  await enterKmByUserInteraction(page.getByLabel("Kilometre maksimum", { exact: true }), "120000");
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
   const restoredResult = page.getByRole("link", { name: new RegExp(title) }).first();
   await restoredResult.waitFor();
