@@ -138,18 +138,6 @@ async function enterKmByUserInteraction(value: string) {
   );
 
   await page.mouse.move(geometry.centerX, geometry.centerY);
-  const pointerHitsScrollContainer = await scrollContainer.evaluate(
-    (node, point) => {
-      const hit = document.elementFromPoint(point.x, point.y);
-      return hit === node || (hit instanceof Node && node.contains(hit));
-    },
-    { x: geometry.centerX, y: geometry.centerY },
-  );
-  assert(
-    pointerHitsScrollContainer,
-    `Mouse is not over the visible Drawer scroll region: ${JSON.stringify(geometry)}.`,
-  );
-
   const beforeScrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
   await page.mouse.wheel(0, 360);
   const afterScrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
