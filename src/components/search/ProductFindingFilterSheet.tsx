@@ -284,7 +284,10 @@ export function ProductFindingFilterSheet({
             Yalnız ihtiyacın olan alanları seç; boş olanlar filtrelenmez.
           </DrawerDescription>
         </DrawerHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+        <div
+          data-testid="product-finding-filter-scroll"
+          className="min-h-0 flex-1 overflow-y-auto px-4 pb-4"
+        >
           <div className="mx-auto w-full max-w-md space-y-6">
             {error ? (
               <p
