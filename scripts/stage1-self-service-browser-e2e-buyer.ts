@@ -1,5 +1,6 @@
+import fs from "node:fs/promises";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium, type Locator, type Page } from "playwright";
 import {
   HarnessMonitor,
   assert,
@@ -17,6 +18,86 @@ const context = await browser.newContext({ viewport: { width: 390, height: 844 }
 const page = await context.newPage();
 const monitor = new HarnessMonitor();
 monitor.observePage(page);
+const runtimeErrors: string[] = [];
+page.on("pageerror", (error) => runtimeErrors.push(`pageerror: ${error.message}`));
+page.on("console", (message) => {
+  if (message.type() === "error") runtimeErrors.push(`console: ${message.text()}`);
+});
+
+async function locatorState(locator: Locator) {
+  const count = await locator.count();
+  if (count !== 1) return { count };
+  return {
+    count,
+    visible: await locator.isVisible(),
+    enabled: await locator.isEnabled(),
+    editable: await locator.isEditable(),
+    value: await locator.inputValue().catch(() => null),
+    boundingBox: await locator.boundingBox(),
+  };
+}
+
+async function recordState(label: string) {
+  const dialogs = page.getByRole("dialog");
+  const category = page.getByLabel("Filtre kategori", { exact: true });
+  const automobile = page.getByRole("button", { name: "Otomobil", exact: true });
+  const yearMin = page.getByLabel("Model yılı minimum", { exact: true });
+  const yearMax = page.getByLabel("Model yılı maksimum", { exact: true });
+  const kmMin = page.getByLabel("Kilometre minimum", { exact: true });
+  const kmMax = page.getByLabel("Kilometre maksimum", { exact: true });
+  const dialogStates = await dialogs.evaluateAll((nodes) =>
+    nodes.map((node) => ({
+      state: node.getAttribute("data-state"),
+      ariaHidden: node.getAttribute("aria-hidden"),
+    })),
+  );
+  const activeElement = await page.evaluate(() => {
+    const element = document.activeElement as HTMLElement | null;
+    if (!element) return null;
+    return {
+      tag: element.tagName,
+      ariaLabel: element.getAttribute("aria-label"),
+      name: element.getAttribute("name"),
+      value: "value" in element ? String((element as HTMLInputElement).value) : null,
+      text: element.textContent?.trim().slice(0, 120) ?? null,
+    };
+  });
+  const state = {
+    label,
+    url: page.url(),
+    dialogs: { count: await dialogs.count(), states: dialogStates },
+    category: {
+      count: await category.count(),
+      value: (await category.count()) === 1 ? await category.inputValue() : null,
+    },
+    automobile: {
+      count: await automobile.count(),
+      ariaPressed:
+        (await automobile.count()) === 1 ? await automobile.getAttribute("aria-pressed") : null,
+    },
+    yearMin: await locatorState(yearMin),
+    yearMax: await locatorState(yearMax),
+    kmMin: await locatorState(kmMin),
+    kmMax: await locatorState(kmMax),
+    activeElement,
+    runtimeErrors: [...runtimeErrors],
+  };
+  console.log(`PHASE2_KM_STATE ${JSON.stringify(state)}`);
+  return state;
+}
+
+async function writeDrawerFailureEvidence() {
+  await page.screenshot({
+    path: path.join(resultsDir, "phase2-km-failure.png"),
+    fullPage: true,
+  });
+  const dialog = page.getByRole("dialog").first();
+  const snapshot =
+    (await dialog.count()) === 1
+      ? await dialog.evaluate((node) => node.outerHTML.slice(0, 30000))
+      : await page.locator("body").evaluate((node) => node.outerHTML.slice(0, 30000));
+  await fs.writeFile(path.join(resultsDir, "phase2-km-failure-dom.html"), snapshot, "utf8");
+}
 
 try {
   await page.goto(`${publicBaseUrl}/ara?q=b150`, { waitUntil: "networkidle" });
@@ -27,9 +108,37 @@ try {
   await page.getByLabel("Maksimum fiyat", { exact: true }).fill("5000");
   await page.getByLabel("Filtre kategori", { exact: true }).selectOption("vehicle");
   await page.getByRole("button", { name: "Otomobil", exact: true }).click();
+  await recordState("before-year-min");
   await page.getByLabel("Model yılı minimum", { exact: true }).fill("2010");
+  await recordState("after-year-min");
   await page.getByLabel("Model yılı maksimum", { exact: true }).fill("2020");
-  await page.getByLabel("Kilometre maksimum", { exact: true }).fill("120000");
+  await recordState("after-year-max");
+  const beforeKm = await recordState("before-km-fill");
+  const kmMax = page.getByLabel("Kilometre maksimum", { exact: true });
+  try {
+    await kmMax.fill("120000");
+  } catch (error) {
+    await writeDrawerFailureEvidence();
+    if (
+      typeof beforeKm.kmMax === "object" &&
+      "count" in beforeKm.kmMax &&
+      beforeKm.kmMax.count === 1 &&
+      "visible" in beforeKm.kmMax &&
+      beforeKm.kmMax.visible === true &&
+      "enabled" in beforeKm.kmMax &&
+      beforeKm.kmMax.enabled === true &&
+      "editable" in beforeKm.kmMax &&
+      beforeKm.kmMax.editable === true
+    ) {
+      console.log("PHASE2_KM_FILL_FALLBACK normal click+keyboard diagnostic starting");
+      await kmMax.click();
+      await page.keyboard.press("ControlOrMeta+A");
+      await page.keyboard.type("120000");
+      assert((await kmMax.inputValue()) === "120000", "Normal keyboard input did not enter 120000.");
+      console.log("PHASE2_KM_FILL_FALLBACK normal click+keyboard diagnostic passed");
+    }
+    throw error;
+  }
   await page.getByRole("button", { name: "Otomatik", exact: true }).click();
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
 
