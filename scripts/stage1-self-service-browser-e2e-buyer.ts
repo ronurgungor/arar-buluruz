@@ -18,6 +18,26 @@ const page = await context.newPage();
 const monitor = new HarnessMonitor();
 monitor.observePage(page);
 
+async function logFilterScrollSelectorState(label: string) {
+  const snapshot = await page.getByLabel("Filtre il", { exact: true }).evaluate((node) => {
+    const ancestors: Array<{ tag: string; testId: string | null; className: string }> = [];
+    let current: HTMLElement | null = node.parentElement;
+    while (current) {
+      ancestors.push({
+        tag: current.tagName,
+        testId: current.getAttribute("data-testid"),
+        className: current.className,
+      });
+      current = current.parentElement;
+    }
+    return {
+      testIdCount: document.querySelectorAll('[data-testid="product-finding-filter-scroll"]').length,
+      ancestors,
+    };
+  });
+  console.log(`Phase 2 filter scroll selector diagnostic (${label}): ${JSON.stringify(snapshot)}`);
+}
+
 async function enterKmByUserInteraction(value: string) {
   const scrollContainer = page.getByTestId("product-finding-filter-scroll");
   await scrollContainer.waitFor({ state: "attached" });
@@ -97,6 +117,8 @@ async function enterKmByUserInteraction(value: string) {
 try {
   await page.goto(`${publicBaseUrl}/ara?q=b150`, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: /^Filtreler/ }).click();
+  await page.getByLabel("Filtre il", { exact: true }).waitFor();
+  await logFilterScrollSelectorState("after-open");
   await page.getByLabel("Filtre il", { exact: true }).selectOption("Tekirdağ");
   await page.getByLabel("Filtre ilçe", { exact: true }).selectOption("Çorlu");
   await page.getByLabel("Minimum fiyat", { exact: true }).fill("0");
@@ -105,6 +127,7 @@ try {
   await page.getByRole("button", { name: "Otomobil", exact: true }).click();
   await page.getByLabel("Model yılı minimum", { exact: true }).fill("2010");
   await page.getByLabel("Model yılı maksimum", { exact: true }).fill("2020");
+  await logFilterScrollSelectorState("after-year-inputs");
   await enterKmByUserInteraction("120000");
   await page.getByRole("button", { name: "Otomatik", exact: true }).click();
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
