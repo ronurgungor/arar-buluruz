@@ -83,7 +83,6 @@ async function recordState(label: string) {
     runtimeErrors: [...runtimeErrors],
   };
   console.log(`PHASE2_KM_STATE ${JSON.stringify(state)}`);
-  return state;
 }
 
 async function writeDrawerFailureEvidence() {
