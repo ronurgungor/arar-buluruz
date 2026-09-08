@@ -103,7 +103,10 @@ async function enterKmByUserInteraction(locator: Locator, value: string) {
   await locator.click();
   await locator.press("ControlOrMeta+A");
   await page.keyboard.type(value);
-  assert((await locator.inputValue()) === value, `Kilometre maksimum değeri ${value} olarak girilemedi.`);
+  assert(
+    (await locator.inputValue()) === value,
+    `Kilometre maksimum değeri ${value} olarak girilemedi.`,
+  );
 }
 
 try {
@@ -173,7 +176,10 @@ try {
   );
 
   await page.getByRole("button", { name: /^Filtreler/ }).click();
-  await enterKmByUserInteraction(page.getByLabel("Kilometre maksimum", { exact: true }), "100000");
+  await enterKmByUserInteraction(
+    page.getByLabel("Kilometre maksimum", { exact: true }),
+    "100000",
+  );
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
   await page.getByText("Sonuç bulunamadı", { exact: true }).waitFor();
   assert(
@@ -191,7 +197,10 @@ try {
   );
 
   await page.getByRole("button", { name: /^Filtreler/ }).click();
-  await enterKmByUserInteraction(page.getByLabel("Kilometre maksimum", { exact: true }), "120000");
+  await enterKmByUserInteraction(
+    page.getByLabel("Kilometre maksimum", { exact: true }),
+    "120000",
+  );
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
   const restoredResult = page.getByRole("link", { name: new RegExp(title) }).first();
   await restoredResult.waitFor();
