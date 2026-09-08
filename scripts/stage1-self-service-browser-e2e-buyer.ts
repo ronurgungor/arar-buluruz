@@ -19,12 +19,12 @@ const monitor = new HarnessMonitor();
 monitor.observePage(page);
 
 async function enterKmByUserInteraction(value: string) {
-  const dialog = page.getByRole("dialog");
-  await dialog.waitFor({ state: "visible" });
+  const dialog = page.locator('[role="dialog"][data-state="open"]').last();
+  await dialog.waitFor({ state: "attached" });
   assert((await dialog.getAttribute("data-state")) === "open", "Filter Drawer is not open.");
 
   const scrollContainer = dialog.locator(".overflow-y-auto").first();
-  await scrollContainer.waitFor({ state: "visible" });
+  await scrollContainer.waitFor({ state: "attached" });
   await page.waitForFunction(() => {
     const dialogNode = document.querySelector('[role="dialog"][data-state="open"]');
     const container = dialogNode?.querySelector(".overflow-y-auto");
