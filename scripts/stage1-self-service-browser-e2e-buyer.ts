@@ -25,23 +25,50 @@ async function enterKmByUserInteraction(value: string) {
 
   const scrollContainer = dialog.locator(".overflow-y-auto").first();
   await scrollContainer.waitFor({ state: "visible" });
-  const scrollBox = await scrollContainer.boundingBox();
-  assert(scrollBox !== null, "Filter Drawer scroll container has no visible geometry.");
+  const geometry = await scrollContainer.evaluate((node) => {
+    const element = node as HTMLElement;
+    const rect = element.getBoundingClientRect();
+    const visibleLeft = Math.max(0, rect.left);
+    const visibleRight = Math.min(window.innerWidth, rect.right);
+    const visibleTop = Math.max(0, rect.top);
+    const visibleBottom = Math.min(window.innerHeight, rect.bottom);
+    return {
+      centerX: (visibleLeft + visibleRight) / 2,
+      centerY: (visibleTop + visibleBottom) / 2,
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+      scrollTop: element.scrollTop,
+      visibleWidth: visibleRight - visibleLeft,
+      visibleHeight: visibleBottom - visibleTop,
+    };
+  });
+  assert(
+    geometry.scrollHeight > geometry.clientHeight,
+    `Filter Drawer body is not the scroll container: ${JSON.stringify(geometry)}.`,
+  );
+  assert(
+    geometry.visibleWidth > 0 && geometry.visibleHeight > 0,
+    `Filter Drawer scroll container has no visible region: ${JSON.stringify(geometry)}.`,
+  );
 
-  await page.mouse.move(scrollBox.x + scrollBox.width / 2, scrollBox.y + scrollBox.height / 2);
-
-  let scrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
-  for (let attempt = 0; attempt < 6 && scrollTop > 0; attempt += 1) {
-    await page.mouse.wheel(0, -600);
-    const nextScrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
-    if (nextScrollTop === scrollTop) break;
-    scrollTop = nextScrollTop;
-  }
+  await page.mouse.move(geometry.centerX, geometry.centerY);
+  const pointerHitsScrollContainer = await scrollContainer.evaluate(
+    (node, point) => {
+      const hit = document.elementFromPoint(point.x, point.y);
+      return hit === node || (hit instanceof Node && node.contains(hit));
+    },
+    { x: geometry.centerX, y: geometry.centerY },
+  );
+  assert(
+    pointerHitsScrollContainer,
+    `Mouse is not over the visible Drawer scroll region: ${JSON.stringify(geometry)}.`,
+  );
 
   const beforeScrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
   await page.mouse.wheel(0, 360);
   await page.waitForFunction((expectedScrollTop) => {
-    const container = document.querySelector('[role="dialog"] .overflow-y-auto');
+    const dialogNode = document.querySelector('[role="dialog"][data-state="open"]');
+    const container = dialogNode?.querySelector(".overflow-y-auto");
     return container instanceof HTMLElement && container.scrollTop > expectedScrollTop;
   }, beforeScrollTop);
   const afterScrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
