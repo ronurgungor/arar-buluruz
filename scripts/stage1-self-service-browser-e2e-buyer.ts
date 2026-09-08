@@ -115,9 +115,11 @@ try {
   await recordState("after-year-max");
   const beforeKm = await recordState("before-km-fill");
   const kmMax = page.getByLabel("Kilometre maksimum", { exact: true });
+  let originalKmFillError: unknown = null;
   try {
     await kmMax.fill("120000");
   } catch (error) {
+    originalKmFillError = error;
     await writeDrawerFailureEvidence();
     if (
       typeof beforeKm.kmMax === "object" &&
@@ -140,6 +142,7 @@ try {
     console.log(`PHASE2_KM_FILL_ORIGINAL_ERROR ${String(error)}`);
   }
   assert((await kmMax.inputValue()) === "120000", "Kilometre maksimum did not contain 120000.");
+  if (originalKmFillError) throw originalKmFillError;
   await page.getByRole("button", { name: "Otomatik", exact: true }).click();
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
 
