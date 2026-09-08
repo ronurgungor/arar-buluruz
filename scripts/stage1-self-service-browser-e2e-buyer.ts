@@ -18,6 +18,8 @@ const page = await context.newPage();
 const monitor = new HarnessMonitor();
 monitor.observePage(page);
 
+const filterScrollSelector = '[data-testid="product-finding-filter-scroll"]';
+
 async function logFilterScrollSelectorState(label: string) {
   const snapshot = await page.getByLabel("Filtre il", { exact: true }).evaluate((node) => {
     const ancestors: Array<{ tag: string; testId: string | null; className: string }> = [];
@@ -40,20 +42,76 @@ async function logFilterScrollSelectorState(label: string) {
 }
 
 async function enterKmByUserInteraction(value: string) {
-  const scrollContainer = page.getByTestId("product-finding-filter-scroll");
-  await scrollContainer.waitFor({ state: "attached" });
-  await page.waitForFunction(() => {
-    const container = document.querySelector('[data-testid="product-finding-filter-scroll"]');
-    if (!(container instanceof HTMLElement)) return false;
-    const rect = container.getBoundingClientRect();
-    return (
-      rect.right > 0 &&
-      rect.left < window.innerWidth &&
-      rect.bottom > 0 &&
-      rect.top < window.innerHeight
-    );
-  });
+  const [rawSnapshot, cssCount, testIdCount] = await Promise.all([
+    page.evaluate(() => {
+      const container = document.querySelector('[data-testid="product-finding-filter-scroll"]');
+      const activeElement = document.activeElement;
+      const drawer = container?.closest("[data-vaul-drawer]");
+      return {
+        rawScrollCount: document.querySelectorAll(
+          '[data-testid="product-finding-filter-scroll"]',
+        ).length,
+        yearMaxCount: document.querySelectorAll('[aria-label="Model yılı maksimum"]').length,
+        kmMinCount: document.querySelectorAll('[aria-label="Kilometre minimum"]').length,
+        kmMaxCount: document.querySelectorAll('[aria-label="Kilometre maksimum"]').length,
+        url: window.location.href,
+        activeElement: {
+          tag: activeElement?.tagName ?? null,
+          ariaLabel: activeElement?.getAttribute("aria-label") ?? null,
+        },
+        drawer:
+          drawer instanceof HTMLElement
+            ? {
+                tag: drawer.tagName,
+                role: drawer.getAttribute("role"),
+                ariaModal: drawer.getAttribute("aria-modal"),
+                dataState: drawer.getAttribute("data-state"),
+                dataVaulDrawer: drawer.getAttribute("data-vaul-drawer"),
+                dataVaulDrawerDirection: drawer.getAttribute("data-vaul-drawer-direction"),
+                style: drawer.getAttribute("style"),
+                transform: window.getComputedStyle(drawer).transform,
+              }
+            : null,
+      };
+    }),
+    page.locator(filterScrollSelector).count(),
+    page.getByTestId("product-finding-filter-scroll").count(),
+  ]);
+  console.log(
+    `Phase 2 atomic filter selector diagnostic: ${JSON.stringify({
+      ...rawSnapshot,
+      cssCount,
+      testIdCount,
+    })}`,
+  );
 
+  assert(
+    rawSnapshot.rawScrollCount === 1,
+    `Filter Drawer scroll container raw DOM count changed at helper entry: ${JSON.stringify({
+      ...rawSnapshot,
+      cssCount,
+      testIdCount,
+    })}.`,
+  );
+  assert(
+    cssCount === 1,
+    `Application-owned filter scroll CSS locator count is ${cssCount}: ${JSON.stringify({
+      ...rawSnapshot,
+      testIdCount,
+    })}.`,
+  );
+  assert(
+    rawSnapshot.kmMaxCount === 1,
+    `Kilometre maksimum contextual facet disappeared while the Drawer remained present: ${JSON.stringify(
+      {
+        ...rawSnapshot,
+        cssCount,
+        testIdCount,
+      },
+    )}.`,
+  );
+
+  const scrollContainer = page.locator(filterScrollSelector);
   const geometry = await scrollContainer.evaluate((node) => {
     const element = node as HTMLElement;
     const rect = element.getBoundingClientRect();
@@ -95,10 +153,6 @@ async function enterKmByUserInteraction(value: string) {
 
   const beforeScrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
   await page.mouse.wheel(0, 360);
-  await page.waitForFunction((expectedScrollTop) => {
-    const container = document.querySelector('[data-testid="product-finding-filter-scroll"]');
-    return container instanceof HTMLElement && container.scrollTop > expectedScrollTop;
-  }, beforeScrollTop);
   const afterScrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
   assert(
     afterScrollTop > beforeScrollTop,
