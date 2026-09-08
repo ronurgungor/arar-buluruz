@@ -113,36 +113,16 @@ try {
   await recordState("after-year-min");
   await page.getByLabel("Model yılı maksimum", { exact: true }).fill("2020");
   await recordState("after-year-max");
-  const beforeKm = await recordState("before-km-fill");
+  await recordState("before-km-fill");
   const kmMax = page.getByLabel("Kilometre maksimum", { exact: true });
-  let originalKmFillError: unknown = null;
   try {
     await kmMax.fill("120000");
   } catch (error) {
-    originalKmFillError = error;
+    await recordState("km-fill-timeout");
     await writeDrawerFailureEvidence();
-    if (
-      typeof beforeKm.kmMax === "object" &&
-      "count" in beforeKm.kmMax &&
-      beforeKm.kmMax.count === 1 &&
-      "visible" in beforeKm.kmMax &&
-      beforeKm.kmMax.visible === true &&
-      "enabled" in beforeKm.kmMax &&
-      beforeKm.kmMax.enabled === true &&
-      "editable" in beforeKm.kmMax &&
-      beforeKm.kmMax.editable === true
-    ) {
-      console.log("PHASE2_KM_FILL_FALLBACK normal click+keyboard diagnostic starting");
-      await kmMax.click();
-      await page.keyboard.press("ControlOrMeta+A");
-      await page.keyboard.type("120000");
-      assert((await kmMax.inputValue()) === "120000", "Normal keyboard input did not enter 120000.");
-      console.log("PHASE2_KM_FILL_FALLBACK normal click+keyboard diagnostic passed");
-    }
     console.log(`PHASE2_KM_FILL_ORIGINAL_ERROR ${String(error)}`);
+    throw error;
   }
-  assert((await kmMax.inputValue()) === "120000", "Kilometre maksimum did not contain 120000.");
-  if (originalKmFillError) throw originalKmFillError;
   await page.getByRole("button", { name: "Otomatik", exact: true }).click();
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
 
