@@ -111,6 +111,26 @@ async function enterKmByUserInteraction(value: string) {
   );
 
   const scrollContainer = page.locator(filterScrollSelector);
+  await page.waitForFunction(
+    (selector) => {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) return false;
+      const rect = element.getBoundingClientRect();
+      const visibleLeft = Math.max(0, rect.left);
+      const visibleRight = Math.min(window.innerWidth, rect.right);
+      const visibleTop = Math.max(0, rect.top);
+      const visibleBottom = Math.min(window.innerHeight, rect.bottom);
+      if (visibleRight <= visibleLeft || visibleBottom <= visibleTop) return false;
+      const centerX = (visibleLeft + visibleRight) / 2;
+      for (let y = Math.ceil(visibleTop) + 1; y < Math.floor(visibleBottom); y += 2) {
+        const hit = document.elementFromPoint(centerX, y);
+        if (hit === element || (hit instanceof Node && element.contains(hit))) return true;
+      }
+      return false;
+    },
+    filterScrollSelector,
+    { timeout: 2000 },
+  );
   const geometry = await scrollContainer.evaluate((node) => {
     const element = node as HTMLElement;
     const rect = element.getBoundingClientRect();
