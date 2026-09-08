@@ -99,7 +99,24 @@ async function writeDrawerFailureEvidence() {
   await fs.writeFile(path.join(resultsDir, "phase2-km-failure-dom.html"), snapshot, "utf8");
 }
 
+async function scrollKmIntoUserViewport(locator: Locator) {
+  const viewport = page.viewportSize();
+  assert(viewport !== null, "Buyer viewport is unavailable.");
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const box = await locator.boundingBox();
+    if (box && box.y >= 0 && box.y + box.height <= viewport.height - 96) return;
+    await page.mouse.move(viewport.width / 2, viewport.height * 0.65);
+    await page.mouse.wheel(0, 280);
+  }
+  const box = await locator.boundingBox();
+  assert(
+    box !== null && box.y >= 0 && box.y + box.height <= viewport.height - 96,
+    `Kilometre maksimum kullanıcı kaydırmasıyla güvenli görünür alana gelmedi: ${JSON.stringify(box)}`,
+  );
+}
+
 async function enterKmByUserInteraction(locator: Locator, value: string) {
+  await scrollKmIntoUserViewport(locator);
   await locator.click();
   await locator.press("ControlOrMeta+A");
   await page.keyboard.type(value);
