@@ -22,36 +22,17 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
-      - name: Patch Back scroll proof to preserve the actual visible click position
+      - name: Patch Back scroll proof to use the already-visible result geometry
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
           buyer = Path("scripts/stage1-self-service-browser-e2e-buyer.ts")
           text = buyer.read_text()
-          old = """  await page.setViewportSize({ width: 390, height: 420 });
-          await restoredResult.scrollIntoViewIfNeeded();
-          const resultsScrollY = await page.evaluate(() => window.scrollY);
-          assert(resultsScrollY > 0, \"Search fixture was not scrollable for Back restoration proof.\");
-          const searchUrlBeforeDetail = page.url();
-          await restoredResult.click();"""
-          new = """  await page.setViewportSize({ width: 390, height: 420 });
-          await restoredResult.scrollIntoViewIfNeeded();
-          const resultBox = await restoredResult.boundingBox();
-          assert(
-            resultBox !== null,
-            \"Search result had no visible click geometry for Back restoration proof.\",
-          );
-          const resultsScrollY = await page.evaluate(() => window.scrollY);
-          assert(resultsScrollY > 0, \"Search fixture was not scrollable for Back restoration proof.\");
-          const searchUrlBeforeDetail = page.url();
-          await page.mouse.click(
-            resultBox.x + resultBox.width / 2,
-            resultBox.y + resultBox.height / 2,
-          );"""
-          if old not in text:
-              raise SystemExit("Back scroll proof block changed; refusing blind patch")
+          old = '  await restoredResult.click();'
+          new = '  const resultBox = await restoredResult.boundingBox();\n  assert(\n    resultBox !== null,\n    "Search result had no visible click geometry for Back restoration proof.",\n  );\n  await page.mouse.click(\n    resultBox.x + resultBox.width / 2,\n    resultBox.y + resultBox.height / 2,\n  );'
+          if text.count(old) != 1:
+              raise SystemExit(f"Expected exactly one restoredResult click, found {text.count(old)}")
           buyer.write_text(text.replace(old, new, 1))
           PY
 
