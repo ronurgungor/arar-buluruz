@@ -218,10 +218,7 @@ try {
     resultBox !== null,
     "Search result had no visible click geometry for Back restoration proof.",
   );
-  await page.mouse.click(
-    resultBox.x + resultBox.width / 2,
-    resultBox.y + resultBox.height / 2,
-  );
+  await page.mouse.click(resultBox.x + resultBox.width / 2, resultBox.y + resultBox.height / 2);
   await page.waitForLoadState("networkidle");
   await page.getByRole("heading", { level: 1, name: title }).waitFor();
   await page.getByText("Ücretsiz", { exact: true }).waitFor();
