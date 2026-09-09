@@ -133,18 +133,20 @@ async function findExactResultAnchorHitPoint(expectedHref: string) {
     `Search-result href did not match ${expectedHref}.`,
   );
   await exactAnchor.scrollIntoViewIfNeeded();
-  await page.waitForFunction(
-    (href) => {
+
+  const point = await page.evaluate(async (href) => {
+    const scan = () => {
       const node = [...document.querySelectorAll<HTMLAnchorElement>("a[href]")].find(
         (anchor) => anchor.getAttribute("href") === href,
       );
-      if (!node) return false;
+      if (!node) return null;
       const rect = node.getBoundingClientRect();
       const left = Math.max(0, rect.left);
       const right = Math.min(window.innerWidth, rect.right);
       const top = Math.max(0, rect.top);
       const bottom = Math.min(window.innerHeight, rect.bottom);
-      if (right <= left || bottom <= top) return false;
+      if (right <= left || bottom <= top) return null;
+
       const firstX = Math.ceil(left) + 1;
       const lastX = Math.floor(right) - 1;
       const firstY = Math.ceil(top) + 1;
@@ -152,40 +154,41 @@ async function findExactResultAnchorHitPoint(expectedHref: string) {
       for (let y = firstY; y <= lastY; y += 8) {
         for (let x = firstX; x <= lastX; x += 8) {
           const hit = document.elementFromPoint(x, y);
-          if (hit instanceof Element && hit.closest("a") === node) return true;
+          if (hit instanceof Element && hit.closest("a") === node) return { x, y };
         }
       }
-      return false;
-    },
-    expectedHref,
-    { timeout: 2000 },
-  );
-  const point = await exactAnchor.evaluate((node, href) => {
-    if (!(node instanceof HTMLAnchorElement) || node.getAttribute("href") !== href) return null;
-    const rect = node.getBoundingClientRect();
-    const left = Math.max(0, rect.left),
-      right = Math.min(window.innerWidth, rect.right);
-    const top = Math.max(0, rect.top),
-      bottom = Math.min(window.innerHeight, rect.bottom);
-    if (right <= left || bottom <= top) return null;
-    const firstX = Math.ceil(left) + 1,
-      lastX = Math.floor(right) - 1;
-    const firstY = Math.ceil(top) + 1,
-      lastY = Math.floor(bottom) - 1;
-    for (let y = firstY; y <= lastY; y += 8) {
-      for (let x = firstX; x <= lastX; x += 8) {
-        const hit = document.elementFromPoint(x, y);
-        if (hit instanceof Element && hit.closest("a") === node) return { x, y };
+
+      const x = Math.max(firstX, Math.min(lastX, Math.round((left + right) / 2)));
+      const y = Math.max(firstY, Math.min(lastY, Math.round((top + bottom) / 2)));
+      const hit = document.elementFromPoint(x, y);
+      return hit instanceof Element && hit.closest("a") === node ? { x, y } : null;
+    };
+
+    const deadline = performance.now() + 2000;
+    let stableFrames = 0;
+    let previous: { x: number; y: number } | null = null;
+    while (performance.now() < deadline) {
+      const candidate = scan();
+      if (candidate && previous && candidate.x === previous.x && candidate.y === previous.y) {
+        stableFrames += 1;
+      } else {
+        stableFrames = candidate ? 1 : 0;
       }
+      previous = candidate;
+      if (candidate && stableFrames >= 3) return candidate;
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     }
-    const x = Math.max(firstX, Math.min(lastX, Math.round((left + right) / 2)));
-    const y = Math.max(firstY, Math.min(lastY, Math.round((top + bottom) / 2)));
-    const hit = document.elementFromPoint(x, y);
-    return hit instanceof Element && hit.closest("a") === node ? { x, y } : null;
+    return null;
   }, expectedHref);
-  assert(point !== null, `No real viewport hit target resolved to ${expectedHref}.`);
+
+  assert(point !== null, `No stable real viewport hit target resolved to ${expectedHref}.`);
+  const viewport = page.viewportSize();
   assert(
-    point.x >= 0 && point.x < 390 && point.y >= 0 && point.y < 420,
+    viewport !== null &&
+      point.x >= 0 &&
+      point.x < viewport.width &&
+      point.y >= 0 &&
+      point.y < viewport.height,
     `Resolved result hit point is outside the active viewport: ${JSON.stringify(point)}.`,
   );
   const hitResolvesToExactAnchor = await page.evaluate(
