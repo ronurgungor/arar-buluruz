@@ -121,6 +121,57 @@ async function enterKmByUserInteraction(value: string) {
   );
 }
 
+async function findExactResultAnchorHitPoint(expectedHref: string) {
+  const exactAnchor = page.locator(`a[href="${expectedHref}"]`);
+  assert(
+    (await exactAnchor.count()) === 1,
+    `Expected exactly one search-result anchor for ${expectedHref}.`,
+  );
+  await exactAnchor.waitFor();
+  assert(
+    (await exactAnchor.getAttribute("href")) === expectedHref,
+    `Search-result href did not match ${expectedHref}.`,
+  );
+  await exactAnchor.scrollIntoViewIfNeeded();
+  const point = await exactAnchor.evaluate((node, href) => {
+    if (!(node instanceof HTMLAnchorElement) || node.getAttribute("href") !== href) return null;
+    const rect = node.getBoundingClientRect();
+    const left = Math.max(0, rect.left),
+      right = Math.min(window.innerWidth, rect.right);
+    const top = Math.max(0, rect.top),
+      bottom = Math.min(window.innerHeight, rect.bottom);
+    if (right <= left || bottom <= top) return null;
+    const firstX = Math.ceil(left) + 1,
+      lastX = Math.floor(right) - 1;
+    const firstY = Math.ceil(top) + 1,
+      lastY = Math.floor(bottom) - 1;
+    for (let y = firstY; y <= lastY; y += 8) {
+      for (let x = firstX; x <= lastX; x += 8) {
+        const hit = document.elementFromPoint(x, y);
+        if (hit instanceof Element && hit.closest("a") === node) return { x, y };
+      }
+    }
+    const x = Math.max(firstX, Math.min(lastX, Math.round((left + right) / 2)));
+    const y = Math.max(firstY, Math.min(lastY, Math.round((top + bottom) / 2)));
+    const hit = document.elementFromPoint(x, y);
+    return hit instanceof Element && hit.closest("a") === node ? { x, y } : null;
+  }, expectedHref);
+  assert(point !== null, `No real viewport hit target resolved to ${expectedHref}.`);
+  assert(
+    point.x >= 0 && point.x < 390 && point.y >= 0 && point.y < 420,
+    `Resolved result hit point is outside the active viewport: ${JSON.stringify(point)}.`,
+  );
+  const hitResolvesToExactAnchor = await page.evaluate(
+    ({ x, y, href }) => {
+      const hit = document.elementFromPoint(x, y);
+      return hit instanceof Element && hit.closest("a")?.getAttribute("href") === href;
+    },
+    { ...point, href: expectedHref },
+  );
+  assert(hitResolvesToExactAnchor, `Hit-test no longer resolves to ${expectedHref}.`);
+  return point;
+}
+
 try {
   await page.goto(`${publicBaseUrl}/ara?q=b150`, { waitUntil: "networkidle" });
   await page.getByTestId("product-finding-filter-trigger").click();
@@ -209,16 +260,25 @@ try {
   assert(new URL(page.url()).searchParams.get("sort") === "price_asc", "Sort was not serialized.");
 
   await page.setViewportSize({ width: 390, height: 420 });
-  await restoredResult.scrollIntoViewIfNeeded();
+  const expectedDetailHref = `/ilan/${listingId}`;
+  const searchUrlBeforeDetail = page.url();
+  const resultHitPoint = await findExactResultAnchorHitPoint(expectedDetailHref);
+  assert(
+    page.url() === searchUrlBeforeDetail,
+    "Resolving the exact result hit target changed the canonical search URL.",
+  );
   const resultsScrollY = await page.evaluate(() => window.scrollY);
   assert(resultsScrollY > 0, "Search fixture was not scrollable for Back restoration proof.");
-  const searchUrlBeforeDetail = page.url();
-  const resultBox = await restoredResult.boundingBox();
   assert(
-    resultBox !== null,
-    "Search result had no visible click geometry for Back restoration proof.",
+    page.url() === searchUrlBeforeDetail,
+    "Canonical search URL changed immediately before the real result click.",
   );
-  await page.mouse.click(resultBox.x + resultBox.width / 2, resultBox.y + resultBox.height / 2);
+  await page.mouse.click(resultHitPoint.x, resultHitPoint.y);
+  await page.waitForURL(`${publicBaseUrl}${expectedDetailHref}`);
+  assert(
+    page.url() === `${publicBaseUrl}${expectedDetailHref}`,
+    "Verified real result click did not navigate to the exact listing detail URL.",
+  );
   await page.waitForLoadState("networkidle");
   await page.getByRole("heading", { level: 1, name: title }).waitFor();
   await page.getByText("Ücretsiz", { exact: true }).waitFor();
