@@ -28,70 +28,33 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          sheet = Path('src/components/search/ProductFindingFilterSheet.tsx')
+          sheet = Path("src/components/search/ProductFindingFilterSheet.tsx")
           text = sheet.read_text()
-          trigger = '''<button
-          type="button"
-          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-semibold shadow-sm transition-colors hover:bg-accent"
-        >'''
-          replacement = '''<button
-          type="button"
-          data-testid="product-finding-filter-trigger"
-          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-semibold shadow-sm transition-colors hover:bg-accent"
-        >'''
+          old = '          type="button"\n          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-semibold shadow-sm transition-colors hover:bg-accent"'
+          new = '          type="button"\n          data-testid="product-finding-filter-trigger"\n          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-semibold shadow-sm transition-colors hover:bg-accent"'
           if 'data-testid="product-finding-filter-trigger"' not in text:
-              if trigger not in text:
-                  raise SystemExit('Product Finding trigger shape changed; refusing blind patch')
-              text = text.replace(trigger, replacement, 1)
+              if old not in text:
+                  raise SystemExit("Product Finding trigger shape changed; refusing blind patch")
+              text = text.replace(old, new, 1)
               sheet.write_text(text)
 
-          buyer = Path('scripts/stage1-self-service-browser-e2e-buyer.ts')
+          buyer = Path("scripts/stage1-self-service-browser-e2e-buyer.ts")
           text = buyer.read_text()
-          proof_old = '''  assert(
-    JSON.stringify(strictContextual.km) === JSON.stringify({ min: null, max: 100000 }),
-    "Zero-result range was not retained as a hard canonical filter.",
-  );
-
-  await page.getByRole("button", { name: /^Filtreler/ }).click();
-  await enterKmByUserInteraction("120000");'''
-          proof_new = '''  assert(
-    JSON.stringify(strictContextual.km) === JSON.stringify({ min: null, max: 100000 }),
-    "Zero-result range was not retained as a hard canonical filter.",
-  );
-
-  await page.getByRole("button", { name: "Filtreleri temizle", exact: true }).waitFor();
-  const hardFilterUrlBeforeReopen = page.url();
-  const filterTrigger = page.getByTestId("product-finding-filter-trigger");
-  assert(
-    (await filterTrigger.count()) === 1,
-    "Product Finding filter trigger must exist exactly once in the zero-result state.",
-  );
-  await filterTrigger.click();
-  assert(
-    page.url() === hardFilterUrlBeforeReopen,
-    "Opening the Product Finding Drawer changed the canonical hard-filter URL.",
-  );
-  await page.getByLabel("Kilometre maksimum", { exact: true }).waitFor();
-  assert(
-    page.url() === hardFilterUrlBeforeReopen,
-    "The hard-filter URL changed while opening the Product Finding Drawer.",
-  );
-  await enterKmByUserInteraction("120000");'''
-          if proof_old in text:
-              text = text.replace(proof_old, proof_new, 1)
-          elif 'hardFilterUrlBeforeReopen' not in text:
-              raise SystemExit('Zero-result reopen block changed; refusing blind patch')
+          proof_anchor = '  assert(\n    JSON.stringify(strictContextual.km) === JSON.stringify({ min: null, max: 100000 }),\n    "Zero-result range was not retained as a hard canonical filter.",\n  );\n\n  await page.getByRole("button", { name: /^Filtreler/ }).click();\n  await enterKmByUserInteraction("120000");'
+          proof_replacement = '  assert(\n    JSON.stringify(strictContextual.km) === JSON.stringify({ min: null, max: 100000 }),\n    "Zero-result range was not retained as a hard canonical filter.",\n  );\n\n  await page.getByRole("button", { name: "Filtreleri temizle", exact: true }).waitFor();\n  const hardFilterUrlBeforeReopen = page.url();\n  const filterTrigger = page.getByTestId("product-finding-filter-trigger");\n  assert(\n    (await filterTrigger.count()) === 1,\n    "Product Finding filter trigger must exist exactly once in the zero-result state.",\n  );\n  await filterTrigger.click();\n  assert(\n    page.url() === hardFilterUrlBeforeReopen,\n    "Opening the Product Finding Drawer changed the canonical hard-filter URL.",\n  );\n  await page.getByLabel("Kilometre maksimum", { exact: true }).waitFor();\n  assert(\n    page.url() === hardFilterUrlBeforeReopen,\n    "The hard-filter URL changed while opening the Product Finding Drawer.",\n  );\n  await enterKmByUserInteraction("120000");'
+          if proof_anchor in text:
+              text = text.replace(proof_anchor, proof_replacement, 1)
+          elif "hardFilterUrlBeforeReopen" not in text:
+              raise SystemExit("Zero-result reopen block changed; refusing blind patch")
 
           ambiguous = 'page.getByRole("button", { name: /^Filtreler/ })'
           text = text.replace(ambiguous, 'page.getByTestId("product-finding-filter-trigger")')
           if ambiguous in text:
-              raise SystemExit('Ambiguous filter trigger selector remains')
+              raise SystemExit("Ambiguous filter trigger selector remains")
           buyer.write_text(text)
           PY
 
-          bunx prettier --write \
-            src/components/search/ProductFindingFilterSheet.tsx \
-            scripts/stage1-self-service-browser-e2e-buyer.ts
+          bunx prettier --write src/components/search/ProductFindingFilterSheet.tsx scripts/stage1-self-service-browser-e2e-buyer.ts
 
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
