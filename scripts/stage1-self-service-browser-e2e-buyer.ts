@@ -133,6 +133,33 @@ async function findExactResultAnchorHitPoint(expectedHref: string) {
     `Search-result href did not match ${expectedHref}.`,
   );
   await exactAnchor.scrollIntoViewIfNeeded();
+  await page.waitForFunction(
+    (href) => {
+      const node = [...document.querySelectorAll<HTMLAnchorElement>("a[href]")].find(
+        (anchor) => anchor.getAttribute("href") === href,
+      );
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      const left = Math.max(0, rect.left);
+      const right = Math.min(window.innerWidth, rect.right);
+      const top = Math.max(0, rect.top);
+      const bottom = Math.min(window.innerHeight, rect.bottom);
+      if (right <= left || bottom <= top) return false;
+      const firstX = Math.ceil(left) + 1;
+      const lastX = Math.floor(right) - 1;
+      const firstY = Math.ceil(top) + 1;
+      const lastY = Math.floor(bottom) - 1;
+      for (let y = firstY; y <= lastY; y += 8) {
+        for (let x = firstX; x <= lastX; x += 8) {
+          const hit = document.elementFromPoint(x, y);
+          if (hit instanceof Element && hit.closest("a") === node) return true;
+        }
+      }
+      return false;
+    },
+    expectedHref,
+    { timeout: 2000 },
+  );
   const point = await exactAnchor.evaluate((node, href) => {
     if (!(node instanceof HTMLAnchorElement) || node.getAttribute("href") !== href) return null;
     const rect = node.getBoundingClientRect();
