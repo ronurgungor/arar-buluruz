@@ -121,87 +121,6 @@ async function enterKmByUserInteraction(value: string) {
   );
 }
 
-async function findExactResultAnchorHitPoint(expectedHref: string) {
-  const exactAnchor = page.locator(`a[href="${expectedHref}"]`);
-  assert(
-    (await exactAnchor.count()) === 1,
-    `Expected exactly one search-result anchor for ${expectedHref}.`,
-  );
-  await exactAnchor.waitFor();
-  assert(
-    (await exactAnchor.getAttribute("href")) === expectedHref,
-    `Search-result href did not match ${expectedHref}.`,
-  );
-  await exactAnchor.scrollIntoViewIfNeeded();
-
-  const point = await page.evaluate(async (href) => {
-    const scan = () => {
-      const node = [...document.querySelectorAll<HTMLAnchorElement>("a[href]")].find(
-        (anchor) => anchor.getAttribute("href") === href,
-      );
-      if (!node) return null;
-      const rect = node.getBoundingClientRect();
-      const left = Math.max(0, rect.left);
-      const right = Math.min(window.innerWidth, rect.right);
-      const top = Math.max(0, rect.top);
-      const bottom = Math.min(window.innerHeight, rect.bottom);
-      if (right <= left || bottom <= top) return null;
-
-      const firstX = Math.ceil(left) + 1;
-      const lastX = Math.floor(right) - 1;
-      const firstY = Math.ceil(top) + 1;
-      const lastY = Math.floor(bottom) - 1;
-      for (let y = firstY; y <= lastY; y += 8) {
-        for (let x = firstX; x <= lastX; x += 8) {
-          const hit = document.elementFromPoint(x, y);
-          if (hit instanceof Element && hit.closest("a") === node) return { x, y };
-        }
-      }
-
-      const x = Math.max(firstX, Math.min(lastX, Math.round((left + right) / 2)));
-      const y = Math.max(firstY, Math.min(lastY, Math.round((top + bottom) / 2)));
-      const hit = document.elementFromPoint(x, y);
-      return hit instanceof Element && hit.closest("a") === node ? { x, y } : null;
-    };
-
-    const deadline = performance.now() + 2000;
-    let stableFrames = 0;
-    let previous: { x: number; y: number } | null = null;
-    while (performance.now() < deadline) {
-      const candidate = scan();
-      if (candidate && previous && candidate.x === previous.x && candidate.y === previous.y) {
-        stableFrames += 1;
-      } else {
-        stableFrames = candidate ? 1 : 0;
-      }
-      previous = candidate;
-      if (candidate && stableFrames >= 3) return candidate;
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    }
-    return null;
-  }, expectedHref);
-
-  assert(point !== null, `No stable real viewport hit target resolved to ${expectedHref}.`);
-  const viewport = page.viewportSize();
-  assert(
-    viewport !== null &&
-      point.x >= 0 &&
-      point.x < viewport.width &&
-      point.y >= 0 &&
-      point.y < viewport.height,
-    `Resolved result hit point is outside the active viewport: ${JSON.stringify(point)}.`,
-  );
-  const hitResolvesToExactAnchor = await page.evaluate(
-    ({ x, y, href }) => {
-      const hit = document.elementFromPoint(x, y);
-      return hit instanceof Element && hit.closest("a")?.getAttribute("href") === href;
-    },
-    { ...point, href: expectedHref },
-  );
-  assert(hitResolvesToExactAnchor, `Hit-test no longer resolves to ${expectedHref}.`);
-  return point;
-}
-
 try {
   await page.goto(`${publicBaseUrl}/ara?q=b150`, { waitUntil: "networkidle" });
   await page.getByTestId("product-finding-filter-trigger").click();
@@ -292,22 +211,51 @@ try {
   await page.setViewportSize({ width: 390, height: 420 });
   const expectedDetailHref = `/ilan/${listingId}`;
   const searchUrlBeforeDetail = page.url();
-  const resultHitPoint = await findExactResultAnchorHitPoint(expectedDetailHref);
+  const exactResultAnchor = page.locator(`a[href="${expectedDetailHref}"]`);
+  assert(
+    (await exactResultAnchor.count()) === 1,
+    `Expected exactly one search-result anchor for ${expectedDetailHref}.`,
+  );
+  await exactResultAnchor.waitFor();
+  assert(
+    (await exactResultAnchor.getAttribute("href")) === expectedDetailHref,
+    `Search-result href did not match ${expectedDetailHref}.`,
+  );
   assert(
     page.url() === searchUrlBeforeDetail,
-    "Resolving the exact result hit target changed the canonical search URL.",
+    "Resolving the exact result anchor changed the canonical search URL.",
   );
-  const resultsScrollY = await page.evaluate(() => window.scrollY);
-  assert(resultsScrollY > 0, "Search fixture was not scrollable for Back restoration proof.");
+
+  let resultsClickScrollY: number | null = null;
+  await page.exposeFunction("__phase2RecordResultClickScrollY", (scrollY: number) => {
+    resultsClickScrollY = scrollY;
+  });
+  await exactResultAnchor.evaluate((anchor) => {
+    anchor.addEventListener(
+      "click",
+      () => {
+        const bridge = window as Window & {
+          __phase2RecordResultClickScrollY?: (scrollY: number) => void;
+        };
+        bridge.__phase2RecordResultClickScrollY?.(window.scrollY);
+      },
+      { capture: true, once: true },
+    );
+  });
+
   assert(
     page.url() === searchUrlBeforeDetail,
-    "Canonical search URL changed immediately before the real result click.",
+    "Canonical search URL changed immediately before the genuine result click.",
   );
-  await page.mouse.click(resultHitPoint.x, resultHitPoint.y);
+  await exactResultAnchor.click();
   await page.waitForURL(`${publicBaseUrl}${expectedDetailHref}`);
   assert(
     page.url() === `${publicBaseUrl}${expectedDetailHref}`,
-    "Verified real result click did not navigate to the exact listing detail URL.",
+    "Genuine result click did not navigate to the exact listing detail URL.",
+  );
+  assert(
+    resultsClickScrollY !== null && resultsClickScrollY > 0,
+    "Real result click-time scroll position was not observed.",
   );
   await page.waitForLoadState("networkidle");
   await page.getByRole("heading", { level: 1, name: title }).waitFor();
@@ -339,12 +287,12 @@ try {
   await page.waitForURL(searchUrlBeforeDetail);
   await page.waitForFunction(
     (expected) => Math.abs(window.scrollY - expected) <= 5,
-    resultsScrollY,
+    resultsClickScrollY,
   );
   assert(page.url() === searchUrlBeforeDetail, "Back did not restore the exact search URL.");
   assert(
-    Math.abs((await page.evaluate(() => window.scrollY)) - resultsScrollY) <= 5,
-    "Back did not restore the previous results scroll position.",
+    Math.abs((await page.evaluate(() => window.scrollY)) - resultsClickScrollY) <= 5,
+    "Back did not restore the real result click-time scroll position.",
   );
 
   const compactContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
