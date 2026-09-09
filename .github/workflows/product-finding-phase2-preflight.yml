@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: product-finding-phase2-preflight-${{ github.ref }}
@@ -15,12 +15,14 @@ concurrency:
 
 jobs:
   quality:
-    name: Phase 2 detail-navigation discriminator and quality gate
+    name: Phase 2 read-only formatting, lint, unit and build
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -30,39 +32,35 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install durable exact-anchor hit-test discriminator once
+      - name: Check canonical formatting
         shell: bash
         run: |
-          python3 - <<'PY'
-          import base64
-          from pathlib import Path
-          buyer = Path("scripts/stage1-self-service-browser-e2e-buyer.ts")
-          text = buyer.read_text()
-          marker = "async function findExactResultAnchorHitPoint"
-          if marker not in text:
-              helper = base64.b64decode("CmFzeW5jIGZ1bmN0aW9uIGZpbmRFeGFjdFJlc3VsdEFuY2hvckhpdFBvaW50KGV4cGVjdGVkSHJlZjogc3RyaW5nKSB7CiAgY29uc3QgZXhhY3RBbmNob3IgPSBwYWdlLmxvY2F0b3IoYGFbaHJlZj0iJHtleHBlY3RlZEhyZWZ9Il1gKTsKICBhc3NlcnQoKGF3YWl0IGV4YWN0QW5jaG9yLmNvdW50KCkpID09PSAxLCBgRXhwZWN0ZWQgZXhhY3RseSBvbmUgc2VhcmNoLXJlc3VsdCBhbmNob3IgZm9yICR7ZXhwZWN0ZWRIcmVmfS5gKTsKICBhd2FpdCBleGFjdEFuY2hvci53YWl0Rm9yKCk7CiAgYXNzZXJ0KChhd2FpdCBleGFjdEFuY2hvci5nZXRBdHRyaWJ1dGUoImhyZWYiKSkgPT09IGV4cGVjdGVkSHJlZiwgYFNlYXJjaC1yZXN1bHQgaHJlZiBkaWQgbm90IG1hdGNoICR7ZXhwZWN0ZWRIcmVmfS5gKTsKICBhd2FpdCBleGFjdEFuY2hvci5zY3JvbGxJbnRvVmlld0lmTmVlZGVkKCk7CiAgY29uc3QgcG9pbnQgPSBhd2FpdCBleGFjdEFuY2hvci5ldmFsdWF0ZSgobm9kZSwgaHJlZikgPT4gewogICAgaWYgKCEobm9kZSBpbnN0YW5jZW9mIEhUTUxBbmNob3JFbGVtZW50KSB8fCBub2RlLmdldEF0dHJpYnV0ZSgiaHJlZiIpICE9PSBocmVmKSByZXR1cm4gbnVsbDsKICAgIGNvbnN0IHJlY3QgPSBub2RlLmdldEJvdW5kaW5nQ2xpZW50UmVjdCgpOwogICAgY29uc3QgbGVmdCA9IE1hdGgubWF4KDAsIHJlY3QubGVmdCksIHJpZ2h0ID0gTWF0aC5taW4od2luZG93LmlubmVyV2lkdGgsIHJlY3QucmlnaHQpOwogICAgY29uc3QgdG9wID0gTWF0aC5tYXgoMCwgcmVjdC50b3ApLCBib3R0b20gPSBNYXRoLm1pbih3aW5kb3cuaW5uZXJIZWlnaHQsIHJlY3QuYm90dG9tKTsKICAgIGlmIChyaWdodCA8PSBsZWZ0IHx8IGJvdHRvbSA8PSB0b3ApIHJldHVybiBudWxsOwogICAgY29uc3QgZmlyc3RYID0gTWF0aC5jZWlsKGxlZnQpICsgMSwgbGFzdFggPSBNYXRoLmZsb29yKHJpZ2h0KSAtIDE7CiAgICBjb25zdCBmaXJzdFkgPSBNYXRoLmNlaWwodG9wKSArIDEsIGxhc3RZID0gTWF0aC5mbG9vcihib3R0b20pIC0gMTsKICAgIGZvciAobGV0IHkgPSBmaXJzdFk7IHkgPD0gbGFzdFk7IHkgKz0gOCkgewogICAgICBmb3IgKGxldCB4ID0gZmlyc3RYOyB4IDw9IGxhc3RYOyB4ICs9IDgpIHsKICAgICAgICBjb25zdCBoaXQgPSBkb2N1bWVudC5lbGVtZW50RnJvbVBvaW50KHgsIHkpOwogICAgICAgIGlmIChoaXQgaW5zdGFuY2VvZiBFbGVtZW50ICYmIGhpdC5jbG9zZXN0KCJhIikgPT09IG5vZGUpIHJldHVybiB7IHgsIHkgfTsKICAgICAgfQogICAgfQogICAgY29uc3QgeCA9IE1hdGgubWF4KGZpcnN0WCwgTWF0aC5taW4obGFzdFgsIE1hdGgucm91bmQoKGxlZnQgKyByaWdodCkgLyAyKSkpOwogICAgY29uc3QgeSA9IE1hdGgubWF4KGZpcnN0WSwgTWF0aC5taW4obGFzdFksIE1hdGgucm91bmQoKHRvcCArIGJvdHRvbSkgLyAyKSkpOwogICAgY29uc3QgaGl0ID0gZG9jdW1lbnQuZWxlbWVudEZyb21Qb2ludCh4LCB5KTsKICAgIHJldHVybiBoaXQgaW5zdGFuY2VvZiBFbGVtZW50ICYmIGhpdC5jbG9zZXN0KCJhIikgPT09IG5vZGUgPyB7IHgsIHkgfSA6IG51bGw7CiAgfSwgZXhwZWN0ZWRIcmVmKTsKICBhc3NlcnQocG9pbnQgIT09IG51bGwsIGBObyByZWFsIHZpZXdwb3J0IGhpdCB0YXJnZXQgcmVzb2x2ZWQgdG8gJHtleHBlY3RlZEhyZWZ9LmApOwogIGFzc2VydChwb2ludC54ID49IDAgJiYgcG9pbnQueCA8IDM5MCAmJiBwb2ludC55ID49IDAgJiYgcG9pbnQueSA8IDQyMCwgYFJlc29sdmVkIHJlc3VsdCBoaXQgcG9pbnQgaXMgb3V0c2lkZSB0aGUgYWN0aXZlIHZpZXdwb3J0OiAke0pTT04uc3RyaW5naWZ5KHBvaW50KX0uYCk7CiAgY29uc3QgaGl0UmVzb2x2ZXNUb0V4YWN0QW5jaG9yID0gYXdhaXQgcGFnZS5ldmFsdWF0ZSgoeyB4LCB5LCBocmVmIH0pID0+IHsKICAgIGNvbnN0IGhpdCA9IGRvY3VtZW50LmVsZW1lbnRGcm9tUG9pbnQoeCwgeSk7CiAgICByZXR1cm4gaGl0IGluc3RhbmNlb2YgRWxlbWVudCAmJiBoaXQuY2xvc2VzdCgiYSIpPy5nZXRBdHRyaWJ1dGUoImhyZWYiKSA9PT0gaHJlZjsKICB9LCB7IC4uLnBvaW50LCBocmVmOiBleHBlY3RlZEhyZWYgfSk7CiAgYXNzZXJ0KGhpdFJlc29sdmVzVG9FeGFjdEFuY2hvciwgYEhpdC10ZXN0IG5vIGxvbmdlciByZXNvbHZlcyB0byAke2V4cGVjdGVkSHJlZn0uYCk7CiAgcmV0dXJuIHBvaW50Owp9Cg==").decode()
-              old = base64.b64decode("ICBhd2FpdCBwYWdlLnNldFZpZXdwb3J0U2l6ZSh7IHdpZHRoOiAzOTAsIGhlaWdodDogNDIwIH0pOwogIGF3YWl0IHJlc3RvcmVkUmVzdWx0LnNjcm9sbEludG9WaWV3SWZOZWVkZWQoKTsKICBjb25zdCByZXN1bHRzU2Nyb2xsWSA9IGF3YWl0IHBhZ2UuZXZhbHVhdGUoKCkgPT4gd2luZG93LnNjcm9sbFkpOwogIGFzc2VydChyZXN1bHRzU2Nyb2xsWSA+IDAsICJTZWFyY2ggZml4dHVyZSB3YXMgbm90IHNjcm9sbGFibGUgZm9yIEJhY2sgcmVzdG9yYXRpb24gcHJvb2YuIik7CiAgY29uc3Qgc2VhcmNoVXJsQmVmb3JlRGV0YWlsID0gcGFnZS51cmwoKTsKICBjb25zdCByZXN1bHRCb3ggPSBhd2FpdCByZXN0b3JlZFJlc3VsdC5ib3VuZGluZ0JveCgpOwogIGFzc2VydCgKICAgIHJlc3VsdEJveCAhPT0gbnVsbCwKICAgICJTZWFyY2ggcmVzdWx0IGhhZCBubyB2aXNpYmxlIGNsaWNrIGdlb21ldHJ5IGZvciBCYWNrIHJlc3RvcmF0aW9uIHByb29mLiIsCiAgKTsKICBhd2FpdCBwYWdlLm1vdXNlLmNsaWNrKHJlc3VsdEJveC54ICsgcmVzdWx0Qm94LndpZHRoIC8gMiwgcmVzdWx0Qm94LnkgKyByZXN1bHRCb3guaGVpZ2h0IC8gMik7CiAgYXdhaXQgcGFnZS53YWl0Rm9yTG9hZFN0YXRlKCJuZXR3b3JraWRsZSIpOw==").decode()
-              new = base64.b64decode("ICBhd2FpdCBwYWdlLnNldFZpZXdwb3J0U2l6ZSh7IHdpZHRoOiAzOTAsIGhlaWdodDogNDIwIH0pOwogIGNvbnN0IGV4cGVjdGVkRGV0YWlsSHJlZiA9IGAvaWxhbi8ke2xpc3RpbmdJZH1gOwogIGNvbnN0IHNlYXJjaFVybEJlZm9yZURldGFpbCA9IHBhZ2UudXJsKCk7CiAgY29uc3QgcmVzdWx0SGl0UG9pbnQgPSBhd2FpdCBmaW5kRXhhY3RSZXN1bHRBbmNob3JIaXRQb2ludChleHBlY3RlZERldGFpbEhyZWYpOwogIGFzc2VydChwYWdlLnVybCgpID09PSBzZWFyY2hVcmxCZWZvcmVEZXRhaWwsICJSZXNvbHZpbmcgdGhlIGV4YWN0IHJlc3VsdCBoaXQgdGFyZ2V0IGNoYW5nZWQgdGhlIGNhbm9uaWNhbCBzZWFyY2ggVVJMLiIpOwogIGNvbnN0IHJlc3VsdHNTY3JvbGxZID0gYXdhaXQgcGFnZS5ldmFsdWF0ZSgoKSA9PiB3aW5kb3cuc2Nyb2xsWSk7CiAgYXNzZXJ0KHJlc3VsdHNTY3JvbGxZID4gMCwgIlNlYXJjaCBmaXh0dXJlIHdhcyBub3Qgc2Nyb2xsYWJsZSBmb3IgQmFjayByZXN0b3JhdGlvbiBwcm9vZi4iKTsKICBhc3NlcnQocGFnZS51cmwoKSA9PT0gc2VhcmNoVXJsQmVmb3JlRGV0YWlsLCAiQ2Fub25pY2FsIHNlYXJjaCBVUkwgY2hhbmdlZCBpbW1lZGlhdGVseSBiZWZvcmUgdGhlIHJlYWwgcmVzdWx0IGNsaWNrLiIpOwogIGF3YWl0IHBhZ2UubW91c2UuY2xpY2socmVzdWx0SGl0UG9pbnQueCwgcmVzdWx0SGl0UG9pbnQueSk7CiAgYXdhaXQgcGFnZS53YWl0Rm9yVVJMKGAke3B1YmxpY0Jhc2VVcmx9JHtleHBlY3RlZERldGFpbEhyZWZ9YCk7CiAgYXNzZXJ0KHBhZ2UudXJsKCkgPT09IGAke3B1YmxpY0Jhc2VVcmx9JHtleHBlY3RlZERldGFpbEhyZWZ9YCwgIlZlcmlmaWVkIHJlYWwgcmVzdWx0IGNsaWNrIGRpZCBub3QgbmF2aWdhdGUgdG8gdGhlIGV4YWN0IGxpc3RpbmcgZGV0YWlsIFVSTC4iKTsKICBhd2FpdCBwYWdlLndhaXRGb3JMb2FkU3RhdGUoIm5ldHdvcmtpZGxlIik7").decode()
-              insertion = "\ntry {\n"
-              if text.count(insertion) != 1 or text.count(old) != 1:
-                  raise SystemExit("Detail discriminator patch anchors changed; refusing blind mutation")
-              text = text.replace(insertion, "\n" + helper + insertion, 1).replace(old, new, 1)
-              buyer.write_text(text)
-          PY
-
-          if git diff --quiet -- scripts/stage1-self-service-browser-e2e-buyer.ts; then
-            echo "Durable exact-anchor discriminator is already installed."
-          else
-            bunx prettier --write scripts/stage1-self-service-browser-e2e-buyer.ts
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add scripts/stage1-self-service-browser-e2e-buyer.ts
-            git commit -m "Use verified real hit target for detail navigation"
-            git push origin HEAD:agent/product-finding-phase2
-          fi
-
-      - name: Check canonical formatting
-        run: bunx prettier --check scripts/stage1-self-service-browser-e2e-buyer.ts
+          bunx prettier --check \
+            docs/PRODUCT_FINDING_PHASE2_CONTRACT.md \
+            src/components/product/ProductSelectionFields.tsx \
+            src/components/search/ProductFindingFilterSheet.tsx \
+            src/lib/product-finding-buyer-facets.ts \
+            src/lib/product-finding-contract.ts \
+            src/lib/product-finding-contract.test.ts \
+            src/lib/product-finding-range-filters.test.ts \
+            src/lib/product-finding-search-url.ts \
+            src/lib/product-finding-search-url.test.ts \
+            src/lib/product-finding-ui-contract.ts \
+            src/lib/product-finding-ui-contract.test.ts \
+            src/lib/listing-search.ts \
+            src/lib/listing-search.test.ts \
+            src/lib/listing-return.ts \
+            src/lib/stage1-product-fields.ts \
+            src/routes-pilot/ara.tsx \
+            src/routes-pilot/ilan-ver.tsx \
+            src/routes-pilot/ilanlarim.tsx \
+            'src/routes-pilot/ilan.$id.tsx' \
+            scripts/stage1-self-service-browser-e2e.ts \
+            scripts/stage1-self-service-browser-e2e-shared.ts \
+            scripts/stage1-self-service-browser-e2e-seller-create.ts \
+            scripts/stage1-self-service-browser-e2e-buyer.ts \
+            scripts/stage1-self-service-browser-e2e-seller-management.ts \
+            package.json
 
       - name: Lint
         run: bun run lint
@@ -76,4 +74,4 @@ jobs:
         run: bun run build
 
       - name: Verify CI did not mutate tracked source
-        run: git diff --check && git diff --exit-code
+        run: git diff --exit-code
