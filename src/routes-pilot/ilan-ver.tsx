@@ -11,7 +11,14 @@ import {
   X,
 } from "lucide-react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
+import { ProductSelectionFields } from "@/components/product/ProductSelectionFields";
 import { getDistrictsForCity, locationCities } from "@/data/turkiye-locations";
+import {
+  transitionProductSelection,
+  type ProductAttributes,
+  type ProductType,
+} from "@/lib/product-finding-contract";
+import { appendStage1ProductFields } from "@/lib/stage1-product-fields";
 import { LISTING_PHOTO_ALLOWED_MIME_TYPES, LISTING_PHOTO_MAX_BYTES } from "@/lib/listing-photo";
 import {
   STAGE1_CATEGORIES,
@@ -107,6 +114,8 @@ function Stage1ListingWizard() {
   const [step, setStep] = useState(1);
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
   const [category, setCategory] = useState<Stage1Category | "">("");
+  const [productType, setProductType] = useState<ProductType | null>(null);
+  const [productAttributes, setProductAttributes] = useState<ProductAttributes>({});
   const [title, setTitle] = useState("");
   const [condition, setCondition] = useState<Stage1Condition | "">("");
   const [price, setPrice] = useState("");
@@ -185,6 +194,26 @@ function Stage1ListingWizard() {
     });
   };
 
+  const changeCategory = (nextCategory: Stage1Category | "") => {
+    if (nextCategory === category) return;
+    if (!nextCategory || !category) {
+      setCategory(nextCategory);
+      setProductType(null);
+      setProductAttributes({});
+      return;
+    }
+    const transitioned = transitionProductSelection({
+      previousCategory: category,
+      previousProductType: productType,
+      previousAttributes: productAttributes,
+      nextCategory,
+      nextProductType: null,
+    });
+    setCategory(nextCategory);
+    setProductType(transitioned.productType);
+    setProductAttributes(transitioned.productAttributes);
+  };
+
   const validateCurrentStep = (): boolean => {
     clearError();
     if (step === 1 && photos.length < 1) {
@@ -213,9 +242,11 @@ function Stage1ListingWizard() {
   };
 
   const buildSubmissionForm = () => {
+    if (!category) throw new Error("Category is required before submission.");
     const form = new FormData();
     form.set("action", "submit_listing");
     form.set("category", category);
+    appendStage1ProductFields(form, { category, productType, productAttributes });
     form.set("title", title.trim());
     if (condition) form.set("condition", condition);
     form.set("priceMode", isFree ? "free" : "priced");
@@ -484,7 +515,7 @@ function Stage1ListingWizard() {
                     id="stage1-category"
                     aria-label="Kategori"
                     value={category}
-                    onChange={(event) => setCategory(event.target.value as Stage1Category)}
+                    onChange={(event) => changeCategory(event.target.value as Stage1Category | "")}
                     className={selectClass}
                   >
                     <option value="">Kategori seçin</option>
@@ -500,6 +531,16 @@ function Stage1ListingWizard() {
                   />
                 </div>
               </div>
+              <ProductSelectionFields
+                category={category}
+                productType={productType}
+                attributes={productAttributes}
+                idPrefix="stage1-product"
+                onChange={(next) => {
+                  setProductType(next.productType);
+                  setProductAttributes(next.attributes);
+                }}
+              />
               <div className="block">
                 <label htmlFor="stage1-title" className="text-sm font-semibold">
                   Başlık

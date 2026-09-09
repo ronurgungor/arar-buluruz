@@ -57,6 +57,31 @@ export function hasStage1ProductFields(form: FormData): boolean {
   );
 }
 
+export function appendStage1ProductFields(
+  form: FormData,
+  input: {
+    category: Stage1Category;
+    productType: ProductType | null;
+    productAttributes: ProductAttributes;
+  },
+): ValidatedProductSelection {
+  const selection = normalizeSelection({
+    category: input.category,
+    productType: input.productType,
+    productAttributesVersion: input.productType === null ? null : undefined,
+    productAttributes: input.productAttributes,
+  });
+
+  form.set("productType", selection.productType ?? "");
+  form.set("productAttributes", JSON.stringify(selection.productAttributes));
+  if (selection.productAttributesVersion === null) {
+    form.delete("productAttributesVersion");
+  } else {
+    form.set("productAttributesVersion", String(selection.productAttributesVersion));
+  }
+  return selection;
+}
+
 export function parseStage1ProductFields(
   form: FormData,
   category: Stage1Category,

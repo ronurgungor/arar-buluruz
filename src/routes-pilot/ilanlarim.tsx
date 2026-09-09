@@ -2,7 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, ChevronDown, Eye, Trash2 } from "lucide-react";
 import { PilotTopBar } from "@/build-profiles/pilot/PilotTopBar";
+import { ProductSelectionFields } from "@/components/product/ProductSelectionFields";
 import { getDistrictsForCity, locationCities } from "@/data/turkiye-locations";
+import {
+  PRODUCT_ATTRIBUTES_VERSION,
+  transitionProductSelection,
+} from "@/lib/product-finding-contract";
+import { appendStage1ProductFields } from "@/lib/stage1-product-fields";
 import {
   STAGE1_CATEGORIES,
   STAGE1_CATEGORY_LABELS,
@@ -280,6 +286,11 @@ function SellerListings() {
     form.set("action", "seller_update");
     form.set("listingId", editing.id);
     form.set("category", editing.category);
+    appendStage1ProductFields(form, {
+      category: editing.category,
+      productType: editing.productType,
+      productAttributes: editing.productAttributes,
+    });
     if (editing.condition) form.set("condition", editing.condition);
     form.set("priceMode", editing.isFree ? "free" : "priced");
     form.set("price", editing.isFree ? "0" : editing.priceText.trim());
@@ -598,9 +609,23 @@ function SellerListings() {
                   <select
                     aria-label="İlanlarım kategori"
                     value={editing.category}
-                    onChange={(event) =>
-                      setEditing({ ...editing, category: event.target.value as Stage1Category })
-                    }
+                    onChange={(event) => {
+                      const nextCategory = event.target.value as Stage1Category;
+                      const transitioned = transitionProductSelection({
+                        previousCategory: editing.category,
+                        previousProductType: editing.productType,
+                        previousAttributes: editing.productAttributes,
+                        nextCategory,
+                        nextProductType: null,
+                      });
+                      setEditing({
+                        ...editing,
+                        category: nextCategory,
+                        productType: transitioned.productType,
+                        productAttributesVersion: transitioned.productAttributesVersion,
+                        productAttributes: transitioned.productAttributes,
+                      });
+                    }}
                     className={selectClass}
                   >
                     {STAGE1_CATEGORIES.map((value) => (
@@ -647,6 +672,20 @@ function SellerListings() {
                 </div>
               </label>
             </div>
+            <ProductSelectionFields
+              category={editing.category}
+              productType={editing.productType}
+              attributes={editing.productAttributes}
+              idPrefix="seller-edit-product"
+              onChange={(next) =>
+                setEditing({
+                  ...editing,
+                  productType: next.productType,
+                  productAttributesVersion: next.productType ? PRODUCT_ATTRIBUTES_VERSION : null,
+                  productAttributes: next.attributes,
+                })
+              }
+            />
             <label className="block">
               <span className="text-sm font-medium">Fiyat (TL)</span>
               <div className="relative mt-1">

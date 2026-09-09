@@ -1,0 +1,324 @@
+import path from "node:path";
+import { chromium } from "playwright";
+import {
+  HarnessMonitor,
+  assert,
+  assertResponsiveRoute,
+  expectHref,
+  ownerPhone,
+  publicBaseUrl,
+  readPublicHandoff,
+  resultsDir,
+} from "./stage1-self-service-browser-e2e-shared";
+
+const { listingId, title } = readPublicHandoff();
+const browser = await chromium.launch({ headless: true });
+const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+const page = await context.newPage();
+const monitor = new HarnessMonitor();
+monitor.observePage(page);
+
+const filterScrollSelector = '[data-testid="product-finding-filter-scroll"]';
+
+async function enterKmByUserInteraction(value: string) {
+  const scrollContainer = page.locator(filterScrollSelector);
+  assert(
+    (await scrollContainer.count()) === 1,
+    "Product Finding filter scroll body must exist exactly once while editing kilometre filters.",
+  );
+
+  await page.waitForFunction(
+    (selector) => {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) return false;
+      const rect = element.getBoundingClientRect();
+      const visibleLeft = Math.max(0, rect.left);
+      const visibleRight = Math.min(window.innerWidth, rect.right);
+      const visibleTop = Math.max(0, rect.top);
+      const visibleBottom = Math.min(window.innerHeight, rect.bottom);
+      if (visibleRight <= visibleLeft || visibleBottom <= visibleTop) return false;
+      const centerX = (visibleLeft + visibleRight) / 2;
+      for (let y = Math.ceil(visibleTop) + 1; y < Math.floor(visibleBottom); y += 2) {
+        const hit = document.elementFromPoint(centerX, y);
+        if (hit === element || (hit instanceof Node && element.contains(hit))) return true;
+      }
+      return false;
+    },
+    filterScrollSelector,
+    { timeout: 2000 },
+  );
+
+  const geometry = await scrollContainer.evaluate((node) => {
+    const element = node as HTMLElement;
+    const rect = element.getBoundingClientRect();
+    const visibleLeft = Math.max(0, rect.left);
+    const visibleRight = Math.min(window.innerWidth, rect.right);
+    const visibleTop = Math.max(0, rect.top);
+    const visibleBottom = Math.min(window.innerHeight, rect.bottom);
+    const centerX = (visibleLeft + visibleRight) / 2;
+
+    const visibleRuns: Array<{ top: number; bottom: number }> = [];
+    let runTop: number | null = null;
+    const firstY = Math.ceil(visibleTop) + 1;
+    const lastY = Math.floor(visibleBottom) - 1;
+    for (let y = firstY; y <= lastY; y += 2) {
+      const hit = document.elementFromPoint(centerX, y);
+      const hitsContainer = hit === element || (hit instanceof Node && element.contains(hit));
+      if (hitsContainer && runTop === null) runTop = y;
+      if (!hitsContainer && runTop !== null) {
+        visibleRuns.push({ top: runTop, bottom: y - 2 });
+        runTop = null;
+      }
+    }
+    if (runTop !== null) visibleRuns.push({ top: runTop, bottom: lastY });
+
+    const visibleRun = visibleRuns.sort((a, b) => b.bottom - b.top - (a.bottom - a.top))[0];
+    return {
+      centerX,
+      centerY: visibleRun ? (visibleRun.top + visibleRun.bottom) / 2 : 0,
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+      scrollTop: element.scrollTop,
+      visibleWidth: visibleRight - visibleLeft,
+      visibleHeight: visibleRun ? visibleRun.bottom - visibleRun.top : 0,
+      visibleTop: visibleRun?.top ?? null,
+      visibleBottom: visibleRun?.bottom ?? null,
+    };
+  });
+  assert(
+    geometry.scrollHeight > geometry.clientHeight,
+    `Filter Drawer body is not scrollable: ${JSON.stringify(geometry)}.`,
+  );
+  assert(
+    geometry.visibleWidth > 0 && geometry.visibleHeight > 0,
+    `Filter Drawer scroll container has no visible intersection: ${JSON.stringify(geometry)}.`,
+  );
+
+  await page.mouse.move(geometry.centerX, geometry.centerY);
+  const beforeScrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
+  await page.mouse.wheel(0, 360);
+  await page.waitForFunction(
+    ({ selector, previous }) => {
+      const container = document.querySelector(selector);
+      return container instanceof HTMLElement && container.scrollTop > previous;
+    },
+    { selector: filterScrollSelector, previous: beforeScrollTop },
+    { timeout: 2000 },
+  );
+  const afterScrollTop = await scrollContainer.evaluate((node) => (node as HTMLElement).scrollTop);
+  assert(
+    afterScrollTop > beforeScrollTop,
+    `Filter Drawer did not scroll by real wheel gesture: ${beforeScrollTop} -> ${afterScrollTop}.`,
+  );
+
+  const kmMax = page.getByLabel("Kilometre maksimum", { exact: true });
+  await kmMax.click();
+  await kmMax.press("ControlOrMeta+A");
+  await page.keyboard.type(value);
+  assert(
+    (await kmMax.inputValue()) === value,
+    `Kilometre maksimum değeri ${value} olarak girilemedi.`,
+  );
+}
+
+try {
+  await page.goto(`${publicBaseUrl}/ara?q=b150`, { waitUntil: "networkidle" });
+  await page.getByTestId("product-finding-filter-trigger").click();
+  await page.getByLabel("Filtre il", { exact: true }).waitFor();
+  await page.getByLabel("Filtre il", { exact: true }).selectOption("Tekirdağ");
+  await page.getByLabel("Filtre ilçe", { exact: true }).selectOption("Çorlu");
+  await page.getByLabel("Minimum fiyat", { exact: true }).fill("0");
+  await page.getByLabel("Maksimum fiyat", { exact: true }).fill("5000");
+  await page.getByLabel("Filtre kategori", { exact: true }).selectOption("vehicle");
+  await page.getByRole("button", { name: "Otomobil", exact: true }).click();
+  await page.getByLabel("Model yılı minimum", { exact: true }).fill("2010");
+  await page.getByLabel("Model yılı maksimum", { exact: true }).fill("2020");
+  await enterKmByUserInteraction("120000");
+  await page.getByRole("button", { name: "Otomatik", exact: true }).click();
+  await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
+
+  const result = page.getByRole("link", { name: new RegExp(title) }).first();
+  await result.waitFor();
+  await page.getByText("2016 · 118.000 km · Otomatik", { exact: true }).waitFor();
+  const filteredUrl = new URL(page.url());
+  assert(
+    filteredUrl.searchParams.get("q") === "b150",
+    "Query was not retained in canonical URL state.",
+  );
+  assert(filteredUrl.searchParams.get("category") === "vehicle", "Category was not serialized.");
+  assert(
+    filteredUrl.searchParams.get("productType") === "automobile",
+    "Product type was not serialized.",
+  );
+  assert(filteredUrl.searchParams.get("province") === "Tekirdağ", "Province was not serialized.");
+  assert(filteredUrl.searchParams.get("district") === "Çorlu", "District was not serialized.");
+  assert(filteredUrl.searchParams.get("priceMin") === "0", "Price min was not serialized.");
+  assert(filteredUrl.searchParams.get("priceMax") === "5000", "Price max was not serialized.");
+  const contextual = JSON.parse(filteredUrl.searchParams.get("contextual") ?? "{}") as Record<
+    string,
+    unknown
+  >;
+  assert(
+    JSON.stringify(contextual.year) === JSON.stringify({ min: 2010, max: 2020 }) &&
+      JSON.stringify(contextual.km) === JSON.stringify({ min: null, max: 120000 }) &&
+      JSON.stringify(contextual.transmission) === JSON.stringify(["automatic"]),
+    "Contextual filters were not serialized canonically.",
+  );
+
+  await page.getByTestId("product-finding-filter-trigger").click();
+  await enterKmByUserInteraction("100000");
+  await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
+  await page.getByText("Sonuç bulunamadı", { exact: true }).waitFor();
+  assert(
+    (await page.getByRole("link", { name: new RegExp(title) }).count()) === 0,
+    "Active numeric range was silently relaxed.",
+  );
+  const strictUrl = new URL(page.url());
+  const strictContextual = JSON.parse(strictUrl.searchParams.get("contextual") ?? "{}") as Record<
+    string,
+    unknown
+  >;
+  assert(
+    JSON.stringify(strictContextual.km) === JSON.stringify({ min: null, max: 100000 }),
+    "Zero-result range was not retained as a hard canonical filter.",
+  );
+
+  await page.getByRole("button", { name: "Filtreleri temizle", exact: true }).waitFor();
+  const hardFilterUrlBeforeReopen = page.url();
+  const filterTrigger = page.getByTestId("product-finding-filter-trigger");
+  assert(
+    (await filterTrigger.count()) === 1,
+    "Product Finding filter trigger must exist exactly once in the zero-result state.",
+  );
+  await filterTrigger.click();
+  assert(
+    page.url() === hardFilterUrlBeforeReopen,
+    "Opening the Product Finding Drawer changed the canonical hard-filter URL.",
+  );
+  await page.getByLabel("Kilometre maksimum", { exact: true }).waitFor();
+  assert(
+    page.url() === hardFilterUrlBeforeReopen,
+    "The hard-filter URL changed while opening the Product Finding Drawer.",
+  );
+  await enterKmByUserInteraction("120000");
+  await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
+  const restoredResult = page.getByRole("link", { name: new RegExp(title) }).first();
+  await restoredResult.waitFor();
+  await page.getByLabel("Sıralama", { exact: true }).selectOption("price_asc");
+  await restoredResult.waitFor();
+  assert(new URL(page.url()).searchParams.get("sort") === "price_asc", "Sort was not serialized.");
+
+  await page.setViewportSize({ width: 390, height: 420 });
+  const expectedDetailHref = `/ilan/${listingId}`;
+  const searchUrlBeforeDetail = page.url();
+  const exactResultAnchor = page.locator(`a[href="${expectedDetailHref}"]`);
+  assert(
+    (await exactResultAnchor.count()) === 1,
+    `Expected exactly one search-result anchor for ${expectedDetailHref}.`,
+  );
+  await exactResultAnchor.waitFor();
+  assert(
+    (await exactResultAnchor.getAttribute("href")) === expectedDetailHref,
+    `Search-result href did not match ${expectedDetailHref}.`,
+  );
+  assert(
+    page.url() === searchUrlBeforeDetail,
+    "Resolving the exact result anchor changed the canonical search URL.",
+  );
+
+  let resultsClickScrollY: number | null = null;
+  await page.exposeFunction("__phase2RecordResultClickScrollY", (scrollY: number) => {
+    resultsClickScrollY = scrollY;
+  });
+  await exactResultAnchor.evaluate((anchor) => {
+    anchor.addEventListener(
+      "click",
+      () => {
+        const bridge = window as Window & {
+          __phase2RecordResultClickScrollY?: (scrollY: number) => void;
+        };
+        bridge.__phase2RecordResultClickScrollY?.(window.scrollY);
+      },
+      { capture: true, once: true },
+    );
+  });
+
+  assert(
+    page.url() === searchUrlBeforeDetail,
+    "Canonical search URL changed immediately before the genuine result click.",
+  );
+  await exactResultAnchor.click();
+  await page.waitForURL(`${publicBaseUrl}${expectedDetailHref}`);
+  assert(
+    page.url() === `${publicBaseUrl}${expectedDetailHref}`,
+    "Genuine result click did not navigate to the exact listing detail URL.",
+  );
+  assert(
+    resultsClickScrollY !== null && resultsClickScrollY > 0,
+    "Real result click-time scroll position was not observed.",
+  );
+  await page.waitForLoadState("networkidle");
+  await page.getByRole("heading", { level: 1, name: title }).waitFor();
+  await page.getByText("Ücretsiz", { exact: true }).waitFor();
+  const hero = page.getByAltText(`${title} fotoğraf 1`);
+  const heroSrc = await hero.getAttribute("src");
+  assert(
+    heroSrc?.startsWith(`/api/listing-photo/${listingId}/`),
+    `Public photo bypassed application signing route: ${heroSrc}`,
+  );
+  const decoded = await hero.evaluate((image) => ({
+    complete: (image as HTMLImageElement).complete,
+    width: (image as HTMLImageElement).naturalWidth,
+  }));
+  assert(decoded.complete && decoded.width > 0, "Application photo did not decode.");
+  const contactBar = page.getByTestId("detail-contact-bar");
+  expectHref(
+    await contactBar.getByRole("link", { name: "Ara", exact: true }).getAttribute("href"),
+    `tel:${ownerPhone}`,
+  );
+  expectHref(
+    await contactBar
+      .getByRole("link", { name: "WhatsApp’tan yaz", exact: true })
+      .getAttribute("href"),
+    `https://wa.me/${ownerPhone.slice(1)}`,
+  );
+
+  await page.getByTestId("results-back").click();
+  await page.waitForURL(searchUrlBeforeDetail);
+  await page.waitForFunction(
+    (expected) => Math.abs(window.scrollY - expected) <= 5,
+    resultsClickScrollY,
+  );
+  assert(page.url() === searchUrlBeforeDetail, "Back did not restore the exact search URL.");
+  assert(
+    Math.abs((await page.evaluate(() => window.scrollY)) - resultsClickScrollY) <= 5,
+    "Back did not restore the real result click-time scroll position.",
+  );
+
+  const compactContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  try {
+    const compactPage = await compactContext.newPage();
+    monitor.observePage(compactPage);
+    await compactPage.goto(`${publicBaseUrl}/ara?q=${encodeURIComponent("b 150")}`, {
+      waitUntil: "networkidle",
+    });
+    await compactPage
+      .getByRole("link", { name: new RegExp(title) })
+      .first()
+      .waitFor();
+  } finally {
+    await compactContext.close();
+  }
+
+  await assertResponsiveRoute(page, `${publicBaseUrl}/ara?q=b150`, "/ara", "İlan ara");
+  await assertResponsiveRoute(page, `${publicBaseUrl}/ilan/${listingId}`, "/ilan/$id", title);
+  await page.screenshot({
+    path: path.join(resultsDir, "phase2-buyer-public-state.png"),
+    fullPage: true,
+  });
+  monitor.assertClean();
+  console.log("Phase 2 buyer Product Finding process passed.");
+} finally {
+  await context.close();
+  await browser.close();
+}
