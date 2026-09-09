@@ -618,7 +618,8 @@ export async function restoreCookie(context: BrowserContext, cookie: Cookie): Pr
     {
       name: cookie.name,
       value: cookie.value,
-      url: publicBaseUrl,
+      domain: cookie.domain,
+      path: cookie.path,
       httpOnly: cookie.httpOnly,
       secure: cookie.secure,
       sameSite: cookie.sameSite,
