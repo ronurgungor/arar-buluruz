@@ -20,97 +20,13 @@ monitor.observePage(page);
 
 const filterScrollSelector = '[data-testid="product-finding-filter-scroll"]';
 
-async function logFilterScrollSelectorState(label: string) {
-  const snapshot = await page.getByLabel("Filtre il", { exact: true }).evaluate((node) => {
-    const ancestors: Array<{ tag: string; testId: string | null; className: string }> = [];
-    let current: HTMLElement | null = node.parentElement;
-    while (current) {
-      ancestors.push({
-        tag: current.tagName,
-        testId: current.getAttribute("data-testid"),
-        className: current.className,
-      });
-      current = current.parentElement;
-    }
-    return {
-      testIdCount: document.querySelectorAll('[data-testid="product-finding-filter-scroll"]')
-        .length,
-      ancestors,
-    };
-  });
-  console.log(`Phase 2 filter scroll selector diagnostic (${label}): ${JSON.stringify(snapshot)}`);
-}
-
 async function enterKmByUserInteraction(value: string) {
-  const [rawSnapshot, cssCount, testIdCount] = await Promise.all([
-    page.evaluate(() => {
-      const container = document.querySelector('[data-testid="product-finding-filter-scroll"]');
-      const activeElement = document.activeElement;
-      const drawer = container?.closest("[data-vaul-drawer]");
-      return {
-        rawScrollCount: document.querySelectorAll('[data-testid="product-finding-filter-scroll"]')
-          .length,
-        yearMaxCount: document.querySelectorAll('[aria-label="Model yılı maksimum"]').length,
-        kmMinCount: document.querySelectorAll('[aria-label="Kilometre minimum"]').length,
-        kmMaxCount: document.querySelectorAll('[aria-label="Kilometre maksimum"]').length,
-        url: window.location.href,
-        activeElement: {
-          tag: activeElement?.tagName ?? null,
-          ariaLabel: activeElement?.getAttribute("aria-label") ?? null,
-        },
-        drawer:
-          drawer instanceof HTMLElement
-            ? {
-                tag: drawer.tagName,
-                role: drawer.getAttribute("role"),
-                ariaModal: drawer.getAttribute("aria-modal"),
-                dataState: drawer.getAttribute("data-state"),
-                dataVaulDrawer: drawer.getAttribute("data-vaul-drawer"),
-                dataVaulDrawerDirection: drawer.getAttribute("data-vaul-drawer-direction"),
-                style: drawer.getAttribute("style"),
-                transform: window.getComputedStyle(drawer).transform,
-              }
-            : null,
-      };
-    }),
-    page.locator(filterScrollSelector).count(),
-    page.getByTestId("product-finding-filter-scroll").count(),
-  ]);
-  console.log(
-    `Phase 2 atomic filter selector diagnostic: ${JSON.stringify({
-      ...rawSnapshot,
-      cssCount,
-      testIdCount,
-    })}`,
-  );
-
-  assert(
-    rawSnapshot.rawScrollCount === 1,
-    `Filter Drawer scroll container raw DOM count changed at helper entry: ${JSON.stringify({
-      ...rawSnapshot,
-      cssCount,
-      testIdCount,
-    })}.`,
-  );
-  assert(
-    cssCount === 1,
-    `Application-owned filter scroll CSS locator count is ${cssCount}: ${JSON.stringify({
-      ...rawSnapshot,
-      testIdCount,
-    })}.`,
-  );
-  assert(
-    rawSnapshot.kmMaxCount === 1,
-    `Kilometre maksimum contextual facet disappeared while the Drawer remained present: ${JSON.stringify(
-      {
-        ...rawSnapshot,
-        cssCount,
-        testIdCount,
-      },
-    )}.`,
-  );
-
   const scrollContainer = page.locator(filterScrollSelector);
+  assert(
+    (await scrollContainer.count()) === 1,
+    "Product Finding filter scroll body must exist exactly once while editing kilometre filters.",
+  );
+
   await page.waitForFunction(
     (selector) => {
       const element = document.querySelector(selector);
@@ -131,6 +47,7 @@ async function enterKmByUserInteraction(value: string) {
     filterScrollSelector,
     { timeout: 2000 },
   );
+
   const geometry = await scrollContainer.evaluate((node) => {
     const element = node as HTMLElement;
     const rect = element.getBoundingClientRect();
@@ -208,7 +125,6 @@ try {
   await page.goto(`${publicBaseUrl}/ara?q=b150`, { waitUntil: "networkidle" });
   await page.getByTestId("product-finding-filter-trigger").click();
   await page.getByLabel("Filtre il", { exact: true }).waitFor();
-  await logFilterScrollSelectorState("after-open");
   await page.getByLabel("Filtre il", { exact: true }).selectOption("Tekirdağ");
   await page.getByLabel("Filtre ilçe", { exact: true }).selectOption("Çorlu");
   await page.getByLabel("Minimum fiyat", { exact: true }).fill("0");
@@ -217,7 +133,6 @@ try {
   await page.getByRole("button", { name: "Otomobil", exact: true }).click();
   await page.getByLabel("Model yılı minimum", { exact: true }).fill("2010");
   await page.getByLabel("Model yılı maksimum", { exact: true }).fill("2020");
-  await logFilterScrollSelectorState("after-year-inputs");
   await enterKmByUserInteraction("120000");
   await page.getByRole("button", { name: "Otomatik", exact: true }).click();
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
@@ -294,7 +209,7 @@ try {
   assert(new URL(page.url()).searchParams.get("sort") === "price_asc", "Sort was not serialized.");
 
   await page.setViewportSize({ width: 390, height: 420 });
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await restoredResult.scrollIntoViewIfNeeded();
   const resultsScrollY = await page.evaluate(() => window.scrollY);
   assert(resultsScrollY > 0, "Search fixture was not scrollable for Back restoration proof.");
   const searchUrlBeforeDetail = page.url();
