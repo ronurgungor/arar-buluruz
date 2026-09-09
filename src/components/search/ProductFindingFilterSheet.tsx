@@ -266,6 +266,7 @@ export function ProductFindingFilterSheet({
       <DrawerTrigger asChild>
         <button
           type="button"
+          data-testid="product-finding-filter-trigger"
           className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-semibold shadow-sm transition-colors hover:bg-accent"
         >
           <SlidersHorizontal aria-hidden className="h-4 w-4" />

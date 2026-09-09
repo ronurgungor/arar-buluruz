@@ -206,7 +206,7 @@ async function enterKmByUserInteraction(value: string) {
 
 try {
   await page.goto(`${publicBaseUrl}/ara?q=b150`, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: /^Filtreler/ }).click();
+  await page.getByTestId("product-finding-filter-trigger").click();
   await page.getByLabel("Filtre il", { exact: true }).waitFor();
   await logFilterScrollSelectorState("after-open");
   await page.getByLabel("Filtre il", { exact: true }).selectOption("Tekirdağ");
@@ -250,7 +250,7 @@ try {
     "Contextual filters were not serialized canonically.",
   );
 
-  await page.getByRole("button", { name: /^Filtreler/ }).click();
+  await page.getByTestId("product-finding-filter-trigger").click();
   await enterKmByUserInteraction("100000");
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
   await page.getByText("Sonuç bulunamadı", { exact: true }).waitFor();
@@ -268,7 +268,23 @@ try {
     "Zero-result range was not retained as a hard canonical filter.",
   );
 
-  await page.getByRole("button", { name: /^Filtreler/ }).click();
+  await page.getByRole("button", { name: "Filtreleri temizle", exact: true }).waitFor();
+  const hardFilterUrlBeforeReopen = page.url();
+  const filterTrigger = page.getByTestId("product-finding-filter-trigger");
+  assert(
+    (await filterTrigger.count()) === 1,
+    "Product Finding filter trigger must exist exactly once in the zero-result state.",
+  );
+  await filterTrigger.click();
+  assert(
+    page.url() === hardFilterUrlBeforeReopen,
+    "Opening the Product Finding Drawer changed the canonical hard-filter URL.",
+  );
+  await page.getByLabel("Kilometre maksimum", { exact: true }).waitFor();
+  assert(
+    page.url() === hardFilterUrlBeforeReopen,
+    "The hard-filter URL changed while opening the Product Finding Drawer.",
+  );
   await enterKmByUserInteraction("120000");
   await page.getByRole("button", { name: "Sonuçları göster", exact: true }).click();
   const restoredResult = page.getByRole("link", { name: new RegExp(title) }).first();
