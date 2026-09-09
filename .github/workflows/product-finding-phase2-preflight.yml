@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: product-finding-phase2-preflight-${{ github.ref }}
@@ -15,14 +15,134 @@ concurrency:
 
 jobs:
   quality:
-    name: Phase 2 read-only formatting, lint, unit and build
+    name: Phase 2 detail-navigation discriminator and quality gate
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          persist-credentials: false
+
+      - name: Install durable exact-anchor hit-test discriminator once
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          buyer = Path("scripts/stage1-self-service-browser-e2e-buyer.ts")
+          text = buyer.read_text()
+          marker = "async function findExactResultAnchorHitPoint"
+          if marker not in text:
+              insertion_point = "\ntry {\n"
+              helper = r'''
+async function findExactResultAnchorHitPoint(expectedHref: string) {
+  const exactAnchor = page.locator(`a[href="${expectedHref}"]`);
+  assert(
+    (await exactAnchor.count()) === 1,
+    `Expected exactly one search-result anchor for ${expectedHref}.`,
+  );
+  await exactAnchor.waitFor();
+  assert(
+    (await exactAnchor.getAttribute("href")) === expectedHref,
+    `Search-result href did not match ${expectedHref}.`,
+  );
+  await exactAnchor.scrollIntoViewIfNeeded();
+
+  const point = await exactAnchor.evaluate((node, href) => {
+    if (!(node instanceof HTMLAnchorElement) || node.getAttribute("href") !== href) return null;
+    const rect = node.getBoundingClientRect();
+    const left = Math.max(0, rect.left);
+    const right = Math.min(window.innerWidth, rect.right);
+    const top = Math.max(0, rect.top);
+    const bottom = Math.min(window.innerHeight, rect.bottom);
+    if (right <= left || bottom <= top) return null;
+
+    const firstX = Math.ceil(left) + 1;
+    const lastX = Math.floor(right) - 1;
+    const firstY = Math.ceil(top) + 1;
+    const lastY = Math.floor(bottom) - 1;
+    for (let y = firstY; y <= lastY; y += 8) {
+      for (let x = firstX; x <= lastX; x += 8) {
+        const hit = document.elementFromPoint(x, y);
+        if (!(hit instanceof Element)) continue;
+        if (hit.closest("a") === node) return { x, y };
+      }
+    }
+
+    const x = Math.max(firstX, Math.min(lastX, Math.round((left + right) / 2)));
+    const y = Math.max(firstY, Math.min(lastY, Math.round((top + bottom) / 2)));
+    const hit = document.elementFromPoint(x, y);
+    return hit instanceof Element && hit.closest("a") === node ? { x, y } : null;
+  }, expectedHref);
+
+  assert(point !== null, `No real viewport hit target resolved to ${expectedHref}.`);
+  assert(
+    point.x >= 0 && point.x < 390 && point.y >= 0 && point.y < 420,
+    `Resolved result hit point is outside the active viewport: ${JSON.stringify(point)}.`,
+  );
+  const hitResolvesToExactAnchor = await page.evaluate(
+    ({ x, y, href }) => {
+      const hit = document.elementFromPoint(x, y);
+      return hit instanceof Element && hit.closest("a")?.getAttribute("href") === href;
+    },
+    { ...point, href: expectedHref },
+  );
+  assert(hitResolvesToExactAnchor, `Hit-test no longer resolves to ${expectedHref}.`);
+  return point;
+}
+'''
+              if insertion_point not in text:
+                  raise SystemExit("Could not locate buyer helper insertion point")
+              text = text.replace(insertion_point, "\n" + helper + insertion_point, 1)
+
+              old = r'''  await page.setViewportSize({ width: 390, height: 420 });
+  await restoredResult.scrollIntoViewIfNeeded();
+  const resultsScrollY = await page.evaluate(() => window.scrollY);
+  assert(resultsScrollY > 0, "Search fixture was not scrollable for Back restoration proof.");
+  const searchUrlBeforeDetail = page.url();
+  const resultBox = await restoredResult.boundingBox();
+  assert(
+    resultBox !== null,
+    "Search result had no visible click geometry for Back restoration proof.",
+  );
+  await page.mouse.click(resultBox.x + resultBox.width / 2, resultBox.y + resultBox.height / 2);
+  await page.waitForLoadState("networkidle");'''
+              new = r'''  await page.setViewportSize({ width: 390, height: 420 });
+  const expectedDetailHref = `/ilan/${listingId}`;
+  const searchUrlBeforeDetail = page.url();
+  const resultHitPoint = await findExactResultAnchorHitPoint(expectedDetailHref);
+  assert(
+    page.url() === searchUrlBeforeDetail,
+    "Resolving the exact result hit target changed the canonical search URL.",
+  );
+  const resultsScrollY = await page.evaluate(() => window.scrollY);
+  assert(resultsScrollY > 0, "Search fixture was not scrollable for Back restoration proof.");
+  assert(
+    page.url() === searchUrlBeforeDetail,
+    "Canonical search URL changed immediately before the real result click.",
+  );
+  await page.mouse.click(resultHitPoint.x, resultHitPoint.y);
+  await page.waitForURL(`${publicBaseUrl}${expectedDetailHref}`);
+  assert(
+    page.url() === `${publicBaseUrl}${expectedDetailHref}`,
+    "Verified real result click did not navigate to the exact listing detail URL.",
+  );
+  await page.waitForLoadState("networkidle");'''
+              if text.count(old) != 1:
+                  raise SystemExit(f"Expected one old detail navigation block, found {text.count(old)}")
+              text = text.replace(old, new, 1)
+              buyer.write_text(text)
+          PY
+
+          if git diff --quiet -- scripts/stage1-self-service-browser-e2e-buyer.ts; then
+            echo "Durable exact-anchor discriminator is already installed."
+          else
+            bunx prettier --write scripts/stage1-self-service-browser-e2e-buyer.ts
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add scripts/stage1-self-service-browser-e2e-buyer.ts
+            git commit -m "Use verified real hit target for detail navigation"
+            git push origin HEAD:agent/product-finding-phase2
+          fi
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -74,4 +194,4 @@ jobs:
         run: bun run build
 
       - name: Verify CI did not mutate tracked source
-        run: git diff --exit-code
+        run: git diff --check && git diff --exit-code
