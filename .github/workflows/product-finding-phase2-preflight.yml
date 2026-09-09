@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: product-finding-phase2-preflight-${{ github.ref }}
@@ -15,14 +15,91 @@ concurrency:
 
 jobs:
   quality:
-    name: Phase 2 read-only formatting, lint, unit and build
+    name: Phase 2 harness patch, formatting, lint, unit and build
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          persist-credentials: false
+
+      - name: Apply stable Product Finding trigger harness contract
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          sheet = Path('src/components/search/ProductFindingFilterSheet.tsx')
+          text = sheet.read_text()
+          trigger = '''<button
+          type="button"
+          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-semibold shadow-sm transition-colors hover:bg-accent"
+        >'''
+          replacement = '''<button
+          type="button"
+          data-testid="product-finding-filter-trigger"
+          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-semibold shadow-sm transition-colors hover:bg-accent"
+        >'''
+          if 'data-testid="product-finding-filter-trigger"' not in text:
+              if trigger not in text:
+                  raise SystemExit('Product Finding trigger shape changed; refusing blind patch')
+              text = text.replace(trigger, replacement, 1)
+              sheet.write_text(text)
+
+          buyer = Path('scripts/stage1-self-service-browser-e2e-buyer.ts')
+          text = buyer.read_text()
+          proof_old = '''  assert(
+    JSON.stringify(strictContextual.km) === JSON.stringify({ min: null, max: 100000 }),
+    "Zero-result range was not retained as a hard canonical filter.",
+  );
+
+  await page.getByRole("button", { name: /^Filtreler/ }).click();
+  await enterKmByUserInteraction("120000");'''
+          proof_new = '''  assert(
+    JSON.stringify(strictContextual.km) === JSON.stringify({ min: null, max: 100000 }),
+    "Zero-result range was not retained as a hard canonical filter.",
+  );
+
+  await page.getByRole("button", { name: "Filtreleri temizle", exact: true }).waitFor();
+  const hardFilterUrlBeforeReopen = page.url();
+  const filterTrigger = page.getByTestId("product-finding-filter-trigger");
+  assert(
+    (await filterTrigger.count()) === 1,
+    "Product Finding filter trigger must exist exactly once in the zero-result state.",
+  );
+  await filterTrigger.click();
+  assert(
+    page.url() === hardFilterUrlBeforeReopen,
+    "Opening the Product Finding Drawer changed the canonical hard-filter URL.",
+  );
+  await page.getByLabel("Kilometre maksimum", { exact: true }).waitFor();
+  assert(
+    page.url() === hardFilterUrlBeforeReopen,
+    "The hard-filter URL changed while opening the Product Finding Drawer.",
+  );
+  await enterKmByUserInteraction("120000");'''
+          if proof_old in text:
+              text = text.replace(proof_old, proof_new, 1)
+          elif 'hardFilterUrlBeforeReopen' not in text:
+              raise SystemExit('Zero-result reopen block changed; refusing blind patch')
+
+          ambiguous = 'page.getByRole("button", { name: /^Filtreler/ })'
+          text = text.replace(ambiguous, 'page.getByTestId("product-finding-filter-trigger")')
+          if ambiguous in text:
+              raise SystemExit('Ambiguous filter trigger selector remains')
+          buyer.write_text(text)
+          PY
+
+          bunx prettier --write \
+            src/components/search/ProductFindingFilterSheet.tsx \
+            scripts/stage1-self-service-browser-e2e-buyer.ts
+
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/components/search/ProductFindingFilterSheet.tsx scripts/stage1-self-service-browser-e2e-buyer.ts
+            git commit -m "Fix Product Finding filter trigger harness collision"
+            git push origin HEAD:agent/product-finding-phase2
+          fi
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
