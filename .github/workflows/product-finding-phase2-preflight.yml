@@ -30,23 +30,26 @@ jobs:
 
           buyer = Path("scripts/stage1-self-service-browser-e2e-buyer.ts")
           text = buyer.read_text()
-          old = '''  await page.setViewportSize({ width: 390, height: 420 });
+          old = """  await page.setViewportSize({ width: 390, height: 420 });
           await restoredResult.scrollIntoViewIfNeeded();
           const resultsScrollY = await page.evaluate(() => window.scrollY);
-          assert(resultsScrollY > 0, "Search fixture was not scrollable for Back restoration proof.");
+          assert(resultsScrollY > 0, \"Search fixture was not scrollable for Back restoration proof.\");
           const searchUrlBeforeDetail = page.url();
-          await restoredResult.click();'''.replace("          ", "")
-          new = '''  await page.setViewportSize({ width: 390, height: 420 });
+          await restoredResult.click();"""
+          new = """  await page.setViewportSize({ width: 390, height: 420 });
           await restoredResult.scrollIntoViewIfNeeded();
           const resultBox = await restoredResult.boundingBox();
-          assert(resultBox !== null, "Search result had no visible click geometry for Back restoration proof.");
+          assert(
+            resultBox !== null,
+            \"Search result had no visible click geometry for Back restoration proof.\",
+          );
           const resultsScrollY = await page.evaluate(() => window.scrollY);
-          assert(resultsScrollY > 0, "Search fixture was not scrollable for Back restoration proof.");
+          assert(resultsScrollY > 0, \"Search fixture was not scrollable for Back restoration proof.\");
           const searchUrlBeforeDetail = page.url();
           await page.mouse.click(
             resultBox.x + resultBox.width / 2,
             resultBox.y + resultBox.height / 2,
-          );'''.replace("          ", "")
+          );"""
           if old not in text:
               raise SystemExit("Back scroll proof block changed; refusing blind patch")
           buyer.write_text(text.replace(old, new, 1))
