@@ -10,10 +10,8 @@ import {
 import {
   listingMatchesQuery,
   listingMatchesSearchRequest,
-  normalizeSearchText,
   resolveSearchIntent,
-  tokenizeSearchQuery,
-  type SearchIntentResolution,
+  scoreListingRelevanceV1,
 } from "./listing-search";
 import type { ListingView } from "./public-listings";
 import type { Stage1Category } from "./stage1-self-service-contract";
@@ -316,11 +314,13 @@ export function projectExternalOfferCandidate(
   if (offer.sourceId !== source.id) throw new Error("External source/offer identity mismatch.");
 
   const nowMs = now.getTime();
-  const freshnessIsCurrent = timestamp(offer.freshUntil) > nowMs;
-  const priceIsCurrent =
-    freshnessIsCurrent &&
+  const observationFresh =
+    timestamp(offer.lastCheckedAt) <= nowMs && timestamp(offer.freshUntil) > nowMs;
+  const priceCurrent =
+    observationFresh &&
     timestamp(offer.priceObservedAt) <= nowMs &&
     timestamp(offer.priceValidUntil) > nowMs &&
+    timestamp(offer.availabilityObservedAt) <= nowMs &&
     offer.availabilityState === "in_stock";
   const hardFilterStructureIsTrusted = offer.structuredConfidence === "deterministic";
 
@@ -334,11 +334,11 @@ export function projectExternalOfferCandidate(
     productType: hardFilterStructureIsTrusted ? offer.productType : null,
     productAttributes: hardFilterStructureIsTrusted ? offer.productAttributes : {},
     condition: "new",
-    currentPrice: priceIsCurrent ? offer.priceAmount : null,
-    currentPriceCurrency: priceIsCurrent ? "TRY" : null,
+    currentPrice: priceCurrent ? offer.priceAmount : null,
+    currentPriceCurrency: priceCurrent ? "TRY" : null,
     listingLocation: offer.listingLocation,
     sourceIdentity: { sourceId: source.id, sourceName: source.displayName },
-    freshness: freshnessIsCurrent && priceIsCurrent ? "fresh" : "stale",
+    freshness: observationFresh ? "fresh" : "stale",
     provenance: "external_source_extracted",
     structuredConfidence: offer.structuredConfidence,
     createdAt: offer.firstSeenAt,
@@ -393,46 +393,6 @@ function candidatePassesCurrentTruthGuards(
   return true;
 }
 
-function containsNormalizedPhrase(normalizedText: string, normalizedPhrase: string): boolean {
-  if (!normalizedText || !normalizedPhrase) return false;
-  return ` ${normalizedText} `.includes(` ${normalizedPhrase} `);
-}
-
-function candidateRelevanceScore(
-  listing: ListingView,
-  request: SearchRequestV1,
-  intent: SearchIntentResolution,
-): number {
-  const normalizedQuery = normalizeSearchText(request.q);
-  if (!normalizedQuery) return 0;
-  const queryTokens = tokenizeSearchQuery(request.q);
-  const title = normalizeSearchText(listing.title);
-  const description = normalizeSearchText(listing.description);
-  const titleWords = title.split(" ");
-  const descriptionWords = description.split(" ");
-  const keywords = listing.keywords.map(normalizeSearchText);
-  const keywordWords = keywords.flatMap((value) => value.split(" "));
-
-  let score = 0;
-  if (title === normalizedQuery) score += 400;
-  else if (containsNormalizedPhrase(title, normalizedQuery)) score += 200;
-  if (containsNormalizedPhrase(description, normalizedQuery)) score += 40;
-  if (keywords.some((keyword) => keyword === normalizedQuery)) score += 120;
-  else if (keywords.some((keyword) => containsNormalizedPhrase(keyword, normalizedQuery)))
-    score += 60;
-
-  for (const token of queryTokens) {
-    if (titleWords.includes(token)) score += 25;
-    else if (titleWords.some((word) => word.startsWith(token))) score += 12;
-    if (keywordWords.includes(token)) score += 15;
-    else if (keywordWords.some((word) => word.startsWith(token))) score += 7;
-    if (descriptionWords.includes(token)) score += 3;
-    else if (descriptionWords.some((word) => word.startsWith(token))) score += 1;
-  }
-  if (intent.productType !== null && listing.productType === intent.productType) score += 10;
-  return score;
-}
-
 export function executeProductFindingCandidatesV1(
   candidates: readonly ProductFindingSearchCandidateV1[],
   rawRequest: SearchRequestV1 | unknown,
@@ -466,8 +426,8 @@ export function executeProductFindingCandidatesV1(
       .slice()
       .sort((left, right) => {
         return (
-          candidateRelevanceScore(right.listing, request, intent) -
-            candidateRelevanceScore(left.listing, request, intent) ||
+          scoreListingRelevanceV1(right.listing, request, intent) -
+            scoreListingRelevanceV1(left.listing, request, intent) ||
           Date.parse(right.candidate.createdAt) - Date.parse(left.candidate.createdAt) ||
           left.candidate.recordKind.localeCompare(right.candidate.recordKind) ||
           left.candidate.recordId.localeCompare(right.candidate.recordId)
