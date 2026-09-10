@@ -206,6 +206,15 @@ select is(
   '19999.90',
   'fresh in-stock external price projects as current TRY truth'
 );
+select is(
+  (
+    select freshness_state
+    from private.product_finding_search_candidates_v1
+    where record_id = 'e3100000-0000-4000-8000-000000000001'
+  ),
+  'fresh',
+  'completed recent observation projects as fresh independently of price usability'
+);
 select ok(
   (
     select listing_province
@@ -223,9 +232,52 @@ select ok(
   'external merchant location is not fabricated as a listing district'
 );
 
+select ok(
+  position(
+    'o.price_observed_at <= now()' in
+    pg_get_viewdef('private.product_finding_search_candidates_v1'::regclass, true)
+  ) > 0,
+  'SQL current-price truth explicitly rejects future price observations'
+);
+select ok(
+  position(
+    'o.availability_observed_at <= now()' in
+    pg_get_viewdef('private.product_finding_search_candidates_v1'::regclass, true)
+  ) > 0,
+  'SQL current-price truth explicitly rejects future availability observations'
+);
+
 update private.external_offers
 set
-  price_valid_until = now() - interval '10 minutes',
+  last_checked_at = now() + interval '30 minutes',
+  fresh_until = now() + interval '3 hours',
+  updated_at = now()
+where id = 'e3100000-0000-4000-8000-000000000001';
+
+select is(
+  (
+    select freshness_state
+    from private.product_finding_search_candidates_v1
+    where record_id = 'e3100000-0000-4000-8000-000000000001'
+  ),
+  'stale',
+  'future last check cannot project a fresh observation early'
+);
+select ok(
+  (
+    select current_price_amount
+    from private.product_finding_search_candidates_v1
+    where record_id = 'e3100000-0000-4000-8000-000000000001'
+  ) is null,
+  'future last check cannot project current price truth early'
+);
+
+update private.external_offers
+set
+  price_observed_at = now() + interval '30 minutes',
+  price_valid_until = now() + interval '2 hours',
+  last_checked_at = now() + interval '1 hour',
+  fresh_until = now() + interval '3 hours',
   updated_at = now()
 where id = 'e3100000-0000-4000-8000-000000000001';
 
@@ -235,7 +287,79 @@ select ok(
     from private.product_finding_search_candidates_v1
     where record_id = 'e3100000-0000-4000-8000-000000000001'
   ) is null,
-  'stale price observation fails closed instead of projecting current price truth'
+  'future price observation cannot project current price truth early'
+);
+
+update private.external_offers
+set
+  price_observed_at = now() - interval '30 minutes',
+  availability_observed_at = now() + interval '30 minutes',
+  last_checked_at = now() + interval '1 hour',
+  fresh_until = now() + interval '3 hours',
+  updated_at = now()
+where id = 'e3100000-0000-4000-8000-000000000001';
+
+select ok(
+  (
+    select current_price_amount
+    from private.product_finding_search_candidates_v1
+    where record_id = 'e3100000-0000-4000-8000-000000000001'
+  ) is null,
+  'future availability observation cannot project current price truth early'
+);
+
+update private.external_offers
+set
+  price_observed_at = now() - interval '30 minutes',
+  price_valid_until = now() - interval '10 minutes',
+  availability_state = 'in_stock',
+  availability_observed_at = now() - interval '30 minutes',
+  last_checked_at = now() - interval '30 minutes',
+  fresh_until = now() + interval '3 hours',
+  updated_at = now()
+where id = 'e3100000-0000-4000-8000-000000000001';
+
+select is(
+  (
+    select freshness_state
+    from private.product_finding_search_candidates_v1
+    where record_id = 'e3100000-0000-4000-8000-000000000001'
+  ),
+  'fresh',
+  'fresh observation remains fresh when only its price validity has expired'
+);
+select ok(
+  (
+    select current_price_amount
+    from private.product_finding_search_candidates_v1
+    where record_id = 'e3100000-0000-4000-8000-000000000001'
+  ) is null,
+  'expired price fails closed instead of projecting current price truth'
+);
+
+update private.external_offers
+set
+  price_valid_until = now() + interval '2 hours',
+  availability_state = 'out_of_stock',
+  updated_at = now()
+where id = 'e3100000-0000-4000-8000-000000000001';
+
+select is(
+  (
+    select freshness_state
+    from private.product_finding_search_candidates_v1
+    where record_id = 'e3100000-0000-4000-8000-000000000001'
+  ),
+  'fresh',
+  'fresh out-of-stock observation remains fresh'
+);
+select ok(
+  (
+    select current_price_amount
+    from private.product_finding_search_candidates_v1
+    where record_id = 'e3100000-0000-4000-8000-000000000001'
+  ) is null,
+  'out-of-stock observation does not project current price truth'
 );
 
 insert into private.external_sources (
