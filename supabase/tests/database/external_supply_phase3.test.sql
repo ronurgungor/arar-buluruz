@@ -206,20 +206,20 @@ select is(
   '19999.90',
   'fresh in-stock external price projects as current TRY truth'
 );
-select is_null(
+select ok(
   (
     select listing_province
     from private.product_finding_search_candidates_v1
     where record_id = 'e3100000-0000-4000-8000-000000000001'
-  ),
+  ) is null,
   'external merchant location is not fabricated as a listing province'
 );
-select is_null(
+select ok(
   (
     select listing_district
     from private.product_finding_search_candidates_v1
     where record_id = 'e3100000-0000-4000-8000-000000000001'
-  ),
+  ) is null,
   'external merchant location is not fabricated as a listing district'
 );
 
@@ -229,12 +229,12 @@ set
   updated_at = now()
 where id = 'e3100000-0000-4000-8000-000000000001';
 
-select is_null(
+select ok(
   (
     select current_price_amount
     from private.product_finding_search_candidates_v1
     where record_id = 'e3100000-0000-4000-8000-000000000001'
-  ),
+  ) is null,
   'stale price observation fails closed instead of projecting current price truth'
 );
 
