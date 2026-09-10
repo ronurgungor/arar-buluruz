@@ -418,7 +418,10 @@ function candidateRelevanceScore(
   else if (containsNormalizedPhrase(title, normalizedQuery)) score += 200;
   if (containsNormalizedPhrase(description, normalizedQuery)) score += 40;
   if (keywords.some((keyword) => keyword === normalizedQuery)) score += 120;
-  else if (keywords.some((keyword) => containsNormalizedPhrase(keyword, normalizedQuery))) score += 60;
+  else if (
+    keywords.some((keyword) => containsNormalizedPhrase(keyword, normalizedQuery))
+  )
+    score += 60;
 
   for (const token of queryTokens) {
     if (titleWords.includes(token)) score += 25;
