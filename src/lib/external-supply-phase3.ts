@@ -418,9 +418,7 @@ function candidateRelevanceScore(
   else if (containsNormalizedPhrase(title, normalizedQuery)) score += 200;
   if (containsNormalizedPhrase(description, normalizedQuery)) score += 40;
   if (keywords.some((keyword) => keyword === normalizedQuery)) score += 120;
-  else if (
-    keywords.some((keyword) => containsNormalizedPhrase(keyword, normalizedQuery))
-  )
+  else if (keywords.some((keyword) => containsNormalizedPhrase(keyword, normalizedQuery)))
     score += 60;
 
   for (const token of queryTokens) {
@@ -431,11 +429,7 @@ function candidateRelevanceScore(
     if (descriptionWords.includes(token)) score += 3;
     else if (descriptionWords.some((word) => word.startsWith(token))) score += 1;
   }
-  if (
-    intent.productType !== null &&
-    listing.productType === intent.productType
-  )
-    score += 10;
+  if (intent.productType !== null && listing.productType === intent.productType) score += 10;
   return score;
 }
 
