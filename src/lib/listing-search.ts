@@ -298,7 +298,7 @@ export function listingMatchesSearchRequest(
   return listingMatchesQuery(listing, request.q);
 }
 
-function relevanceScore(
+export function scoreListingRelevanceV1(
   listing: ListingView,
   request: SearchRequestV1,
   intent: SearchIntentResolution,
@@ -358,7 +358,8 @@ export function executeSearchRequestV1(
   if (request.sort === "relevance") {
     return relevant.slice().sort((left, right) => {
       return (
-        relevanceScore(right, request, intent) - relevanceScore(left, request, intent) ||
+        scoreListingRelevanceV1(right, request, intent) -
+          scoreListingRelevanceV1(left, request, intent) ||
         Date.parse(right.createdAt) - Date.parse(left.createdAt) ||
         left.id.localeCompare(right.id)
       );
