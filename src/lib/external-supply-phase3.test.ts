@@ -69,8 +69,11 @@ function nativeListing(input: {
     category: "electronics",
     productType: input.productType ?? "phone",
     productAttributesVersion: 1,
-    productAttributes:
-      input.productAttributes ?? { brand: "Apple", model: "iPhone 13", storage_gb: 128 },
+    productAttributes: input.productAttributes ?? {
+      brand: "Apple",
+      model: "iPhone 13",
+      storage_gb: 128,
+    },
     condition: "used",
     city: "Tekirdağ",
     district: "Çorlu",
@@ -113,7 +116,9 @@ describe("Phase 3.0 synthetic ingestion boundary", () => {
   test("refuses real merchant domains and non-new Product evidence in the synthetic-only slice", () => {
     const realDomain = syntheticInput();
     realDomain.source.canonicalDomain = "merchant.example.com";
-    expect(() => ingestSyntheticProductOffer(realDomain)).toThrow("synthetic .invalid sources only");
+    expect(() => ingestSyntheticProductOffer(realDomain)).toThrow(
+      "synthetic .invalid sources only",
+    );
 
     const usedCondition = {
       ...syntheticInput(),
@@ -204,9 +209,7 @@ describe("Phase 3.0 common search candidate projection", () => {
     expect(external.currentPrice).toBe(19_999.9);
     expect(external.freshness).toBe("fresh");
     expect(
-      executeProductFindingCandidatesV1([native, external], request).map(
-        (item) => item.recordKind,
-      ),
+      executeProductFindingCandidatesV1([native, external], request).map((item) => item.recordKind),
     ).toEqual(["external_offer", "native_listing"]);
   });
 
@@ -236,16 +239,12 @@ describe("Phase 3.0 common search candidate projection", () => {
       sort: "relevance",
     });
     expect(
-      executeProductFindingCandidatesV1([native, stale], hardPrice).map(
-        (item) => item.recordKind,
-      ),
+      executeProductFindingCandidatesV1([native, stale], hardPrice).map((item) => item.recordKind),
     ).toEqual(["native_listing"]);
 
     const priceSort = parseSearchRequestV1({ version: 1, q: "iPhone 13", sort: "price_asc" });
     expect(
-      executeProductFindingCandidatesV1([native, stale], priceSort).map(
-        (item) => item.recordKind,
-      ),
+      executeProductFindingCandidatesV1([native, stale], priceSort).map((item) => item.recordKind),
     ).toEqual(["native_listing"]);
   });
 
@@ -272,9 +271,7 @@ describe("Phase 3.0 common search candidate projection", () => {
 
     expect(external.listingLocation).toBeNull();
     expect(
-      executeProductFindingCandidatesV1([external, native], request).map(
-        (item) => item.recordKind,
-      ),
+      executeProductFindingCandidatesV1([external, native], request).map((item) => item.recordKind),
     ).toEqual(["native_listing"]);
   });
 
@@ -304,9 +301,7 @@ describe("Phase 3.0 common search candidate projection", () => {
     });
 
     expect(
-      executeProductFindingCandidatesV1([low, deterministic], request).map(
-        (item) => item.recordId,
-      ),
+      executeProductFindingCandidatesV1([low, deterministic], request).map((item) => item.recordId),
     ).toEqual([deterministic.recordId]);
   });
 });
