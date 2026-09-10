@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   generateSystemSearchKeywords,
   parseSearchRequestV1,
+  validateProductSelection,
   type ProductAttributes,
   type ProductType,
   type SearchRequestV1,
@@ -15,7 +16,6 @@ import {
   type SearchIntentResolution,
 } from "./listing-search";
 import type { ListingView } from "./public-listings";
-import { validateProductSelection } from "./product-finding-contract";
 import type { Stage1Category } from "./stage1-self-service-contract";
 
 export const PHASE3_SEARCH_PIPELINE_ORDER = [
@@ -37,9 +37,7 @@ export const PHASE3_EXTERNAL_CATEGORIES = [
 
 export type ProductFindingRecordKind = "native_listing" | "external_offer";
 export type ProductFindingCondition = "new" | "used" | "refurbished" | "unknown";
-export type ProductFindingProvenance =
-  | "native_seller_declared"
-  | "external_source_extracted";
+export type ProductFindingProvenance = "native_seller_declared" | "external_source_extracted";
 export type ProductFindingFreshness = "native_current" | "fresh" | "stale";
 export type ProductFindingStructuredConfidence =
   | "seller_declared"
@@ -169,7 +167,13 @@ function timestamp(value: string): number {
 
 function parsePositiveTryPrice(value: number | string): number {
   const price = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(price) || price <= 0 || Math.round(price * 100) !== price * 100) {
+  const cents = price * 100;
+  if (
+    !Number.isFinite(price) ||
+    price <= 0 ||
+    !Number.isFinite(cents) ||
+    Math.abs(Math.round(cents) - cents) > 1e-8
+  ) {
     throw new Error("Synthetic Offer price must be a positive TRY amount with at most 2 decimals.");
   }
   return price;
@@ -199,7 +203,11 @@ function assertObservationOrder(input: z.output<typeof syntheticProductOfferSche
   if (firstSeen > lastSeen || lastSeen > lastChecked) {
     throw new Error("Synthetic observation timestamps are out of order.");
   }
-  if (priceObserved < firstSeen || priceObserved > lastChecked || priceValidUntil <= priceObserved) {
+  if (
+    priceObserved < firstSeen ||
+    priceObserved > lastChecked ||
+    priceValidUntil <= priceObserved
+  ) {
     throw new Error("Synthetic price observation timestamps are invalid.");
   }
   if (availabilityObserved < firstSeen || availabilityObserved > lastChecked) {
@@ -352,8 +360,7 @@ function toListingAdapter(candidate: ProductFindingSearchCandidateV1): Candidate
       price: candidate.currentPrice ?? 0,
       category: candidate.category ?? undefined,
       productType: structuredUsable ? candidate.productType : null,
-      productAttributesVersion:
-        structuredUsable && candidate.productType !== null ? 1 : null,
+      productAttributesVersion: structuredUsable && candidate.productType !== null ? 1 : null,
       productAttributes: structuredUsable ? candidate.productAttributes : {},
       condition: null,
       city: candidate.listingLocation?.province ?? "",
