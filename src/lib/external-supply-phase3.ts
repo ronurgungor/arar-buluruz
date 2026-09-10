@@ -431,7 +431,11 @@ function candidateRelevanceScore(
     if (descriptionWords.includes(token)) score += 3;
     else if (descriptionWords.some((word) => word.startsWith(token))) score += 1;
   }
-  if (intent.productType !== null && listing.productType === intent.productType) score += 10;
+  if (
+    intent.productType !== null &&
+    listing.productType === intent.productType
+  )
+    score += 10;
   return score;
 }
 
