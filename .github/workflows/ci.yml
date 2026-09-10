@@ -8,7 +8,7 @@ on:
     branches:
       - main
       - agent/smsless-seller-ownership-phase1
-      - agent/external-supply-phase3-seam
+      - agent/external-supply-phase3-seam # temporary pre-PR validation trigger
   workflow_dispatch:
 
 permissions:
