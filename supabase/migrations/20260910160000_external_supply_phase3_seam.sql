@@ -304,15 +304,21 @@ select
   o.product_attributes,
   o.item_condition,
   case
-    when o.fresh_until > now()
+    when o.last_checked_at <= now()
+      and o.fresh_until > now()
+      and o.price_observed_at <= now()
       and o.price_valid_until > now()
+      and o.availability_observed_at <= now()
       and o.availability_state = 'in_stock'
     then o.price_amount
     else null::numeric
   end as current_price_amount,
   case
-    when o.fresh_until > now()
+    when o.last_checked_at <= now()
+      and o.fresh_until > now()
+      and o.price_observed_at <= now()
       and o.price_valid_until > now()
+      and o.availability_observed_at <= now()
       and o.availability_state = 'in_stock'
     then o.price_currency
     else null::text
@@ -322,7 +328,7 @@ select
   s.id as external_source_id,
   s.display_name as source_name,
   case
-    when o.fresh_until > now() and o.last_checked_at <= now() then 'fresh'
+    when o.last_checked_at <= now() and o.fresh_until > now() then 'fresh'
     else 'stale'
   end::text as freshness_state,
   o.provenance,
@@ -337,7 +343,7 @@ where s.source_mode = 'synthetic_fixture'
   and s.eligibility_state = 'synthetic_only';
 
 comment on view private.product_finding_search_candidates_v1 is
-  'Internal native/external Product Finding candidate seam. External rows remain synthetic-only in Phase 3.0 and stale/unavailable price observations project as NULL current price.';
+  'Internal native/external Product Finding candidate seam. External rows remain synthetic-only in Phase 3.0; observation freshness is independent from current price, and non-current prices project as NULL.';
 
 revoke all on table private.product_finding_search_candidates_v1 from public, anon, authenticated;
 grant select on table private.product_finding_search_candidates_v1 to service_role;
