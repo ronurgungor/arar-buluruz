@@ -60,6 +60,8 @@ function nativeListing(input: {
   price: number;
   productType?: ProductType;
   productAttributes?: ListingView["productAttributes"];
+  description?: string;
+  keywords?: string[];
   createdAt?: string;
 }): ListingView {
   return {
@@ -78,11 +80,11 @@ function nativeListing(input: {
     city: "Tekirdağ",
     district: "Çorlu",
     seller: "Native Seller",
-    description: "Native seller description",
+    description: input.description ?? "Native seller description",
     photos: [],
     createdAt: input.createdAt ?? "2026-09-10T10:00:00.000Z",
     distanceKm: null,
-    keywords: ["telefon", "Apple", "iPhone 13", "128"],
+    keywords: input.keywords ?? ["telefon", "Apple", "iPhone 13", "128"],
   };
 }
 
@@ -213,7 +215,55 @@ describe("Phase 3.0 common search candidate projection", () => {
     ).toEqual(["external_offer", "native_listing"]);
   });
 
-  test("stale external price fails closed for hard price filters and price sort", () => {
+  test("future last check is stale and cannot project current price", () => {
+    const { source, offer } = ingestSyntheticProductOffer(syntheticInput());
+    const futureChecked = projectExternalOfferCandidate(
+      source,
+      {
+        ...offer,
+        lastCheckedAt: "2026-09-10T12:30:00.000Z",
+      },
+      new Date("2026-09-10T12:00:00.000Z"),
+    );
+
+    expect(futureChecked.freshness).toBe("stale");
+    expect(futureChecked.currentPrice).toBeNull();
+    expect(futureChecked.currentPriceCurrency).toBeNull();
+  });
+
+  test("future price observation cannot become current truth early", () => {
+    const { source, offer } = ingestSyntheticProductOffer(syntheticInput());
+    const futurePrice = projectExternalOfferCandidate(
+      source,
+      {
+        ...offer,
+        priceObservedAt: "2026-09-10T12:30:00.000Z",
+      },
+      new Date("2026-09-10T12:00:00.000Z"),
+    );
+
+    expect(futurePrice.freshness).toBe("fresh");
+    expect(futurePrice.currentPrice).toBeNull();
+    expect(futurePrice.currentPriceCurrency).toBeNull();
+  });
+
+  test("future availability observation cannot make price current early", () => {
+    const { source, offer } = ingestSyntheticProductOffer(syntheticInput());
+    const futureAvailability = projectExternalOfferCandidate(
+      source,
+      {
+        ...offer,
+        availabilityObservedAt: "2026-09-10T12:30:00.000Z",
+      },
+      new Date("2026-09-10T12:00:00.000Z"),
+    );
+
+    expect(futureAvailability.freshness).toBe("fresh");
+    expect(futureAvailability.currentPrice).toBeNull();
+    expect(futureAvailability.currentPriceCurrency).toBeNull();
+  });
+
+  test("fresh observation with expired price stays fresh but fails closed for price use", () => {
     const native = projectNativeListingCandidate(
       nativeListing({
         id: "e3200000-0000-4000-8000-000000000003",
@@ -222,15 +272,15 @@ describe("Phase 3.0 common search candidate projection", () => {
       }),
     );
     const { source, offer } = ingestSyntheticProductOffer(syntheticInput());
-    const stale = projectExternalOfferCandidate(
+    const expiredPrice = projectExternalOfferCandidate(
       source,
       offer,
       new Date("2026-09-10T14:30:00.000Z"),
     );
 
-    expect(stale.currentPrice).toBeNull();
-    expect(stale.currentPriceCurrency).toBeNull();
-    expect(stale.freshness).toBe("stale");
+    expect(expiredPrice.currentPrice).toBeNull();
+    expect(expiredPrice.currentPriceCurrency).toBeNull();
+    expect(expiredPrice.freshness).toBe("fresh");
 
     const hardPrice = parseSearchRequestV1({
       version: 1,
@@ -239,13 +289,30 @@ describe("Phase 3.0 common search candidate projection", () => {
       sort: "relevance",
     });
     expect(
-      executeProductFindingCandidatesV1([native, stale], hardPrice).map((item) => item.recordKind),
+      executeProductFindingCandidatesV1([native, expiredPrice], hardPrice).map(
+        (item) => item.recordKind,
+      ),
     ).toEqual(["native_listing"]);
 
     const priceSort = parseSearchRequestV1({ version: 1, q: "iPhone 13", sort: "price_asc" });
     expect(
-      executeProductFindingCandidatesV1([native, stale], priceSort).map((item) => item.recordKind),
+      executeProductFindingCandidatesV1([native, expiredPrice], priceSort).map(
+        (item) => item.recordKind,
+      ),
     ).toEqual(["native_listing"]);
+  });
+
+  test("fresh out-of-stock observation stays fresh without current price truth", () => {
+    const { source, offer } = ingestSyntheticProductOffer(syntheticInput());
+    const outOfStock = projectExternalOfferCandidate(
+      source,
+      { ...offer, availabilityState: "out_of_stock" },
+      new Date("2026-09-10T12:00:00.000Z"),
+    );
+
+    expect(outOfStock.freshness).toBe("fresh");
+    expect(outOfStock.currentPrice).toBeNull();
+    expect(outOfStock.currentPriceCurrency).toBeNull();
   });
 
   test("external offer without genuine listing-location semantics fails an active native location filter", () => {
@@ -307,10 +374,10 @@ describe("Phase 3.0 common search candidate projection", () => {
 });
 
 describe("Phase 2 and legal/security boundaries remain authoritative", () => {
-  test("native-only common-candidate execution matches settled Phase 2 execution", () => {
+  test("native-only common-candidate execution matches settled Phase 2 execution across relevance signals", () => {
     const first = nativeListing({
       id: "e3300000-0000-4000-8000-000000000001",
-      title: "Apple iPhone 13 128 GB",
+      title: "iPhone 13",
       price: 24_000,
       createdAt: "2026-09-10T10:00:00.000Z",
     });
@@ -321,7 +388,22 @@ describe("Phase 2 and legal/security boundaries remain authoritative", () => {
       productAttributes: { brand: "Apple", model: "iPhone 13", storage_gb: 256 },
       createdAt: "2026-09-10T11:00:00.000Z",
     });
-    const listings = [first, second];
+    const third = nativeListing({
+      id: "e3300000-0000-4000-8000-000000000003",
+      title: "Telefon fırsatı",
+      price: 26_000,
+      keywords: ["iPhone 13", "telefon"],
+      createdAt: "2026-09-10T12:00:00.000Z",
+    });
+    const fourth = nativeListing({
+      id: "e3300000-0000-4000-8000-000000000004",
+      title: "Apple telefon",
+      price: 25_000,
+      description: "Temiz iPhone 13 cihaz açıklaması",
+      keywords: ["telefon"],
+      createdAt: "2026-09-10T13:00:00.000Z",
+    });
+    const listings = [fourth, third, second, first];
     const candidates = listings.map(projectNativeListingCandidate);
     const requests = [
       parseSearchRequestV1({ version: 1, q: "iPhone 13", sort: "relevance" }),
