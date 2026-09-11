@@ -184,6 +184,7 @@ describe("Product Finding conflict regression", () => {
     const request = parseSearchRequestV1({
       version: 1,
       q: "iphone",
+      category: "electronics",
       productType: "phone",
       contextual: { storage_gb: [256] },
       sort: "relevance",
@@ -202,6 +203,7 @@ describe("Product Finding conflict regression", () => {
     const request = parseSearchRequestV1({
       version: 1,
       q: "iphone",
+      category: "electronics",
       productType: "phone",
       contextual: { storage_gb: [256] },
       sort: "relevance",
@@ -213,7 +215,12 @@ describe("Product Finding conflict regression", () => {
 
   test("sorting cannot enlarge the relevant set and Phase 3 keeps native provenance", () => {
     const candidates = [phone128, phone256, accessory].map(projectNativeListingCandidate);
-    const base = { version: 1, q: "iphone", productType: "phone" } as const;
+    const base = {
+      version: 1,
+      q: "iphone",
+      category: "electronics",
+      productType: "phone",
+    } as const;
     const relevance = executeProductFindingCandidatesV1(
       candidates,
       parseSearchRequestV1({ ...base, sort: "relevance" }),
