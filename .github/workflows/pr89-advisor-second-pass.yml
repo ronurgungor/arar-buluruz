@@ -28,6 +28,59 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
 
+      - name: Prepare idempotent canonical-doc updates
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          patcher = Path("scripts/apply-pr89-advisor-second-pass.py")
+          text = patcher.read_text(encoding="utf-8")
+          start = text.index("# Canonical docs: record only durable semantics.")
+          end = text.index('print("PR #89 Advisor second-pass patch applied.")')
+          text = text[:start] + text[end:]
+          patcher.write_text(text, encoding="utf-8")
+
+          blocks = {
+              "docs/PRODUCT_CONTRACT_V2.md": """
+
+          ### PR #89 Advisor second-pass hardening
+
+          - Vehicle/Real Estate remain regulated and fail-closed by default. The existing local synthetic test bypass is represented only after the exact triple gate (`PILOT_SYNTHETIC_TEST_MODE=enabled`, loopback request host, loopback backend) as a service-role-only `synthetic_test` eligibility transition. It never represents production EİDS/provider verification.
+          - Seller-editable category/product metadata may trigger deterministic reassessment but cannot automatically weaken the latest trusted operator/legal policy or trusted blocked/review eligibility. Deterministic EİDS/review requirements also outrank looser stored overrides.
+          - Enforcement is recomputed from every active case with fail-closed precedence: remove > hold > contact suppression > clear. Restoring one case cannot neutralize another unresolved blocking case.
+          """,
+              "docs/ARAR_BULURUZ_CURRENT_STATE.md": """
+
+          ## PR #89 Advisor second-pass hardening
+
+          - The existing loopback-only synthetic Vehicle/Real-Estate path is preserved through an auditable `synthetic_test` eligibility transition after the exact application triple gate; production EİDS remains closed and fail-closed.
+          - Seller metadata reassessment uses fail-closed trusted-policy/eligibility precedence, so seller edits cannot remove stricter operator/legal restrictions or trusted blocks.
+          - Enforcement is aggregate across all active cases rather than last-event-wins.
+          - Restore verification and managed portability equality now cover the architecture-freeze state, including the Phase-3.0 private external-supply state.
+          """,
+              "docs/ACTIVE_CHAT_HANDOFF.md": """
+
+          ## PR #89 Advisor second-pass closure
+
+          Preserve the accepted architecture. The second pass adds explicit loopback-only synthetic regulated eligibility evidence, trusted policy/eligibility precedence against seller metadata edits, aggregate multi-case enforcement recomputation, capability-aware restore verification, explicit ordinary infrastructure fixtures, and architecture/Phase-3 portability fingerprint coverage. Do not start Phase 3.1 or public-launch readiness; leave PR #89 unmerged for Advisor review.
+          """,
+              "docs/ARAR_BULURUZ_DECISION_LOG.md": """
+
+          ## D-033 — Architecture-freeze second-pass precedence and synthetic regulated test evidence
+
+          **Decision:** Preserve the existing Stage-1 local synthetic Vehicle/Real-Estate test path, but represent its post-triple-gate eligibility as an explicit service-role-only `synthetic_test` transition with auditable provenance and no production/provider-verification claim. Seller-editable metadata cannot lower stricter trusted policy/eligibility; deterministic EİDS/review scope cannot be lowered by looser overrides. Enforcement derives from all active cases, so restoration is aggregate rather than last-event-wins. Portability verification includes architecture-freeze and Phase-3 private state.
+
+          **Boundary:** No real EİDS provider integration, KYC, production activation, real merchant ingestion, public external offers, or ownership/auth changes.
+          """,
+          }
+          for filename, block in blocks.items():
+              path = Path(filename)
+              current = path.read_text(encoding="utf-8")
+              marker = block.strip().splitlines()[0]
+              if marker not in current:
+                  path.write_text(current.rstrip() + "\n" + block + "\n", encoding="utf-8")
+          PY
+
       - name: Apply Advisor closure
         run: python3 scripts/apply-pr89-advisor-second-pass.py
 
