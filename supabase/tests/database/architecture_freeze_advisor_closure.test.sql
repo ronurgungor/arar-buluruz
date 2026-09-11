@@ -35,17 +35,17 @@ select function_privs_are(
 );
 
 insert into public.listings (
-  id, title, description, price_amount, category, product_type, province, district,
+  id, title, description, price_amount, category, province, district,
   seller_display_name, contact_channel, contact_e164, publication_instruction_at, status
 ) values
 (
   'f3100000-0000-4000-8000-000000000001', 'Synthetic vehicle bypass', 'Advisor fixture',
-  1, 'vehicle', 'automobile', 'Tekirdağ', 'Çorlu', 'Synthetic Seller',
+  1, 'vehicle', 'Tekirdağ', 'Çorlu', 'Synthetic Seller',
   'phone_whatsapp', '+12025550201', now(), 'pending'
 ),
 (
   'f3100000-0000-4000-8000-000000000002', 'Ordinary control', 'Advisor fixture',
-  1, 'electronics', null, 'Tekirdağ', 'Çorlu', 'Synthetic Seller',
+  1, 'electronics', 'Tekirdağ', 'Çorlu', 'Synthetic Seller',
   'phone_whatsapp', '+12025550202', now(), 'pending'
 );
 
@@ -225,11 +225,12 @@ select results_eq(
 insert into public.listings (
   id, title, description, price_amount, category, province, district, seller_display_name,
   owner_user_id, contact_channel, contact_e164, publication_instruction_at,
-  status, published_at, expires_at
+  listing_rules_version, listing_rules_accepted_at, status, published_at, expires_at
 ) values (
   'f3120000-0000-4000-8000-000000000001', 'Enforcement aggregation', 'Advisor fixture',
   1, 'electronics', 'Tekirdağ', 'Çorlu', 'Synthetic Seller',
   null, 'phone_whatsapp', '+12025550220', now() - interval '2 minutes',
+  'architecture-freeze-v1', now() - interval '90 seconds',
   'published', now() - interval '1 minute', now() + interval '1 day'
 );
 insert into private.listing_external_sales_links (
