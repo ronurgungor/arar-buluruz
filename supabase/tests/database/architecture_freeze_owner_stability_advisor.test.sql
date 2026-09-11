@@ -43,9 +43,9 @@ insert into public.listings (
   'phone_whatsapp',
   '+12025550230',
   now() - interval '2 minutes',
-  'published',
-  now() - interval '1 minute',
-  now() + interval '1 day'
+  'pending',
+  null,
+  null
 );
 
 insert into private.listing_enforcement_cases (
