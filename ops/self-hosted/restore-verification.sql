@@ -6,6 +6,8 @@ declare
   anonymous_policy_qual text;
   photo_manifest_oid oid;
   photo_path_helper_oid oid;
+  capability_oid oid;
+  anonymous_policy_count integer;
 begin
   if to_regclass('public.listings') is null then
     raise exception 'public.listings is missing';
@@ -45,6 +47,14 @@ begin
     raise exception 'private seller identity/session tables are missing';
   end if;
 
+  if to_regclass('private.seller_role_assessments') is null
+     or to_regclass('private.listing_policy_decisions') is null
+     or to_regclass('private.listing_publication_controls') is null
+     or to_regclass('private.listing_enforcement_cases') is null
+     or to_regclass('private.listing_eligibility_transitions') is null then
+    raise exception 'one or more architecture-freeze private tables are missing';
+  end if;
+
   if to_regprocedure('public.reconcile_seller_recovery(text,text,text,timestamptz)') is not null then
     raise exception 'obsolete non-rotating recovery reconciliation RPC still exists';
   end if;
@@ -62,7 +72,12 @@ begin
     select 1
     from (values
       ('listing_photos'),
-      ('listing_external_sales_links')
+      ('listing_external_sales_links'),
+      ('seller_role_assessments'),
+      ('listing_policy_decisions'),
+      ('listing_publication_controls'),
+      ('listing_enforcement_cases'),
+      ('listing_eligibility_transitions')
     ) as required(relname)
     where not exists (
       select 1
@@ -159,19 +174,64 @@ begin
     raise exception 'canonical anonymous active-listing policy is missing';
   end if;
 
-  -- Restore verification must validate the actual fail-closed predicate, not only
-  -- the policy name. Any OR in this single canonical gate is treated as a weakened
-  -- restore and therefore fails closed.
+  select count(*)
+  into anonymous_policy_count
+  from pg_catalog.pg_policy p
+  join pg_catalog.pg_class c on c.oid = p.polrelid
+  join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public'
+    and c.relname = 'listings'
+    and p.polcmd = 'r'
+    and p.polroles = array[(select oid from pg_catalog.pg_roles where rolname = 'anon')];
+
+  if anonymous_policy_count <> 1 then
+    raise exception 'expected exactly one canonical anonymous listings SELECT policy, found %', anonymous_policy_count;
+  end if;
+
+  -- The policy must delegate directly to the one canonical capability decision. Any OR in
+  -- this RLS predicate would create a bypass around the capability contract and fails closed.
   if anonymous_policy_qual ~* '\sOR\s'
-     or anonymous_policy_qual !~* 'status\s*=\s*''published''(::text)?'
-     or anonymous_policy_qual !~* 'published_at\s*<=\s*now\(\)'
-     or anonymous_policy_qual !~* 'expires_at\s*>\s*now\(\)'
-     or anonymous_policy_qual !~* 'unpublished_at\s+IS\s+NULL'
-     or anonymous_policy_qual !~* 'contact_channel\s+IS\s+NOT\s+NULL'
-     or anonymous_policy_qual !~* 'contact_e164\s+IS\s+NOT\s+NULL'
-     or anonymous_policy_qual !~* 'publication_instruction_at\s+IS\s+NOT\s+NULL'
+     or anonymous_policy_qual !~* 'listing_has_public_capability\s*\('
+     or anonymous_policy_qual !~* '''detail'''
   then
-    raise exception 'canonical anonymous listings policy does not preserve the required active-published/contact-readiness predicate: %', anonymous_policy_qual;
+    raise exception 'canonical anonymous listings policy does not delegate exclusively to detail capability: %', anonymous_policy_qual;
+  end if;
+
+  capability_oid := to_regprocedure('public.listing_has_public_capability(uuid,text)');
+  if capability_oid is null then
+    raise exception 'canonical listing public-capability function is missing';
+  end if;
+  if not (select prosecdef from pg_catalog.pg_proc where oid = capability_oid) then
+    raise exception 'canonical listing public-capability function is not SECURITY DEFINER';
+  end if;
+  if position('search_path=""' in coalesce(
+       (select array_to_string(proconfig, ',') from pg_catalog.pg_proc where oid = capability_oid),
+       ''
+     )) = 0 then
+    raise exception 'canonical listing public-capability function search_path is not pinned empty';
+  end if;
+  if not has_function_privilege('anon', capability_oid, 'EXECUTE')
+     or not has_function_privilege('authenticated', capability_oid, 'EXECUTE')
+     or not has_function_privilege('service_role', capability_oid, 'EXECUTE') then
+    raise exception 'canonical listing public-capability EXECUTE contract is incomplete';
+  end if;
+
+  if has_function_privilege(
+       'anon',
+       'public.record_synthetic_regulated_listing_eligibility(uuid)',
+       'EXECUTE'
+     )
+     or has_function_privilege(
+       'authenticated',
+       'public.record_synthetic_regulated_listing_eligibility(uuid)',
+       'EXECUTE'
+     )
+     or not has_function_privilege(
+       'service_role',
+       'public.record_synthetic_regulated_listing_eligibility(uuid)',
+       'EXECUTE'
+     ) then
+    raise exception 'synthetic regulated eligibility transition privilege boundary is invalid';
   end if;
 
   if exists (
@@ -245,8 +305,21 @@ begin
     raise exception 'service-role photo delivery privilege is missing';
   end if;
 
-  if has_table_privilege('anon', 'private.listing_photos', 'SELECT') then
-    raise exception 'anon gained direct private listing_photos SELECT privilege';
+  if exists (
+    select 1
+    from (values
+      ('listing_photos'),
+      ('listing_external_sales_links'),
+      ('seller_role_assessments'),
+      ('listing_policy_decisions'),
+      ('listing_publication_controls'),
+      ('listing_enforcement_cases'),
+      ('listing_eligibility_transitions')
+    ) as required(relname)
+    where has_table_privilege('anon', 'private.' || required.relname, 'SELECT')
+       or has_table_privilege('authenticated', 'private.' || required.relname, 'SELECT')
+  ) then
+    raise exception 'public application role gained direct SELECT on private application state';
   end if;
 
   if exists (

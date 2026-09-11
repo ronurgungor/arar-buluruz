@@ -108,3 +108,7 @@ Before Advisor handoff:
 ## Hard boundaries
 
 Remain closed: production/public activation, real personal data, real merchant ingestion, crawler, company/tax/KYC onboarding, production EİDS calls, global e-Devlet, SMS OTP, new auth methods, Redis solely for this seam, AI moderation/search, paid services, Ads/monetization, payments/orders/reservations/commission/chat, Publish/Update, Tarladan changes and history rewrite.
+
+## PR #89 Advisor second-pass closure
+
+Preserve the accepted architecture. The second pass adds explicit loopback-only synthetic regulated eligibility evidence, trusted policy/eligibility precedence against seller metadata edits, aggregate multi-case enforcement recomputation, capability-aware restore verification, explicit ordinary infrastructure fixtures, and architecture/Phase-3 portability fingerprint coverage. Do not start Phase 3.1 or public-launch readiness; leave PR #89 unmerged for Advisor review.

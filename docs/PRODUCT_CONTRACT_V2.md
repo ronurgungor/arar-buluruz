@@ -251,3 +251,9 @@ D-030 supersedes D-025/D-026 only where those decisions made verified phone, pho
 The 2026-09-11 architecture freeze does not redesign those settled identity or search decisions. It separates seller role from seller principal, policy scope from seller-selected category, public capability from legacy status, and enforcement/contact controls from ownership.
 
 The still-valid Türkiye-wide self-service, direct public contact, trusted-photo, atomic-publication, post-moderation, Product Finding, RLS/Storage and no-rebuild principles remain active.
+
+### PR #89 Advisor second-pass hardening
+
+- Vehicle/Real Estate remain regulated and fail-closed by default. The existing local synthetic test bypass is represented only after the exact triple gate (`PILOT_SYNTHETIC_TEST_MODE=enabled`, loopback request host, loopback backend) as a service-role-only `synthetic_test` eligibility transition. It never represents production EİDS/provider verification.
+- Seller-editable category/product metadata may trigger deterministic reassessment but cannot automatically weaken the latest trusted operator/legal policy or trusted blocked/review eligibility. Deterministic EİDS/review requirements also outrank looser stored overrides.
+- Enforcement is recomputed from every active case with fail-closed precedence: remove > hold > contact suppression > clear. Restoring one case cannot neutralize another unresolved blocking case.

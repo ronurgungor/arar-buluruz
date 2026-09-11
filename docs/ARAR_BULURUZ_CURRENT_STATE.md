@@ -177,3 +177,10 @@ Remain closed unless explicitly reopened later:
 ## PR #89 completion gate
 
 Before Advisor review, require one exact final head with clean diff plus canonical validation covering lint/Prettier, full unit suite, production-like build, full migration rebuild, pgTAP/RLS/trusted-photo probes, REST integration, browser E2E and privileged-key boundary. Re-verify live `main`, open PR #89 **UNMERGED**, and stop. Do not start Phase 3.1 or public-launch readiness in the same workstream.
+
+## PR #89 Advisor second-pass hardening
+
+- The existing loopback-only synthetic Vehicle/Real-Estate path is preserved through an auditable `synthetic_test` eligibility transition after the exact application triple gate; production EİDS remains closed and fail-closed.
+- Seller metadata reassessment uses fail-closed trusted-policy/eligibility precedence, so seller edits cannot remove stricter operator/legal restrictions or trusted blocks.
+- Enforcement is aggregate across all active cases rather than last-event-wins.
+- Restore verification and managed portability equality now cover the architecture-freeze state, including the Phase-3.0 private external-supply state.

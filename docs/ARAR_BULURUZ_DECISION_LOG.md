@@ -377,3 +377,9 @@ Each new entry should include:
 - **Rejected/deferred:** Professional-seller onboarding UI, company/tax documents, KYC, production EİDS calls, global e-Devlet, SMS OTP, passkey/email/OAuth, Redis solely for this seam, AI moderation/search, payments/orders/reservations/chat/monetization and production/public activation.
 - **Evidence:** PR #89 architecture-freeze migration/tests/docs once opened; live GitHub and exact-head canonical workflows remain authoritative for final SHA/evidence.
 - **Review trigger:** Advisor/founder approval for a later public-launch gate, real EİDS integration, professional-seller onboarding, real external supply, or evidence that the conservative public projection must be split from contact fields.
+
+## D-033 — Architecture-freeze second-pass precedence and synthetic regulated test evidence
+
+**Decision:** Preserve the existing Stage-1 local synthetic Vehicle/Real-Estate test path, but represent its post-triple-gate eligibility as an explicit service-role-only `synthetic_test` transition with auditable provenance and no production/provider-verification claim. Seller-editable metadata cannot lower stricter trusted policy/eligibility; deterministic EİDS/review scope cannot be lowered by looser overrides. Enforcement derives from all active cases, so restoration is aggregate rather than last-event-wins. Portability verification includes architecture-freeze and Phase-3 private state.
+
+**Boundary:** No real EİDS provider integration, KYC, production activation, real merchant ingestion, public external offers, or ownership/auth changes.
