@@ -74,6 +74,7 @@ try {
         title: "Synthetic anonymous Storage-sign denial fixture",
         description: "Synthetic local-only fixture for signed-photo security closure.",
         price_amount: 1,
+        category: "electronics",
         province: "Tekirdağ",
         district: "Çorlu",
         seller_display_name: "Synthetic Seller",

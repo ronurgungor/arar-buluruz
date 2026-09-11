@@ -16,6 +16,7 @@ const listingBodies = new Map<string, Record<string, unknown>>();
 const storedObjects = new Set<string>();
 const photoMetadata = new Set<string>();
 const submissionKeys = new Map<string, { listingId: string; complete: boolean }>();
+const syntheticRegulatedEligibilityBypasses = new Set<string>();
 const sellers = new Map<
   string,
   { recoverySelector: string; recoveryDigest: string; recoveryRotatedAt: string }
@@ -107,6 +108,7 @@ function json(value: unknown, status = 200): Response {
 function cascadeDeleteListing(listingId: string): void {
   listings.delete(listingId);
   listingBodies.delete(listingId);
+  syntheticRegulatedEligibilityBypasses.delete(listingId);
   for (const [keyHash, state] of submissionKeys) {
     if (state.listingId === listingId) submissionKeys.delete(keyHash);
   }
@@ -295,6 +297,21 @@ function installBackendMock(): void {
       return json({ signedURL: `/object/sign/listing_photos/${objectPath}?token=synthetic` });
     }
 
+    if (
+      url.pathname === "/rest/v1/rpc/record_synthetic_regulated_listing_eligibility" &&
+      method === "POST"
+    ) {
+      const body = JSON.parse(String(init?.body)) as { p_listing_id: string };
+      const row = listingBodies.get(body.p_listing_id);
+      if (!row || (row.category !== "vehicle" && row.category !== "real-estate")) {
+        return new Response("synthetic regulated transition requires regulated listing", {
+          status: 409,
+        });
+      }
+      syntheticRegulatedEligibilityBypasses.add(body.p_listing_id);
+      return json(true);
+    }
+
     if (url.pathname === "/rest/v1/rpc/claim_listing_submission_key" && method === "POST") {
       if (failNextClaim) {
         failNextClaim = false;
@@ -341,8 +358,10 @@ function installBackendMock(): void {
       }
       const existing = submissionKeys.get(body.p_key_hash);
       const row = listingBodies.get(body.p_listing_id);
+      const isRegulated = row?.category === "vehicle" || row?.category === "real-estate";
       const ready =
         row?.status === "pending" &&
+        (!isRegulated || syntheticRegulatedEligibilityBypasses.has(body.p_listing_id)) &&
         typeof row.owner_user_id === "string" &&
         row.contact_channel === "phone_whatsapp" &&
         typeof row.contact_e164 === "string" &&
@@ -873,6 +892,29 @@ describe("Stage 1 SMS-less seller ownership server acceptance", () => {
     } finally {
       process.env.PILOT_SUBMISSION_SUPABASE_URL = priorUrl;
     }
+  });
+
+  test("loopback synthetic EIDS publication records the regulated bypass before publication", async () => {
+    const seller = await bootstrapSeller();
+    const before = syntheticRegulatedEligibilityBypasses.size;
+
+    const ordinary = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000096"), {
+        cookie: seller.cookie,
+      }),
+    );
+    expect(ordinary.status).toBe(201);
+    expect(syntheticRegulatedEligibilityBypasses.size).toBe(before);
+
+    const vehicle = await handleStage1SelfServiceRequest(
+      requestFor(submissionForm("97000000-0000-4000-8000-000000000097", { category: "vehicle" }), {
+        cookie: seller.cookie,
+      }),
+    );
+    expect(vehicle.status).toBe(201);
+    const payload = (await vehicle.json()) as { listingId: string };
+    expect(syntheticRegulatedEligibilityBypasses.has(payload.listingId)).toBe(true);
+    expect(listingBodies.get(payload.listingId)?.status).toBe("published");
   });
 
   test("claim/photo failures compensate and unknown fields fail before privileged listing work", async () => {

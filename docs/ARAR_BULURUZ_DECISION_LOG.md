@@ -1,6 +1,6 @@
 # Arar Buluruz — Decision Log
 
-_Last updated: 2026-09-04, Europe/Istanbul_
+_Last updated: 2026-09-11, Europe/Istanbul_
 
 This is an append-oriented record of consequential product, technical and operating decisions. It preserves **what was decided, why, alternatives rejected and what would cause reconsideration**.
 
@@ -264,7 +264,6 @@ Each new entry should include:
 - **Evidence:** `docs/REAL_CORLU_PILOT_SELLER_CONTACT.md`; implementation is prepared under PR #58 and must remain synthetic/local/CI-only until a separate activation gate.
 - **Review trigger:** Material scraping/spam/harassment during real pilot, scale beyond founder-operated listings, need for buyer/seller accounts, verified availability of a phone-number-minimizing WhatsApp identifier, or a separately approved privacy/security architecture change.
 
-
 ## D-025 — Türkiye-wide seller self-service with verified-phone atomic auto-publication
 
 - **Date:** 2026-08-27
@@ -283,7 +282,6 @@ Each new entry should include:
 - **Executable evidence:** PR #78 exact frontend checkpoint `41691652070cbc117a943578a49056d49d51e6f0`; all seven canonical workflows GREEN, including Stage 1 self-service acceptance run `33091191129` after a same-SHA rerun resolved a transient local port collision.
 - **Canonical product document:** `docs/PRODUCT_CONTRACT_V2.md`.
 - **Review trigger:** Measured real seller/buyer behavior, material abuse/security evidence, monetization, professional sellers, need for classic accounts/chat/payment, or a founder decision to change the product contract.
-
 
 ## D-026 — Simplified public-phone, rules-evidence and remembered-seller contract
 
@@ -327,7 +325,7 @@ Each new entry should include:
 - **Status:** Active technical evidence strategy
 - **Decision:** Do **not** rebuild the full current Stage 1 seller lifecycle through the legacy localhost transport shim. Modernize hosted managed evidence around provider-specific invariants now; add one thin actual-managed-provider Stage 1 canary later only when a deliberate server-only service-role credential/gate is justified.
 - **Now keep/prove:** canonical migration-chain equality; managed DB/RLS/grant semantics; private Storage and lifecycle signing; backup/restore/rollback/fingerprint consistency; synthetic-only data boundary; public artifact/privilege boundary.
-- **Reject:** adding a shim signing route merely to make the stale founder-entry browser journey green, or claiming shim behavior is equivalent to actual managed Supabase API integration.
+- **Reject:** adding a shim signing route merely to make the stale founder-entry/preapproval browser journey green, or claiming shim behavior is equivalent to actual managed Supabase API integration.
 - **Historical proof status:** the old hosted founder-entry/preapproval browser journey remains dated evidence but is superseded as current Stage 1 product acceptance after PR #78.
 - **Later canary:** one synthetic current submission → public delivery/signed photo → founder post-moderation takedown path against actual managed provider APIs, without duplicating the entire canonical Stage 1 acceptance suite.
 - **Rationale:** Independent Work review plus Advisor code inspection found that the old hosted proof duplicates already-covered product behavior, encodes superseded founder-entry assumptions and increases false-green/drift risk when extended through the shim.
@@ -362,3 +360,26 @@ Each new entry should include:
 - **Review chronology:** The second Codex exact-head review found the non-rotating reconciliation BLOCKER and process-memory rate-limit IMPORTANT; Advisor accepted both; the second remediation closed both on exact head `e841cf688b8cafb97d0508d0c1afec9e96446670`; Advisor independently inspected that 8-file remediation and found no new blocker.
 - **Evidence:** Stage 1 run `33848314033` is SUCCESS. All seven canonical workflows on `e841cf688b8cafb97d0508d0c1afec9e96446670` were SUCCESS before the final docs-only synchronization: CI `33848313993`, Stage 1 `33848314033`, Activation `33848313967`, V0 `33848313970`, Real pilot `33848313977`, Self-host `33848313963`, Managed `33848313976`.
 - **Remaining gate:** After the docs-only synchronization itself obtains seven canonical GREEN workflows on one exact new head, run one final narrow Codex exact-head recovery-security closure review. PR #84 remains unmerged until that review and a later Advisor/founder merge decision.
+
+## D-032 — Mandatory architecture freeze before external-supply or public-rollout expansion
+
+- **Date:** 2026-09-11
+- **Status:** Active architecture baseline; PR #89 implementation pending Advisor review; production/real-data activation closed
+- **Decision:** Stop before Phase 3.1 and freeze five distinct internal authorities: (1) pseudonymous seller ownership principal; (2) seller-role assessment; (3) server-owned listing policy/legal scope; (4) orthogonal lifecycle/eligibility/enforcement/contact state; and (5) one derived public capability decision for search/detail/photo/contact/external CTA. Seller role and legal policy may change without changing listing ownership identity.
+- **Seller-role consequence:** `private.sellers` remains the ownership principal. Role assessment is separate and supports `unknown`, `private_occasional`, `professional`, `regulated_business`; unknown is non-blocking for ordinary ownership. No company/tax/KYC data or onboarding UI is introduced.
+- **Policy-scope consequence:** Seller category remains product metadata. A separate current policy decision supports `ordinary`, `eids_vehicle`, `eids_real_estate`, `review_required`, `restricted`. Vehicle/real-estate remain fail-closed for regulated verification; ambiguous `other` without structured type is review-required rather than silently ordinary.
+- **State consequence:** `public.listings.status` remains legacy/current workflow state while internal lifecycle, eligibility, enforcement and contact availability become independent axes. This is append-only migration, not a big-bang status rewrite.
+- **Capability consequence:** One fail-closed listing-level capability seam governs anonymous listing visibility and signed-photo eligibility. Contact suppression and legal/enforcement failures remove the affected public exposure without changing owner UUID. Existing external-sales-link ownership/match/moderation/complaint/explicit-CTA facts remain an additional, narrower CTA requirement.
+- **Notice consequence:** Durable legal/operator enforcement cases record reason/type, time/deadline, decision/action, evidence/audit and appeal/restoration state. Removal propagates to collection/detail/photo/contact/CTA capability coherently.
+- **Product Finding consequence:** Freeze two independent hierarchies. Intent authority is legal/public availability → explicit filters → high-confidence deterministic inference → free text. Fact authority is regulatory/provider verified → validated seller structured → deterministic derived/external with provenance/confidence → free text. Execution remains eligibility → product role/scope → hard filters → relevance → sort; no semantic AI search.
+- **External-supply consequence:** Phase 3.0 remains synthetic `.invalid` only. No real merchant ingestion, crawler, public external offer/card, external image, service activation, second-hand external supply or Phase 3.1 implementation is authorized.
+- **Preserved invariants:** D-030/D-031 seller ownership/recovery, private Storage/trusted-photo checks, RLS/service-role boundaries, EİDS fail-closed behavior, Phase-2 search semantics and Phase-3.0 synthetic boundary remain authoritative unless a later explicit decision changes them.
+- **Rejected/deferred:** Professional-seller onboarding UI, company/tax documents, KYC, production EİDS calls, global e-Devlet, SMS OTP, passkey/email/OAuth, Redis solely for this seam, AI moderation/search, payments/orders/reservations/chat/monetization and production/public activation.
+- **Evidence:** PR #89 architecture-freeze migration/tests/docs once opened; live GitHub and exact-head canonical workflows remain authoritative for final SHA/evidence.
+- **Review trigger:** Advisor/founder approval for a later public-launch gate, real EİDS integration, professional-seller onboarding, real external supply, or evidence that the conservative public projection must be split from contact fields.
+
+## D-033 — Architecture-freeze second-pass precedence and synthetic regulated test evidence
+
+**Decision:** Preserve the existing Stage-1 local synthetic Vehicle/Real-Estate test path, but represent its post-triple-gate eligibility as an explicit service-role-only `synthetic_test` transition with auditable provenance and no production/provider-verification claim. Seller-editable metadata cannot lower stricter trusted policy/eligibility; deterministic EİDS/review scope cannot be lowered by looser overrides. Enforcement derives from all active cases, so restoration is aggregate rather than last-event-wins. Portability verification includes architecture-freeze and Phase-3 private state.
+
+**Boundary:** No real EİDS provider integration, KYC, production activation, real merchant ingestion, public external offers, or ownership/auth changes.

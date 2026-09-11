@@ -1,27 +1,38 @@
 # Arar Buluruz — Product Finding Phase 2 Contract
 
-_Last updated: 2026-09-06, Europe/Istanbul_
+_Last updated: 2026-09-11, Europe/Istanbul_
 
 ## Purpose
 
-Phase 2 turns the Phase 1 structured product-finding foundation into the user-facing seller and buyer flow without changing the settled ownership, photo, EİDS, RLS or production boundaries.
+Phase 2 turns the Phase 1 structured product-finding foundation into the user-facing seller and buyer flow without changing the settled ownership, photo, EİDS, RLS or production boundaries. The 2026-09-11 architecture freeze clarifies authority ordering without redesigning the search engine.
 
-The canonical execution order is:
+The implementation remains conceptually:
 
-**QUERY → INTENT/SCOPE → RELEVANT SET → FILTER → SORT**
+**ELIGIBILITY → PRODUCT ROLE / SCOPE → HARD FILTERS → TEXT RELEVANCE → SORT**
 
-Sorting is never allowed to redefine search meaning or expand the relevant set.
+The earlier implementation shorthand **QUERY → INTENT/SCOPE → RELEVANT SET → FILTER → SORT** remains compatible: legal/public availability constrains the candidate inventory before Product Finding operates, and sort never expands the relevant set.
 
-## Search precedence
+## Two independent authority axes
 
-1. legal/compliance gate;
+### Intent authority
+
+1. legal/publication availability;
 2. explicit user category/product-type/filter scope;
-3. validated structured listing data;
-4. high-confidence deterministic query intent;
-5. free-text relevance;
-6. sort.
+3. high-confidence deterministic inferred intent;
+4. remaining free-text relevance.
 
-An explicit `productType` always wins over inference. An invalid explicit hard filter fails closed; it is never secretly relaxed.
+An explicit `productType` or explicit hard filter always wins over inferred query intent. An invalid explicit hard filter fails closed; it is never secretly relaxed.
+
+### Fact authority
+
+1. regulatory/provider verified fact;
+2. validated seller structured fact;
+3. deterministic derived/external fact with explicit provenance/confidence;
+4. free-text claim.
+
+Hard filtering consumes the highest-authority structured fact available for that field. Contradictory title/description text cannot override a structured hard-filter fact. A missing required hard-filter fact fails closed.
+
+Native and external facts remain provenance-distinguishable. Phase 3.0 external facts are `external_source_extracted`; native listing facts remain seller-declared. Phase 3.0 external supply remains synthetic-only and does not authorize real merchant discovery/ingestion or public external cards.
 
 ## Deterministic intent resolution
 
@@ -50,6 +61,8 @@ Known typed incompatible roles are excluded after a high-confidence inferred sco
 - `iPhone 13` with typed phone + phone-accessory matches resolves to the phone main family. Cases/cables remain outside that relevant set.
 - `iPhone 13 kılıf` resolves to `phone-accessory` only when the phone family is unambiguous.
 - an explicit `automobile-part` or `phone-accessory` filter wins even if the free-text query would otherwise infer a main product.
+- a listing whose title says `256 GB` but whose validated structured storage fact is `128` does not satisfy a hard `256 GB` filter.
+- a listing missing a structured fact required by an active hard filter is excluded.
 - ambiguous query evidence does not force a type.
 
 ## Filtering semantics
@@ -82,7 +95,13 @@ Vehicle is an explicit exception to the normal roughly 2–5 contextual-facet gu
 - non-empty query → `relevance`;
 - browse / empty query → `newest`.
 
-`relevance`, `newest`, `price_asc` and `price_desc` all operate only after the same relevant set has been established.
+`relevance`, `newest`, `price_asc` and `price_desc` all operate only after the same relevant set has been established. Sorting cannot add a candidate excluded by eligibility, product scope or a hard filter.
+
+## Seller-selected category vs policy scope
+
+Seller-selected broad category remains product metadata. Product Finding may use it as explicit user/product scope, but compliance/publication authority is separate.
+
+The server-owned listing policy decision may resolve to `ordinary`, `eids_vehicle`, `eids_real_estate`, `review_required` or `restricted`. Vehicle and real-estate main-product scopes remain EİDS-gated; ambiguous `other` without structured type is `review_required`. This legal/publication classification occurs outside and before text relevance and cannot be overridden by a search query.
 
 ## Seller UI contract
 
@@ -116,19 +135,30 @@ The UI metadata source is `src/lib/product-finding-ui-contract.ts`; buyer facet 
 
 The `/ara` search state is the source of truth for query, location, category, product type, contextual filters and sort. Opening a detail page must not clear or rewrite that state. Back navigation returns to the same search URL/state and restores the results scroll position. A product-scope change must clear only incompatible contextual filters, not unrelated universal filters.
 
-## End-to-end acceptance before PR
+## Regression invariants
+
+Focused tests must preserve at least:
+
+1. explicit filter wins inferred query intent;
+2. structured fact wins contradictory free text for hard filtering;
+3. missing hard-filter fact fails closed;
+4. sorting cannot enlarge the relevant set;
+5. native/external provenance remains distinguishable;
+6. Phase-2 native execution remains behaviorally compatible when routed through the Phase-3 common candidate seam.
+
+## End-to-end acceptance before Product Finding changes
 
 Synthetic acceptance must prove:
 
 1. seller create UI → submitted structured data;
 2. seller edit UI → transitioned structured data;
 3. persisted structured data → public adapter;
-4. query intent → relevant set → hard filters → sort;
+4. eligibility → query intent/product scope → hard filters → relevance → sort;
 5. contextual listing-card facts;
 6. detail navigation and Back restore query/category/product type/filter/sort/scroll state.
 
-Canonical workflows must be GREEN on one exact final head before opening the PR.
+Canonical workflows must be GREEN on one exact final head before merge of a consequential Product Finding change.
 
 ## Hard boundaries
 
-No AI semantic search, typo engine, Elasticsearch/external search engine, general Auth redesign, ads/payment/chat work, production activation, taxonomy explosion, or reopening of PR #84/#85/#86 architecture belongs in Phase 2.
+No AI semantic search, typo engine, Elasticsearch/external search engine, general Auth redesign, ads/payment/chat work, production activation, taxonomy explosion, real merchant ingestion or reopening of settled Phase-1/2/3.0 architecture belongs in this contract clarification.
