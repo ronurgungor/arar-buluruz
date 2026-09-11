@@ -6,7 +6,10 @@ import {
   classifyListingPolicyScopeDeterministically,
   deriveListingPublicCapabilities,
 } from "./architecture-freeze";
-import { executeProductFindingCandidatesV1, projectNativeListingCandidate } from "./external-supply-phase3";
+import {
+  executeProductFindingCandidatesV1,
+  projectNativeListingCandidate,
+} from "./external-supply-phase3";
 import { executeSearchRequestV1 } from "./listing-search";
 import { parseSearchRequestV1 } from "./product-finding-contract";
 import type { ListingView } from "./public-listings";
@@ -20,6 +23,7 @@ const baseCapabilityInput = {
   publicationReady: true,
   publicationInstructionPresent: true,
   notExpired: true,
+  externalCtaApproved: true,
 };
 
 function listing(input: Partial<ListingView> & Pick<ListingView, "id" | "title">): ListingView {
@@ -30,7 +34,11 @@ function listing(input: Partial<ListingView> & Pick<ListingView, "id" | "title">
     category: input.category ?? "electronics",
     productType: input.productType ?? "phone",
     productAttributesVersion: input.productAttributesVersion ?? 1,
-    productAttributes: input.productAttributes ?? { brand: "Apple", model: "iPhone 13", storage_gb: 128 },
+    productAttributes: input.productAttributes ?? {
+      brand: "Apple",
+      model: "iPhone 13",
+      storage_gb: 128,
+    },
     condition: input.condition ?? "used",
     city: input.city ?? "Tekirdağ",
     district: input.district ?? "Çorlu",
@@ -45,10 +53,27 @@ function listing(input: Partial<ListingView> & Pick<ListingView, "id" | "title">
 
 describe("mandatory architecture freeze contract", () => {
   test("keeps selected category separate from server-owned policy scope", () => {
-    expect(classifyListingPolicyScopeDeterministically({ category: "vehicle", productType: "automobile" })).toBe("eids_vehicle");
-    expect(classifyListingPolicyScopeDeterministically({ category: "real-estate", productType: "housing" })).toBe("eids_real_estate");
-    expect(classifyListingPolicyScopeDeterministically({ category: "electronics", productType: "phone" })).toBe("ordinary");
-    expect(classifyListingPolicyScopeDeterministically({ category: "other", productType: null })).toBe("review_required");
+    expect(
+      classifyListingPolicyScopeDeterministically({
+        category: "vehicle",
+        productType: "automobile",
+      }),
+    ).toBe("eids_vehicle");
+    expect(
+      classifyListingPolicyScopeDeterministically({
+        category: "real-estate",
+        productType: "housing",
+      }),
+    ).toBe("eids_real_estate");
+    expect(
+      classifyListingPolicyScopeDeterministically({
+        category: "electronics",
+        productType: "phone",
+      }),
+    ).toBe("ordinary");
+    expect(
+      classifyListingPolicyScopeDeterministically({ category: "other", productType: null }),
+    ).toBe("review_required");
   });
 
   test("derives one fail-closed public capability contract", () => {
@@ -83,6 +108,18 @@ describe("mandatory architecture freeze contract", () => {
         externalCta: false,
       });
     }
+  });
+
+  test("keeps external CTA approval narrower than ordinary public exposure", () => {
+    expect(
+      deriveListingPublicCapabilities({ ...baseCapabilityInput, externalCtaApproved: false }),
+    ).toEqual({
+      searchIndex: true,
+      detail: true,
+      signedPhoto: true,
+      publicContact: true,
+      externalCta: false,
+    });
   });
 
   test("freezes Product Finding intent and fact authority separately", () => {
