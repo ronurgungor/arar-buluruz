@@ -1,0 +1,45 @@
+name: PR 89 focused fixture corrections
+
+on:
+  push:
+    branches:
+      - agent/architecture-freeze-closure
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: true
+      - name: Correct Advisor pgTAP fixtures
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('supabase/tests/database/architecture_freeze_advisor_closure.test.sql')
+          text = path.read_text(encoding='utf-8')
+          old = '''insert into public.listings (\n  id, title, description, price_amount, category, product_type, province, district,\n  seller_display_name, contact_channel, contact_e164, publication_instruction_at, status\n) values\n(\n  'f3100000-0000-4000-8000-000000000001', 'Synthetic vehicle bypass', 'Advisor fixture',\n  1, 'vehicle', 'automobile', 'Tekirdağ', 'Çorlu', 'Synthetic Seller',\n  'phone_whatsapp', '+12025550201', now(), 'pending'\n),\n(\n  'f3100000-0000-4000-8000-000000000002', 'Ordinary control', 'Advisor fixture',\n  1, 'electronics', null, 'Tekirdağ', 'Çorlu', 'Synthetic Seller',\n  'phone_whatsapp', '+12025550202', now(), 'pending'\n);'''
+          new = '''insert into public.listings (\n  id, title, description, price_amount, category, province, district,\n  seller_display_name, contact_channel, contact_e164, publication_instruction_at, status\n) values\n(\n  'f3100000-0000-4000-8000-000000000001', 'Synthetic vehicle bypass', 'Advisor fixture',\n  1, 'vehicle', 'Tekirdağ', 'Çorlu', 'Synthetic Seller',\n  'phone_whatsapp', '+12025550201', now(), 'pending'\n),\n(\n  'f3100000-0000-4000-8000-000000000002', 'Ordinary control', 'Advisor fixture',\n  1, 'electronics', 'Tekirdağ', 'Çorlu', 'Synthetic Seller',\n  'phone_whatsapp', '+12025550202', now(), 'pending'\n);'''
+          if text.count(old) != 1:
+              raise SystemExit('vehicle fixture anchor mismatch')
+          text = text.replace(old, new, 1)
+          old = '''  owner_user_id, contact_channel, contact_e164, publication_instruction_at,\n  status, published_at, expires_at\n) values (\n  'f3120000-0000-4000-8000-000000000001', 'Enforcement aggregation', 'Advisor fixture',\n  1, 'electronics', 'Tekirdağ', 'Çorlu', 'Synthetic Seller',\n  null, 'phone_whatsapp', '+12025550220', now() - interval '2 minutes',\n  'published', now() - interval '1 minute', now() + interval '1 day'\n);'''
+          new = '''  owner_user_id, contact_channel, contact_e164, publication_instruction_at,\n  listing_rules_version, listing_rules_accepted_at, status, published_at, expires_at\n) values (\n  'f3120000-0000-4000-8000-000000000001', 'Enforcement aggregation', 'Advisor fixture',\n  1, 'electronics', 'Tekirdağ', 'Çorlu', 'Synthetic Seller',\n  null, 'phone_whatsapp', '+12025550220', now() - interval '2 minutes',\n  'architecture-freeze-v1', now() - interval '90 seconds',\n  'published', now() - interval '1 minute', now() + interval '1 day'\n);'''
+          if text.count(old) != 1:
+              raise SystemExit('enforcement fixture anchor mismatch')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+      - name: Commit durable fixture correction only
+        run: |
+          rm .github/workflows/pr89-fixture-fix.yml
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "Correct PR 89 Advisor database fixtures"
+          git push origin HEAD:agent/architecture-freeze-closure
