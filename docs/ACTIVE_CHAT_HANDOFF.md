@@ -1,138 +1,110 @@
 # Arar Buluruz — Active Chat Handoff
 
-_Last updated: 2026-09-04, Europe/Istanbul_
+_Last updated: 2026-09-11, Europe/Istanbul_
 
 ## Purpose
 
-Short-lived continuity layer for the final PR #84 closure. Live GitHub and executable exact-head evidence remain authoritative.
+Short-lived continuity layer for PR #89 mandatory architecture-freeze closure. Live GitHub and executable exact-head evidence are authoritative for exact SHA/workflow state.
 
-## Writer and repository state
+## Repository state
 
-- Founder: final consequential decision owner.
-- Main Execution Chat: repository writer for this bounded documentation-only closure.
-- Advisor Chat: roadmap/materiality/final review.
 - Repository: `ronurgungor/arar-buluruz`.
-- Canonical `main`: `47956ef9f4e91cd6dd033d988c9c115bb1f128b7`.
-- Active branch: `agent/smsless-seller-ownership-phase1`.
-- Advisor-reviewed security implementation head immediately before this docs-only sync: `e841cf688b8cafb97d0508d0c1afec9e96446670`.
-- At that checkpoint: 52 commits ahead / 0 behind `main`.
-- PR #84: **OPEN / UNMERGED**.
-- The commit containing this handoff is the final docs-only synchronization head. A Git commit cannot embed its own SHA without changing that SHA; resolve the exact current/final head from the live PR/GitHub and bind all post-sync workflow evidence to that one SHA.
+- Canonical branch: `main`.
+- Verified PR #89 base/main at branch creation: `3ca449e8f0e07d7131c59739e45f6ca46d9050fb` (normal merge commit of PR #88).
+- Active branch: `agent/architecture-freeze-closure`.
+- PR #88 External Supply Phase 3.0: **MERGED / COMPLETE**.
+- External supply after PR #88: synthetic `.invalid` only; Phase 3.1 real-source discovery/ingestion is explicitly paused.
+- PR #89 must remain **OPEN / UNMERGED** for Advisor review. Resolve its final exact head from live GitHub; this document cannot embed its own containing commit SHA without changing it.
 
-No new branch. No rebase/amend/squash/force-push. No security/application/database/workflow/dependency/runtime behavior changes in this sync. Tarladan untouched.
+## Architecture freeze objective
 
-## Current founder/Advisor product truth — D-030
+Separate durable authorities without redesigning the settled product:
 
-- Ordinary-goods SMS OTP is no longer a product requirement.
-- Seller ownership identity is a pseudonymous UUID.
-- Listings bind ownership through `seller_id → listings.owner_user_id`.
-- Seller access uses a server-side revocable opaque HttpOnly cookie session.
-- Seller recovery uses a rotating one-time high-entropy recovery credential; only selector/digest state is persisted.
-- Public phone is contact data, not verified identity or authorization.
-- Equal phones do not imply the same seller; phone change does not transfer ownership.
-- Manual line/WhatsApp verification is risk-triggered only.
-- No general e-Devlet login.
-- Passkey/email/OAuth/password are deferred.
-- Vasıta **and Emlak** require EİDS before real production publication.
+1. `private.sellers` remains the pseudonymous listing-ownership principal.
+2. Seller role is a separate assessment: `unknown`, `private_occasional`, `professional`, `regulated_business`.
+3. Seller-selected category/product metadata is separate from server-owned policy scope: `ordinary`, `eids_vehicle`, `eids_real_estate`, `review_required`, `restricted`.
+4. Listing lifecycle, publication eligibility, enforcement and contact availability are orthogonal internal axes; legacy `public.listings.status` remains during migration.
+5. One listing-level public capability seam decides search/index, detail, signed photo, public contact and external CTA exposure.
+6. Legal/operator notice cases propagate fail-closed enforcement without changing seller ownership.
+7. Product Finding keeps the settled Phase-2 engine while freezing separate intent-authority and fact-authority hierarchies.
 
-## Final recovery-security semantics
+## Preserved seller-security truth
 
-The second Codex exact-head review identified a BLOCKER in the then-current non-rotating recovery reconciliation path. Advisor accepted the finding. The second remediation closes it without adding a persistent pending-recovery state machine.
+- Ordinary-goods SMS OTP remains removed.
+- Seller ownership remains `seller_id → listings.owner_user_id`.
+- `owner_user_id` remains immutable.
+- Server-backed opaque HttpOnly sessions and rotating recovery credentials remain unchanged.
+- Phone remains intentionally public listing contact, never authorization identity.
+- Equal phones never merge sellers; phone changes never transfer ownership.
+- Seller-role assessment contains no company/tax/KYC identity semantics.
+- Unknown role is valid and non-blocking for ordinary ownership.
 
-Ambiguous recovery now works as follows:
+## Policy and public-capability truth
 
-1. normal recovery attempts atomic `A → B` through `recover_seller_identity(...)`;
-2. if the browser cannot determine the response outcome, it generates and displays replacement candidate **C before any reconciliation mutation**;
-3. reconciliation attempts `B → C` through the same atomic `recover_seller_identity(...)` primitive;
-4. if `A → B` committed, `B → C` succeeds, B is consumed, C becomes current, pre-existing seller sessions are revoked and a fresh browser session is created;
-5. if `A → B` did not commit, `B → C` fails; the application does **not** claim that A is definitely still valid because concurrent rotation cannot be excluded;
-6. a successfully used/reconciled B cannot be replayed.
+- Vehicle/automobile defaults to `eids_vehicle` + `regulated_verification_required`.
+- Real-estate/housing defaults to `eids_real_estate` + `regulated_verification_required`.
+- Ambiguous `other` without structured product type is `review_required`, not ordinary by default.
+- Ordinary structured goods may be `eligible` when their existing publication requirements are satisfied.
+- Enforcement `held`/`removed` fails closed.
+- Contact `suppressed` fails closed; while contact fields remain on `public.listings`, suppression conservatively removes row-level public exposure to prevent leakage.
+- Signed-photo delivery retains canonical WebP/private-Storage checks and delegates only listing-level visibility to the capability seam.
+- External CTA additionally retains the existing ownership-confirmed, product-match, moderation-approved, complaint-clear and explicit `allow_public_cta` requirements.
 
-Plaintext recovery/session credentials are not persisted. The browser possesses/displays replacement C before irreversible reconciliation rotation.
+## Enforcement case seam
 
-## Migration and privilege state
+`private.listing_enforcement_cases` records case id, target listing, reason/type, received/deadline time, decision/action, action time, evidence/audit metadata and appeal/restoration state.
 
-The canonical migration chain contains **12 migrations**.
+Removal propagates to enforcement=`removed` and contact=`suppressed`. Tests must prove collection/search, detail, signed-photo, public contact and external CTA are all disabled while ownership remains unchanged.
 
-Relevant Phase 1 migrations:
+## Product Finding authority freeze
 
-- `20260903130000_prepare_smsless_seller_ownership.sql` — pseudonymous seller identity, opaque seller sessions and rotating recovery digest foundation;
-- `20260903193000_reconcile_seller_recovery.sql` — historical append-only migration that introduced the first reconciliation RPC;
-- `20260904070000_retire_nonrotating_recovery_reconciliation.sql` — append-only remediation that revokes/drops the unsafe non-rotating `reconcile_seller_recovery(...)` RPC from the final schema and preserves explicit recovery privilege boundaries.
+Intent authority:
 
-Final schema truth:
+1. legal/publication availability;
+2. explicit user category/product/filter;
+3. high-confidence deterministic inferred intent;
+4. free-text relevance.
 
-- obsolete `reconcile_seller_recovery(...)` is absent;
-- `recover_seller_identity(...)` remains privileged/service-role-only;
-- `public`, `anon` and `authenticated` cannot execute privileged seller recovery RPCs.
+Fact authority:
 
-No existing migration history was rewritten.
+1. regulatory/provider verified;
+2. validated seller structured;
+3. deterministic derived/external with provenance/confidence;
+4. free-text claim.
 
-## Rate-limit closure
+Execution remains **ELIGIBILITY → PRODUCT ROLE/SCOPE → HARD FILTERS → TEXT RELEVANCE → SORT**. No AI/semantic search.
 
-The second Codex review also identified process-memory recovery rate-limit growth as IMPORTANT. Advisor accepted it and the second remediation closed it with bounded local hardening only:
+Required conflict regressions: explicit filter beats inference; structured fact beats contradictory text for hard filtering; missing hard-filter fact fails closed; sorting cannot enlarge the relevant set; native/external provenance remains distinguishable.
 
-- trusted-IP limiting runs before attacker-controlled recovery selector bucket allocation;
-- expired process-local buckets are swept periodically;
-- the in-process bucket map has a fixed upper bound and fails closed rather than growing indefinitely;
-- no Redis, distributed limiter dependency or broad production architecture was introduced.
+## External-supply freeze
 
-Shared/distributed abuse state remains a separate deferred production concern.
+Phase 3.0 remains closed at synthetic-only:
 
-## Exact-head evidence before this docs-only sync
+- no real merchant offer ingestion;
+- no crawler;
+- no public external offers/cards;
+- no external images;
+- no external service activation;
+- no external second-hand;
+- no vehicle/real-estate external supply;
+- no Phase 3.1 implementation in PR #89.
 
-Advisor-reviewed security head:
+## Validation / next action
 
-`e841cf688b8cafb97d0508d0c1afec9e96446670`
+Before Advisor handoff:
 
-Focused/canonical Stage 1 security run:
-
-- Stage 1 self-service acceptance — `33848314033` — **SUCCESS**; includes lint/unit, 12-migration rebuild, pgTAP/RLS/trusted-photo probes and the rotating-recovery browser regression.
-
-All seven canonical workflows on that same `e841cf6...` head were **SUCCESS**:
-
-- CI — `33848313993` — SUCCESS;
-- Stage 1 self-service acceptance — `33848314033` — SUCCESS;
-- Activation readiness — `33848313967` — SUCCESS;
-- V0 minimal PWA — `33848313970` — SUCCESS;
-- Real pilot backend prep — `33848313977` — SUCCESS;
-- Self-host migration rehearsal — `33848313963` — SUCCESS;
-- Managed Supabase migration rehearsal — `33848313976` — SUCCESS.
-
-This 7/7 set is immutable evidence for `e841cf6...`; because the present docs-only commit advances the branch, the same seven canonical workflows must also be GREEN on the new exact docs-only head before the next review.
-
-## Review state
-
-- First security remediation: closed before the second Codex review.
-- Second Codex exact-head review: completed; it found the non-rotating reconciliation BLOCKER and process-memory rate-limit IMPORTANT.
-- Advisor disposition: both findings accepted.
-- Second remediation: both findings closed on `e841cf6...`; Advisor independently inspected that exact head and found no new blocker in the 8-file remediation.
-- Remaining pre-merge security gate: **one final narrow Codex exact-head recovery-security closure review after this docs-only sync is 7/7 GREEN**.
-- PR #84 must remain OPEN / UNMERGED until that review and the later Advisor/founder merge decision.
-
-## Immediate next action
-
-1. Verify this synchronization changed documentation files only relative to `e841cf6...`.
-2. Resolve the new exact PR head and verify `main` remains unchanged.
-3. Require all seven canonical workflows SUCCESS on that same new exact head.
-4. Keep PR #84 OPEN / UNMERGED.
-5. Stop for the final narrow Codex exact-head recovery-security closure review.
-
-No security implementation, migration, runtime, production, real-data or external-service activation work belongs in this step.
+1. lint/Prettier and full unit suite;
+2. production-like build;
+3. full migration rebuild;
+4. complete pgTAP/RLS and trusted-photo checks;
+5. REST integration and browser E2E;
+6. privileged-key boundary;
+7. clean diff audit against `3ca449e8f0e07d7131c59739e45f6ca46d9050fb`;
+8. verify live main has not moved;
+9. open PR #89 unmerged;
+10. require all applicable canonical workflows GREEN on one exact final PR head;
+11. return to Advisor. Do not merge and do not start Phase 3.1/public-launch readiness.
 
 ## Hard boundaries
 
-Remain closed:
-
-- production/public activation;
-- real personal/seller/listing/contact/photo data;
-- AWS/production infrastructure;
-- secrets/env mutation;
-- paid services;
-- real SMS;
-- production EİDS calls;
-- Ads/monetization;
-- payments/orders/reservations/commission;
-- Publish/Update;
-- Tarladan changes;
-- history rewrite.
+Remain closed: production/public activation, real personal data, real merchant ingestion, crawler, company/tax/KYC onboarding, production EİDS calls, global e-Devlet, SMS OTP, new auth methods, Redis solely for this seam, AI moderation/search, paid services, Ads/monetization, payments/orders/reservations/commission/chat, Publish/Update, Tarladan changes and history rewrite.
