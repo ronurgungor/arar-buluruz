@@ -124,13 +124,11 @@ function assertPublicListingIntegrity(row: PublicListingRowBase, context: z.Refi
 
 const publicListingRowSchema = publicListingRowBaseSchema.superRefine(assertPublicListingIntegrity);
 const publicListingRowsSchema = z.array(publicListingRowSchema);
-const publicListingDetailRowSchema = publicListingRowBaseSchema
-  .extend({
-    contact_channel: publicSellerContactSchema.shape.channel,
-    contact_e164: publicSellerContactSchema.shape.e164,
-  })
-  .superRefine(assertPublicListingIntegrity);
-const publicListingDetailRowsSchema = z.array(publicListingDetailRowSchema);
+const publicContactRowSchema = z.object({
+  contact_channel: publicSellerContactSchema.shape.channel,
+  contact_e164: publicSellerContactSchema.shape.e164,
+});
+const publicContactRowsSchema = z.array(publicContactRowSchema).max(1);
 
 const publicPhotoManifestRowSchema = z.object({
   photo_id: z.string().uuid(),
@@ -155,7 +153,7 @@ const publicPhotoManifestRowSchema = z.object({
 });
 const publicPhotoManifestRowsSchema = z.array(publicPhotoManifestRowSchema).max(32);
 
-const PUBLIC_LISTING_COLLECTION_COLUMNS = [
+const PUBLIC_LISTING_COLUMNS = [
   "id",
   "title",
   "description",
@@ -172,12 +170,6 @@ const PUBLIC_LISTING_COLLECTION_COLUMNS = [
   "search_keywords",
   "created_at",
   "published_at",
-].join(",");
-
-const PUBLIC_LISTING_DETAIL_COLUMNS = [
-  PUBLIC_LISTING_COLLECTION_COLUMNS,
-  "contact_channel",
-  "contact_e164",
 ].join(",");
 
 export class PublicListingsError extends Error {
@@ -204,21 +196,15 @@ function validateSupabaseUrl(rawUrl: string): URL {
   return url;
 }
 
-function createListingsUrl(
-  config: PublicSupabaseConfig,
-  options: { id?: string; includeContact: boolean },
-): URL {
+function createListingsUrl(config: PublicSupabaseConfig, id?: string): URL {
   const baseUrl = validateSupabaseUrl(config.url);
   const apiUrl = new URL("rest/v1/listings", `${baseUrl.toString().replace(/\/+$/, "")}/`);
 
-  apiUrl.searchParams.set(
-    "select",
-    options.includeContact ? PUBLIC_LISTING_DETAIL_COLUMNS : PUBLIC_LISTING_COLLECTION_COLUMNS,
-  );
+  apiUrl.searchParams.set("select", PUBLIC_LISTING_COLUMNS);
   apiUrl.searchParams.set("order", "published_at.desc,id.desc");
 
-  if (options.id) {
-    const validId = z.string().uuid().parse(options.id);
+  if (id) {
+    const validId = z.string().uuid().parse(id);
     apiUrl.searchParams.set("id", `eq.${validId}`);
     apiUrl.searchParams.set("limit", "1");
   }
@@ -289,6 +275,37 @@ async function fetchPublicPhotoUrls(
   return manifest.map((photo) => buildApplicationPhotoUrl(listingId, photo.photo_id));
 }
 
+async function fetchPublicContact(
+  listingId: string,
+  config: PublicSupabaseConfig,
+  fetchImpl: typeof fetch,
+): Promise<PublicSellerContact | null> {
+  const baseUrl = validateSupabaseUrl(config.url);
+  const rpcUrl = new URL(
+    "rest/v1/rpc/get_public_listing_contact",
+    `${baseUrl.toString().replace(/\/+$/, "")}/`,
+  );
+  const response = await fetchImpl(rpcUrl, {
+    method: "POST",
+    headers: {
+      ...publicApiHeaders(config),
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ p_listing_id: listingId }),
+  });
+  if (!response.ok) {
+    throw new PublicListingsError(
+      `Public listing contact request failed with status ${response.status}.`,
+    );
+  }
+  const parsed = publicContactRowsSchema.safeParse(await response.json());
+  if (!parsed.success) {
+    throw new PublicListingsError("Public listing contact response did not match the approved schema.");
+  }
+  const row = parsed.data[0];
+  return row ? { channel: row.contact_channel, e164: row.contact_e164 } : null;
+}
+
 function mapPublicRow(row: z.infer<typeof publicListingRowSchema>, photos: string[]): ListingView {
   const product = validateProductSelection({
     category: row.category,
@@ -318,15 +335,13 @@ function mapPublicRow(row: z.infer<typeof publicListingRowSchema>, photos: strin
 }
 
 function mapPublicDetailRow(
-  row: z.infer<typeof publicListingDetailRowSchema>,
+  row: z.infer<typeof publicListingRowSchema>,
   photos: string[],
+  publicContact: PublicSellerContact | null,
 ): ListingDetailView {
   return {
     ...mapPublicRow(row, photos),
-    publicContact: {
-      channel: row.contact_channel,
-      e164: row.contact_e164,
-    },
+    publicContact,
   };
 }
 
@@ -334,7 +349,7 @@ async function fetchCollectionRows(
   config: PublicSupabaseConfig,
   fetchImpl: typeof fetch,
 ): Promise<ListingView[]> {
-  const response = await fetchImpl(createListingsUrl(config, { includeContact: false }), {
+  const response = await fetchImpl(createListingsUrl(config), {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -363,7 +378,7 @@ async function fetchDetailRows(
   config: PublicSupabaseConfig,
   fetchImpl: typeof fetch,
 ): Promise<ListingDetailView[]> {
-  const response = await fetchImpl(createListingsUrl(config, { id, includeContact: true }), {
+  const response = await fetchImpl(createListingsUrl(config, id), {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -375,7 +390,7 @@ async function fetchDetailRows(
     throw new PublicListingsError(`Public listings request failed with status ${response.status}.`);
   }
 
-  const parsed = publicListingDetailRowsSchema.safeParse(await response.json());
+  const parsed = publicListingRowsSchema.safeParse(await response.json());
   if (!parsed.success) {
     throw new PublicListingsError(
       "Public listing detail response did not match the approved schema.",
@@ -384,7 +399,11 @@ async function fetchDetailRows(
 
   return await Promise.all(
     parsed.data.map(async (row) =>
-      mapPublicDetailRow(row, await fetchPublicPhotoUrls(row.id, config, fetchImpl)),
+      mapPublicDetailRow(
+        row,
+        await fetchPublicPhotoUrls(row.id, config, fetchImpl),
+        await fetchPublicContact(row.id, config, fetchImpl),
+      ),
     ),
   );
 }
