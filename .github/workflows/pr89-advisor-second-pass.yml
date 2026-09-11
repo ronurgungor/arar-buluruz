@@ -1,0 +1,58 @@
+name: PR 89 Advisor second-pass patch
+
+on:
+  push:
+    branches:
+      - agent/architecture-freeze-closure
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.14
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Apply Advisor closure
+        run: python3 scripts/apply-pr89-advisor-second-pass.py
+
+      - name: Format touched TypeScript and canonical docs
+        run: >-
+          bunx prettier --write
+          src/lib/stage1-self-service-server.ts
+          src/lib/stage1-self-service-server.test.ts
+          scripts/stage1-self-service-browser-e2e-shared.ts
+          scripts/real-pilot-backend-integration.ts
+          scripts/migration-photo-fixture.ts
+          docs/PRODUCT_CONTRACT_V2.md
+          docs/ARAR_BULURUZ_CURRENT_STATE.md
+          docs/ACTIVE_CHAT_HANDOFF.md
+          docs/ARAR_BULURUZ_DECISION_LOG.md
+
+      - name: Commit only durable PR changes
+        shell: bash
+        run: |
+          rm scripts/apply-pr89-advisor-second-pass.py
+          rm .github/workflows/pr89-advisor-second-pass.yml
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git status --short
+          git commit -m "Close PR 89 advisor second-pass blockers"
+          git push origin HEAD:agent/architecture-freeze-closure
