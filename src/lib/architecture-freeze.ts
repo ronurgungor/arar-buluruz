@@ -74,6 +74,7 @@ export type ListingCapabilityInput = Readonly<{
   publicationReady: boolean;
   publicationInstructionPresent: boolean;
   notExpired: boolean;
+  externalCtaApproved: boolean;
 }>;
 
 export type ListingPublicCapabilities = Readonly<{
@@ -95,7 +96,8 @@ export function classifyListingPolicyScopeDeterministically(input: {
 export function deriveListingPublicCapabilities(
   input: ListingCapabilityInput,
 ): ListingPublicCapabilities {
-  const legalScopeResolved = input.policyScope !== "review_required" && input.policyScope !== "restricted";
+  const legalScopeResolved =
+    input.policyScope !== "review_required" && input.policyScope !== "restricted";
   const publicBase =
     input.publicationReady &&
     input.publicationInstructionPresent &&
@@ -114,6 +116,6 @@ export function deriveListingPublicCapabilities(
     detail: publicExposure,
     signedPhoto: publicExposure,
     publicContact: publicExposure,
-    externalCta: publicExposure,
+    externalCta: publicExposure && input.externalCtaApproved,
   };
 }
