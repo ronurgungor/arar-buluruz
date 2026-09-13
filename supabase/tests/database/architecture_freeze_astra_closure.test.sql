@@ -37,7 +37,7 @@ select function_privs_are(
 
 select results_eq(
   $$
-    select privilege_type
+    select privilege_type::text
     from information_schema.role_table_grants
     where table_schema = 'private'
       and table_name = 'listing_trusted_eligibility_constraints'
