@@ -35,17 +35,21 @@ select function_privs_are(
   'service role may perform the explicit trusted eligibility reassessment operation'
 );
 
-select results_eq(
-  $$
-    select privilege_type::text
-    from information_schema.role_table_grants
-    where table_schema = 'private'
-      and table_name = 'listing_trusted_eligibility_constraints'
-      and grantee = 'service_role'
-    order by privilege_type
-  $$,
-  $$ values ('SELECT'::text) $$,
-  'service role reads trusted constraints but mutation is forced through the explicit reassessment RPC'
+select ok(
+  has_table_privilege('service_role', 'private.listing_trusted_eligibility_constraints', 'SELECT'),
+  'service role may read trusted constraints'
+);
+select ok(
+  not has_table_privilege('service_role', 'private.listing_trusted_eligibility_constraints', 'INSERT'),
+  'service role cannot directly insert trusted constraints'
+);
+select ok(
+  not has_table_privilege('service_role', 'private.listing_trusted_eligibility_constraints', 'UPDATE'),
+  'service role cannot directly update trusted constraints'
+);
+select ok(
+  not has_table_privilege('service_role', 'private.listing_trusted_eligibility_constraints', 'DELETE'),
+  'service role cannot directly delete trusted constraints'
 );
 
 insert into private.sellers (id, recovery_selector, recovery_digest)
@@ -169,6 +173,28 @@ select is(
   (select count(*)::bigint from private.listing_trusted_eligibility_constraints where listing_id = 'f3150000-0000-4000-8000-000000000101'::uuid),
   0::bigint,
   'trusted restriction disappears only after the explicit reassessment/clear operation'
+);
+
+insert into private.listing_enforcement_cases (
+  id, listing_id, reason_type, reason_detail, decision_action, action_at, created_origin
+) values (
+  'f3150000-0000-4000-8000-000000000201',
+  'f3150000-0000-4000-8000-000000000101',
+  'operator_review',
+  'Astra immutable listing target fixture',
+  'hold',
+  now(),
+  'operator'
+);
+select throws_ok(
+  $$
+    update private.listing_enforcement_cases
+    set listing_id = 'f3150000-0000-4000-8000-000000000102'::uuid
+    where id = 'f3150000-0000-4000-8000-000000000201'::uuid
+  $$,
+  'P0001',
+  'listing_enforcement_cases.listing_id is immutable',
+  'enforcement cases cannot be retargeted across listings, preventing cross-list lock-order cycles'
 );
 
 select * from finish();
