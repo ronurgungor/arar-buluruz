@@ -132,7 +132,14 @@ application_fingerprint() {
       coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from private.listing_photos x), '[]') || E'\\n' ||
       coalesce((select jsonb_agg(to_jsonb(x) order by x.listing_id)::text from private.listing_external_sales_links x), '[]') || E'\\n' ||
       coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from private.sellers x), '[]') || E'\\n' ||
-      coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from private.seller_sessions x), '[]')
+      coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from private.seller_sessions x), '[]') || E'\\n' ||
+      coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from private.seller_role_assessments x), '[]') || E'\\n' ||
+      coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from private.listing_policy_decisions x), '[]') || E'\\n' ||
+      coalesce((select jsonb_agg(to_jsonb(x) order by x.listing_id)::text from private.listing_publication_controls x), '[]') || E'\\n' ||
+      coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from private.listing_enforcement_cases x), '[]') || E'\\n' ||
+      coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from private.listing_eligibility_transitions x), '[]') || E'\\n' ||
+      coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from private.external_sources x), '[]') || E'\\n' ||
+      coalesce((select jsonb_agg(to_jsonb(x) order by x.id)::text from private.external_offers x), '[]')
     );
   "
 }
@@ -413,13 +420,14 @@ managed_psql <<SQL
 begin;
 set local role service_role;
 insert into public.listings (
-  id, title, description, price_amount, province, district,
+  id, title, description, price_amount, category, province, district,
   seller_display_name, search_keywords, contact_channel, contact_e164, status
 ) values (
   '${listing_id}'::uuid,
   'Sentetik migration fotoğraf ilanı',
   'Managed-to-self-host DB ve Storage restore doğrulaması için sentetik ilan.',
   100,
+  'electronics',
   'Tekirdağ',
   'Çorlu',
   'Sentetik Satıcı',

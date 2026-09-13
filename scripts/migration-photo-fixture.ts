@@ -158,6 +158,7 @@ if (mode === "seed") {
         title: "Sentetik migration fotoğraf ilanı",
         description: "Managed-to-self-host DB ve Storage restore doğrulaması için sentetik ilan.",
         price_amount: 100,
+        category: "electronics",
         province: "Tekirdağ",
         district: "Çorlu",
         seller_display_name: "Sentetik Satıcı",

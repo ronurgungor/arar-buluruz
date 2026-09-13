@@ -969,25 +969,45 @@ async function createPendingRow(
   }
 }
 
+type EidsPublicationDecision = "ordinary" | "synthetic_regulated_bypass";
+
 function assertEidsPublicationAllowed(
   category: Stage1Category,
   productType: ProductType | null,
   request: Request,
   config: BackendConfig,
-): void {
-  if (resolveProductComplianceScope({ category, productType }) === "ordinary") return;
+): EidsPublicationDecision {
+  if (resolveProductComplianceScope({ category, productType }) === "ordinary") return "ordinary";
   if (
     process.env.PILOT_SYNTHETIC_TEST_MODE === "enabled" &&
     isLoopbackHost(new URL(request.url).hostname) &&
     isLoopbackHost(new URL(config.baseUrl).hostname)
   ) {
-    return;
+    return "synthetic_regulated_bypass";
   }
   throw new Stage1SubmissionError(
     "NOT_ENABLED",
     "Vasıta ve emlak ilanları için gerekli EİDS yetkilendirmesi production ortamında henüz etkin değil.",
     503,
   );
+}
+
+async function recordSyntheticRegulatedListingEligibility(
+  config: BackendConfig,
+  listingId: string,
+): Promise<void> {
+  const response = await requireOk(
+    await fetch(`${config.baseUrl}/rest/v1/rpc/record_synthetic_regulated_listing_eligibility`, {
+      method: "POST",
+      headers: serviceHeaders(config),
+      body: JSON.stringify({ p_listing_id: listingId }),
+    }),
+    "synthetic regulated listing eligibility transition",
+  );
+  const recorded = (await response.json()) as boolean;
+  if (recorded !== true) {
+    throw new Error("Synthetic regulated eligibility transition was not acknowledged.");
+  }
 }
 
 async function submitListing(
@@ -1045,7 +1065,12 @@ async function submitListing(
   }
 
   const config = readBackendConfig();
-  assertEidsPublicationAllowed(category, product.productType, request, config);
+  const eidsPublicationDecision = assertEidsPublicationAllowed(
+    category,
+    product.productType,
+    request,
+    config,
+  );
   const sellerSession = await resolveSellerSession(config, request);
   const listingId = crypto.randomUUID();
   const rulesAcceptedAt = new Date().toISOString();
@@ -1072,6 +1097,9 @@ async function submitListing(
 
   let claim: SubmissionClaim;
   try {
+    if (eidsPublicationDecision === "synthetic_regulated_bypass") {
+      await recordSyntheticRegulatedListingEligibility(config, listingId);
+    }
     claim = await claimSubmission(config, keyHash, listingId);
   } catch (cause) {
     try {
@@ -1479,7 +1507,12 @@ async function sellerUpdate(form: FormData, clientIp: string, request: Request):
         previousAttributes: previousProduct.productAttributes,
         nextCategory: category,
       });
-  assertEidsPublicationAllowed(category, product.productType, request, config);
+  const eidsPublicationDecision = assertEidsPublicationAllowed(
+    category,
+    product.productType,
+    request,
+    config,
+  );
   const conditionRaw = optionalString(form, "condition", 32);
   const condition = conditionRaw ? stage1ConditionSchema.parse(conditionRaw) : null;
   const title = requiredString(form, "title", 3, 120);
@@ -1520,6 +1553,9 @@ async function sellerUpdate(form: FormData, clientIp: string, request: Request):
     },
     "seller listing update",
   );
+  if (eidsPublicationDecision === "synthetic_regulated_bypass") {
+    await recordSyntheticRegulatedListingEligibility(config, listingId);
+  }
   return jsonResponse({
     ok: true,
     action: "seller_updated",

@@ -199,6 +199,7 @@ export class HarnessMonitor {
         url.pathname.endsWith("/rpc/register_sanitized_listing_photo") ||
         url.pathname.endsWith("/rpc/get_listing_photo_inventory") ||
         url.pathname.endsWith("/rpc/complete_and_publish_listing_submission") ||
+        url.pathname.endsWith("/rpc/record_synthetic_regulated_listing_eligibility") ||
         (url.pathname.startsWith("/storage/v1/object/listing_photos") &&
           !url.pathname.startsWith("/storage/v1/object/sign/listing_photos") &&
           request.method() !== "GET");

@@ -1,538 +1,186 @@
 # Arar Buluruz — Current State
 
-_Last updated: 2026-09-04, Europe/Istanbul_
+_Last updated: 2026-09-11, Europe/Istanbul_
 
 ## Canonical repository checkpoint
 
 - Repository: `ronurgungor/arar-buluruz`.
 - Canonical branch: `main`.
-- Live `main` at this synchronization: `47956ef9f4e91cd6dd033d988c9c115bb1f128b7`.
-- Active branch: `agent/smsless-seller-ownership-phase1`.
-- PR #84: **OPEN / UNMERGED**.
-- Advisor-reviewed security implementation head immediately before this docs-only synchronization: `e841cf688b8cafb97d0508d0c1afec9e96446670`.
-- At that checkpoint the branch is 52 commits ahead / 0 behind `main`.
-- This synchronization is one documentation-only commit. If `main` remains unchanged, the resulting branch is 53 commits ahead / 0 behind `main`; live GitHub is authoritative for the verified post-commit count.
-- The commit containing this document is the final docs-only synchronization head. A Git commit cannot embed its own SHA without changing that SHA; resolve the exact current/final head from the live PR/GitHub and bind all post-sync evidence to that one SHA.
+- Verified `main` at PR #89 branch creation: `3ca449e8f0e07d7131c59739e45f6ca46d9050fb`.
+- That SHA is the normal merge commit of PR #88 — **Phase 3.0: add synthetic external supply seam**.
+- Active PR #89 implementation branch: `agent/architecture-freeze-closure`.
+- Live GitHub is authoritative for the final PR #89 head and whether `main` has moved after this synchronization.
 
-One-writer discipline remains active. No rebase/amend/squash/force-push of pushed history. No security/application/database/workflow/dependency/runtime behavior changes are authorized in this documentation sync.
+Historical checkpoints remain historical evidence in Git and the append-oriented Decision Log; obsolete PR #84/open-head wording is not current authority.
 
 ## Current phase
 
-**SMSless seller ownership Phase 1 security implementation is closed on the Advisor-reviewed `e841cf6...` head. PR #84 remains OPEN / UNMERGED. The remaining pre-merge security gate is one final narrow Codex exact-head recovery-security closure review after this docs-only head obtains 7/7 canonical GREEN. Production and real data remain closed.**
+**Mandatory architecture freeze closure before external-supply or public-rollout expansion.**
 
-The current product authority is `docs/PRODUCT_CONTRACT_V2.md`.
+PR #88 / External Supply Phase 3.0 is complete. Phase 3.1 real-source discovery/ingestion is paused. The current work is not a redesign and does not authorize production/public activation.
 
-## 2026-09-03 founder/Advisor decision
+## Settled seller ownership
 
-Current seller identity/authorization truth:
+- `private.sellers` remains the persistent pseudonymous seller principal.
+- Listing ownership remains `public.listings.owner_user_id → private.sellers.id`.
+- Ownership is immutable and is never inferred from public phone equality.
+- Seller sessions remain opaque, HttpOnly, revocable and digest-only server-side.
+- Recovery remains rotating one-time high-entropy credentials through the established atomic recovery primitive.
+- Public phone remains listing contact data only.
+- SMS OTP remains absent for ordinary-goods ownership.
 
-- ordinary-goods SMS OTP is removed as a product requirement;
-- seller identity is a pseudonymous UUID;
-- `listings.owner_user_id` is the listing ownership link;
-- the browser receives a server-backed opaque HttpOnly session cookie;
-- only token digests are persisted;
-- seller recovery uses a rotating one-time high-entropy recovery credential with digest-only persistence;
-- public phone is contact data, not verified identity or authorization;
-- phone equality does not establish ownership and phone edits do not transfer ownership;
-- manual line/WhatsApp verification is risk-triggered only;
-- no general e-Devlet login;
-- passkey/email/OAuth/password are deferred;
-- Vasıta **and Emlak** real production publication fail closed without production EİDS integration.
+## New architecture-freeze seams
 
-## Final recovery-security semantics
+### Seller role assessment
 
-Current implementation/tests establish:
+Role is separate from principal identity. Internal assessments support:
 
-- seller A/B isolation resolves session `seller_id` and requires `owner_user_id = seller_id`;
-- `owner_user_id` is immutable after listing creation;
-- phone/contact changes do not modify listing ownership;
-- historical rows are deliberately not backfilled from `contact_e164`;
-- normal recovery is an atomic `A → B` rotation through privileged `recover_seller_identity(...)`, with browser candidate B generated/displayed before the irreversible mutation;
-- if the `A → B` response is ambiguous, the browser generates and displays a second replacement candidate **C before any reconciliation mutation**;
-- reconciliation performs `B → C` through the same atomic `recover_seller_identity(...)` primitive;
-- if `A → B` committed, `B → C` succeeds, B is consumed, C becomes current, pre-existing seller sessions are revoked and a fresh browser session is created;
-- after successful `B → C`, B replay fails;
-- if `A → B` did not commit, `B → C` fails; that failure does **not** claim that A is definitely still valid because concurrent rotation cannot be excluded;
-- every logout attempt clears the browser cookie; an unconfirmed server revoke returns `LOGOUT_PARTIAL` instead of claiming logout completed;
-- database rows store recovery/session digests, not plaintext tokens;
-- browser acceptance rejects phone/localStorage fallback and proves stale copied sessions fail;
-- anonymous/authenticated roles cannot inspect private seller/session state or execute privileged seller recovery/session RPCs;
-- current self-service and exceptional founder publication both fail closed for real-production Vasıta and Emlak without EİDS; synthetic bypass additionally requires explicit default-off `PILOT_SYNTHETIC_TEST_MODE=enabled` plus the applicable loopback request/backend conditions;
-- established RLS, private Storage, trusted-photo, signed-photo, idempotency, atomic-publication and takedown controls remain in the canonical validation paths.
+- `unknown`;
+- `private_occasional`;
+- `professional`;
+- `regulated_business`.
 
-## Migration and privilege state
+Each assessment can preserve basis, assessment time, review/reassessment state, policy version, origin and bounded evidence. Existing/new sellers default to non-blocking `unknown`; no company/tax/KYC data or onboarding UI is introduced.
 
-The canonical migration chain now contains **12 migrations**.
+### Server-owned listing policy scope
 
-Relevant Phase 1 migrations are:
+Seller-selected category/product type remains product metadata. A separate current server-owned decision records:
 
-- `supabase/migrations/20260903130000_prepare_smsless_seller_ownership.sql`;
-- `supabase/migrations/20260903193000_reconcile_seller_recovery.sql`;
-- `supabase/migrations/20260904070000_retire_nonrotating_recovery_reconciliation.sql`.
+- `ordinary`;
+- `eids_vehicle`;
+- `eids_real_estate`;
+- `review_required`;
+- `restricted`.
 
-The first adds private pseudonymous seller identities, revocable server-side seller sessions, rotating recovery digests and nullable `public.listings.owner_user_id`, explicitly avoiding historical ownership inference from public-phone equality. The second is preserved as append-only migration history for the first reconciliation implementation. The third is the append-only security remediation that revokes/drops the unsafe non-rotating `reconcile_seller_recovery(...)` RPC after the application stopped depending on it.
+The initial classifier is deterministic only. Vehicle/automobile and real-estate/housing remain EİDS-gated. Ambiguous `other` without structured product type is `review_required`.
 
-Final schema truth:
+### Orthogonal listing controls
 
-- obsolete `reconcile_seller_recovery(...)` is absent;
-- `recover_seller_identity(...)` remains privileged/service-role-only;
-- `public`, `anon` and `authenticated` cannot execute the privileged recovery primitive;
-- no plaintext recovery credential is persisted.
+`public.listings.status` remains as legacy/current workflow state while internal controls separately represent:
 
-Existing migration history was not rewritten. No production migration has been applied by this repository work; managed-provider rehearsal remains synthetic-only evidence.
+- lifecycle: draft / active / sold / withdrawn / expired / deleted;
+- eligibility: eligible / review_required / regulated_verification_required / blocked;
+- enforcement: clear / held / removed;
+- contact: available / suppressed.
 
-## Recovery rate-limit closure
+No historical migration is destructively rewritten.
 
-The second Codex review also identified process-memory recovery rate-limit growth as IMPORTANT. Advisor accepted it, and the second remediation closed it with a deliberately narrow process-local correction:
+### One public capability decision
 
-- trusted-IP limiting is applied before attacker-controlled recovery selector bucket allocation;
-- expired buckets are periodically swept;
-- the process-local map has a fixed upper bound and fails closed rather than growing indefinitely;
-- no Redis, distributed rate-limit dependency or broad production architecture was introduced.
+`public.listing_has_public_capability(listing_id, capability)` is the listing-level fail-closed seam for:
 
-Shared/distributed abuse state remains a separate deferred production concern.
+- `search_index`;
+- `detail`;
+- `signed_photo`;
+- `public_contact`;
+- `external_cta`.
 
-## PR #84 security-review chronology
+It combines current publication dates/evidence with lifecycle, policy scope, eligibility, enforcement and contact state. Existing ordinary published listings remain compatible when valid.
 
-- The second Codex exact-head review identified the non-rotating reconciliation BLOCKER and the process-memory recovery rate-limit IMPORTANT.
-- Advisor independently reviewed that Codex result and accepted both findings.
-- The bounded second remediation closed both findings on exact head `e841cf688b8cafb97d0508d0c1afec9e96446670`.
-- Advisor independently inspected the 8-file second-remediation diff on `e841cf6...` and found no new security blocker.
-- Remaining pre-merge security gate: **final narrow Codex exact-head recovery-security closure review after this docs-only synchronization is 7/7 GREEN**.
+Because the current public listing row still contains public contact columns, `contact=suppressed` conservatively removes row-level public exposure rather than risking contact leakage. This may be relaxed only after a separately approved contact-free public projection exists.
 
-## Exact-head evidence before this docs-only sync
+Existing private-Storage trusted-photo checks remain unchanged; the photo helpers now delegate listing-level exposure to the capability seam. External CTA also keeps the established external-link ownership/match/moderation/complaint/explicit-allow requirements.
 
-Focused/canonical Stage 1 run `33848314033` on exact head `e841cf688b8cafb97d0508d0c1afec9e96446670` completed **SUCCESS**, including lint/unit contracts, 12-migration rebuild, pgTAP/RLS/trusted-photo probes and the rotating-recovery browser regression.
+### Notice/enforcement propagation
 
-All seven canonical workflows on that same exact `e841cf6...` head were **SUCCESS**:
+`private.listing_enforcement_cases` provides durable case/action state with reason/type, times/deadline, decision/action, evidence/audit metadata and appeal/restoration representation.
 
-- CI — `33848313993` — SUCCESS;
-- Stage 1 self-service acceptance — `33848314033` — SUCCESS;
-- Activation readiness — `33848313967` — SUCCESS;
-- V0 minimal PWA — `33848313970` — SUCCESS;
-- Real pilot backend prep — `33848313977` — SUCCESS;
-- Self-host migration rehearsal — `33848313963` — SUCCESS;
-- Managed Supabase migration rehearsal — `33848313976` — SUCCESS.
+A removal propagates to enforcement=`removed` and contact=`suppressed`; it does not change seller ownership. Database tests prove removal disables search/collection, detail, signed-photo, public contact and external CTA coherently.
 
-Those runs are immutable security/remediation evidence for `e841cf6...`. Because this documentation-only synchronization advances the branch, all seven canonical workflows must also be obtained GREEN on the new exact docs-only head before final Codex closure review.
+## Product Finding authority freeze
 
-## Public runtime versus repository
+No Phase-2 search rewrite is intended.
 
-The existing public V0 and repository capability remain separate facts.
+Intent authority:
 
-Closed unless explicitly authorized:
+1. legal/publication availability;
+2. explicit user category/product/filter;
+3. high-confidence deterministic inferred intent;
+4. free-text relevance.
+
+Fact authority:
+
+1. regulatory/provider verified;
+2. validated seller structured;
+3. deterministic derived/external with provenance/confidence;
+4. free-text claim.
+
+Execution remains **ELIGIBILITY → PRODUCT ROLE/SCOPE → HARD FILTERS → TEXT RELEVANCE → SORT**.
+
+Regression coverage freezes explicit-filter precedence, structured-fact precedence over contradictory text, fail-closed missing hard facts, sort-set invariance and native/external provenance distinction.
+
+## External Supply Phase 3.0
+
+Current merged boundary remains:
+
+- separate private `external_sources` / `external_offers`;
+- only synthetic `.invalid` offer ingestion;
+- professional-merchant source shape is review metadata only; real merchant offers are blocked;
+- external condition is `new`;
+- external provenance is `external_source_extracted`;
+- no external vehicle/real-estate supply;
+- no public external results/cards;
+- no crawler;
+- no external images;
+- no real-source discovery/ingestion;
+- no external service activation;
+- no external second-hand.
+
+Phase 3.1 is deferred.
+
+## Security / provider boundaries
+
+Preserved:
+
+- RLS/grants and service-role/browser separation;
+- direct-anon-write denial;
+- private Storage;
+- trusted decode/re-encode WebP pipeline;
+- lifecycle/capability-gated signed-photo delivery;
+- CSRF/origin controls;
+- idempotency/race and atomic-publication controls;
+- fail-closed takedown;
+- EİDS synthetic bypass remains default-off and limited to the established explicit synthetic-test + loopback conditions.
+
+No production EİDS provider call, KYC, global e-Devlet or new authentication method is added.
+
+## Documentation authority
+
+Current architecture is synchronized in:
+
+- `docs/PRODUCT_CONTRACT_V2.md`;
+- `docs/PRODUCT_FINDING_PHASE2_CONTRACT.md`;
+- `docs/ARAR_BULURUZ_DECISION_LOG.md` — D-032;
+- `docs/ARAR_BULURUZ_CURRENT_STATE.md`;
+- `docs/ACTIVE_CHAT_HANDOFF.md`.
+
+## Hard boundaries
+
+Remain closed unless explicitly reopened later:
 
 - production/public activation;
 - real personal/seller/listing/contact/photo data;
-- AWS / production infrastructure;
-- secrets or environment mutation;
-- paid recurring services;
-- real SMS;
+- real merchant ingestion / crawler / public external supply;
+- professional-seller/company/tax-document onboarding;
 - production EİDS calls;
+- global e-Devlet/KYC;
+- SMS OTP or passkey/email/OAuth additions;
+- Redis solely for this architecture seam;
+- AI moderation/search;
+- paid services or production infrastructure;
 - Ads/monetization;
-- payments/orders/reservations/commission;
+- payments/orders/reservations/commission/chat;
 - Publish/Update;
-- Tarladan changes.
+- Tarladan changes;
+- history rewrite.
 
-**REAL DATA COLLECTION remains CLOSED.**
+## PR #89 completion gate
 
-## Immediate next action
+Before Advisor review, require one exact final head with clean diff plus canonical validation covering lint/Prettier, full unit suite, production-like build, full migration rebuild, pgTAP/RLS/trusted-photo probes, REST integration, browser E2E and privileged-key boundary. Re-verify live `main`, open PR #89 **UNMERGED**, and stop. Do not start Phase 3.1 or public-launch readiness in the same workstream.
 
-1. Verify the net diff from `e841cf688b8cafb97d0508d0c1afec9e96446670` to this synchronization head contains documentation files only.
-2. Verify no code, SQL migration, workflow, dependency or runtime file changed.
-3. Resolve the new exact PR head and confirm `main` remains `47956ef9f4e91cd6dd033d988c9c115bb1f128b7`.
-4. Require all seven canonical workflows GREEN on that same new exact head.
-5. Keep PR #84 OPEN / UNMERGED.
-6. Stop for the final narrow Codex exact-head recovery-security closure review.
+## PR #89 Advisor second-pass hardening
 
-No production or external-service activation is part of these steps.
-
-
-## Historical 2026-09-01 state snapshot — retained for audit
-
-> This appendix preserves the previous snapshot as historical evidence. Any verified-phone, OTP, phone-bound ownership/session, founder-entry, or vehicle-only EİDS wording below is **not current product authority** after D-030.
-
-### Canonical repository state
-
-- Repository: `ronurgungor/arar-buluruz`; canonical branch: `main`.
-- Pre-PR83 / docs-sync branch-base `main` checkpoint: `27dc75c96ef687e1c585e27fac6521b172e04f31`. Live GitHub controls the exact current `main` SHA.
-- Open PRs at this documentation-sync branch start: **none**.
-- PR #78 — Stage 1 seller self-service: **MERGED / CLOSED**, merge `26ce6c66de8a03d941d90ff7fe267998ad63ba8f`.
-- PR #79 — managed workflow parse/config + migration-chain drift: **MERGED / CLOSED**, merge `1207cf177469d1835abb56d914bd3d80858a0b1a`.
-- PR #80 — post-PR79 state + GVK Mükerrer 20/B synchronization: **MERGED / CLOSED**, merge `7ca851e805b0d01d66b2533cad94158a4b7f6b4b`.
-- PR #81 — hosted managed provider-proof modernization: **MERGED / CLOSED**.
-  - approved head: `8ab785fefa80ee4122fc559298859b8281d4094d`;
-  - merge commit: `8bfe6d7a89bbda6ef710aaf313bf24e312ec18eb`;
-  - D-029 provider-specific modernization completed.
-- PR #82 — Stage 1 listing UX polish: **MERGED / CLOSED**.
-  - approved head: `abdcb3621575e870648519cf7adf6e57020bc33c`;
-  - merge commit / pre-PR83 docs-sync branch-base checkpoint: `27dc75c96ef687e1c585e27fac6521b172e04f31`.
-- Post-PR82 merge CI run `33489222953`, attempt 3: **SUCCESS**.
-  - lint/unit/build: **SUCCESS**;
-  - Gate 1 local migration/RLS/REST/browser E2E: **SUCCESS**.
-- Post-PR82 merge V0 minimal PWA run `33489222873`: **SUCCESS**.
-- PR #79 restored the intended managed-rehearsal trigger contract: `pull_request` + `workflow_dispatch`; no `push` trigger.
-- GitHub `main` is not branch-protected; successful checks are evidence rather than server-enforced merge requirements. Exact-head verification and normal PR/merge discipline remain mandatory.
-
-### Current phase
-
-**Stage 1 technical implementation is merged; production and real data remain closed.**
-
-Current product authority: `docs/PRODUCT_CONTRACT_V2.md`.
-
-Latest completed work:
-
-- PR #81 completed D-029 provider-specific hosted managed-proof modernization.
-- PR #82 completed the approved Stage 1 listing UX polish port from the isolated Lovable UX lab without changing product/backend/security semantics.
-
-The PR #78 remediation closed the two merge-blocking review items:
-
-- ambiguous publication commit/response is reconciled before destructive compensation;
-- browser E2E no longer globally suppresses generic 403/404 failures.
-
-Deferred production/recovery items remain open by design:
-
-- stale `in_progress` claim plus pending/private-state reconciliation after process termination;
-- orphan Storage cleanup tied to that deliberate recovery model;
-- process-local abuse/rate-limit state;
-- seller-device logout/localStorage hygiene;
-- production proxy-derived HTTPS/host/client-IP semantics;
-- cross-service hard-delete retry/reconciliation.
-
-Current consumer product facts:
-
-- Türkiye-wide İl / İlçe seller self-service;
-- 1–8 trusted photos;
-- broad category + title;
-- condition optional with no silent default;
-- description optional with no filler text;
-- price or explicit **Ücretsiz**;
-- seller display name + one verified public phone;
-- no seller contact-preference selector;
-- buyers receive both **Ara** (`tel:`) and **WhatsApp** (`https://wa.me/`) from that same phone;
-- no three consumer declaration checkboxes;
-- versioned listing-rules evidence;
-- bounded 7-day phone-bound signed HttpOnly seller session;
-- atomic auto-publication;
-- founder post-moderation/takedown;
-- lightweight `İlanlarım`;
-- Vasıta retained for the product/synthetic path;
-- real production vehicle publication fail-closed until EİDS integration is enabled.
-
-### Current business/formalization state
-
-The prior automatic company-first sequence is superseded.
-
-Current founder plan:
-
-**APPLICATION COMPLETION → GVK MÜKERRER 20/B PERSONAL-DEVELOPER ROUTE WHILE APPLICABLE → MARKET / REVENUE VALIDATION → COMPANY / KOSGEB WHEN REQUIRED OR ADVANTAGEOUS**
-
-Before first taxable revenue, current GVK Mükerrer 20/B eligibility and mechanics must be re-verified. This does not authorize production, real data or waive KVKK/EİDS/platform obligations.
-
-### Hosted managed-proof state
-
-D-029 provider-specific modernization is **completed** through PR #81.
-
-PR #79 first fixed workflow parsing and canonical migration-chain drift. PR #81 then retired the superseded founder-entry/preapproval hosted browser journey, localhost privileged transport shim, stale product-level pilot artifact E2E and historical PR #74-only hosted job from the current evidence path.
-
-The retained provider-specific managed proof is executable and substantive:
-
-- canonical migration-chain equality derived from `supabase/migrations/*.sql`;
-- dedicated synthetic-project and Tarladan hard exclusions;
-- managed DB/RLS/grants and anon listing-write denial;
-- actual managed anonymous direct `listing_photos` Storage API write rejection, with probe absence verified afterward;
-- private Storage plus lifecycle-controlled manifest/signing behavior through actual managed provider APIs;
-- deterministic fixture byte/hash verification;
-- DB + Storage backup, pinned self-host restore and source/target fingerprint/Storage equality;
-- rollback/source consistency and explicit orphan metadata/object checks;
-- public pilot artifact privilege/secret-residue boundary.
-
-Current Stage 1 seller lifecycle behavior remains covered by the canonical Stage 1 acceptance workflow rather than duplicated through a provider shim.
-
-No new service-role secret was introduced. A thin actual-managed-provider current Stage 1 canary remains intentionally deferred to a later explicit gate.
-
-PR #81 is **MERGED / CLOSED**; there is no active hosted-proof modernization branch or merge-readiness work remaining.
-
-### Hard boundaries
-
-- synthetic/mock data only;
-- no real seller/listing/contact/photo/personal data;
-- production backend/deployment OFF;
-- AWS OFF;
-- recurring paid infrastructure/services OFF;
-- real SMS OFF;
-- production EİDS OFF;
-- Ads/monetization OFF;
-- no payment/order/reservation/commission/in-app chat;
-- Tarladan untouched.
-
-**REAL DATA COLLECTION remains CLOSED.**
-
-### Dedicated hosted Supabase state
-
-The approved isolated hosted-development environment is:
-
-- organization: `Arar Buluruz`;
-- project: `arar-buluruz-synthetic-dev`;
-- project ref: `rzosrvenlvhijeckmwyc`;
-- region: `eu-central-1` / Frankfurt;
-- plan: Supabase Free;
-- data: synthetic/mock only.
-
-The hosted proof hard-rejects both known Tarladan project refs before any live mutation. The dedicated project is not production and its successful use does not authorize real data or production activation.
-
-### Issue #66 portability state
-
-The managed Supabase Free → pinned self-host DB + Storage migration and rollback rehearsal is complete.
-
-Verified portability includes:
-
-- canonical migrations and application schema/data;
-- private Storage object backup/restore;
-- RLS/grants and restore verification;
-- signed private-photo delivery;
-- application-level verification on source and target;
-- source/target DB fingerprint equality;
-- source/target Storage equality;
-- rollback to the preserved managed source;
-- exact photo byte/hash verification;
-- final synthetic-only cleanup guard.
-
-The tested target remains pinned to `self-hosted/v0.8.0` / upstream commit `241bb11c0627f2981746d37033f57dbfa81d29b0`, PostgreSQL 17, Storage API `v1.60.4`, PostgREST `v14.12` and Envoy `v1.39.0`.
-
-Portability is therefore **PASS** and is not an open Issue #72 blocker.
-
-### Historical Issue #72 hosted RC evidence — superseded as current product proof
-
-Final recovery-free exact head:
-
-`e63ac55a99dcb62fb7e3d55c0ed077aa7213eb20`
-
-All required workflows on that same head completed **SUCCESS**:
-
-- CI — run `32758521813`;
-- V0 minimal PWA — run `32758521843`;
-- Self-host migration rehearsal — run `32758521808`;
-- Real pilot backend prep — run `32758522016`;
-  - hosted exact-head RC job `97531617395` — **SUCCESS**;
-  - local synthetic migration/RLS/Storage/operational validation job `97531617660` — **SUCCESS**.
-
-The following was valid historical evidence for the then-current founder-entry product. It is retained for audit history but is superseded as current Stage 1 product acceptance:
-
-1. founder create;
-2. server-side image sanitization;
-3. private Storage upload and private photo metadata registration;
-4. pending state;
-5. publish;
-6. public collection and detail through the real Supabase adapter;
-7. signed private-photo delivery in the buyer UI;
-8. lifecycle-controlled seller contact;
-9. unpublish;
-10. hard delete;
-11. separate pending → reject → hard-delete path.
-
-The browser proof explicitly reported:
-
-`Hosted founder create/photo/publish/public/contact/unpublish/delete + reject/delete browser journey passed.`
-
-### Final DB / Storage cleanup consistency
-
-The hosted RC proof returned the dedicated environment to its canonical fixture state after the founder journeys.
-
-Verified final conditions include:
-
-- Auth users = `0`;
-- no listing rows beyond the canonical fixture;
-- no orphan private photo metadata;
-- no orphan Storage object;
-- application DB fingerprint before/after equality;
-- Storage before/after object and byte consistency;
-- canonical Storage state exactly `1 object / 72 bytes`.
-
-The workflow reported:
-
-`Hosted RC Storage before/after consistency verified: 1 object(s), 72 byte(s).`
-
-No recovery script or recovery workflow hook is present in the final recovery-free exact head.
-
-### Pilot release-candidate artifact proof
-
-The real `pilot-rc` production artifact was built and browser-tested, rather than treating a source fixture or directly opened fallback file as release evidence.
-
-Verified artifact/browser behavior includes:
-
-- desktop and mobile flows;
-- Chromium PWA/installability checks;
-- service-worker registration and active control;
-- manifest disk/HTTP byte identity;
-- back-navigation/search-state preservation;
-- honest loading, validation, empty and backend-outage fail-closed states;
-- public `/giris` unavailable in pilot-RC;
-- public `/kurucu` GET/POST unavailable in pilot-RC;
-- accountless pilot intake/privacy behavior;
-- real Supabase public listing collection/detail;
-- signed private-photo browser decode;
-- seller-contact contract;
-- fail-closed offline navigation.
-
-Final pilot manifest evidence:
-
-- bytes: `784`;
-- SHA-256: `80c19fb20d9512fe6454cb12ed699b4badd91083b67d8c94d1d45b18eca2a562`;
-- served bytes were identical to the finalized disk artifact.
-
-The signed private photo decoded successfully in Chromium (`complete=true`, non-zero natural dimensions, no decode error).
-
-#### Real offline navigation evidence
-
-The offline proof verified an installed and controlling service worker before navigation:
-
-- secure context: true;
-- one service-worker registration for the application scope;
-- `installing = null`;
-- `waiting = null`;
-- active `/sw.js` state: `activated`;
-- `navigator.serviceWorker.controller`: `/sw.js`, state `activated`;
-- `/offline.html` present in Cache Storage with HTTP 200.
-
-The production server was then made unavailable and the browser performed a real offline navigation to:
-
-`/ara?q=offline-proof`
-
-The navigation result was:
-
-- HTTP `200`;
-- `fromServiceWorker = true`;
-- `navigator.onLine = false`;
-- visible heading: `Bağlantı yok`;
-- no stale dynamic listing data;
-- request failures: none;
-- console errors: none;
-- page errors: none.
-
-The workflow reported:
-
-`pilot-rc production artifact desktop/mobile/PWA/offline/navigation/fail-closed proof passed.`
-
-### Artifact and privilege boundary
-
-PR #81 removed the localhost privileged transport shim from the current managed-provider proof rather than extending it.
-
-Current verified constraints include:
-
-- dedicated Arar Buluruz synthetic project only, with known Tarladan project refs hard-rejected;
-- privileged DB/S3 credentials remain CI/server-side and are not supplied to browser runtime;
-- public pilot artifact contains no privileged endpoint/credential material;
-- retired hosted-shim residue is rejected by the artifact boundary scanner;
-- no V0/mock/test presentation residue in pilot-RC;
-- no service-role credential or supplied secret leakage;
-- repository remains clean after proof.
-
-The current boundary scanner reports:
-
-`pilot-rc artifact privilege boundary passed: no retired hosted shim, V0/mock/test presentation residue, founder-intake path, privileged marker, or supplied secret leakage.`
-
-### Supabase repository state
-
-`supabase/config.toml` remains fail-closed in Git. Auth and Storage are enabled only in controlled test/rehearsal paths; production activation is not implied.
-
-Current canonical migration chain is exactly nine migrations:
-
-1. `20260730162000_create_listings.sql`
-2. `20260808211500_prepare_real_corlu_pilot_backend.sql`
-3. `20260809220000_prepare_trusted_photo_pipeline.sql`
-4. `20260810210000_prepare_public_seller_contact_contract.sql`
-5. `20260822113000_enable_public_signed_photo_delivery.sql`
-6. `20260823150000_add_operator_photo_inventory.sql`
-7. `20260826181500_prepare_stage1_self_service.sql`
-8. `20260827120000_prepare_near_final_classifieds.sql`
-9. `20260828205000_finalize_product_simplification.sql`
-
-Canonical database/RLS test suites, REST integration, browser E2E, private Storage, signed-photo, backup/restore and application-level verification all pass in the final required workflows.
-### Public runtime vs repository
-
-Repository readiness and the already-published public V0 remain separate states.
-
-The known public V0 remains synthetic/mock and non-collecting unless a separate publication/deployment gate changes it:
-
-- no authorized real production backend connection;
-- no real personal data;
-- no real production Storage;
-- no Auth;
-- no payment/advertising/monetization activation.
-
-PR #74 and Issue #72 completion do **not** authorize Lovable Publish/Update, AWS provisioning, production deployment or real-data collection.
-
-### Current consumer product scope
-
-The old controlled Çorlu-only intake model and the later seller-contact-choice/declaration-checkbox presentation are superseded as the current product contract.
-
-The current product is Türkiye-wide and seller self-service:
-
-- seller creates the listing directly;
-- 1–8 trusted photos;
-- broad category + required title;
-- optional condition with no silent default;
-- price or explicit **Ücretsiz**;
-- optional description;
-- İl / İlçe;
-- seller display name + one verified public phone;
-- no seller contact-preference selector;
-- buyer receives both **Ara** (`tel:`) and **WhatsApp’tan yaz** (`https://wa.me/`) derived from that same public E.164 phone;
-- no three consumer declaration checkboxes;
-- versioned publication evidence through `listing_rules_version` + `listing_rules_accepted_at`;
-- `publication_instruction_at`, verified-phone state and trusted-photo readiness remain publication prerequisites;
-- bounded 7-day signed, phone-bound HttpOnly remembered-seller session;
-- atomic auto-publication;
-- founder post-moderation/takedown;
-- lightweight phone-verified `İlanlarım` management;
-- buyer search/detail/signed-photo/direct-contact flow;
-- Vasıta retained, while real production vehicle publication remains fail-closed until EİDS is integrated;
-- no classic Auth/password, in-app chat, payment, order, reservation, commission or shipping.
-
-Search continues to normalize compact/spaced queries such as `b150` and `b 150`.
-
-Free listings display **Ücretsiz**, never `₺0`.
-
-The consumer UI must not present itself as a pilot, Stage 1 test harness, founder intake process or compliance tool.
-
-### Remaining activation gates
-
-The technical pre-AWS release-candidate proof is complete, but it is not legal or operational authorization for real data.
-
-Before the first real listing, the separate privacy/legal/operational and production-activation gates must still resolve and verify, as applicable:
-
-- KVKK transparency/aydınlatma and controller contact;
-- collection/storage/public-disclosure legal basis;
-- retention/deletion and data-subject request procedures;
-- wrong-person/incorrect-phone rapid takedown;
-- recipient/data-flow mapping and moderation rules;
-- actual production provider/data-residency configuration;
-- production TLS/network/admin hardening;
-- production secrets/least privilege;
-- minimum operational logs;
-- unpublish/kill switch;
-- actual production backup and successful restore.
-
-AWS account/provisioning, pricing/credit eligibility, Istanbul availability/residency and production network design remain intentionally deferred until an explicit production activation decision. **AWS remains OFF.**
-
-### Immediate next objective — Activation Gate Review
-
-**Activation Gate Review — determine exactly what remains before the first real listing / real pilot can legally and technically open.**
-
-This is a review/decision gate only. It does not authorize activation implementation.
-
-The review should:
-
-1. keep production, real data, AWS, paid recurring services, real SMS, production EİDS and Ads/monetization OFF;
-2. inventory the remaining privacy/legal/operational/production prerequisites against current canonical evidence;
-3. distinguish already-proved technical controls from unresolved prerequisites;
-4. identify the exact BLOCKER / IMPORTANT / CAN WAIT items for the first real listing / real pilot;
-5. produce explicit founder/Advisor go/no-go criteria;
-6. make no production, infrastructure, secret, external-service or real-data mutation during the review.
-
-Do not add classic Auth/accounts, in-app chat, payments, orders, reservations, commission, ads, recommendation engines, microservices, Kubernetes or speculative observability merely to satisfy this review.
-
-### Historical-document rule
-
-Older project-memory, backlog, provider and readiness documents remain historical evidence. Where their current-status wording conflicts with this file or a later canonical GitHub change, this current-state file and GitHub `main` control. The exact PR/commit under review remains authoritative for implementation facts.
+- The existing loopback-only synthetic Vehicle/Real-Estate path is preserved through an auditable `synthetic_test` eligibility transition after the exact application triple gate; production EİDS remains closed and fail-closed.
+- Seller metadata reassessment uses fail-closed trusted-policy/eligibility precedence, so seller edits cannot remove stricter operator/legal restrictions or trusted blocks.
+- Enforcement is aggregate across all active cases rather than last-event-wins.
+- Restore verification and managed portability equality now cover the architecture-freeze state, including the Phase-3.0 private external-supply state.

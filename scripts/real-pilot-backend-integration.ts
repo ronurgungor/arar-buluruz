@@ -168,6 +168,7 @@ const pendingInsert = await fetch(`${baseUrl}/rest/v1/listings`, {
     title: "Synthetic service-role pilot listing",
     description: "Synthetic fixture proving the trusted operational write path before real data.",
     price_amount: 2500,
+    category: "electronics",
     province: "Tekirdağ",
     district: "Çorlu",
     seller_display_name: "Synthetic Seller",
@@ -199,6 +200,7 @@ const turkiyeWideInsert = await fetch(`${baseUrl}/rest/v1/listings`, {
     description:
       "Synthetic fixture proving the database no longer carries a Çorlu-only product lock.",
     price_amount: 1,
+    category: "electronics",
     province: "İstanbul",
     district: "Kadıköy",
     seller_display_name: "Synthetic Seller",
