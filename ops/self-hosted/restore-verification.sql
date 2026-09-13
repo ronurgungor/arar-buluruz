@@ -51,7 +51,8 @@ begin
      or to_regclass('private.listing_policy_decisions') is null
      or to_regclass('private.listing_publication_controls') is null
      or to_regclass('private.listing_enforcement_cases') is null
-     or to_regclass('private.listing_eligibility_transitions') is null then
+     or to_regclass('private.listing_eligibility_transitions') is null
+     or to_regclass('private.listing_trusted_eligibility_constraints') is null then
     raise exception 'one or more architecture-freeze private tables are missing';
   end if;
 
@@ -77,7 +78,8 @@ begin
       ('listing_policy_decisions'),
       ('listing_publication_controls'),
       ('listing_enforcement_cases'),
-      ('listing_eligibility_transitions')
+      ('listing_eligibility_transitions'),
+      ('listing_trusted_eligibility_constraints')
     ) as required(relname)
     where not exists (
       select 1
@@ -234,6 +236,47 @@ begin
     raise exception 'synthetic regulated eligibility transition privilege boundary is invalid';
   end if;
 
+  if has_function_privilege(
+       'anon',
+       'public.set_trusted_listing_eligibility_constraint(uuid,text,text,text)',
+       'EXECUTE'
+     )
+     or has_function_privilege(
+       'authenticated',
+       'public.set_trusted_listing_eligibility_constraint(uuid,text,text,text)',
+       'EXECUTE'
+     )
+     or not has_function_privilege(
+       'service_role',
+       'public.set_trusted_listing_eligibility_constraint(uuid,text,text,text)',
+       'EXECUTE'
+     ) then
+    raise exception 'trusted eligibility reassessment privilege boundary is invalid';
+  end if;
+
+  if not has_table_privilege(
+       'service_role',
+       'private.listing_trusted_eligibility_constraints',
+       'SELECT'
+     )
+     or has_table_privilege(
+       'service_role',
+       'private.listing_trusted_eligibility_constraints',
+       'INSERT'
+     )
+     or has_table_privilege(
+       'service_role',
+       'private.listing_trusted_eligibility_constraints',
+       'UPDATE'
+     )
+     or has_table_privilege(
+       'service_role',
+       'private.listing_trusted_eligibility_constraints',
+       'DELETE'
+     ) then
+    raise exception 'trusted eligibility table privilege boundary is invalid';
+  end if;
+
   if exists (
     select 1
     from public.listings
@@ -314,7 +357,8 @@ begin
       ('listing_policy_decisions'),
       ('listing_publication_controls'),
       ('listing_enforcement_cases'),
-      ('listing_eligibility_transitions')
+      ('listing_eligibility_transitions'),
+      ('listing_trusted_eligibility_constraints')
     ) as required(relname)
     where has_table_privilege('anon', 'private.' || required.relname, 'SELECT')
        or has_table_privilege('authenticated', 'private.' || required.relname, 'SELECT')
