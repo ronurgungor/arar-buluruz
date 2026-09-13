@@ -8,26 +8,26 @@ select no_plan();
 select is(
   dblink_connect(
     'astra_setup',
-    'host=127.0.0.1 port=5432 dbname=postgres user=postgres password=postgres'
+    'host=supabase_db_arar-buluruz-gate1 port=5432 dbname=postgres user=postgres password=postgres'
   ),
   'OK',
-  'Astra setup connection uses an independent database session'
+  'Astra setup connection uses an independent password-authenticated database session'
 );
 select is(
   dblink_connect(
     'astra_a',
-    'host=127.0.0.1 port=5432 dbname=postgres user=postgres password=postgres'
+    'host=supabase_db_arar-buluruz-gate1 port=5432 dbname=postgres user=postgres password=postgres'
   ),
   'OK',
-  'transaction A has an independent database session'
+  'transaction A has an independent password-authenticated database session'
 );
 select is(
   dblink_connect(
     'astra_b',
-    'host=127.0.0.1 port=5432 dbname=postgres user=postgres password=postgres'
+    'host=supabase_db_arar-buluruz-gate1 port=5432 dbname=postgres user=postgres password=postgres'
   ),
   'OK',
-  'transaction B has an independent database session'
+  'transaction B has an independent password-authenticated database session'
 );
 
 select dblink_exec(
