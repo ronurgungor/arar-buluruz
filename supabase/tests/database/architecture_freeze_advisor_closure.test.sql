@@ -117,10 +117,16 @@ insert into private.listing_policy_decisions (
   'f3110000-0000-4000-8000-000000000001', 'restricted', 'Trusted operator restriction',
   'advisor2-test', 'operator', 'synthetic_operator_fixture'
 );
-update private.listing_publication_controls
-set eligibility_state = 'blocked', eligibility_origin = 'operator',
-    eligibility_basis = 'Trusted operator restriction'
-where listing_id = 'f3110000-0000-4000-8000-000000000001'::uuid;
+select is(
+  public.set_trusted_listing_eligibility_constraint(
+    'f3110000-0000-4000-8000-000000000001',
+    'blocked',
+    'operator',
+    'Trusted operator restriction'
+  ),
+  'blocked',
+  'operator restriction is persisted through the trusted eligibility reassessment seam'
+);
 update public.listings set category = 'home'
 where id = 'f3110000-0000-4000-8000-000000000001'::uuid;
 select results_eq(
@@ -145,10 +151,16 @@ insert into private.listing_policy_decisions (
   'f3110000-0000-4000-8000-000000000002', 'review_required', 'Trusted operator review',
   'advisor2-test', 'operator', 'synthetic_operator_fixture'
 );
-update private.listing_publication_controls
-set eligibility_state = 'review_required', eligibility_origin = 'operator',
-    eligibility_basis = 'Trusted operator review'
-where listing_id = 'f3110000-0000-4000-8000-000000000002'::uuid;
+select is(
+  public.set_trusted_listing_eligibility_constraint(
+    'f3110000-0000-4000-8000-000000000002',
+    'review_required',
+    'operator',
+    'Trusted operator review'
+  ),
+  'review_required',
+  'operator review is persisted through the trusted eligibility reassessment seam'
+);
 update public.listings set category = 'home'
 where id = 'f3110000-0000-4000-8000-000000000002'::uuid;
 select results_eq(
@@ -163,10 +175,16 @@ select results_eq(
   'trusted review-required decision survives a seller category edit'
 );
 
-update private.listing_publication_controls
-set eligibility_state = 'blocked', eligibility_origin = 'operator',
-    eligibility_basis = 'Trusted manual eligibility block'
-where listing_id = 'f3110000-0000-4000-8000-000000000003'::uuid;
+select is(
+  public.set_trusted_listing_eligibility_constraint(
+    'f3110000-0000-4000-8000-000000000003',
+    'blocked',
+    'operator',
+    'Trusted manual eligibility block'
+  ),
+  'blocked',
+  'manual operator block is persisted through the trusted eligibility reassessment seam'
+);
 update public.listings set category = 'home'
 where id = 'f3110000-0000-4000-8000-000000000003'::uuid;
 select results_eq(
@@ -203,10 +221,16 @@ insert into private.listing_policy_decisions (
   'f3110000-0000-4000-8000-000000000005', 'restricted', 'Trusted restriction on regulated listing',
   'advisor2-test', 'legal_notice', 'synthetic_legal_fixture'
 );
-update private.listing_publication_controls
-set eligibility_state = 'blocked', eligibility_origin = 'legal_notice',
-    eligibility_basis = 'Trusted legal restriction'
-where listing_id = 'f3110000-0000-4000-8000-000000000005'::uuid;
+select is(
+  public.set_trusted_listing_eligibility_constraint(
+    'f3110000-0000-4000-8000-000000000005',
+    'blocked',
+    'legal_notice',
+    'Trusted legal restriction'
+  ),
+  'blocked',
+  'legal block is persisted through the trusted eligibility reassessment seam'
+);
 update public.listings set category = 'electronics'
 where id = 'f3110000-0000-4000-8000-000000000005'::uuid;
 select results_eq(
