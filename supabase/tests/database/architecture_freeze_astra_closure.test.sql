@@ -171,11 +171,5 @@ select is(
   'trusted restriction disappears only after the explicit reassessment/clear operation'
 );
 
-select throws_ok(
-  $$ update private.listing_enforcement_cases set listing_id = gen_random_uuid() where false $$,
-  null,
-  'placeholder no-op does not exercise immutability'
-);
-
 select * from finish();
 rollback;
